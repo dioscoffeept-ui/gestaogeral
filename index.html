@@ -366,7 +366,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 04/11/2026 20:19</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 04/11/2026 20:42</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -1028,14 +1028,14 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 <div id="purchase-drop" class="rounded-2xl border-2 border-dashed p-4 text-center transition" style="border-color:var(--brand-line);background:var(--nav-bg);--tw-ring-color:var(--brand)">
                     <i class="fas fa-cloud-arrow-up text-2xl" style="color:var(--brand)"></i>
                     <p class="text-sm font-black text-slate-800 mt-1">Arraste para aqui a foto ou o PDF da fatura</p>
-                    <p class="text-[11px] text-slate-500">ou cole uma imagem (Ctrl+V) · ou use os botões abaixo</p>
+                    <p class="text-[11px] text-slate-500">Fatura comprida? Tire 2 ou 3 fotos (cima, meio, fim) e envie-as juntas · ou cole uma imagem (Ctrl+V)</p>
                 </div>
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
                     <label class="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 hover:border-slate-500 p-3 text-center transition">
                         <i class="fas fa-camera text-xl" style="color:var(--brand)"></i>
                         <p class="text-xs font-black text-slate-800 mt-1">Foto da fatura</p>
-                        <p class="text-[11px] text-slate-500">Lê produtos + QR code</p>
-                        <input type="file" accept="image/*" class="hidden" onchange="purchaseFromImage(this)">
+                        <p class="text-[11px] text-slate-500">Pode escolher 2–3 fotos da mesma fatura</p>
+                        <input type="file" accept="image/*" multiple class="hidden" onchange="purchaseFromImage(this)">
                     </label>
                     <label class="cursor-pointer rounded-2xl border-2 border-dashed border-slate-300 hover:border-slate-500 p-3 text-center transition">
                         <i class="fas fa-file-pdf text-xl text-rose-600"></i>
@@ -6567,11 +6567,13 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
         function blobToB64(blob) { return new Promise((ok, fail) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = fail; fr.readAsDataURL(blob); }); }
         // lê a fatura com IA de visão (função "ler-fatura" no Supabase). Devolve null se não estiver disponível.
-        async function aiReadInvoice(blob, mediaType, qrRaw) {
+        async function aiReadInvoice(blob, mediaType, qrRaw, extraBlobs) {
             if (!sb || !currentUser) return null;
             const { data: ss } = await sb.auth.getSession();
             const token = ss && ss.session && ss.session.access_token; if (!token) return null;
-            const body = { media_type: mediaType, data: await blobToB64(blob), qr: qrRaw || '', empresa: currentEmpresa || '',
+            const extra = [];
+            for (const b of (extraBlobs || [])) extra.push({ media_type: 'image/jpeg', data: await blobToB64(b) });
+            const body = { media_type: mediaType, data: await blobToB64(blob), extra, qr: qrRaw || '', empresa: currentEmpresa || '',
                 categorias: appState.inventoryCategories, inventario: appState.inventory.map(i => ({ id: i.id, name: i.name, unit: i.unit, category: i.category })) };
             const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 120000);
             try {
@@ -6617,6 +6619,23 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (f.notas) { const box = document.getElementById('purchase-qr-box'); box.insertAdjacentHTML('beforeend', `<p class="mt-2 text-[11px] text-amber-700 font-semibold"><i class="fas fa-triangle-exclamation mr-1"></i>${escapeHtml(f.notas)}</p>`); }
         }
         let aiWarned = false;
+        // a IA falhou: pergunta antes de usar a leitura simples (que se engana muito em faturas de grossistas)
+        function aiFallbackAsk(res) {
+            if (!res || res.ok) return true;
+            if (res.code === 'sem_chave' || res.code === 'plano') return true;
+            const why = res.code === 'limite' ? 'O limite gratuito diário de leituras com IA (Google) está esgotado por agora. Volta a funcionar daqui a algumas horas.' : (res.msg || 'A leitura com IA falhou.');
+            const ok = confirm(why + '\n\nQuer usar a leitura simples, sem IA? Em faturas compridas ou de grossistas (Makro, Recheio…) costuma ter muitos erros — terá de conferir tudo.\n\nOK = ler sem IA · Cancelar = tentar mais tarde ou escrever à mão');
+            if (!ok) {
+                document.getElementById('purchase-table-box').classList.add('hidden');
+                const p = document.getElementById('purchase-progress');
+                p.classList.remove('hidden');
+                document.getElementById('purchase-progress-label').innerHTML = '<span class="text-amber-800"><i class="fas fa-circle-info mr-1"></i>' + escapeHtml(why) + '</span> <button type="button" onclick="purchaseManual()" class="underline font-bold ml-1" style="color:var(--brand)">Escrever à mão</button>';
+                document.getElementById('purchase-progress-bar').style.width = '0';
+                return false;
+            }
+            purchaseProgress('A usar a leitura simples (sem IA)…', 12);
+            return true;
+        }
         function aiFallbackNote(res) {
             if (!res || res.ok) return;
             if (res.code === 'sem_chave') { if (!aiWarned) { aiWarned = true; console.info('Leitura com IA não ativada; a usar leitura local.'); } return; }
@@ -6646,7 +6665,12 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const zone = document.getElementById('purchase-drop');
             ['dragenter', 'dragover'].forEach(ev => m.addEventListener(ev, e => { e.preventDefault(); if (zone) zone.classList.add('ring-4'); }));
             ['dragleave', 'drop'].forEach(ev => m.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === m) zone && zone.classList.remove('ring-4'); }));
-            m.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) purchaseHandleFile(f); });
+            m.addEventListener('drop', e => {
+                const fs = [...((e.dataTransfer && e.dataTransfer.files) || [])];
+                const imgs = fs.filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|hei[cf])$/i.test(f.name || ''));
+                if (imgs.length > 1) return purchaseFromImage({ files: imgs, value: '' });
+                if (fs[0]) purchaseHandleFile(fs[0]);
+            });
             document.addEventListener('paste', e => {
                 if (m.classList.contains('hidden')) return;
                 const it = [...(e.clipboardData ? e.clipboardData.items : [])].find(x => x.kind === 'file');
@@ -6654,23 +6678,28 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             });
         })();
         async function purchaseFromImage(input) {
-            const file = input.files && input.files[0];
+            const files = [...(input.files || [])].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|hei[cf])$/i.test(f.name || '')).slice(0, 4);
             input.value = '';
-            if (!file) return;
+            if (!files.length) return;
             try {
-                purchaseProgress('A preparar a foto…', 3);
-                const blob = await decodableBlob(file);
-                const img = await imgFromBlob(blob);
+                purchaseProgress(files.length > 1 ? 'A preparar as ' + files.length + ' fotos…' : 'A preparar a foto…', 3);
+                const imgs = [], blobs = [];
+                for (const f of files) { const b = await decodableBlob(f); blobs.push(b); imgs.push(await imgFromBlob(b)); }
+                const img = imgs[0], blob = blobs[0];
                 purchaseFile = { blob: await new Promise(ok => imageToCanvasJpeg(img, 1800).then(c => c.toBlob(ok, 'image/jpeg', 0.8))), type: 'image/jpeg', ext: 'jpg' };
                 purchaseProgress('A procurar o QR code…', 6);
-                const qrRaw = await findQr(img), qr = parseAtQr(qrRaw);
-                purchaseProgress('A ler a fatura com IA… (10–30 segundos)', 15);
-                const tick = setInterval(() => { const b = document.getElementById('purchase-progress-bar'); const w = parseFloat(b.style.width) || 15; if (w < 90) b.style.width = (w + 3) + '%'; }, 1000);
-                const aiBlob = await new Promise(ok => imageToCanvasJpeg(img, 2000).then(c => c.toBlob(ok, 'image/jpeg', 0.85)));
-                const res = await aiReadInvoice(aiBlob, 'image/jpeg', qrRaw);
+                let qrRaw = '';
+                for (const im of imgs) { qrRaw = await findQr(im); if (parseAtQr(qrRaw)) break; }
+                const qr = parseAtQr(qrRaw);
+                purchaseProgress('A ler a fatura com IA… (20–60 segundos)', 15);
+                const tick = setInterval(() => { const b = document.getElementById('purchase-progress-bar'); const w = parseFloat(b.style.width) || 15; if (w < 92) b.style.width = (w + 1.5) + '%'; }, 1000);
+                const toAi = im => new Promise(ok => imageToCanvasJpeg(im, 2600).then(c => c.toBlob(ok, 'image/jpeg', 0.88)));
+                const aiBlob = await toAi(img), extraBlobs = [];
+                for (const im of imgs.slice(1)) extraBlobs.push(await toAi(im));
+                const res = await aiReadInvoice(aiBlob, 'image/jpeg', qrRaw, extraBlobs);
                 clearInterval(tick);
                 if (res && res.ok) { purchaseProgress(null); return startPurchaseFromAi(res.fatura, qr); }
-                aiFallbackNote(res);
+                if (!aiFallbackAsk(res)) return;
                 purchaseProgress('A ler a fatura…', 30);
                 const text = await localOcrText(blob, pr => purchaseProgress('A ler a fatura (leitura local)…', 30 + pr * 70));
                 purchaseProgress(null);
@@ -6709,7 +6738,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     purchaseProgress('A ler a fatura com IA… (10–30 segundos)', 15);
                     const res = await aiReadInvoice(file, 'application/pdf', '');
                     if (res && res.ok) { purchaseProgress(null); return startPurchaseFromAi(res.fatura, null); }
-                    aiFallbackNote(res);
+                    if (!aiFallbackAsk(res)) return;
                 }
                 purchaseProgress('A abrir o PDF…', 5);
                 await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
@@ -7809,7 +7838,6 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         const cell = tr.children[2]; if (!cell) return;
                         const ps = it.packSize > 1 ? it.packSize : 0;
                         if (ps) { const n = Math.floor((Number(it.stock) || 0) / ps), lo = Math.round(((Number(it.stock) || 0) - n * ps) * 100) / 100; cell.insertAdjacentHTML('beforeend', `<span class="block text-[10px] text-slate-500 font-semibold">${fmtQ(n)} emb. × ${ps}${lo ? ' + ' + fmtQ(lo) : ''}</span>`); }
-                        cell.insertAdjacentHTML('beforeend', `<button type="button" class="inv-count-btn" onclick="invQuickCount('${id}')" title="Contar / corrigir"><i class="fas fa-pen mr-0.5"></i>contar</button>`);
                     });
                     mTable(t);
                 });
