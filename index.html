@@ -370,7 +370,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 04/11/2026 21:38</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 04/11/2026 22:19</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -1105,7 +1105,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                                 <th class="px-2 py-2 font-bold" style="width:17%">Item do estoque</th>
                                 <th class="px-2 py-2 font-bold text-right" style="width:7%">Qtd.</th>
                                 <th class="px-2 py-2 font-bold text-right" style="width:8%">Preço un.</th>
-                                <th class="px-2 py-2 font-bold text-right" style="width:6%">Desc. %</th>
+                                <th class="px-2 py-2 font-bold text-right" style="width:6%">Desconto</th>
                                 <th class="px-2 py-2 font-bold" style="width:7%">IVA</th>
                                 <th class="px-2 py-2 font-bold text-right" style="width:9%">Total</th>
                                 <th class="px-2 py-2 font-bold" style="width:12%">Para estoque</th>
@@ -6470,13 +6470,38 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 if (q !== null) { r.qty = q; if (r.newItem) r.newItem.qty = q; }
             }
             else if (field === 'lote') r.lote = val;
+            else if (field === 'unit') {
+                const old = purchaseEffUnit(r);
+                if (r.itemId === '__auto' && r.newItem) { r.newItem.unit = val; r.unitSel = null; }
+                else r.unitSel = val;
+                let q = packToItemQty(r.pack, r.units, { unit: val });
+                if (q === null && r.qty > 0) { const c = convertQty(r.qty, old, val); if (c !== null) q = Math.round(c * 100) / 100; }
+                if (q !== null) { r.qty = q; if (r.newItem && r.itemId === '__auto') r.newItem.qty = q; }
+            }
+            else if (field === 'discMode') {
+                const gross = (Number(r.units) || 0) * (Number(r.unitPrice) || 0);
+                r.discMode = r.discMode === 'eur' ? 'pct' : 'eur';
+                if (r.discMode === 'eur') r.discEur = Math.round(gross * (Number(r.disc) || 0) / 100 * 100) / 100;
+            }
+            else if (field === 'disc' && r.discMode === 'eur') {
+                const gross = (Number(r.units) || 0) * (Number(r.unitPrice) || 0);
+                r.discEur = pnum(val) || 0;
+                r.disc = gross > 0 ? Math.round(r.discEur / gross * 10000) / 100 : 0;
+                if (gross > 0) r.total = Math.round((gross - r.discEur) * 100) / 100;
+            }
             else {
                 r[field] = pnum(val);
-                if (['units', 'unitPrice', 'disc'].includes(field) && r.units > 0 && r.unitPrice > 0) r.total = Math.round(r.units * r.unitPrice * (1 - (r.disc || 0) / 100) * 100) / 100;
-                if (field === 'units') { const item = r.itemId === '__auto' && r.newItem ? { unit: r.newItem.unit } : appState.inventory.find(x => x.id === r.itemId); const q = packToItemQty(r.pack, r.units, item); if (q !== null) { r.qty = q; if (r.newItem) r.newItem.qty = q; } }
+                if (['units', 'unitPrice', 'disc'].includes(field) && r.units > 0 && r.unitPrice > 0) {
+                    const gross = r.units * r.unitPrice;
+                    if (r.discMode === 'eur') { r.disc = gross > 0 ? Math.round((r.discEur || 0) / gross * 10000) / 100 : 0; r.total = Math.round((gross - (r.discEur || 0)) * 100) / 100; }
+                    else r.total = Math.round(gross * (1 - (r.disc || 0) / 100) * 100) / 100;
+                }
+                if (field === 'units') { const eu = purchaseEffUnit(r); const q = eu ? packToItemQty(r.pack, r.units, { unit: eu }) : null; if (q !== null) { r.qty = q; if (r.newItem) r.newItem.qty = q; } }
             }
             renderPurchaseRows();
         }
+        function purchaseRowItem(r) { return r.itemId === '__auto' && r.newItem ? { unit: r.newItem.unit } : appState.inventory.find(x => x.id === r.itemId); }
+        function purchaseEffUnit(r) { const it = purchaseRowItem(r); return r.unitSel || (it && it.unit) || ''; }
         function purchaseGuessCat(r) {
             const cats = appState.inventoryCategories, d = normTxt(r.desc || '');
             const rules = [[/cerve|birra|vinho|sumo|agua|refrig|cola|tonic|gin|vodka|whisk|rum|licor|bebida|beer|soda/, /bebida/], [/leite|natas|iogurte|queijo|mantei|lactic|mozzarel|burrata|ricotta|fiambre|presunto|bacon/, /latic|frio/],
@@ -6518,7 +6543,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 if (n) { r.newItem.category = n; r.newItem.catAi = false; }
             } else if (field === 'category') { r.newItem.category = val; r.newItem.catAi = false; }
             else if (field === 'name') r.newItem.name = val.trim() || r.newItem.name;
-            else if (field === 'unit') r.newItem.unit = val;
+            else if (field === 'unit') return purchaseSet(i, 'unit', val);
             renderPurchaseRows();
         }
         function purchasePerAsk(i) {
@@ -6542,8 +6567,14 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 const f = 1 + (Number(r.iva) || 0) / 100;
                 const netT = mode === 'gross' ? (r.total || 0) / f : (r.total || 0);
                 const uc = item && r.qty > 0 && r.total > 0 ? netT / r.qty : null;
-                const big = item && { g: ['kg', 1000], ml: ['L', 1000] }[String(item.unit).toLowerCase()];
-                const fmt = v => big ? eur2(v * big[1]) + '/' + big[0] : eurU(v) + '/' + escapeHtml(item.unit);
+                const eu = purchaseEffUnit(r);
+                const big = item && { g: ['kg', 1000], ml: ['L', 1000] }[String(eu).toLowerCase()];
+                const fmt = v => big ? eur2(v * big[1]) + '/' + big[0] : eurU(v) + '/' + escapeHtml(eu);
+                const gross = (Number(r.units) || 0) * (Number(r.unitPrice) || 0);
+                const dEur = r.discMode === 'eur' ? (r.discEur || 0) : Math.round(gross * (Number(r.disc) || 0) / 100 * 100) / 100;
+                const unitOpts = [...new Set(['un', 'L', 'ml', 'kg', 'g', eu].filter(Boolean))];
+                const realItem = r.itemId && r.itemId !== '__auto' ? appState.inventory.find(x => x.id === r.itemId) : null;
+                const unitWarn = realItem && r.unitSel && r.unitSel !== realItem.unit && convertQty(1, r.unitSel, realItem.unit) === null;
                 const warn = r.itemId && !r.sure;
                 return `<tr class="border-b border-slate-100 align-top ${warn || r.weak ? 'bg-amber-50/60' : ''}">
                     <td class="px-2 py-2"><input value="${escapeHtml(r.desc)}" onchange="purchaseSet(${i},'desc',this.value)" placeholder="Descrição" class="w-full text-xs font-semibold">
@@ -6552,10 +6583,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     <td class="px-2 py-2">${num(i, 'units', r.units, '', '0.001')}
                         <button type="button" onclick="purchasePerAsk(${i})" class="mt-1 text-[10px] font-bold whitespace-nowrap ${r.pack && r.pack.mult > 1 ? '' : 'text-slate-400 hover:text-slate-700'}" style="${r.pack && r.pack.mult > 1 ? 'color:var(--brand)' : ''}" title="Unidades por pacote / caixa">${r.pack && r.pack.mult > 1 ? '× ' + r.pack.mult + ' = ' + fmtQ(r.units * r.pack.mult) + (r.pack.unit === 'un' ? ' un' : '') : '<i class="fas fa-box mr-0.5"></i>emb.?'}</button></td>
                     <td class="px-2 py-2">${num(i, 'unitPrice', r.unitPrice, '', '0.0001')}</td>
-                    <td class="px-2 py-2">${num(i, 'disc', r.disc || '', '', '0.01')}</td>
+                    <td class="px-2 py-2"><div class="flex items-center gap-1">${num(i, 'disc', r.discMode === 'eur' ? (r.discEur || '') : (r.disc || ''), '', '0.01')}<button type="button" onclick="purchaseSet(${i},'discMode')" class="shrink-0 w-8 h-8 rounded-lg text-xs font-black border" style="color:var(--brand);border-color:var(--brand-line);background:var(--brand-soft)" title="Mudar entre percentagem e valor em euros">${r.discMode === 'eur' ? '€' : '%'}</button></div>
+                        ${dEur > 0 ? `<p class="text-[10px] text-slate-500 mt-1 whitespace-nowrap">${r.discMode === 'eur' ? '= ' + fmtQ(r.disc) + ' %' : '= ' + eur2(dEur)}</p>` : ''}</td>
                     <td class="px-2 py-2"><select onchange="purchaseSet(${i},'iva',this.value)" class="w-full text-xs font-semibold" style="min-width:80px;padding-left:.5rem;padding-right:1.6rem">${[23, 13, 6, 0].map(v => `<option value="${v}" ${+r.iva === v ? 'selected' : ''}>${v}%</option>`).join('')}</select></td>
                     <td class="px-2 py-2">${num(i, 'total', r.total)}${r.weak ? '<p class="text-[10px] text-amber-700 font-bold mt-1">Confirme os valores</p>' : ''}</td>
-                    <td class="px-2 py-2"><div class="flex items-center gap-1">${num(i, 'qty', r.qty)}<span class="text-[11px] text-slate-500 w-6">${item ? escapeHtml(item.unit) : ''}</span></div><div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 whitespace-nowrap" title="Quantas unidades vêm em cada pacote / caixa"><span>Unid. por emb.</span><input type="number" min="1" step="1" value="${r.pack ? r.pack.mult : 1}" onchange="purchaseSet(${i},'per',this.value)" class="text-[11px] font-bold text-right" style="width:58px;height:24px;padding:0 .3rem"></div>
+                    <td class="px-2 py-2"><div class="flex items-center gap-1">${num(i, 'qty', r.qty)}${item ? `<select onchange="purchaseSet(${i},'unit',this.value)" class="text-xs font-bold shrink-0" style="width:68px;padding-left:.4rem;padding-right:1.3rem" title="Unidade em que conta este produto no estoque">${unitOpts.map(u => `<option ${u === eu ? 'selected' : ''}>${escapeHtml(u)}</option>`).join('')}</select>` : ''}</div>${unitWarn ? `<p class="text-[10px] text-amber-700 font-bold mt-1">"${escapeHtml(realItem.name)}" está em ${escapeHtml(realItem.unit)} — ao guardar passa a ${escapeHtml(r.unitSel)}</p>` : ''}<div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 whitespace-nowrap" title="Quantas unidades vêm em cada pacote / caixa"><span>Unid. por emb.</span><input type="number" min="1" step="1" value="${r.pack ? r.pack.mult : 1}" onchange="purchaseSet(${i},'per',this.value)" class="text-[11px] font-bold text-right" style="width:58px;height:24px;padding:0 .3rem"></div>
                         ${r.pack && r.pack.mult > 1 ? `<p class="text-[10px] font-bold mt-0.5" style="color:var(--brand)">${fmtQ(r.units)} emb. × ${r.pack.mult}${r.pack.unit === 'un' ? '' : ' × ' + r.pack.amount + ' ' + r.pack.unit} = ${fmtQ(r.units * r.pack.mult)} ${r.pack.unit === 'un' ? 'un' : 'emb. individuais'}</p>` : (r.pack ? `<p class="text-[10px] text-slate-400 mt-0.5">${r.pack.amount} ${r.pack.unit} cada</p>` : '')}</td>
                     <td class="px-2 py-2 text-[11px] font-bold text-slate-700">${uc === null ? '<span class="text-slate-300">—</span>' : fmt(uc) + '<span class="block text-[10px] font-normal text-slate-400">s/IVA</span>'}</td>
                     <td class="px-1 py-2 text-right"><button type="button" onclick="purchaseRows.splice(${i},1);renderPurchaseRows()" class="p-1 text-slate-400 hover:text-red-600" title="Remover"><i class="fas fa-trash"></i></button></td>
@@ -6798,6 +6830,23 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const mode = document.getElementById('purchase-mode').value;
             const addStock = document.getElementById('purchase-addstock').checked;
             const date = document.getElementById('purchase-date').value || new Date().toISOString().slice(0, 10);
+            for (const r of purchaseRows) {
+                if (!r.unitSel || !r.itemId || r.itemId === '__auto' || r.itemId === '__new') continue;
+                const it = appState.inventory.find(x => x.id === r.itemId);
+                if (!it || it.unit === r.unitSel) { r.unitSel = null; continue; }
+                const c = convertQty(r.qty, r.unitSel, it.unit);
+                if (c !== null) { r.qty = Math.round(c * 100) / 100; r.unitSel = null; continue; }
+                const pu = r.pack && r.pack.unit !== 'un' ? ({ gr: 'g', lt: 'l' }[r.pack.unit] || r.pack.unit) : null;
+                let f = null;
+                if (pu && r.unitSel === 'un') { const sz = convertQty(r.pack.amount, pu, it.unit); if (sz) f = 1 / sz; }
+                else if (pu && it.unit === 'un') f = convertQty(r.pack.amount, pu, r.unitSel);
+                const ns = f ? Math.round((Number(it.stock) || 0) * f * 100) / 100 : Number(it.stock) || 0;
+                const usado = appState.recipes.some(rc => (rc.ingredients || []).some(g => normTxt(g.name) === normTxt(it.name)));
+                if (!confirm('"' + it.name + '" está em ' + it.unit + '. Passar a contar em ' + r.unitSel + '?\n\nEstoque atual: ' + fmtQ(it.stock) + ' ' + it.unit + ' → ' + fmtQ(ns) + ' ' + r.unitSel + (f ? '' : ' (não sei converter: confira depois)') + (usado ? '\n\nAtenção: há fichas que usam este item — confira se a unidade nelas continua certa.' : ''))) return;
+                it.stock = ns; it.minStock = f ? Math.round((Number(it.minStock) || 0) * f * 100) / 100 : it.minStock;
+                it.unit = r.unitSel; delete it.price; delete it.priceQty;
+                r.unitSel = null;
+            }
             const semCat = purchaseRows.filter(r => r.itemId === '__auto' && r.newItem && !r.newItem.category).length;
             if (semCat) return alert('Escolha a categoria do estoque para ' + semCat + ' item(ns) novo(s) (campo a vermelho).');
             purchaseRows.forEach(r => {
@@ -7858,6 +7907,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             startPurchaseFromAi = function (f, qr) {
                 const r = oStart.apply(this, arguments);
                 purchaseHead.aiTot = (f && f.totais) || null; purchaseHead.aiGross = !!(f && f.documento && f.documento.precos_com_iva);
+                // descontos que não dão uma percentagem redonda vieram em euros (ex.: "Leve Mais Pague Menos 6,00")
+                (purchaseRows || []).forEach(r => {
+                    const g = (Number(r.units) || 0) * (Number(r.unitPrice) || 0), e = Math.round((g - (Number(r.total) || 0)) * 100) / 100;
+                    if (Number(r.disc) > 0 && e > 0 && Math.abs(Number(r.disc) - Math.round(Number(r.disc))) > 0.01) { r.discMode = 'eur'; r.discEur = e; }
+                });
                 renderPurchaseRows();
                 return r;
             };
