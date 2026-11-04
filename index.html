@@ -256,8 +256,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             /* evita o zoom automático do iPhone ao tocar num campo */
             input, select, textarea { font-size: 16px !important; }
             /* janelas em ecrã inteiro */
-            .fixed.inset-0[id$="-modal"] { padding: 0 !important; align-items: stretch !important; }
-            .fixed.inset-0[id$="-modal"] > div { margin: 0 !important; max-width: none !important; width: 100% !important; min-height: 100%; border-radius: 0 !important; border: 0 !important; }
+            .fixed.inset-0[id$="-modal"] { padding: 0 !important; align-items: flex-start !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+            .fixed.inset-0[id$="-modal"] > div { margin: 0 !important; max-width: none !important; width: 100% !important; min-height: 100%; height: auto !important; max-height: none !important; flex-shrink: 0; border-radius: 0 !important; border: 0 !important; }
             /* tabelas viram cartões */
             .ds-mtable { min-width: 0 !important; }
             .ds-mtable thead { display: none; }
@@ -274,6 +274,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             #tab-inventory > div:first-child, #tab-bar > div:first-child, #tab-kitchen > div:first-child { padding: 14px !important; }
             #tab-inventory > div:first-child button, #tab-bar > div:first-child button, #tab-kitchen > div:first-child button { padding: 10px 12px !important; }
             #inv-search { min-width: 0 !important; width: 100%; }
+            #recipe-ingredients-list .ingredient-row { flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
+            #recipe-ingredients-list .ingredient-row > .relative { flex: 1 1 100%; }
+            #recipe-ingredients-list .ingredient-row .ing-qty, #recipe-ingredients-list .ingredient-row .ing-unit { flex: 1 1 0 !important; width: auto !important; min-width: 0 !important; }
+            #recipe-ingredients-list .ingredient-row > button { flex: 0 0 auto; }
             #tab-inventory > div:first-child .relative { flex: 1 1 100%; }
             .dash-kpi p.v { font-size: 1.25rem; }
             .dash-qa { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
@@ -366,7 +370,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 04/11/2026 21:01</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 04/11/2026 21:38</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
