@@ -156,7 +156,7 @@
         n++;
         let r = null;
         try { const x = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: N }) }); r = await x.json(); if (!x.ok) throw new Error(r.erro || 'Erro'); }
-        catch (e) { app.innerHTML = `<div class="spin">${esc(e.message)}</div>`; return; }
+        catch (e) { app.innerHTML = `<div class="spin">Este link NFC não está completo.<br><span style="font-weight:500;font-size:12px">No Dio´Stock: Balcão → Pagamentos → Etiqueta NFC da loja → Copiar, e grave esse link na etiqueta.</span></div>`; return; }
         if (!info) { info = { loja: r.loja, marca: r.marca, teste: false }; marca(); }
         if (r.t) { T = r.t; history.replaceState(null, '', location.pathname + '?t=' + T); info = null; return start(); }
         app.innerHTML = `<div class="ok wait"><div class="dot"></div><h1 style="font-size:19px">À espera do valor…</h1><p>Peça no balcão para enviar o pagamento.<br>Esta página abre sozinha.</p></div>`;
