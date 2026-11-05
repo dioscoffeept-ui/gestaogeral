@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root { --brand: #9C3815; --brand-soft: #fbeee8; --ink: #0f172a; --mut: #64748b; --line: #e2e8f0; --bg: #F6F3F0; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; padding-bottom: 110px; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  .top { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid #f1f5f9; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; }
+  .top .in { max-width: 640px; margin: 0 auto; }
+  .shop { display: flex; align-items: center; gap: 10px; }
+  .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; overflow: hidden; flex-shrink: 0; }
+  .logo img { width: 100%; height: 100%; object-fit: cover; }
+  .shop b { display: block; font-size: 16px; font-weight: 900; } .shop span { font-size: 12px; color: var(--mut); }
+  .tabs { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; scrollbar-width: none; } .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; padding: 7px 13px; border-radius: 99px; font-size: 13px; font-weight: 800; background: #f1f5f9; color: #475569; white-space: nowrap; }
+  .tab.on { background: var(--brand); color: #fff; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 14px 16px; }
+  .sec { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; color: var(--mut); margin: 18px 2px 8px; }
+  .item { display: flex; gap: 12px; align-items: center; background: #fff; border: 1px solid #f1f5f9; border-radius: 18px; padding: 10px; margin-bottom: 8px; width: 100%; text-align: left; }
+  .item .ph { width: 76px; height: 76px; border-radius: 14px; background: var(--brand-soft) center/cover no-repeat; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+  .item .tx { flex: 1; min-width: 0; } .item .tx b { display: block; font-size: 15px; font-weight: 800; }
+  .item .tx p { margin: 2px 0 0; font-size: 12px; color: var(--mut); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .item .pr { font-size: 14px; font-weight: 900; margin-top: 4px; display: block; }
+  .item .add { width: 36px; height: 36px; border-radius: 12px; background: var(--brand); color: #fff; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .item .q { min-width: 26px; height: 26px; border-radius: 99px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--bg) 70%, transparent); }
+  .bar button { width: 100%; max-width: 608px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-radius: 16px; background: var(--brand); color: #fff; font-size: 16px; font-weight: 900; box-shadow: 0 14px 30px -14px var(--brand); }
+  .bar .n { background: rgba(255,255,255,.22); border-radius: 99px; padding: 2px 9px; font-size: 13px; }
+  .sheet { position: fixed; inset: 0; z-index: 30; background: rgba(15,23,42,.45); display: none; align-items: flex-end; justify-content: center; }
+  .sheet.on { display: flex; }
+  .sheet .box { background: #fff; width: 100%; max-width: 640px; border-radius: 24px 24px 0 0; max-height: 92vh; overflow-y: auto; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); animation: up .2s ease-out; }
+  @keyframes up { from { transform: translateY(30px); opacity: .5; } to { transform: none; opacity: 1; } }
+  .sheet h3 { margin: 0 0 4px; font-size: 19px; font-weight: 900; }
+  .opt { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 14px; margin-top: 8px; font-size: 14px; font-weight: 700; text-align: left; }
+  .opt.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .row .nm { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; } .row .nm small { display: block; color: var(--mut); font-weight: 600; }
+  .qb { display: flex; align-items: center; gap: 8px; } .qb button { width: 32px; height: 32px; border-radius: 10px; background: #f1f5f9; font-size: 18px; font-weight: 800; } .qb button.p { background: var(--brand); color: #fff; }
+  .tot { display: flex; justify-content: space-between; align-items: baseline; margin: 14px 0 4px; } .tot b { font-size: 26px; font-weight: 900; }
+  label { display: block; font-size: 11px; font-weight: 800; color: var(--mut); text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 5px; }
+  input, textarea { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; font-size: 16px; font-family: inherit; outline: none; background: #fff; }
+  input:focus, textarea:focus { border-color: var(--brand); }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .more summary { list-style: none; cursor: pointer; font-size: 13px; font-weight: 800; color: var(--brand); margin-top: 12px; } .more summary::-webkit-details-marker { display: none; }
+  .main { width: 100%; margin-top: 16px; padding: 16px; border-radius: 14px; background: var(--brand); color: #fff; font-size: 17px; font-weight: 900; box-shadow: 0 12px 26px -14px var(--brand); }
+  .main:disabled { opacity: .5; }
+  .err { color: #b91c1c; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; min-height: 1em; }
+  .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .banner { display: none; margin: 0 0 12px; padding: 12px 14px; border-radius: 16px; background: var(--ink); color: #fff; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; }
+  .banner.on { display: flex; } .banner button { background: #fff; color: var(--ink); padding: 8px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; white-space: nowrap; }
+  .empty { text-align: center; color: var(--mut); padding: 50px 16px; font-weight: 600; font-size: 14px; line-height: 1.5; }
+</style>
+</head>
+<body>
+  <header class="top"><div class="in">
+    <div class="shop"><div class="logo" id="logo">☕</div><div><b id="lname">Menu</b><span>Peça e pague pelo telemóvel</span></div></div>
+    <div class="tabs" id="tabs"></div>
+  </div></header>
+  <main class="wrap">
+    <div class="banner" id="banner"><span id="banner-t">Tem um pagamento do balcão à espera</span><button type="button" id="banner-b">Pagar</button></div>
+    <div id="list"><div class="empty">A carregar o menu…</div></div>
+  </main>
+  <div class="bar" id="bar" hidden><button type="button" onclick="abrirCarrinho()"><span><span class="n" id="bar-n">0</span>&nbsp; Ver pedido</span><span id="bar-t">0,00 €</span></button></div>
+  <div class="sheet" id="sh-var" onclick="if(event.target===this)fechar('sh-var')"><div class="box" id="var-box"></div></div>
+  <div class="sheet" id="sh-cart" onclick="if(event.target===this)fechar('sh-cart')"><div class="box" id="cart-box"></div></div>
+
+  <script>
+    const FN = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/pedido-publico';
+    const FN_PAG = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/pagar-publico';
+    const N = new URLSearchParams(location.search).get('n') || '';
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const eur = v => Number(v).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+    let data = null, cart = [], cat = '';
+    try { cart = JSON.parse(sessionStorage.getItem('ds_cart_' + N) || '[]') || []; } catch (_) { cart = []; }
+    const guardar = () => { try { sessionStorage.setItem('ds_cart_' + N, JSON.stringify(cart)); } catch (_) {} };
+
+    async function post(url, body) {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+      return j;
+    }
+    function nifOk(n) { n = String(n || '').replace(/\D/g, ''); if (!/^\d{9}$/.test(n)) return false; let s = 0; for (let i = 0; i < 8; i++) s += Number(n[i]) * (9 - i); const c = 11 - (s % 11); return (c >= 10 ? 0 : c) === Number(n[8]); }
+    function marca() {
+      const m = data.marca || {};
+      if (m.brand) { document.documentElement.style.setProperty('--brand', m.brand); document.documentElement.style.setProperty('--brand-soft', 'color-mix(in srgb, ' + m.brand + ' 12%, #fff)'); }
+      if (m.bg) document.documentElement.style.setProperty('--bg', m.bg);
+      document.getElementById('lname').textContent = data.loja || 'Menu';
+      document.title = 'Menu · ' + (data.loja || '');
+      if (m.logo) document.getElementById('logo').innerHTML = '<img src="' + esc(m.logo) + '" alt="">';
+    }
+    function cats() {
+      const ordem = data.cats || [], usadas = [...new Set(data.menu.map(m => m.cat || 'Outros'))];
+      return usadas.sort((a, b) => { const ia = ordem.indexOf(a), ib = ordem.indexOf(b); return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib); });
+    }
+    function qtdDe(id) { return cart.filter(c => c.id === id).reduce((a, c) => a + c.qty, 0); }
+    function render() {
+      const cs = cats();
+      document.getElementById('tabs').innerHTML = ['', ...cs].map(c => `<button type="button" class="tab ${c === cat ? 'on' : ''}" onclick="cat='${esc(c).replace(/'/g, "\\'")}';render();scrollTo({top:0,behavior:'smooth'})">${c ? esc(c) : 'Tudo'}</button>`).join('');
+      if (!data.ativo) { document.getElementById('list').innerHTML = '<div class="empty">Os pedidos pelo telemóvel ainda não estão disponíveis aqui.<br>Faça o seu pedido no balcão. 🙂</div>'; barra(); return; }
+      if (!data.menu.length) { document.getElementById('list').innerHTML = '<div class="empty">O menu ainda está a ser preparado.</div>'; barra(); return; }
+      const grupos = (cat ? [cat] : cs);
+      document.getElementById('list').innerHTML = grupos.map(g => {
+        const its = data.menu.filter(m => (m.cat || 'Outros') === g);
+        if (!its.length) return '';
+        return `<p class="sec">${esc(g)}</p>` + its.map(m => { const q = qtdDe(m.id); return `<button type="button" class="item" onclick="tocar('${m.id}')">
+          <span class="ph" style="${m.foto ? `background-image:url('${esc(m.foto)}')` : ''}">${m.foto ? '' : (m.tipo === 'KITCHEN' ? '🍽️' : '☕')}</span>
+          <span class="tx"><b>${esc(m.nome)}</b>${m.desc ? `<p>${esc(m.desc)}</p>` : ''}<span class="pr">${eur(m.preco)}${m.vars.length ? ' <span style="color:var(--mut);font-weight:600;font-size:12px">· opções</span>' : ''}</span></span>
+          ${q ? `<span class="q">${q}</span>` : '<span class="add">+</span>'}</button>`; }).join('');
+      }).join('');
+      barra();
+    }
+    function total() { return Math.round(cart.reduce((a, c) => a + c.preco * c.qty, 0) * 100) / 100; }
+    function barra() {
+      const n = cart.reduce((a, c) => a + c.qty, 0);
+      document.getElementById('bar').hidden = !n;
+      document.getElementById('bar-n').textContent = n;
+      document.getElementById('bar-t').textContent = eur(total());
+    }
+    function juntar(m, v) {
+      const ex = cart.find(c => c.id === m.id && c.key === (v ? v.key : ''));
+      if (ex) ex.qty++; else cart.push({ id: m.id, key: v ? v.key : '', nome: m.nome + (v ? ' — ' + v.nome : ''), preco: Math.round((m.preco + (v ? v.extra : 0)) * 100) / 100, qty: 1 });
+      guardar(); render(); if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
+    }
+    function tocar(id) {
+      const m = data.menu.find(x => x.id === id); if (!m) return;
+      if (!m.vars.length) return juntar(m, null);
+      let sel = '';
+      const desenhar = () => {
+        document.getElementById('var-box').innerHTML = `<h3>${esc(m.nome)}</h3><p style="margin:0;color:var(--mut);font-size:13px">Escolha uma opção</p>
+          <button type="button" class="opt ${sel === '' ? 'on' : ''}" data-k="">Normal <span>${eur(m.preco)}</span></button>
+          ${m.vars.map(v => `<button type="button" class="opt ${sel === v.key ? 'on' : ''}" data-k="${v.key}">${esc(v.nome)} <span>${v.extra ? '+' + eur(v.extra) : eur(m.preco)}</span></button>`).join('')}
+          <button type="button" class="main" id="var-ok">Juntar · ${eur(m.preco + ((m.vars.find(v => v.key === sel) || {}).extra || 0))}</button>`;
+        document.querySelectorAll('#var-box .opt').forEach(b => b.onclick = () => { sel = b.dataset.k; desenhar(); });
+        document.getElementById('var-ok').onclick = () => { juntar(m, m.vars.find(v => v.key === sel) || null); fechar('sh-var'); };
+      };
+      desenhar(); abrir('sh-var');
+    }
+    function abrir(id) { document.getElementById(id).classList.add('on'); document.body.style.overflow = 'hidden'; }
+    function fechar(id) { document.getElementById(id).classList.remove('on'); document.body.style.overflow = ''; }
+    let dados = { nome: '', nif: '', email: '', nota: '' };
+    try { dados = Object.assign(dados, JSON.parse(localStorage.getItem('ds_cliente') || '{}')); dados.nota = ''; } catch (_) {}
+    function abrirCarrinho() { desenharCarrinho(); abrir('sh-cart'); }
+    function desenharCarrinho(err) {
+      if (!cart.length) { fechar('sh-cart'); render(); return; }
+      document.getElementById('cart-box').innerHTML = `<h3>O seu pedido</h3>
+        ${cart.map((c, i) => `<div class="row"><span class="nm">${esc(c.nome)}<small>${eur(c.preco)}</small></span><span class="qb"><button type="button" onclick="mudar(${i},-1)">−</button><b>${c.qty}</b><button type="button" class="p" onclick="mudar(${i},1)">+</button></span></div>`).join('')}
+        <div class="tot"><span style="font-weight:800;color:var(--mut)">Total</span><b>${eur(total())}</b></div>
+        <label for="f-nome">Nome para chamar <span style="text-transform:none;font-weight:600">(opcional)</span></label><input id="f-nome" value="${esc(dados.nome)}" placeholder="Ex.: Ana" autocomplete="given-name">
+        <details class="more" ${dados.nif || dados.email ? 'open' : ''}><summary>🧾 Quero fatura com NIF / receber por email</summary>
+          <div class="g2"><div><label for="f-nif">NIF</label><input id="f-nif" inputmode="numeric" maxlength="9" value="${esc(dados.nif)}" placeholder="9 dígitos"></div>
+          <div><label for="f-email">Email</label><input id="f-email" type="email" inputmode="email" value="${esc(dados.email)}" placeholder="nome@gmail.com" autocomplete="email"></div></div>
+          <p class="hint">Opcional. Usamos só para a fatura e o comprovativo.</p></details>
+        <details class="more"><summary>✏️ Nota para o pedido</summary><textarea id="f-nota" rows="2" maxlength="200" placeholder="Ex.: sem açúcar, para levar">${esc(dados.nota)}</textarea></details>
+        <button type="button" class="main" id="f-ok">Pagar ${eur(total())}</button><div class="err" id="f-err">${err ? esc(err) : ''}</div>`;
+      document.getElementById('f-ok').onclick = enviar;
+    }
+    function mudar(i, d) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); guardar(); render(); desenharCarrinho(); }
+    async function enviar() {
+      const g = id => (document.getElementById(id) || {}).value || '';
+      dados = { nome: g('f-nome').trim(), nif: g('f-nif').replace(/\D/g, ''), email: g('f-email').trim(), nota: g('f-nota').trim() };
+      if (dados.nif && !nifOk(dados.nif)) return desenharCarrinho('O NIF não parece válido. Confirme os números ou deixe em branco.');
+      if (dados.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dados.email)) return desenharCarrinho('O email não parece correto.');
+      try { localStorage.setItem('ds_cliente', JSON.stringify({ nome: dados.nome, nif: dados.nif, email: dados.email })); } catch (_) {}
+      const b = document.getElementById('f-ok'); b.disabled = true; b.textContent = 'A preparar o pagamento…';
+      try {
+        const r = await post(FN, { n: N, acao: 'pedir', itens: cart.map(c => ({ id: c.id, key: c.key, qty: c.qty })), nome: dados.nome, nif: dados.nif, email: dados.email, nota: dados.nota });
+        cart = []; guardar();
+        location.href = 'pagar.html?t=' + r.t;
+      } catch (e) { desenharCarrinho(e.message); }
+    }
+    // pagamento do balcão à espera (cliente encostou o telemóvel na etiqueta do balcão)
+    async function vigiarBalcao() {
+      try {
+        const r = await post(FN_PAG, { n: N });
+        const bn = document.getElementById('banner');
+        if (r.t) { bn.classList.add('on'); document.getElementById('banner-t').textContent = 'Pagamento do balcão' + (r.valor_cent ? ': ' + eur(r.valor_cent / 100) : '');
+          document.getElementById('banner-b').onclick = () => location.href = 'pagar.html?t=' + r.t; }
+        else bn.classList.remove('on');
+      } catch (_) {}
+      setTimeout(vigiarBalcao, 4000);
+    }
+    (async () => {
+      if (!/^[a-f0-9]{24}$/.test(N)) { document.getElementById('list').innerHTML = '<div class="empty">Link incompleto. Peça ajuda no balcão.</div>'; return; }
+      try { data = await post(FN, { n: N, acao: 'menu' }); } catch (e) { document.getElementById('list').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+      marca();
+      // tira do carrinho o que já não existe
+      cart = cart.filter(c => data.menu.some(m => m.id === c.id)); guardar();
+      render(); vigiarBalcao();
+    })();
+  </script>
+</body>
+</html>

@@ -83,7 +83,9 @@
     }
     function okScreen(emailJa) {
       clearInterval(poll);
-      app.innerHTML = `<div class="ok"><div class="ic">✓</div><h1>Pago!</h1><p><b style="color:var(--ink);font-size:18px">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">Obrigado. Pode mostrar este ecrã no balcão.</p></div>${itens()}
+      const pd = info.pedido;
+      app.innerHTML = (pd ? `<div class="ok"><div class="ic">✓</div><p style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase">Pedido</p><h1 style="font-size:54px;line-height:1;margin:2px 0 8px">#${esc(pd.numero)}</h1><p>Pago · <b style="color:var(--ink)">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">Já estamos a preparar. Chamamos pelo número quando estiver pronto.</p></div>`
+        : `<div class="ok"><div class="ic">✓</div><h1>Pago!</h1><p><b style="color:var(--ink);font-size:18px">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">Obrigado. Pode mostrar este ecrã no balcão.</p></div>`) + `${itens()}
         <div class="sep"></div><div id="rec">${emailJa ? `<p class="hint" style="text-align:center;font-size:13px">✓ Comprovativo enviado para <b>${esc(emailJa)}</b></p>` : `
           <p style="font-size:14px;font-weight:800;margin:0 0 8px;text-align:center">Quer o comprovativo por email?</p>
           <div class="em" style="margin-top:0"><input type="email" id="em2" placeholder="nome@gmail.com" autocomplete="email" inputmode="email"></div>
@@ -159,6 +161,7 @@
         catch (e) { app.innerHTML = `<div class="spin">Este link NFC não está completo.<br><span style="font-weight:500;font-size:12px">No Dio´Stock: Balcão → Pagamentos → Etiqueta NFC da loja → Copiar, e grave esse link na etiqueta.</span></div>`; return; }
         if (!info) { info = { loja: r.loja, marca: r.marca, teste: false }; marca(); }
         if (r.t) { T = r.t; history.replaceState(null, '', location.pathname + '?t=' + T); info = null; return start(); }
+        return location.replace('pedir.html?n=' + N);
         app.innerHTML = `<div class="ok wait"><div class="dot"></div><h1 style="font-size:19px">À espera do valor…</h1><p>Peça no balcão para enviar o pagamento.<br>Esta página abre sozinha.</p></div>`;
         if (n < 200) setTimeout(tick, 2000);
       };
