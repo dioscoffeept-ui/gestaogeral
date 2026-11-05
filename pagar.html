@@ -53,7 +53,8 @@
   <script src="https://js.stripe.com/v3/"></script>
   <script>
     const FN = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/pagar-publico';
-    const T = new URLSearchParams(location.search).get('t') || '';
+    let T = new URLSearchParams(location.search).get('t') || '';
+    const N = new URLSearchParams(location.search).get('n') || '';
     const app = document.getElementById('app');
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const eur = c => (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
@@ -148,7 +149,23 @@
       const m = { card_declined: 'O cartão foi recusado.', insufficient_funds: 'Saldo insuficiente.', expired_card: 'O cartão está expirado.', incorrect_cvc: 'O código de segurança (CVC) está errado.', processing_error: 'Erro ao processar. Tente de novo.', incorrect_number: 'O número do cartão está errado.' };
       return m[c] || (e && e.message) || 'O pagamento não foi concluído.';
     }
+    // etiqueta NFC da loja: espera que o balcão envie o valor e abre esse pagamento
+    async function nfcStart() {
+      let n = 0;
+      const tick = async () => {
+        n++;
+        let r = null;
+        try { const x = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: N }) }); r = await x.json(); if (!x.ok) throw new Error(r.erro || 'Erro'); }
+        catch (e) { app.innerHTML = `<div class="spin">${esc(e.message)}</div>`; return; }
+        if (!info) { info = { loja: r.loja, marca: r.marca, teste: false }; marca(); }
+        if (r.t) { T = r.t; history.replaceState(null, '', location.pathname + '?t=' + T); info = null; return start(); }
+        app.innerHTML = `<div class="ok wait"><div class="dot"></div><h1 style="font-size:19px">À espera do valor…</h1><p>Peça no balcão para enviar o pagamento.<br>Esta página abre sozinha.</p></div>`;
+        if (n < 200) setTimeout(tick, 2000);
+      };
+      tick();
+    }
     async function start() {
+      if (!T && N) return nfcStart();
       if (!T) { app.innerHTML = '<div class="spin">Link de pagamento inválido.</div>'; return; }
       try { info = await call('info'); } catch (x) { app.innerHTML = `<div class="spin">${esc(x.message)}</div>`; return; }
       marca();
