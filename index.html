@@ -792,7 +792,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 05/11/2026 13:27</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 05/11/2026 14:10</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -12029,6 +12029,18 @@ var qrcode = function() {
             // barra Pagar (telemóvel)
             document.getElementById('balcao-registar').insertAdjacentHTML('afterend', `<div id="pos-paybar"><button type="button" class="pb-main" onclick="posPayNow()" id="pb-main">Pagar 0,00 €</button><button type="button" class="pb-cart" onclick="posCartOpen()" aria-label="Carrinho"><i class="fas fa-cart-shopping"></i><b id="pb-n" class="hidden">0</b></button></div>`);
         })();
+        // QR passa a ser uma forma de pagamento como as outras
+        (function () { if (!POS_PAY.some(p => p[0] === 'qr')) { const i = POS_PAY.findIndex(p => p[0] === 'link'); POS_PAY.splice(i < 0 ? POS_PAY.length : i, 0, ['qr', 'QR', 'fa-qrcode']); } })();
+        function posPagar() {
+            if (!posCart.length) return;
+            if (posPay === 'qr') return posPayQr();
+            if (posPay === 'link') return posPayLink();
+            posCheckout();
+        }
+        function posDescartar() {
+            if (posCart.length && !confirm('Fechar sem registar? O pedido é apagado e nada sai do estoque nem entra nas vendas.')) return;
+            posCart = []; posKey = ''; posKeyRender(); posRenderCart(); posRenderGrid(); posCartClose();
+        }
         function posKeyVal() { return (parseInt(posKey || '0', 10) || 0) / 100; }
         function posKeyRender() {
             const el = document.getElementById('kp-amt'); if (el) el.innerHTML = posKeyVal().toFixed(2).replace('.', ',') + '<small>€</small>';
@@ -12078,6 +12090,20 @@ var qrcode = function() {
                     box.firstElementChild.insertAdjacentHTML('afterbegin', '<button type="button" onclick="posCartClose()" class="pos-cart-x w-9 h-9 mr-2 rounded-xl bg-white border border-slate-200 items-center justify-center text-slate-700 shrink-0" aria-label="Voltar"><i class="fas fa-arrow-left"></i></button>');
                     box.firstElementChild.classList.add('items-center');
                     const t = box.firstElementChild.querySelector('p'); if (t) t.innerHTML = t.innerHTML.replace('Pedido', 'Carrinho');
+                }
+                if (box && posCart.length) {
+                    // um só botão "Pagar": a forma de pagamento escolhida decide o que acontece
+                    const qr = box.querySelector('#pos-qr-btn'); if (qr) qr.remove();
+                    box.querySelectorAll('button').forEach(b => { const oc = b.getAttribute('onclick') || ''; if (oc === 'posPayLink()') b.setAttribute('onclick', "posPay='link';posRenderCart()"); });
+                    const g = [...box.querySelectorAll('div.grid')].find(d => d.querySelector('button[onclick^="posPay="]'));
+                    if (g) { g.classList.remove('grid-cols-4'); g.style.gridTemplateColumns = 'repeat(' + POS_PAY.length + ', minmax(0, 1fr))'; }
+                    const close = [...box.querySelectorAll('button')].find(b => /Fechar pedido/.test(b.textContent));
+                    if (close) {
+                        const t = Math.round(posTotal() * 100) / 100;
+                        const lbl = posPay === 'qr' ? '<i class="fas fa-qrcode mr-1"></i> Pagar ' + eur2(t) + ' com QR' : posPay === 'link' ? '<i class="fas fa-link mr-1"></i> Enviar link · ' + eur2(t) : '<i class="fas fa-check mr-1"></i> Pagar ' + eur2(t);
+                        close.innerHTML = lbl; close.setAttribute('onclick', 'posPagar()');
+                        close.insertAdjacentHTML('afterend', '<button type="button" onclick="posDescartar()" class="w-full py-2 text-xs font-bold text-slate-500 hover:text-slate-800"><i class="fas fa-xmark mr-1"></i>Fechar sem registar</button>');
+                    }
                 }
                 if (box && !posCart.length) posCartClose();
                 posPaybar();
