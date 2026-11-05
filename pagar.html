@@ -4,48 +4,51 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Pagamento · Dio´Stock</title>
+<title>Pagamento</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root { --brand: #9C3815; --brand-soft: #fbeee8; --ink: #0f172a; --mut: #64748b; --line: #e2e8f0; --bg: #F6F3F0; }
   * { box-sizing: border-box; }
   body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
-  .top { background: #fff; border-bottom: 1px solid color-mix(in srgb, var(--brand) 14%, #fff); padding: calc(12px + env(safe-area-inset-top)) 16px 12px; position: sticky; top: 0; z-index: 5; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
-  .top .in { max-width: 460px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
-  .logo { width: 44px; height: 44px; border-radius: 14px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 20px; overflow: hidden; flex-shrink: 0; box-shadow: 0 8px 18px -10px var(--brand); }
+  .wrap { max-width: 440px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px 28px; }
+  .shop { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px; }
+  .logo { width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 17px; overflow: hidden; }
   .logo img { width: 100%; height: 100%; object-fit: cover; }
-  .top b { display: block; font-size: 17px; font-weight: 900; letter-spacing: -.01em; } .top span { font-size: 12px; color: var(--mut); font-weight: 500; }
-  .tag { display: inline-block; font-size: 10px; font-weight: 900; padding: 3px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); margin-left: 6px; vertical-align: middle; letter-spacing: .03em; }
-  .wrap { max-width: 460px; margin: 0 auto; padding: 16px 16px 28px; }
-  .card { background: #fff; border: 1px solid #f1f5f9; border-radius: 22px; padding: 18px; box-shadow: 0 14px 34px -26px rgba(15,23,42,.45); margin-bottom: 12px; }
-  .k { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .07em; color: var(--mut); margin: 0 0 8px; }
-  .items { margin: 0; padding: 0; list-style: none; }
-  .items li { display: flex; gap: 8px; font-size: 14px; font-weight: 600; padding: 7px 0; border-bottom: 1px solid #f1f5f9; }
-  .items li:last-child { border-bottom: 0; }
-  .items li i { font-style: normal; color: var(--brand); font-weight: 900; min-width: 24px; }
-  .tot { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
-  .tot span { font-size: 13px; font-weight: 700; color: var(--mut); } .tot b { font-size: 30px; font-weight: 900; letter-spacing: -.02em; }
-  label { display: block; font-size: 11px; font-weight: 800; color: var(--mut); text-transform: uppercase; letter-spacing: .05em; margin: 16px 0 6px; }
-  input[type=email] { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 16px; font-family: inherit; outline: none; }
-  input[type=email]:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
+  .shop b { font-size: 16px; font-weight: 900; }
+  .tag { font-size: 10px; font-weight: 900; padding: 3px 8px; border-radius: 99px; background: var(--brand-soft); color: var(--brand); }
+  .card { background: #fff; border: 1px solid #f1f5f9; border-radius: 24px; padding: 20px 18px; box-shadow: 0 16px 36px -28px rgba(15,23,42,.5); }
+  .amt { text-align: center; font-size: 44px; font-weight: 900; letter-spacing: -.03em; line-height: 1.05; }
+  .what { text-align: center; font-size: 13px; color: var(--mut); margin: 6px 0 0; line-height: 1.4; }
+  .what summary { cursor: pointer; list-style: none; font-weight: 600; } .what summary::-webkit-details-marker { display: none; }
+  .what ul { list-style: none; padding: 0; margin: 8px 0 0; text-align: left; border-top: 1px solid #f1f5f9; }
+  .what li { display: flex; gap: 8px; padding: 6px 2px; border-bottom: 1px solid #f8fafc; color: var(--ink); font-weight: 600; font-size: 13px; }
+  .what li i { font-style: normal; color: var(--brand); font-weight: 900; min-width: 22px; }
+  .sep { height: 1px; background: #f1f5f9; margin: 18px -18px; }
+  .em { margin-top: 14px; }
+  .em summary { font-size: 13px; font-weight: 700; color: var(--brand); cursor: pointer; list-style: none; } .em summary::-webkit-details-marker { display: none; }
+  .em input { width: 100%; margin-top: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 16px; font-family: inherit; outline: none; }
+  .em input:focus { border-color: var(--brand); }
   .hint { font-size: 11px; color: #94a3b8; margin-top: 5px; }
   button.pay { width: 100%; margin-top: 16px; padding: 16px; border: 0; border-radius: 14px; background: var(--brand); color: #fff; font-size: 17px; font-weight: 900; font-family: inherit; cursor: pointer; box-shadow: 0 12px 26px -14px var(--brand); }
-  button.pay:disabled { opacity: .55; }
+  button.pay:disabled { opacity: .5; }
   button.sec { width: 100%; margin-top: 10px; padding: 13px; border-radius: 12px; border: 2px solid var(--brand); background: #fff; color: var(--brand); font-weight: 900; font-size: 14px; font-family: inherit; }
-  .err { color: #b91c1c; font-size: 13px; margin-top: 12px; min-height: 1em; font-weight: 600; }
+  .err { color: #b91c1c; font-size: 13px; margin-top: 10px; font-weight: 600; text-align: center; }
   .ok { text-align: center; }
-  .ok .ic { width: 76px; height: 76px; border-radius: 999px; margin: 6px auto 14px; display: flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; font-size: 38px; font-weight: 900; box-shadow: 0 14px 30px -14px var(--brand); }
+  .ok .ic { width: 76px; height: 76px; border-radius: 999px; margin: 4px auto 14px; display: flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; font-size: 38px; font-weight: 900; }
   .ok h1 { font-size: 22px; font-weight: 900; margin: 0 0 6px; } .ok p { color: var(--mut); font-size: 14px; margin: 0; line-height: 1.5; }
-  .foot { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 8px; }
-  .spin { text-align: center; color: var(--mut); padding: 36px 0; font-size: 14px; font-weight: 600; }
+  .wait .dot { width: 54px; height: 54px; border-radius: 999px; border: 5px solid var(--brand-soft); border-top-color: var(--brand); margin: 6px auto 14px; animation: r 1s linear infinite; }
+  @keyframes r { to { transform: rotate(360deg); } }
+  .foot { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 14px; }
+  .spin { text-align: center; color: var(--mut); padding: 30px 0; font-size: 14px; font-weight: 600; }
+  input[type=email]::placeholder { color: #94a3b8; }
 </style>
 </head>
 <body>
-  <header class="top"><div class="in"><div class="logo" id="logo">€</div><div class="min-w-0"><b id="lname">Pagamento</b><span>Pagamento seguro</span></div></div></header>
   <div class="wrap">
-    <div id="app"><div class="card"><div class="spin">A carregar o pagamento…</div></div></div>
-    <p class="foot">🔒 Processado pela Stripe · Dio´Stock</p>
+    <div class="shop"><div class="logo" id="logo">€</div><b id="lname">Pagamento</b><span class="tag" id="ltag" hidden>TESTE</span></div>
+    <div class="card" id="app"><div class="spin">A carregar…</div></div>
+    <p class="foot">🔒 Pagamento seguro · Stripe</p>
   </div>
   <script src="https://js.stripe.com/v3/"></script>
   <script>
@@ -54,76 +57,106 @@
     const app = document.getElementById('app');
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const eur = c => (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
-    let info = null, stripe = null, elements = null;
+    const emailOk = v => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+    let info = null, stripe = null, elements = null, poll = null;
     async function call(acao, extra) {
       const r = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ t: T, acao }, extra || {})) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
       return j;
     }
-    function head() {
+    function marca() {
       const l = info.loja || 'Pagamento', m = info.marca || {};
-      if (m.brand) { document.documentElement.style.setProperty('--brand', m.brand); document.documentElement.style.setProperty('--brand-soft', 'color-mix(in srgb, ' + m.brand + ' 10%, #fff)'); }
+      if (m.brand) { document.documentElement.style.setProperty('--brand', m.brand); document.documentElement.style.setProperty('--brand-soft', 'color-mix(in srgb, ' + m.brand + ' 12%, #fff)'); }
       if (m.bg) document.documentElement.style.setProperty('--bg', m.bg);
-      document.getElementById('lname').innerHTML = esc(l) + (info.teste ? '<span class="tag">TESTE</span>' : '');
+      document.getElementById('lname').textContent = l;
+      document.getElementById('ltag').hidden = !info.teste;
       const lg = document.getElementById('logo');
       if (m.logo) lg.innerHTML = '<img src="' + esc(m.logo) + '" alt="">'; else lg.textContent = (l.trim()[0] || '€').toUpperCase();
       document.title = 'Pagamento · ' + l;
-      return '';
     }
     function itens() {
       const parts = String(info.descricao || '').split(/,\s*/).filter(Boolean);
-      return '<ul class="items">' + parts.map(p => { const m = p.match(/^(\d+)×\s*(.*)$/); return m ? `<li><i>${esc(m[1])}×</i><span>${esc(m[2])}</span></li>` : `<li><span>${esc(p)}</span></li>`; }).join('') + '</ul>';
+      const n = parts.reduce((a, p) => a + (Number((p.match(/^(\d+)×/) || [])[1]) || 1), 0);
+      return `<details class="what"><summary>${n} artigo${n === 1 ? '' : 's'} · ver pedido ▾</summary><ul>${parts.map(p => { const m = p.match(/^(\d+)×\s*(.*)$/); return m ? `<li><i>${esc(m[1])}×</i><span>${esc(m[2])}</span></li>` : `<li><span>${esc(p)}</span></li>`; }).join('')}</ul></details>`;
     }
     function okScreen(emailJa) {
-      head();
-      app.innerHTML = `<div class="card"><div class="ok"><div class="ic">✓</div><h1>Pagamento concluído</h1><p><b style="color:var(--ink)">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">Obrigado! Pode mostrar este ecrã no balcão.</p></div></div>
-        <div class="card"><p class="k">O seu pedido</p>${itens()}</div>
-        <div class="card" id="rec">${emailJa ? `<p class="hint" style="text-align:center">O comprovativo vai para <b>${esc(emailJa)}</b>.</p>` : `
-          <label for="em2">Quer receber o comprovativo por email?</label>
-          <input type="email" id="em2" placeholder="nome@gmail.com" autocomplete="email" inputmode="email">
+      clearInterval(poll);
+      app.innerHTML = `<div class="ok"><div class="ic">✓</div><h1>Pago!</h1><p><b style="color:var(--ink);font-size:18px">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">Obrigado. Pode mostrar este ecrã no balcão.</p></div>${itens()}
+        <div class="sep"></div><div id="rec">${emailJa ? `<p class="hint" style="text-align:center;font-size:13px">✓ Comprovativo enviado para <b>${esc(emailJa)}</b></p>` : `
+          <p style="font-size:14px;font-weight:800;margin:0 0 8px;text-align:center">Quer o comprovativo por email?</p>
+          <div class="em" style="margin-top:0"><input type="email" id="em2" placeholder="nome@gmail.com" autocomplete="email" inputmode="email"></div>
           <button class="sec" id="send">Enviar comprovativo</button><div class="err" id="err2"></div>`}</div>`;
-      if (emailJa) document.getElementById('rec').classList.add('card');
       const b = document.getElementById('send');
       if (b) b.onclick = async () => {
-        const v = document.getElementById('em2').value.trim(); const e = document.getElementById('err2');
-        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { e.textContent = 'Escreva um email válido.'; return; }
+        const v = document.getElementById('em2').value.trim(), e = document.getElementById('err2');
+        if (!emailOk(v)) { e.textContent = 'Escreva um email válido.'; return; }
         b.disabled = true; b.textContent = 'A enviar…';
-        try { await call('recibo', { email: v }); document.getElementById('rec').innerHTML = `<p class="hint" style="text-align:center;font-size:13px">✓ O comprovativo vai para <b>${esc(v)}</b>.</p>`; }
+        try { await call('recibo', { email: v }); document.getElementById('rec').innerHTML = `<p class="hint" style="text-align:center;font-size:13px">✓ Comprovativo enviado para <b>${esc(v)}</b></p>`; }
         catch (x) { e.textContent = x.message; b.disabled = false; b.textContent = 'Enviar comprovativo'; }
       };
     }
-    async function start() {
-      if (!T) { app.innerHTML = '<div class="card"><div class="spin">Link de pagamento inválido.</div></div>'; return; }
-      try { info = await call('info'); } catch (x) { app.innerHTML = `<div class="card"><div class="spin">${esc(x.message)}</div></div>`; return; }
-      if (new URLSearchParams(location.search).get('redirect_status') === 'succeeded' || info.estado === 'pago') return okScreen(info.email);
-      if (info.estado === 'a_processar') { app.innerHTML = head() + '<div class="card"><div class="spin">O pagamento está a ser processado. Pode fechar esta página.</div></div>'; return; }
-      if (info.estado !== 'aberto' || !info.client_secret) { app.innerHTML = head() + '<div class="card"><div class="spin">Este pagamento já não está ativo. Peça um novo no balcão.</div></div>'; return; }
-      if (!window.Stripe || !info.pk) { app.innerHTML = '<div class="card"><div class="spin">Não foi possível carregar a Stripe. Tente de novo.</div></div>'; return; }
-      app.innerHTML = head() + `<div class="card"><p class="k">O seu pedido</p>${itens()}<div class="tot"><span>Total</span><b>${eur(info.valor_cent)}</b></div></div>
-        <div class="card"><p class="k">Pagamento</p><div id="pe"></div>
-        <label for="em">Email para o comprovativo <span style="text-transform:none;font-weight:600;letter-spacing:0">(opcional)</span></label>
-        <input type="email" id="em" placeholder="nome@gmail.com" autocomplete="email" inputmode="email">
-        <p class="hint">Só se quiser receber o comprovativo. Não é obrigatório.</p>
-        <button class="pay" id="pay" disabled>Pagar ${eur(info.valor_cent)}</button><div class="err" id="err"></div></div>`;
-      const cs = getComputedStyle(document.documentElement);
-      stripe = Stripe(info.pk, { stripeAccount: info.conta, locale: 'pt' });
-      elements = stripe.elements({ clientSecret: info.client_secret, appearance: { theme: 'stripe', variables: { colorPrimary: (info.marca && info.marca.brand) || '#9C3815', colorText: '#0f172a', borderRadius: '12px', fontFamily: 'Inter, -apple-system, Segoe UI, Roboto, sans-serif', fontWeightNormal: '500' } }, fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' }] });
-      const pe = elements.create('payment', { layout: { type: 'tabs' }, wallets: { applePay: 'auto', googlePay: 'auto' } });
+    function waitScreen(msg) {
+      app.innerHTML = `<div class="ok wait"><div class="dot"></div><h1 style="font-size:19px">${esc(msg || 'A confirmar o pagamento…')}</h1><p>${eur(info.valor_cent)} · não feche esta página.</p></div>`;
+      clearInterval(poll);
+      let n = 0;
+      poll = setInterval(async () => {
+        n++;
+        try { const r = await call('info'); if (r.estado === 'pago') { info = Object.assign(info, r); return okScreen(r.email); }
+          if (r.estado === 'expirado' || (r.estado === 'aberto' && r.status === 'requires_payment_method' && n > 1 && r.client_secret)) { clearInterval(poll); info = Object.assign(info, r); return payScreen(r.estado === 'expirado' ? null : 'O pagamento não foi aceite. Tente de novo ou escolha outro método.'); }
+        } catch (_) {}
+        if (n > 100) clearInterval(poll);
+      }, 3000);
+    }
+    function payScreen(erroMsg) {
+      if (info.estado !== 'aberto' || !info.client_secret) { app.innerHTML = '<div class="spin">Este pagamento já não está ativo.<br>Peça um novo no balcão.</div>'; return; }
+      if (!window.Stripe || !info.pk) { app.innerHTML = '<div class="spin">Não foi possível carregar o pagamento. Atualize a página.</div>'; return; }
+      app.innerHTML = `<div class="amt">${eur(info.valor_cent)}</div>${itens()}<div class="sep"></div>
+        <div id="pe"></div>
+        <details class="em"><summary>✉️ Receber comprovativo por email (opcional)</summary><input type="email" id="em" placeholder="nome@gmail.com" autocomplete="email" inputmode="email"></details>
+        <button class="pay" id="pay" disabled>Pagar ${eur(info.valor_cent)}</button><div class="err" id="err">${erroMsg ? esc(erroMsg) : ''}</div>`;
+      const brand = (info.marca && info.marca.brand) || '#9C3815';
+      stripe = stripe || Stripe(info.pk, { stripeAccount: info.conta, locale: 'pt' });
+      elements = stripe.elements({ clientSecret: info.client_secret, fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' }],
+        appearance: { theme: 'stripe', variables: { colorPrimary: brand, colorText: '#0f172a', borderRadius: '12px', fontFamily: 'Inter, -apple-system, Segoe UI, Roboto, sans-serif', spacingUnit: '4px' },
+          rules: { '.AccordionItem': { boxShadow: 'none', borderColor: '#e2e8f0' } } } });
+      const pe = elements.create('payment', {
+        layout: { type: 'accordion', defaultCollapsed: false, radios: true, spacedAccordionItems: true },
+        paymentMethodOrder: ['apple_pay', 'google_pay', 'mb_way', 'card'],
+        wallets: { applePay: 'auto', googlePay: 'auto' },
+      });
       pe.mount('#pe');
       const btn = document.getElementById('pay'), err = document.getElementById('err');
       pe.on('ready', () => { btn.disabled = false; });
+      pe.on('loaderror', ev => { err.textContent = (ev && ev.error && ev.error.message) || 'Erro ao carregar os métodos de pagamento.'; });
       btn.onclick = async () => {
-        err.textContent = ''; btn.disabled = true; btn.textContent = 'A processar…';
-        const email = document.getElementById('em').value.trim();
-        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'O email não parece correto (ou deixe em branco).'; btn.disabled = false; btn.textContent = 'Pagar ' + eur(info.valor_cent); return; }
+        err.textContent = '';
+        const email = ((document.getElementById('em') || {}).value || '').trim();
+        if (email && !emailOk(email)) { err.textContent = 'O email não parece correto (ou deixe em branco).'; return; }
+        btn.disabled = true; btn.textContent = 'A processar…';
         const params = { return_url: location.origin + location.pathname + '?t=' + T };
         if (email) params.receipt_email = email;
         const { error, paymentIntent } = await stripe.confirmPayment({ elements, confirmParams: params, redirect: 'if_required' });
-        if (error) { err.textContent = error.message || 'O pagamento não foi concluído.'; btn.disabled = false; btn.textContent = 'Pagar ' + eur(info.valor_cent); return; }
+        if (error) { err.textContent = traduz(error); btn.disabled = false; btn.textContent = 'Pagar ' + eur(info.valor_cent); return; }
         if (paymentIntent && paymentIntent.status === 'succeeded') return okScreen(email);
-        app.innerHTML = head() + '<div class="card"><div class="spin">O pagamento está a ser processado. Pode fechar esta página.</div></div>';
+        // MB WAY e outros: o cliente confirma na app — esperamos aqui
+        waitScreen(paymentIntent && paymentIntent.payment_method_types && paymentIntent.payment_method_types.includes('mb_way') ? 'Confirme o pagamento na app MB WAY' : 'A confirmar o pagamento…');
       };
+    }
+    function traduz(e) {
+      const c = (e && (e.decline_code || e.code)) || '';
+      const m = { card_declined: 'O cartão foi recusado.', insufficient_funds: 'Saldo insuficiente.', expired_card: 'O cartão está expirado.', incorrect_cvc: 'O código de segurança (CVC) está errado.', processing_error: 'Erro ao processar. Tente de novo.', incorrect_number: 'O número do cartão está errado.' };
+      return m[c] || (e && e.message) || 'O pagamento não foi concluído.';
+    }
+    async function start() {
+      if (!T) { app.innerHTML = '<div class="spin">Link de pagamento inválido.</div>'; return; }
+      try { info = await call('info'); } catch (x) { app.innerHTML = `<div class="spin">${esc(x.message)}</div>`; return; }
+      marca();
+      const rs = new URLSearchParams(location.search).get('redirect_status');
+      if (info.estado === 'pago') return okScreen(info.email);
+      if (rs === 'succeeded' || info.estado === 'a_processar') return waitScreen();
+      if (rs === 'failed') return payScreen('O pagamento não foi aceite. Tente de novo ou escolha outro método.');
+      payScreen();
     }
     start();
   </script>
