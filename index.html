@@ -843,6 +843,17 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         html.dark .alg-chip { background: transparent; color: #cbd5e1; border-color: #334155; }
         html.dark .alg-chip.on { background: #78350f; color: #fde68a; border-color: #b45309; }
     </style>
+
+    <style>
+        #inventory-modal { align-items: center; padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px)); }
+        #inventory-modal > div { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; }
+        #inventory-modal > div > div:first-child { flex: none; position: sticky; top: 0; z-index: 2; }
+        #inventory-form { overflow-y: auto; flex: 1 1 auto; min-height: 0; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+        /* em qualquer janela: o topo (título + X) fica sempre visível ao rolar */
+        .fixed.inset-0[id$="-modal"] > div > div:first-child:not(form) { position: sticky; top: 0; z-index: 5; }
+        @media (max-width: 767px) { .fixed.inset-0[id$="-modal"] > div { overflow: visible !important; } .fixed.inset-0[id$="-modal"] > div > div:first-child:not(form) { padding-top: calc(env(safe-area-inset-top, 0px) + 12px) !important; } #inventory-form { overflow: visible !important; } }
+        #inventory-modal > div > div:first-child button { width: 40px; height: 40px; border-radius: 12px; font-size: 18px; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -923,7 +934,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 11:45</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 13:42</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -13461,6 +13472,15 @@ var qrcode = function() {
             if (typeof openSettings === 'function') { const oS = openSettings; openSettings = function () { const r = oS.apply(this, arguments); setTimeout(encher, 50); return r; }; }
             document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-pane="empresa"], [onclick*="Settings"]')) setTimeout(encher, 80); });
             setTimeout(encher, 1500);
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const m = document.getElementById('inventory-modal');
+            if (!m) return;
+            m.addEventListener('click', e => { if (e.target === m) closeInventoryModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && !m.classList.contains('hidden')) closeInventoryModal(); });
         })();
     </script>
 </body>
