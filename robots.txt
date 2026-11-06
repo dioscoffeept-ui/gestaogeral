@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /pagar.html
+Disallow: /pago.html
+Disallow: /estado.html
+Sitemap: https://dioscoffeept-ui.github.io/gestaogeral/sitemap.xml

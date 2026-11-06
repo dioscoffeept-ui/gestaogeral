@@ -204,9 +204,9 @@
           <div id="w-nfat" ${dados.nif ? '' : 'hidden'}><label for="f-nfat">${T('invName')} *</label><input id="f-nfat" value="${esc(dados.nomeFat)}" placeholder="${T('exInv')}" autocomplete="${K ? 'off' : 'name'}"></div>
           <p class="hint">${T('onlyFor')}</p></details>
         <details class="more"><summary>${T('note')}</summary><textarea id="f-nota" rows="2" maxlength="200" placeholder="${T('exNote')}">${esc(dados.nota)}</textarea></details>
-        ${K && data.terminal ? `<button type="button" class="main" id="f-term">💳 ${T('payTerminal')} · ${eur(tt)}</button>` : ''}
-        ${online ? `<button type="button" class="${K && data.terminal ? 'sec2' : 'main'}" id="f-ok">${K && data.terminal ? '📱 ' + T('payPhone') : T('payNow') + ' · ' + eur(tt)}</button><button type="button" class="sec2" id="f-bal">🧾 ${T('payCounter')}</button>`
-                 : `<button type="button" class="${K && data.terminal ? 'sec2' : 'main'}" id="f-bal">${K && data.terminal ? '🧾 ' + T('payCounter') : T('sendCounter') + ' · ' + eur(tt)}</button>`}
+        ${data.terminal ? `<button type="button" class="main" id="f-term">💳 ${K ? T('payTerminal') : T('payTerminalCounter')} · ${eur(tt)}</button>` : ''}
+        ${online ? `<button type="button" class="${data.terminal ? 'sec2' : 'main'}" id="f-ok">${data.terminal ? '📱 ' + T('payPhone') : T('payNow') + ' · ' + eur(tt)}</button><button type="button" class="sec2" id="f-bal">🧾 ${T('payCounter')}</button>`
+                 : `<button type="button" class="${data.terminal ? 'sec2' : 'main'}" id="f-bal">${data.terminal ? '🧾 ' + T('payCounter') : T('sendCounter') + ' · ' + eur(tt)}</button>`}
         <div class="err" id="f-err">${err ? esc(err) : ''}</div>`;
       const ok = document.getElementById('f-ok'); if (ok) ok.onclick = () => enviar('agora');
       const tm = document.getElementById('f-term'); if (tm) tm.onclick = () => enviar('terminal');
@@ -251,7 +251,7 @@
       const box = document.getElementById('cart-box');
       box.innerHTML = `<div style="text-align:center;padding:18px 4px 6px">
         <div style="font-size:52px;line-height:1">💳</div>
-        <h3 style="font-size:22px;margin:10px 0 4px">${T('tapTerminal')}</h3>
+        <h3 style="font-size:22px;margin:10px 0 4px">${K ? T('tapTerminal') : T('tapTerminalCounter')}</h3>
         <p style="margin:0;font-size:44px;font-weight:900;color:var(--brand)">${eur(r.total_cent / 100)}</p>
         <p style="margin:8px 0 0;color:var(--mut);font-size:14px">${T('orderNo')} <b>#${r.numero}</b></p>
         <p id="term-st" style="margin:14px 0 0;font-weight:800;color:var(--brand)">⏳ ${T('waitingPay')}</p>
