@@ -204,10 +204,12 @@
           <div id="w-nfat" ${dados.nif ? '' : 'hidden'}><label for="f-nfat">${T('invName')} *</label><input id="f-nfat" value="${esc(dados.nomeFat)}" placeholder="${T('exInv')}" autocomplete="${K ? 'off' : 'name'}"></div>
           <p class="hint">${T('onlyFor')}</p></details>
         <details class="more"><summary>${T('note')}</summary><textarea id="f-nota" rows="2" maxlength="200" placeholder="${T('exNote')}">${esc(dados.nota)}</textarea></details>
-        ${online ? `<button type="button" class="main" id="f-ok">${T('payNow')} · ${eur(tt)}</button><button type="button" class="sec2" id="f-bal">🧾 ${T('payCounter')}</button>`
-                 : `<button type="button" class="main" id="f-bal">${T('sendCounter')} · ${eur(tt)}</button>`}
+        ${K && data.terminal ? `<button type="button" class="main" id="f-term">💳 ${T('payTerminal')} · ${eur(tt)}</button>` : ''}
+        ${online ? `<button type="button" class="${K && data.terminal ? 'sec2' : 'main'}" id="f-ok">${K && data.terminal ? '📱 ' + T('payPhone') : T('payNow') + ' · ' + eur(tt)}</button><button type="button" class="sec2" id="f-bal">🧾 ${T('payCounter')}</button>`
+                 : `<button type="button" class="${K && data.terminal ? 'sec2' : 'main'}" id="f-bal">${K && data.terminal ? '🧾 ' + T('payCounter') : T('sendCounter') + ' · ' + eur(tt)}</button>`}
         <div class="err" id="f-err">${err ? esc(err) : ''}</div>`;
       const ok = document.getElementById('f-ok'); if (ok) ok.onclick = () => enviar('agora');
+      const tm = document.getElementById('f-term'); if (tm) tm.onclick = () => enviar('terminal');
       document.getElementById('f-bal').onclick = () => enviar('balcao');
       document.getElementById('f-nif').oninput = e => { document.getElementById('w-nfat').hidden = !e.target.value.trim(); };
       document.querySelectorAll('#cart-box .tipc').forEach(b => b.onclick = () => {
@@ -229,12 +231,13 @@
       if (!K) try { localStorage.setItem('ds_cliente', JSON.stringify({ nome: dados.nome, email: dados.email })); } catch (_) {}
       // pede já a autorização de avisos (tem de ser no toque do botão); a subscrição é feita quando o pedido existir
       const perm = K ? null : pedirPermissaoAvisos();
-      const b = document.getElementById(modo === 'balcao' ? 'f-bal' : 'f-ok'); b.disabled = true; b.textContent = modo === 'balcao' ? '…' : T('preparingPay');
+      const b = document.getElementById(modo === 'balcao' ? 'f-bal' : modo === 'terminal' ? 'f-term' : 'f-ok'); b.disabled = true; b.textContent = modo === 'balcao' ? '…' : T('preparingPay');
       try {
-        const r = await post(FN, { n: N, acao: 'pedir', pagar: modo === 'balcao' ? 'balcao' : 'agora', gorjeta_cent: 0, itens: cart.map(c => ({ id: c.id, key: c.key, qty: c.qty })), nome: dados.nome, nif: dados.nif, nome_fatura: dados.nomeFat, email: dados.email, nota: dados.nota });
+        const r = await post(FN, { n: N, acao: 'pedir', pagar: modo === 'balcao' ? 'balcao' : modo === 'terminal' ? 'terminal' : 'agora', gorjeta_cent: 0, itens: cart.map(c => ({ id: c.id, key: c.key, qty: c.qty })), nome: dados.nome, nif: dados.nif, nome_fatura: dados.nomeFat, email: dados.email, nota: dados.nota });
         cart = []; guardar(); gorj = { pct: 0, cent: 0 };
         if (perm && r.a) { const sub = subscreverAvisos(r.a, perm); if (!r.balcao) await Promise.race([sub, new Promise(ok => setTimeout(ok, 4000))]); }
         if (r.balcao) return enviado(r);
+        if (r.terminal) return noTerminal(r);
         location.href = 'pagar.html?t=' + r.t + '&n=' + N + (K ? '&k=1' : '');
       } catch (e) {
         // algo esgotou entretanto: atualiza o menu e o carrinho
@@ -242,12 +245,42 @@
         desenharCarrinho(e.message);
       }
     }
+    // tablet da loja: o valor foi para o terminal SumUp; espera que o cliente encoste o cartão
+    let termPoll = null;
+    function noTerminal(r) {
+      const box = document.getElementById('cart-box');
+      box.innerHTML = `<div style="text-align:center;padding:18px 4px 6px">
+        <div style="font-size:52px;line-height:1">💳</div>
+        <h3 style="font-size:22px;margin:10px 0 4px">${T('tapTerminal')}</h3>
+        <p style="margin:0;font-size:44px;font-weight:900;color:var(--brand)">${eur(r.total_cent / 100)}</p>
+        <p style="margin:8px 0 0;color:var(--mut);font-size:14px">${T('orderNo')} <b>#${r.numero}</b></p>
+        <p id="term-st" style="margin:14px 0 0;font-weight:800;color:var(--brand)">⏳ ${T('waitingPay')}</p>
+        <button type="button" class="sec2" id="term-x">${T('cancel')}</button></div>`;
+      render();
+      let feito = false;
+      const fim = () => { clearInterval(termPoll); termPoll = null; };
+      document.getElementById('term-x').onclick = async () => { fim(); try { await post(FN, { acao: 'terminal_cancelar', a: r.a }); } catch (_) {} fechar('sh-cart'); };
+      const ver = async () => {
+        if (feito) return;
+        try {
+          const v = await post(FN, { acao: 'terminal_ver', a: r.a });
+          if (v.pago) { feito = true; fim(); return enviado(Object.assign({}, r, { pago: true })); }
+          if (v.estado === 'failed' || v.estado === 'cancelled') {
+            fim(); const st = document.getElementById('term-st');
+            if (st) st.innerHTML = `<span style="color:#b91c1c">${T('payFailed')}</span>`;
+            const x = document.getElementById('term-x'); if (x) { x.textContent = T('back'); }
+          }
+        } catch (_) {}
+      };
+      termPoll = setInterval(ver, 2000);
+      setTimeout(() => { if (!feito && termPoll) { fim(); post(FN, { acao: 'terminal_cancelar', a: r.a }).catch(() => {}); fechar('sh-cart'); } }, 3 * 60 * 1000);
+    }
     function enviado(r) {
       document.getElementById('cart-box').innerHTML = `<div style="text-align:center;padding:18px 4px 6px">
         <div style="font-size:46px">✅</div><h3 style="font-size:22px">${T('sentTitle')}</h3>
         <p style="margin:6px 0 0;color:var(--mut);font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.08em">${T('orderNo')}</p>
         <p style="margin:0;font-size:56px;font-weight:900;color:var(--brand);line-height:1.1">#${r.numero}</p>
-        <p style="margin:12px 0 0;font-size:15px">${T('payAt')} <b style="font-size:20px">${eur(r.total_cent / 100)}</b></p>
+        ${r.pago ? `<p style="margin:12px 0 0;font-size:16px;font-weight:800;color:#15803d">✓ ${T('paidOk')} · ${eur(r.total_cent / 100)}</p>` : `<p style="margin:12px 0 0;font-size:15px">${T('payAt')} <b style="font-size:20px">${eur(r.total_cent / 100)}</b></p>`}
         <p style="margin:6px 0 0;color:var(--mut);font-size:13px">${T('weCall')}</p>
         <div id="acp"></div>
         <button type="button" class="main" id="f-novo">${K ? T('back') : T('newOrder')}</button></div>`;
