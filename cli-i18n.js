@@ -2,6 +2,7 @@
 (function () {
   const D = {
     pt: {
+      scanPay: '📱 Aponte a câmara do seu telemóvel para pagar com Apple Pay, Google Pay ou MB WAY', orCard: 'ou pague aqui com cartão:',
       soldOut: 'Esgotado', leftN: 'Restam', noMore: 'Não há mais deste artigo.', okTip: 'OK',
       invName: 'Nome e apelido / empresa (para a fatura)', exInv: 'Ex.: Ana Silva ou Café Lda', tip: 'Gorjeta', noTip: 'Sem gorjeta', otherTip: 'Outro', tipAsk: 'Valor da gorjeta (€)', payNow: 'Pagar agora', payCounter: 'Pagar no balcão', sendCounter: 'Enviar pedido · pago no balcão', needName: 'Escreva o nome para chamarmos.', needInvName: 'Para a fatura com NIF escreva o nome e apelido (ou o nome da empresa).', sentTitle: 'Pedido enviado!', payAt: 'Pague no balcão:', weCall: 'Chamamos pelo nome quando estiver pronto.', orderNo: 'Pedido', thanksTip: 'Obrigado pela gorjeta! 💛', back: 'Voltar ao menu', withTip: 'com gorjeta',
       _nome: 'Português', loading: 'A carregar…', pay: 'Pagamento', test: 'TESTE', secure: '🔒 Pagamento seguro · Stripe',
@@ -23,6 +24,7 @@
       badNif: 'O NIF não parece válido. Confirme os números ou deixe em branco.', badEmail2: 'O email não parece correto.', preparingPay: 'A preparar o pagamento…', linkBad: 'Link incompleto. Peça ajuda no balcão.', others: 'Outros'
     },
     en: {
+      scanPay: '📱 Point your phone camera here to pay with Apple Pay, Google Pay or MB WAY', orCard: 'or pay here by card:',
       soldOut: 'Sold out', leftN: 'Only', noMore: 'No more of this item left.', okTip: 'OK',
       invName: 'Full name / company (for the invoice)', exInv: 'e.g. Anna Smith or Café Ltd', tip: 'Tip', noTip: 'No tip', otherTip: 'Other', tipAsk: 'Tip amount (€)', payNow: 'Pay now', payCounter: 'Pay at the counter', sendCounter: 'Send order · pay at the counter', needName: 'Please enter a name so we can call you.', needInvName: 'For an invoice with tax number, enter your full name (or company name).', sentTitle: 'Order sent!', payAt: 'Pay at the counter:', weCall: "We'll call your name when it's ready.", orderNo: 'Order', thanksTip: 'Thank you for the tip! 💛', back: 'Back to menu', withTip: 'incl. tip',
       _nome: 'English', loading: 'Loading…', pay: 'Payment', test: 'TEST', secure: '🔒 Secure payment · Stripe',
@@ -44,6 +46,7 @@
       badNif: "The tax number doesn't look valid. Check it or leave it blank.", badEmail2: "The email doesn't look right.", preparingPay: 'Preparing payment…', linkBad: 'Incomplete link. Please ask at the counter.', others: 'Other'
     },
     es: {
+      scanPay: '📱 Apunta la cámara de tu móvil para pagar con Apple Pay, Google Pay o MB WAY', orCard: 'o paga aquí con tarjeta:',
       soldOut: 'Agotado', leftN: 'Quedan', noMore: 'No quedan más de este artículo.', okTip: 'OK',
       invName: 'Nombre y apellido / empresa (para la factura)', exInv: 'Ej.: Ana García o Café SL', tip: 'Propina', noTip: 'Sin propina', otherTip: 'Otra', tipAsk: 'Importe de la propina (€)', payNow: 'Pagar ahora', payCounter: 'Pagar en el mostrador', sendCounter: 'Enviar pedido · pago en el mostrador', needName: 'Escribe un nombre para llamarte.', needInvName: 'Para la factura con NIF escribe nombre y apellido (o el nombre de la empresa).', sentTitle: '¡Pedido enviado!', payAt: 'Paga en el mostrador:', weCall: 'Te llamaremos por tu nombre cuando esté listo.', orderNo: 'Pedido', thanksTip: '¡Gracias por la propina! 💛', back: 'Volver al menú', withTip: 'con propina',
       _nome: 'Español', loading: 'Cargando…', pay: 'Pago', test: 'PRUEBA', secure: '🔒 Pago seguro · Stripe',
@@ -65,6 +68,7 @@
       badNif: 'El NIF no parece válido. Revísalo o déjalo en blanco.', badEmail2: 'El email no parece correcto.', preparingPay: 'Preparando el pago…', linkBad: 'Enlace incompleto. Pide ayuda en el mostrador.', others: 'Otros'
     },
     fr: {
+      scanPay: '📱 Scannez avec votre téléphone pour payer avec Apple Pay, Google Pay ou MB WAY', orCard: 'ou payez ici par carte :',
       soldOut: 'Épuisé', leftN: 'Reste', noMore: "Il n'en reste plus.", okTip: 'OK',
       invName: 'Nom et prénom / société (pour la facture)', exInv: 'Ex. : Anne Martin ou Café SARL', tip: 'Pourboire', noTip: 'Sans pourboire', otherTip: 'Autre', tipAsk: 'Montant du pourboire (€)', payNow: 'Payer maintenant', payCounter: 'Payer au comptoir', sendCounter: 'Envoyer · payer au comptoir', needName: 'Indiquez un prénom pour vous appeler.', needInvName: 'Pour une facture avec NIF, indiquez nom et prénom (ou le nom de la société).', sentTitle: 'Commande envoyée !', payAt: 'Payez au comptoir :', weCall: 'Nous vous appellerons quand ce sera prêt.', orderNo: 'Commande', thanksTip: 'Merci pour le pourboire ! 💛', back: 'Retour au menu', withTip: 'pourboire inclus',
       _nome: 'Français', loading: 'Chargement…', pay: 'Paiement', test: 'TEST', secure: '🔒 Paiement sécurisé · Stripe',
@@ -86,6 +90,7 @@
       badNif: 'Le NIF ne semble pas valide. Vérifiez-le ou laissez vide.', badEmail2: "L'email ne semble pas correct.", preparingPay: 'Préparation du paiement…', linkBad: 'Lien incomplet. Demandez au comptoir.', others: 'Autres'
     },
     de: {
+      scanPay: '📱 Mit der Handykamera scannen und mit Apple Pay, Google Pay oder MB WAY zahlen', orCard: 'oder hier mit Karte zahlen:',
       soldOut: 'Ausverkauft', leftN: 'Nur noch', noMore: 'Davon ist nichts mehr da.', okTip: 'OK',
       invName: 'Vor- und Nachname / Firma (für die Rechnung)', exInv: 'z. B. Anna Müller oder Café GmbH', tip: 'Trinkgeld', noTip: 'Kein Trinkgeld', otherTip: 'Anderes', tipAsk: 'Trinkgeld (€)', payNow: 'Jetzt bezahlen', payCounter: 'An der Theke zahlen', sendCounter: 'Bestellen · an der Theke zahlen', needName: 'Bitte gib einen Namen an, damit wir dich aufrufen können.', needInvName: 'Für eine Rechnung mit Steuernummer bitte Vor- und Nachnamen (oder Firmennamen) angeben.', sentTitle: 'Bestellung gesendet!', payAt: 'Zahle an der Theke:', weCall: 'Wir rufen deinen Namen auf, wenn es fertig ist.', orderNo: 'Bestellung', thanksTip: 'Danke für das Trinkgeld! 💛', back: 'Zurück zum Menü', withTip: 'inkl. Trinkgeld',
       _nome: 'Deutsch', loading: 'Wird geladen…', pay: 'Zahlung', test: 'TEST', secure: '🔒 Sichere Zahlung · Stripe',
@@ -107,6 +112,7 @@
       badNif: 'Die Steuernummer scheint ungültig. Prüfen oder leer lassen.', badEmail2: 'Die E-Mail scheint nicht korrekt.', preparingPay: 'Zahlung wird vorbereitet…', linkBad: 'Unvollständiger Link. Bitte an der Theke fragen.', others: 'Sonstiges'
     },
     it: {
+      scanPay: '📱 Inquadra con la fotocamera del telefono per pagare con Apple Pay, Google Pay o MB WAY', orCard: 'oppure paga qui con carta:',
       soldOut: 'Esaurito', leftN: 'Restano', noMore: 'Non ce ne sono più.', okTip: 'OK',
       invName: 'Nome e cognome / azienda (per la fattura)', exInv: 'Es.: Anna Rossi o Café Srl', tip: 'Mancia', noTip: 'Senza mancia', otherTip: 'Altro', tipAsk: 'Importo della mancia (€)', payNow: 'Paga ora', payCounter: 'Paga al banco', sendCounter: 'Invia ordine · paga al banco', needName: 'Scrivi un nome per chiamarti.', needInvName: 'Per la fattura con codice fiscale scrivi nome e cognome (o il nome dell\'azienda).', sentTitle: 'Ordine inviato!', payAt: 'Paga al banco:', weCall: 'Ti chiameremo per nome quando è pronto.', orderNo: 'Ordine', thanksTip: 'Grazie per la mancia! 💛', back: 'Torna al menù', withTip: 'mancia inclusa',
       _nome: 'Italiano', loading: 'Caricamento…', pay: 'Pagamento', test: 'TEST', secure: '🔒 Pagamento sicuro · Stripe',
