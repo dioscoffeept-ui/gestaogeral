@@ -65,6 +65,7 @@
     <p class="foot" id="foot"></p>
   </div>
   <script src="cli-i18n.js"></script>
+  <script src="acompanhar.js"></script>
   <script src="https://js.stripe.com/v3/"></script>
   <script src="qr.js"></script>
   <script>
@@ -102,12 +103,13 @@
     function okScreen(emailJa) {
       clearInterval(poll);
       const pd = info.pedido;
-      app.innerHTML = (pd ? `<div class="ok"><div class="ic">✓</div><p style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase">${T('order')}</p><h1 style="font-size:54px;line-height:1;margin:2px 0 8px">#${esc(pd.numero)}</h1><p>${T('paid')} · <b style="color:var(--ink)">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">${T('preparing')}</p></div>`
+      app.innerHTML = (pd ? `<div class="ok"><div class="ic">✓</div><p style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase">${T('order')}</p><h1 style="font-size:54px;line-height:1;margin:2px 0 8px">#${esc(pd.numero)}</h1><p>${T('paid')} · <b style="color:var(--ink)">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">${T('preparing')}</p></div><div id="acp"></div>`
         : `<div class="ok"><div class="ic">✓</div><h1>${T('paidX')}</h1><p><b style="color:var(--ink);font-size:18px">${eur(info.valor_cent)}</b></p><p style="margin-top:6px">${T('showCounter')}</p></div>`) + `${itens()}
         <div class="sep"></div><div id="rec">${emailJa ? `<p class="hint" style="text-align:center;font-size:13px">${T('receiptSent')} <b>${esc(emailJa)}</b></p>` : `
           <p style="font-size:14px;font-weight:800;margin:0 0 8px;text-align:center">${T('wantReceipt')}</p>
           <div class="em" style="margin-top:0"><input type="email" id="em2" placeholder="nome@gmail.com" autocomplete="email" inputmode="email"></div>
           <button class="sec" id="send">${T('sendReceipt')}</button><div class="err" id="err2"></div>`}</div>`;
+      if (pd && pd.a) { const k = new URLSearchParams(location.search).get('k') === '1'; if (k) acompanharQR(document.getElementById('acp'), pd.a); else acompanhar(document.getElementById('acp'), pd.a); }
       const b = document.getElementById('send');
       if (b) b.onclick = async () => {
         const v = document.getElementById('em2').value.trim(), e = document.getElementById('err2');
@@ -248,7 +250,7 @@
       const pago = info && info.estado === 'pago';
       const K = new URLSearchParams(location.search).get('k') === '1';
       const dest = 'pedir.html?n=' + encodeURIComponent(N) + (K ? '&k=1' : '');
-      if (K && pago && !window._kvolta) window._kvolta = setTimeout(() => location.replace(dest), 15000);
+      if (K && pago && !window._kvolta) window._kvolta = setTimeout(() => location.replace(dest), 30000);
       o.innerHTML = `<a href="${dest}" style="display:inline-block;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:800;color:var(--brand);text-decoration:none;background:rgba(255,255,255,.7)">${pago ? '🍽️ ' + (K ? T('back') : T('newOrder')) : T('notYours') + ' <u>' + T('seeMenu') + '</u>'} →</a>`;
     }
     document.getElementById('foot').textContent = T('secure');

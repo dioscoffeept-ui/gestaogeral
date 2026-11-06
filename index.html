@@ -831,6 +831,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         .pos-tag { position: absolute; left: 8px; top: 8px; z-index: 3; background: #0f172a; color: #fff; font-size: 10px; font-weight: 900; padding: 2px 7px; border-radius: 99px; text-transform: uppercase; letter-spacing: .03em; }
         .pos-tag.pouco { background: #d97706; }
     </style>
+
+    <style>
+        .onl-recusar { display: block; width: 100%; margin-top: 6px; padding: 8px; border-radius: 12px; font-size: 12px; font-weight: 800; color: #b91c1c; background: transparent; }
+        .onl-recusar:hover { background: #fef2f2; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -911,7 +916,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 07:51</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 09:00</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -13344,6 +13349,52 @@ var qrcode = function() {
                 const d = dispCalc();
                 if (d[id] != null && noCarrinho(id) >= d[id]) { const r = appState.recipes.find(x => x.id === id); dsToast((r ? r.name : 'Artigo') + ' esgotado', true); return; }
                 return oAdd.apply(this, arguments);
+            };
+        })();
+    </script>
+
+    <script>
+        // ======================================================= AVISAR / RECUSAR PEDIDO ONLINE
+        async function onlFn(body) {
+            const { data: ss } = await sb.auth.getSession();
+            const token = ss && ss.session && ss.session.access_token;
+            if (!token) return { erro: 'Sessão expirada. Entre de novo.' };
+            try {
+                const r = await fetch(SUPABASE_URL + '/functions/v1/notificar', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': SUPABASE_KEY }, body: JSON.stringify(body) });
+                const j = await r.json().catch(() => ({}));
+                return r.ok ? j : { erro: j.erro || ('Erro ' + r.status) };
+            } catch (_) { return { erro: 'Sem ligação ao servidor.' }; }
+        }
+        onlPronto = async function (id, btn) {
+            const p = onlLista.find(x => x.id === id); if (!p) return;
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> A chamar…'; }
+            let r = await onlFn({ acao: 'pronto', id });
+            if (r.erro) { await sb.from('pedidos_online').update({ estado: 'pronto', pronto_em: new Date().toISOString() }).eq('id', id); }
+            onlLista = onlLista.filter(x => x.id !== id); onlBadge(); onlRender();
+            dsToast('#' + p.numero + (p.nome ? ' · ' + p.nome : '') + ' pronto' + (r.avisado ? ' — cliente avisado no telemóvel' : ''));
+        };
+        async function onlRecusar(id) {
+            const p = onlLista.find(x => x.id === id); if (!p) return;
+            const pago = p.estado === 'pago';
+            const motivo = await dsDialog({ title: 'Recusar o pedido #' + p.numero + '?', icon: 'fa-ban', danger: true, ok: pago ? 'Recusar e devolver' : 'Recusar',
+                msg: (pago ? 'O cliente já pagou ' + eur2(p.total_cent / 100) + ': o dinheiro é devolvido ao cartão dele automaticamente. ' : '') + 'Escreva o motivo — o cliente vê esta mensagem no telemóvel.',
+                input: 'Um dos artigos esgotou.', placeholder: 'Ex.: a máquina avariou' });
+            if (motivo === null) return;
+            dsToast('A recusar o pedido #' + p.numero + '…');
+            const r = await onlFn({ acao: 'recusar', id, motivo: String(motivo || '').trim() });
+            if (r.erro) { dsToast(r.erro, true); return onlPoll(); }
+            onlLista = onlLista.filter(x => x.id !== id); onlBadge(); onlRender();
+            dsToast('Pedido #' + p.numero + ' recusado' + (r.reembolsado ? ' · ' + eur2(p.total_cent / 100) + ' devolvidos' : '') + (r.avisado ? ' · cliente avisado' : ''));
+        }
+        (function () {
+            const oR = onlRender;
+            onlRender = function () {
+                const r = oR.apply(this, arguments);
+                document.querySelectorAll('#onl-body button[onclick^="onlAceitar("], #onl-body button[onclick^="onlCobrar("]').forEach(b => {
+                    const id = ((b.getAttribute('onclick') || '').match(/'([^']+)'/) || [])[1]; if (!id || b.nextElementSibling && b.nextElementSibling.classList.contains('onl-recusar')) return;
+                    b.insertAdjacentHTML('afterend', `<button type="button" class="onl-recusar" onclick="onlRecusar('${id}')"><i class="fas fa-ban mr-1"></i> Recusar pedido</button>`);
+                });
+                return r;
             };
         })();
     </script>

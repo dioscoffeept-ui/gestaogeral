@@ -81,6 +81,8 @@
   <div class="sheet" id="sh-cart" onclick="if(event.target===this)fechar('sh-cart')"><div class="box" id="cart-box"></div></div>
 
   <script src="cli-i18n.js"></script>
+  <script src="acompanhar.js"></script>
+  <script src="qr.js"></script>
   <script>
     const FN = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/pedido-publico';
     const FN_PAG = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/pagar-publico';
@@ -226,11 +228,13 @@
         <p style="margin:0;font-size:56px;font-weight:900;color:var(--brand);line-height:1.1">#${r.numero}</p>
         <p style="margin:12px 0 0;font-size:15px">${T('payAt')} <b style="font-size:20px">${eur(r.total_cent / 100)}</b></p>
         <p style="margin:6px 0 0;color:var(--mut);font-size:13px">${T('weCall')}</p>
+        <div id="acp"></div>
         <button type="button" class="main" id="f-novo">${K ? T('back') : T('newOrder')}</button></div>`;
       render();
+      if (r.a) { if (K) acompanharQR(document.getElementById('acp'), r.a); else acompanhar(document.getElementById('acp'), r.a); }
       const voltar = () => { fechar('sh-cart'); if (K) { dados = { nome: '', nif: '', nomeFat: '', email: '', nota: '' }; scrollTo(0, 0); try { if (sessionStorage.getItem('ds_lang_cli')) { sessionStorage.removeItem('ds_lang_cli'); location.reload(); } } catch (_) {} } };
       document.getElementById('f-novo').onclick = voltar;
-      if (K) setTimeout(() => { if (document.getElementById('f-novo')) voltar(); }, 15000);
+      if (K) setTimeout(() => { if (document.getElementById('f-novo')) voltar(); }, 30000);
     }
     // pagamento do balcão à espera (cliente encostou o telemóvel na etiqueta do balcão)
     async function vigiarBalcao() {
