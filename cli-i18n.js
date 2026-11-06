@@ -80,11 +80,51 @@
       callName: 'Prénom pour vous appeler', optional: '(facultatif)', exName: 'Ex. : Anne', wantInvoice: '🧾 Je veux une facture avec NIF / par email', nif: 'N° fiscal (NIF)', email: 'Email', digits: '9 chiffres',
       onlyFor: 'Facultatif. Utilisé uniquement pour la facture et le reçu.', note: '✏️ Note pour la commande', exNote: 'Ex. : sans sucre, à emporter',
       badNif: 'Le NIF ne semble pas valide. Vérifiez-le ou laissez vide.', badEmail2: "L'email ne semble pas correct.", preparingPay: 'Préparation du paiement…', linkBad: 'Lien incomplet. Demandez au comptoir.', others: 'Autres'
+    },
+    de: {
+      invName: 'Vor- und Nachname / Firma (für die Rechnung)', exInv: 'z. B. Anna Müller oder Café GmbH', tip: 'Trinkgeld', noTip: 'Kein Trinkgeld', otherTip: 'Anderes', tipAsk: 'Trinkgeld (€)', payNow: 'Jetzt bezahlen', payCounter: 'An der Theke zahlen', sendCounter: 'Bestellen · an der Theke zahlen', needName: 'Bitte gib einen Namen an, damit wir dich aufrufen können.', needInvName: 'Für eine Rechnung mit Steuernummer bitte Vor- und Nachnamen (oder Firmennamen) angeben.', sentTitle: 'Bestellung gesendet!', payAt: 'Zahle an der Theke:', weCall: 'Wir rufen deinen Namen auf, wenn es fertig ist.', orderNo: 'Bestellung', thanksTip: 'Danke für das Trinkgeld! 💛', back: 'Zurück zum Menü', withTip: 'inkl. Trinkgeld',
+      _nome: 'Deutsch', loading: 'Wird geladen…', pay: 'Zahlung', test: 'TEST', secure: '🔒 Sichere Zahlung · Stripe',
+      item: 'Artikel', items: 'Artikel', seeOrder: 'Bestellung ansehen ▾', order: 'Bestellung', paid: 'Bezahlt', paidX: 'Bezahlt!',
+      preparing: 'Wir bereiten es gerade zu. Wir rufen deine Nummer auf, wenn es fertig ist.', showCounter: 'Danke. Du kannst diesen Bildschirm an der Theke zeigen.',
+      receiptSent: '✓ Beleg gesendet an', wantReceipt: 'Beleg per E-Mail?', sendReceipt: 'Beleg senden', sending: 'Wird gesendet…',
+      badEmail: 'Bitte eine gültige E-Mail eingeben.', confirming: 'Zahlung wird bestätigt…', dontClose: 'Seite nicht schließen.',
+      notAccepted: 'Die Zahlung wurde nicht akzeptiert. Versuche es erneut oder wähle eine andere Methode.', inactive: 'Diese Zahlung ist nicht mehr aktiv.<br>Bitte an der Theke eine neue anfordern.',
+      cantLoad: 'Zahlung konnte nicht geladen werden. Bitte Seite neu laden.', receiptOpt: '✉️ Beleg per E-Mail erhalten (optional)',
+      payX: 'Bezahlen', processing: 'Wird verarbeitet…', loadErr: 'Fehler beim Laden der Zahlungsmethoden.', emailWrong: 'Die E-Mail scheint nicht korrekt (oder leer lassen).',
+      confirmMbw: 'Bestätige die Zahlung in der MB WAY App', invalidLink: 'Ungültiger Zahlungslink.', nfcBad: 'Dieser NFC-Link ist unvollständig.',
+      notYours: 'Nicht deine Bestellung?', seeMenu: 'Menü ansehen und bestellen', newOrder: 'Neue Bestellung',
+      declined: 'Die Karte wurde abgelehnt.', funds: 'Nicht genügend Guthaben.', expired: 'Die Karte ist abgelaufen.', cvc: 'Der Sicherheitscode (CVC) ist falsch.', procErr: 'Verarbeitungsfehler. Bitte erneut versuchen.', number: 'Die Kartennummer ist falsch.', notDone: 'Die Zahlung wurde nicht abgeschlossen.',
+      menu: 'Menü', tagline: 'Mit dem Handy bestellen und bezahlen', all: 'Alles', options: 'Optionen', counterWaiting: 'Zahlung an der Theke', payBtn: 'Bezahlen',
+      menuLoading: 'Menü wird geladen…', notAvail: 'Bestellen per Handy ist hier noch nicht verfügbar.<br>Bitte an der Theke bestellen. 🙂', menuEmpty: 'Das Menü wird noch vorbereitet.',
+      seeCart: 'Bestellung ansehen', choose: 'Wähle eine Option', normal: 'Normal', add: 'Hinzufügen', yourOrder: 'Deine Bestellung', total: 'Gesamt',
+      callName: 'Name zum Aufrufen', optional: '(optional)', exName: 'z. B. Anna', wantInvoice: '🧾 Rechnung mit Steuernummer / per E-Mail', nif: 'Steuernr. (NIF)', email: 'E-Mail', digits: '9 Ziffern',
+      onlyFor: 'Optional. Nur für Rechnung und Beleg.', note: '✏️ Notiz zur Bestellung', exNote: 'z. B. ohne Zucker, zum Mitnehmen',
+      badNif: 'Die Steuernummer scheint ungültig. Prüfen oder leer lassen.', badEmail2: 'Die E-Mail scheint nicht korrekt.', preparingPay: 'Zahlung wird vorbereitet…', linkBad: 'Unvollständiger Link. Bitte an der Theke fragen.', others: 'Sonstiges'
+    },
+    it: {
+      invName: 'Nome e cognome / azienda (per la fattura)', exInv: 'Es.: Anna Rossi o Café Srl', tip: 'Mancia', noTip: 'Senza mancia', otherTip: 'Altro', tipAsk: 'Importo della mancia (€)', payNow: 'Paga ora', payCounter: 'Paga al banco', sendCounter: 'Invia ordine · paga al banco', needName: 'Scrivi un nome per chiamarti.', needInvName: 'Per la fattura con codice fiscale scrivi nome e cognome (o il nome dell\'azienda).', sentTitle: 'Ordine inviato!', payAt: 'Paga al banco:', weCall: 'Ti chiameremo per nome quando è pronto.', orderNo: 'Ordine', thanksTip: 'Grazie per la mancia! 💛', back: 'Torna al menù', withTip: 'mancia inclusa',
+      _nome: 'Italiano', loading: 'Caricamento…', pay: 'Pagamento', test: 'TEST', secure: '🔒 Pagamento sicuro · Stripe',
+      item: 'articolo', items: 'articoli', seeOrder: 'vedi ordine ▾', order: 'Ordine', paid: 'Pagato', paidX: 'Pagato!',
+      preparing: 'Lo stiamo preparando. Chiameremo il tuo numero quando è pronto.', showCounter: 'Grazie. Puoi mostrare questa schermata al banco.',
+      receiptSent: '✓ Ricevuta inviata a', wantReceipt: 'Vuoi la ricevuta via email?', sendReceipt: 'Invia ricevuta', sending: 'Invio…',
+      badEmail: 'Inserisci un\'email valida.', confirming: 'Conferma del pagamento…', dontClose: 'non chiudere questa pagina.',
+      notAccepted: 'Il pagamento non è stato accettato. Riprova o scegli un altro metodo.', inactive: 'Questo pagamento non è più attivo.<br>Chiedine uno nuovo al banco.',
+      cantLoad: 'Impossibile caricare il pagamento. Aggiorna la pagina.', receiptOpt: '✉️ Ricevi la ricevuta via email (facoltativo)',
+      payX: 'Paga', processing: 'Elaborazione…', loadErr: 'Errore nel caricamento dei metodi di pagamento.', emailWrong: 'L\'email non sembra corretta (o lascia vuoto).',
+      confirmMbw: 'Conferma il pagamento nell\'app MB WAY', invalidLink: 'Link di pagamento non valido.', nfcBad: 'Questo link NFC è incompleto.',
+      notYours: 'Non è il tuo ordine?', seeMenu: 'Vedi il menù e ordina', newOrder: 'Fai un altro ordine',
+      declined: 'La carta è stata rifiutata.', funds: 'Fondi insufficienti.', expired: 'La carta è scaduta.', cvc: 'Il codice di sicurezza (CVC) è errato.', procErr: 'Errore di elaborazione. Riprova.', number: 'Il numero della carta è errato.', notDone: 'Il pagamento non è stato completato.',
+      menu: 'Menù', tagline: 'Ordina e paga dal telefono', all: 'Tutto', options: 'opzioni', counterWaiting: 'Pagamento al banco', payBtn: 'Paga',
+      menuLoading: 'Caricamento del menù…', notAvail: 'Gli ordini dal telefono non sono ancora disponibili qui.<br>Ordina al banco. 🙂', menuEmpty: 'Il menù è ancora in preparazione.',
+      seeCart: 'Vedi ordine', choose: 'Scegli un\'opzione', normal: 'Normale', add: 'Aggiungi', yourOrder: 'Il tuo ordine', total: 'Totale',
+      callName: 'Nome per chiamarti', optional: '(facoltativo)', exName: 'Es.: Anna', wantInvoice: '🧾 Voglio la fattura con codice fiscale / via email', nif: 'Cod. fiscale (NIF)', email: 'Email', digits: '9 cifre',
+      onlyFor: 'Facoltativo. Solo per la fattura e la ricevuta.', note: '✏️ Nota per l\'ordine', exNote: 'Es.: senza zucchero, da asporto',
+      badNif: 'Il codice fiscale non sembra valido. Controllalo o lascia vuoto.', badEmail2: 'L\'email non sembra corretta.', preparingPay: 'Preparazione del pagamento…', linkBad: 'Link incompleto. Chiedi al banco.', others: 'Altro'
     }
   };
-  const LOC = { pt: 'pt-PT', en: 'en-GB', es: 'es-ES', fr: 'fr-FR' };
+  const LOC = { pt: 'pt-PT', en: 'en-GB', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT' };
   let L = '';
-  try { L = localStorage.getItem('ds_lang_cli') || ''; } catch (_) {}
+  try { L = sessionStorage.getItem('ds_lang_cli') || ''; } catch (_) {}
   if (!D[L]) { const nav = (navigator.languages || [navigator.language || 'pt']).map(x => String(x).slice(0, 2).toLowerCase()); L = nav.find(x => D[x]) || 'pt'; }
   window.LANG = L;
   window.LOCALE = LOC[L];
@@ -93,7 +133,9 @@
   // seletor (botões pequenos PT EN ES FR)
   window.langSeletor = function (el) {
     if (!el) return;
-    el.innerHTML = Object.keys(D).map(k => `<button type="button" data-l="${k}" aria-label="${D[k]._nome}" style="font:inherit;font-size:11px;font-weight:900;padding:4px 7px;border-radius:8px;border:0;cursor:pointer;${k === L ? 'background:var(--brand);color:#fff' : 'background:rgba(15,23,42,.06);color:#475569'}">${k.toUpperCase()}</button>`).join('');
-    el.querySelectorAll('button').forEach(b => b.onclick = () => { try { localStorage.setItem('ds_lang_cli', b.dataset.l); } catch (_) {} location.reload(); });
+    const fl = { pt: '🇵🇹', en: '🇬🇧', es: '🇪🇸', fr: '🇫🇷', de: '🇩🇪', it: '🇮🇹' };
+    el.innerHTML = `<select aria-label="Language" style="font:inherit;font-size:12px;font-weight:800;padding:5px 6px;border-radius:10px;border:1px solid rgba(15,23,42,.12);background:#fff;color:#334155;cursor:pointer">${Object.keys(D).map(k => `<option value="${k}" ${k === L ? 'selected' : ''}>${fl[k] || ''} ${k.toUpperCase()}</option>`).join('')}</select>`;
+    el.querySelector('select').onchange = e => { try { sessionStorage.setItem('ds_lang_cli', e.target.value); } catch (_) {} location.reload(); };
   };
+
 })();

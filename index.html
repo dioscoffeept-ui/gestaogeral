@@ -905,7 +905,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 07:18</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 07:34</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -13198,6 +13198,11 @@ var qrcode = function() {
     </script>
 
     <style>.onl-badge.hidden { display: none !important; }
+        /* fichas seguem a cor da empresa (nada de rosa / verde fixos) */
+        .recipe-card-bar, .recipe-card-kitchen { background-color: var(--brand-soft) !important; border: 2px solid var(--brand-line) !important; }
+        .recipe-card-bar:hover, .recipe-card-kitchen:hover { border-color: var(--brand) !important; }
+        html.dark .recipe-card-bar, html.dark .recipe-card-kitchen { background-color: #1e293b !important; border-color: rgba(255,255,255,.08) !important; }
+        html.dark .recipe-card-bar:hover, html.dark .recipe-card-kitchen:hover { border-color: var(--brand) !important; }
         @media (max-width: 767px) {
             #inventory-grouped-container .ds-mtable tr { grid-template-columns: .7fr 1fr 1fr 1.6fr; gap: 2px 10px; padding: 10px 12px; position: relative; }
             #inventory-grouped-container .ds-mtable td:first-child { padding-right: 64px !important; font-size: 14px; }
