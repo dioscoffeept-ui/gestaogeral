@@ -47,6 +47,9 @@
   .tipc { padding: 9px 4px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #fff; font: inherit; font-size: 12.5px; font-weight: 800; line-height: 1.15; cursor: pointer; color: inherit; }
   .tipc small { display: block; font-size: 10px; font-weight: 600; color: #94a3b8; margin-top: 2px; }
   .tipc.on { border-color: var(--brand); background: var(--brand-soft, #fbeee8); color: var(--brand); }
+  .tipx { grid-column: 1 / -1; display: flex; gap: 6px; }
+  .tipx input { flex: 1; min-width: 0; border: 1.5px solid var(--brand); border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 16px; outline: none; }
+  .tipx button { padding: 0 18px; border-radius: 12px; background: var(--brand); color: #fff; font: inherit; font-weight: 900; border: 0; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -104,7 +107,7 @@
         const v = document.getElementById('em2').value.trim(), e = document.getElementById('err2');
         if (!emailOk(v)) { e.textContent = T('badEmail'); return; }
         b.disabled = true; b.textContent = T('sending');
-        try { await call('recibo', { email: v }); document.getElementById('rec').innerHTML = `<p class="hint" style="text-align:center;font-size:13px">${T('receiptSent')} <b>${esc(v)}</b></p>`; }
+        try { await call('recibo', { email: v }); document.getElementById('rec').innerHTML = `<p class="hint" style="text-align:center;font-size:13px">${T('receiptSent')} <b>${esc(v)}</b></p>` + (info.teste ? '<p class="hint" style="text-align:center;font-size:11px;color:#b45309">Modo de teste: a Stripe não envia emails de verdade.</p>' : ''); }
         catch (x) { e.textContent = x.message; b.disabled = false; b.textContent = T('sendReceipt'); }
       };
     }
@@ -141,33 +144,42 @@
       });
       pe.mount('#pe');
       const btn = document.getElementById('pay'), err = document.getElementById('err');
-      // gorjeta: muda o valor do pagamento antes de pagar
-      let gSel = info.gorjeta_cent ? 'x' : 0, ocupado = false;
-      const opts = [[0, T('noTip')], [0.05, '5%'], [0.1, '10%'], [0.15, '15%'], ['x', T('otherTip')]];
+      // gorjeta: muda o valor do pagamento antes de pagar (a escolha aparece logo; o servidor confirma por trás)
+      let gSel = info.gorjeta_cent ? 'x' : '0', ocupado = false, outroAberto = false, fila = null;
+      const opts = [['0', T('noTip')], ['0.05', '5%'], ['0.1', '10%'], ['0.15', '15%'], ['x', T('otherTip')]];
+      const centDe = v => v === 'x' ? (info.gorjeta_cent || 0) : Math.round(base * Number(v));
+      const mostrarTotal = cent => { document.getElementById('amt').textContent = eur(base + cent); if (!ocupado) btn.textContent = T('payX') + ' ' + eur(base + cent); };
       const desenharTips = () => {
-        document.getElementById('tips').innerHTML = opts.map(([v, l]) => {
-          const val = v === 'x' ? (gSel === 'x' && info.gorjeta_cent ? eur(info.gorjeta_cent) : l) : l;
-          const sub = typeof v === 'number' && v > 0 ? `<small>${eur(Math.round(base * v))}</small>` : '';
-          return `<button type="button" class="tipc ${gSel === v ? 'on' : ''}" data-v="${v}">${val}${sub}</button>`; }).join('');
-        document.querySelectorAll('#tips .tipc').forEach(b => b.onclick = async () => {
-          if (ocupado) return;
-          const v = b.dataset.v === 'x' ? 'x' : Number(b.dataset.v);
-          let cent;
-          if (v === 'x') { const r = prompt(T('tipAsk'), info.gorjeta_cent ? (info.gorjeta_cent / 100).toFixed(2) : ''); if (r == null) return; cent = Math.max(0, Math.round(parseFloat(String(r).replace(',', '.')) * 100) || 0); }
-          else cent = Math.round(base * v);
-          ocupado = true; btn.disabled = true; err.textContent = '';
-          try {
-            const r = await call('gorjeta', { gorjeta_cent: cent });
-            info.valor_cent = r.valor_cent; info.gorjeta_cent = r.gorjeta_cent;
-            gSel = !r.gorjeta_cent ? 0 : v;
-            await elements.fetchUpdates();
-            document.getElementById('amt').textContent = eur(info.valor_cent);
-            btn.textContent = T('payX') + ' ' + eur(info.valor_cent);
-            if (r.gorjeta_cent) err.innerHTML = '<span style="color:var(--brand)">' + T('thanksTip') + '</span>';
-          } catch (x) { err.textContent = x.message; }
-          ocupado = false; btn.disabled = false; desenharTips();
+        const box = document.getElementById('tips');
+        box.innerHTML = opts.map(([v, l]) => {
+          const val = v === 'x' && gSel === 'x' && info.gorjeta_cent ? eur(info.gorjeta_cent) : l;
+          const sub = v !== '0' && v !== 'x' ? `<small>${eur(Math.round(base * Number(v)))}</small>` : '';
+          return `<button type="button" class="tipc ${gSel === v ? 'on' : ''}" data-v="${v}">${val}${sub}</button>`; }).join('')
+          + (outroAberto ? `<div class="tipx"><input id="tipx" type="text" inputmode="decimal" placeholder="0,00 €" value="${info.gorjeta_cent && gSel === 'x' ? (info.gorjeta_cent / 100).toFixed(2).replace('.', ',') : ''}"><button type="button" id="tipx-ok">${T('okTip')}</button></div>` : '');
+        box.querySelectorAll('.tipc').forEach(b => b.onclick = () => {
+          const v = b.dataset.v;
+          if (v === 'x') { outroAberto = true; desenharTips(); const inp = document.getElementById('tipx'); inp && inp.focus(); return; }
+          outroAberto = false; aplicar(v, centDe(v));
         });
+        const ok = document.getElementById('tipx-ok');
+        if (ok) { const go = () => { const c = Math.max(0, Math.round(parseFloat(String(document.getElementById('tipx').value).replace(',', '.').replace(/[^\d.]/g, '')) * 100) || 0); outroAberto = false; aplicar(c ? 'x' : '0', Math.min(c, Math.round(base * 0.3))); };
+          ok.onclick = go; document.getElementById('tipx').onkeydown = e => { if (e.key === 'Enter') go(); }; }
       };
+      async function aplicar(v, cent) {
+        gSel = v; if (v === 'x') info.gorjeta_cent = cent;
+        mostrarTotal(cent); desenharTips();
+        if (ocupado) { fila = [v, cent]; return; }   // o cliente tocou várias vezes: fica a última escolha
+        ocupado = true; btn.disabled = true; btn.textContent = '…'; err.textContent = '';
+        try {
+          const r = await call('gorjeta', { gorjeta_cent: cent });
+          info.valor_cent = r.valor_cent; info.gorjeta_cent = r.gorjeta_cent;
+          await elements.fetchUpdates();
+          if (r.gorjeta_cent) err.innerHTML = '<span style="color:var(--brand)">' + T('thanksTip') + '</span>';
+        } catch (x) { err.textContent = x.message; }
+        ocupado = false; btn.disabled = false;
+        if (fila) { const f = fila; fila = null; return aplicar(f[0], f[1]); }
+        mostrarTotal(info.gorjeta_cent || 0); btn.textContent = T('payX') + ' ' + eur(info.valor_cent); desenharTips();
+      }
       desenharTips();
       pe.on('ready', () => { btn.disabled = false; });
       pe.on('loaderror', ev => { err.textContent = (ev && ev.error && ev.error.message) || T('loadErr'); });

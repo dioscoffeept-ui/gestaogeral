@@ -53,6 +53,11 @@
   .main:disabled { opacity: .5; }
   .err { color: #b91c1c; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; min-height: 1em; }
   .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .item { position: relative; } .item.esg { opacity: .5; filter: grayscale(1); cursor: not-allowed; }
+  .item .tag { position: absolute; top: 8px; left: 8px; background: var(--ink); color: #fff; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; }
+  .item .tag.pouco { background: #d97706; }
+  #aviso { position: fixed; left: 50%; top: 16px; transform: translate(-50%, -80px); background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 700; z-index: 99; transition: transform .2s; pointer-events: none; }
+  #aviso.on { transform: translate(-50%, 0); }
   .tips { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr 1.15fr; gap: 6px; } .tipc { padding: 10px 4px; border-radius: 12px; border: 1.5px solid var(--line); font-size: 12.5px; font-weight: 800; line-height: 1.15; }
   .tipc.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
   .sec2 { width: 100%; margin-top: 8px; padding: 14px; border-radius: 14px; border: 1.5px solid var(--brand); color: var(--brand); font-size: 15px; font-weight: 900; background: #fff; }
@@ -115,10 +120,10 @@
       document.getElementById('list').innerHTML = grupos.map(g => {
         const its = data.menu.filter(m => (m.cat || 'Outros') === g);
         if (!its.length) return '';
-        return `<p class="sec">${esc(g === 'Outros' ? T('others') : g)}</p>` + its.map(m => { const q = qtdDe(m.id); return `<button type="button" class="item" onclick="tocar('${m.id}')">
+        return `<p class="sec">${esc(g === 'Outros' ? T('others') : g)}</p>` + its.map(m => { const q = qtdDe(m.id), esg = m.restam === 0, pouco = m.restam != null && m.restam > 0 && m.restam <= 3; return `<button type="button" class="item ${esg ? 'esg' : ''}" ${esg ? 'disabled' : ''} onclick="tocar('${m.id}')">
           <span class="ph" style="${m.foto ? `background-image:url('${esc(m.foto)}')` : ''}">${m.foto ? '' : (m.tipo === 'KITCHEN' ? '🍽️' : '☕')}</span>
           <span class="tx"><b>${esc(m.nome)}</b>${m.desc ? `<p>${esc(m.desc)}</p>` : ''}<span class="pr">${eur(m.preco)}${m.vars.length ? ' <span style="color:var(--mut);font-weight:600;font-size:12px">· ' + T('options') + '</span>' : ''}</span></span>
-          ${q ? `<span class="q">${q}</span>` : '<span class="add">+</span>'}</button>`; }).join('');
+          ${esg ? `<span class="tag">${T('soldOut')}</span>` : q ? `<span class="q">${q}</span>` : '<span class="add">+</span>'}${pouco && !esg ? `<span class="tag pouco">${T('leftN')} ${m.restam}</span>` : ''}</button>`; }).join('');
       }).join('');
       barra();
     }
@@ -129,7 +134,9 @@
       document.getElementById('bar-n').textContent = n;
       document.getElementById('bar-t').textContent = eur(total());
     }
+    function aviso(t) { let el = document.getElementById('aviso'); if (!el) { el = document.createElement('div'); el.id = 'aviso'; document.body.appendChild(el); } el.textContent = t; el.className = 'on'; clearTimeout(el._t); el._t = setTimeout(() => el.className = '', 2200); }
     function juntar(m, v) {
+      if (m.restam != null && qtdDe(m.id) >= m.restam) return aviso(m.restam ? T('leftN') + ' ' + m.restam : T('soldOut'));
       const ex = cart.find(c => c.id === m.id && c.key === (v ? v.key : ''));
       if (ex) ex.qty++; else cart.push({ id: m.id, key: v ? v.key : '', nome: m.nome + (v ? ' — ' + v.nome : ''), preco: Math.round((m.preco + (v ? v.extra : 0)) * 100) / 100, qty: 1 });
       guardar(); render(); if (navigator.vibrate) try { navigator.vibrate(10); } catch (_) {}
@@ -191,7 +198,7 @@
         desenharCarrinho();
       });
     }
-    function mudar(i, d) { lerCampos(); cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); guardar(); render(); desenharCarrinho(); }
+    function mudar(i, d) { lerCampos(); if (d > 0) { const m = data.menu.find(x => x.id === cart[i].id); if (m && m.restam != null && qtdDe(m.id) >= m.restam) return aviso(T('noMore')); } cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); guardar(); render(); desenharCarrinho(); }
     async function enviar(modo) {
       lerCampos();
       if (!dados.nome) return desenharCarrinho(T('needName'));
@@ -206,7 +213,11 @@
         cart = []; guardar(); gorj = { pct: 0, cent: 0 };
         if (r.balcao) return enviado(r);
         location.href = 'pagar.html?t=' + r.t + '&n=' + N + (K ? '&k=1' : '');
-      } catch (e) { desenharCarrinho(e.message); }
+      } catch (e) {
+        // algo esgotou entretanto: atualiza o menu e o carrinho
+        try { const nd = await post(FN, { n: N, acao: 'menu' }); data = nd; cart = cart.filter(c => { const m = data.menu.find(x => x.id === c.id); return m && m.restam !== 0; }); guardar(); render(); } catch (_) {}
+        desenharCarrinho(e.message);
+      }
     }
     function enviado(r) {
       document.getElementById('cart-box').innerHTML = `<div style="text-align:center;padding:18px 4px 6px">
@@ -244,6 +255,8 @@
       // tira do carrinho o que já não existe
       cart = cart.filter(c => data.menu.some(m => m.id === c.id)); guardar();
       render(); if (!K) vigiarBalcao();
+      // atualiza o menu de vez em quando (artigos que esgotam / voltam)
+      setInterval(async () => { if (document.querySelector('.sheet.on') || document.hidden) return; try { data = await post(FN, { n: N, acao: 'menu' }); render(); } catch (_) {} }, 45000);
     })();
   </script>
 </body>
