@@ -2,6 +2,7 @@
 (function () {
   const D = {
     pt: {
+      invName: 'Nome e apelido / empresa (para a fatura)', exInv: 'Ex.: Ana Silva ou Café Lda', tip: 'Gorjeta', noTip: 'Sem gorjeta', otherTip: 'Outro', tipAsk: 'Valor da gorjeta (€)', payNow: 'Pagar agora', payCounter: 'Pagar no balcão', sendCounter: 'Enviar pedido · pago no balcão', needName: 'Escreva o nome para chamarmos.', needInvName: 'Para a fatura com NIF escreva o nome e apelido (ou o nome da empresa).', sentTitle: 'Pedido enviado!', payAt: 'Pague no balcão:', weCall: 'Chamamos pelo nome quando estiver pronto.', orderNo: 'Pedido', thanksTip: 'Obrigado pela gorjeta! 💛', back: 'Voltar ao menu', withTip: 'com gorjeta',
       _nome: 'Português', loading: 'A carregar…', pay: 'Pagamento', test: 'TESTE', secure: '🔒 Pagamento seguro · Stripe',
       item: 'artigo', items: 'artigos', seeOrder: 'ver pedido ▾', order: 'Pedido', paid: 'Pago', paidX: 'Pago!',
       preparing: 'Já estamos a preparar. Chamamos pelo número quando estiver pronto.', showCounter: 'Obrigado. Pode mostrar este ecrã no balcão.',
@@ -21,6 +22,7 @@
       badNif: 'O NIF não parece válido. Confirme os números ou deixe em branco.', badEmail2: 'O email não parece correto.', preparingPay: 'A preparar o pagamento…', linkBad: 'Link incompleto. Peça ajuda no balcão.', others: 'Outros'
     },
     en: {
+      invName: 'Full name / company (for the invoice)', exInv: 'e.g. Anna Smith or Café Ltd', tip: 'Tip', noTip: 'No tip', otherTip: 'Other', tipAsk: 'Tip amount (€)', payNow: 'Pay now', payCounter: 'Pay at the counter', sendCounter: 'Send order · pay at the counter', needName: 'Please enter a name so we can call you.', needInvName: 'For an invoice with tax number, enter your full name (or company name).', sentTitle: 'Order sent!', payAt: 'Pay at the counter:', weCall: "We'll call your name when it's ready.", orderNo: 'Order', thanksTip: 'Thank you for the tip! 💛', back: 'Back to menu', withTip: 'incl. tip',
       _nome: 'English', loading: 'Loading…', pay: 'Payment', test: 'TEST', secure: '🔒 Secure payment · Stripe',
       item: 'item', items: 'items', seeOrder: 'see order ▾', order: 'Order', paid: 'Paid', paidX: 'Paid!',
       preparing: "We're preparing it now. We'll call your number when it's ready.", showCounter: 'Thank you. You can show this screen at the counter.',
@@ -40,6 +42,7 @@
       badNif: "The tax number doesn't look valid. Check it or leave it blank.", badEmail2: "The email doesn't look right.", preparingPay: 'Preparing payment…', linkBad: 'Incomplete link. Please ask at the counter.', others: 'Other'
     },
     es: {
+      invName: 'Nombre y apellido / empresa (para la factura)', exInv: 'Ej.: Ana García o Café SL', tip: 'Propina', noTip: 'Sin propina', otherTip: 'Otra', tipAsk: 'Importe de la propina (€)', payNow: 'Pagar ahora', payCounter: 'Pagar en el mostrador', sendCounter: 'Enviar pedido · pago en el mostrador', needName: 'Escribe un nombre para llamarte.', needInvName: 'Para la factura con NIF escribe nombre y apellido (o el nombre de la empresa).', sentTitle: '¡Pedido enviado!', payAt: 'Paga en el mostrador:', weCall: 'Te llamaremos por tu nombre cuando esté listo.', orderNo: 'Pedido', thanksTip: '¡Gracias por la propina! 💛', back: 'Volver al menú', withTip: 'con propina',
       _nome: 'Español', loading: 'Cargando…', pay: 'Pago', test: 'PRUEBA', secure: '🔒 Pago seguro · Stripe',
       item: 'artículo', items: 'artículos', seeOrder: 'ver pedido ▾', order: 'Pedido', paid: 'Pagado', paidX: '¡Pagado!',
       preparing: 'Ya lo estamos preparando. Llamaremos tu número cuando esté listo.', showCounter: 'Gracias. Puedes mostrar esta pantalla en el mostrador.',
@@ -59,6 +62,7 @@
       badNif: 'El NIF no parece válido. Revísalo o déjalo en blanco.', badEmail2: 'El email no parece correcto.', preparingPay: 'Preparando el pago…', linkBad: 'Enlace incompleto. Pide ayuda en el mostrador.', others: 'Otros'
     },
     fr: {
+      invName: 'Nom et prénom / société (pour la facture)', exInv: 'Ex. : Anne Martin ou Café SARL', tip: 'Pourboire', noTip: 'Sans pourboire', otherTip: 'Autre', tipAsk: 'Montant du pourboire (€)', payNow: 'Payer maintenant', payCounter: 'Payer au comptoir', sendCounter: 'Envoyer · payer au comptoir', needName: 'Indiquez un prénom pour vous appeler.', needInvName: 'Pour une facture avec NIF, indiquez nom et prénom (ou le nom de la société).', sentTitle: 'Commande envoyée !', payAt: 'Payez au comptoir :', weCall: 'Nous vous appellerons quand ce sera prêt.', orderNo: 'Commande', thanksTip: 'Merci pour le pourboire ! 💛', back: 'Retour au menu', withTip: 'pourboire inclus',
       _nome: 'Français', loading: 'Chargement…', pay: 'Paiement', test: 'TEST', secure: '🔒 Paiement sécurisé · Stripe',
       item: 'article', items: 'articles', seeOrder: 'voir la commande ▾', order: 'Commande', paid: 'Payé', paidX: 'Payé !',
       preparing: 'Nous la préparons. Nous appellerons votre numéro quand elle sera prête.', showCounter: 'Merci. Vous pouvez montrer cet écran au comptoir.',

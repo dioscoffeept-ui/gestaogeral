@@ -53,6 +53,10 @@
   .main:disabled { opacity: .5; }
   .err { color: #b91c1c; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; min-height: 1em; }
   .hint { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+  .tips { display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr 1.15fr; gap: 6px; } .tipc { padding: 10px 4px; border-radius: 12px; border: 1.5px solid var(--line); font-size: 12.5px; font-weight: 800; line-height: 1.15; }
+  .tipc.on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+  .sec2 { width: 100%; margin-top: 8px; padding: 14px; border-radius: 14px; border: 1.5px solid var(--brand); color: var(--brand); font-size: 15px; font-weight: 900; background: #fff; }
+  .sec2:disabled { opacity: .5; }
   .banner { display: none; margin: 0 0 12px; padding: 12px 14px; border-radius: 16px; background: var(--ink); color: #fff; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; }
   .banner.on { display: flex; } .banner button { background: #fff; color: var(--ink); padding: 8px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; white-space: nowrap; }
   .empty { text-align: center; color: var(--mut); padding: 50px 16px; font-weight: 600; font-size: 14px; line-height: 1.5; }
@@ -146,36 +150,76 @@
     }
     function abrir(id) { document.getElementById(id).classList.add('on'); document.body.style.overflow = 'hidden'; }
     function fechar(id) { document.getElementById(id).classList.remove('on'); document.body.style.overflow = ''; }
-    let dados = { nome: '', nif: '', email: '', nota: '' };
-    try { dados = Object.assign(dados, JSON.parse(localStorage.getItem('ds_cliente') || '{}')); dados.nota = ''; } catch (_) {}
+    // modo tablet (quiosque): não guarda dados do cliente e volta sozinho ao menu
+    const K = new URLSearchParams(location.search).get('k') === '1';
+    let dados = { nome: '', nif: '', nomeFat: '', email: '', nota: '' };
+    if (!K) try { dados = Object.assign(dados, JSON.parse(localStorage.getItem('ds_cliente') || '{}')); dados.nota = ''; } catch (_) {}
+    let gorj = { pct: 0, cent: 0 };
+    const gorjCent = () => gorj.pct === 'x' ? gorj.cent : Math.round(total() * 100 * gorj.pct);
+    function lerCampos() {
+      const g = id => { const el = document.getElementById(id); return el ? el.value : null; };
+      if (g('f-nome') == null) return;
+      dados = { nome: g('f-nome').trim(), nif: (g('f-nif') || '').replace(/\D/g, ''), nomeFat: (g('f-nfat') || '').trim(), email: (g('f-email') || '').trim(), nota: (g('f-nota') || '').trim() };
+    }
     function abrirCarrinho() { desenharCarrinho(); abrir('sh-cart'); }
     function desenharCarrinho(err) {
       if (!cart.length) { fechar('sh-cart'); render(); return; }
+      const tg = gorjCent(), tt = total() + tg / 100;
+      const chip = (v, l) => `<button type="button" class="tipc ${gorj.pct === v ? 'on' : ''}" data-v="${v}">${l}</button>`;
+      const online = !!(data && data.online);
       document.getElementById('cart-box').innerHTML = `<h3>${T('yourOrder')}</h3>
         ${cart.map((c, i) => `<div class="row"><span class="nm">${esc(c.nome)}<small>${eur(c.preco)}</small></span><span class="qb"><button type="button" onclick="mudar(${i},-1)">−</button><b>${c.qty}</b><button type="button" class="p" onclick="mudar(${i},1)">+</button></span></div>`).join('')}
-        <div class="tot"><span style="font-weight:800;color:var(--mut)">${T('total')}</span><b>${eur(total())}</b></div>
-        <label for="f-nome">${T('callName')} <span style="text-transform:none;font-weight:600">${T('optional')}</span></label><input id="f-nome" value="${esc(dados.nome)}" placeholder="${T('exName')}" autocomplete="given-name">
-        <details class="more" ${dados.nif || dados.email ? 'open' : ''}><summary>${T('wantInvoice')}</summary>
-          <div class="g2"><div><label for="f-nif">${T('nif')}</label><input id="f-nif" inputmode="numeric" maxlength="9" value="${esc(dados.nif)}" placeholder="${T('digits')}"></div>
-          <div><label for="f-email">${T('email')}</label><input id="f-email" type="email" inputmode="email" value="${esc(dados.email)}" placeholder="nome@gmail.com" autocomplete="email"></div></div>
+        <label>${T('tip')}</label><div class="tips">${chip(0, T('noTip'))}${chip(0.05, '5%')}${chip(0.1, '10%')}${chip(0.15, '15%')}${chip('x', gorj.pct === 'x' && gorj.cent ? eur(gorj.cent / 100) : T('otherTip'))}</div>
+        <div class="tot"><span style="font-weight:800;color:var(--mut)">${T('total')}${tg ? ' <small style="font-weight:600">(' + T('withTip') + ' ' + eur(tg / 100) + ')</small>' : ''}</span><b>${eur(tt)}</b></div>
+        <label for="f-nome">${T('callName')} *</label><input id="f-nome" value="${esc(dados.nome)}" placeholder="${T('exName')}" autocomplete="${K ? 'off' : 'given-name'}" required>
+        <details class="more" id="d-fat" ${dados.nif || dados.email ? 'open' : ''}><summary>${T('wantInvoice')}</summary>
+          <div class="g2"><div><label for="f-nif">${T('nif')}</label><input id="f-nif" inputmode="numeric" maxlength="9" value="${esc(dados.nif)}" placeholder="${T('digits')}" autocomplete="off"></div>
+          <div><label for="f-email">${T('email')}</label><input id="f-email" type="email" inputmode="email" value="${esc(dados.email)}" placeholder="nome@gmail.com" autocomplete="${K ? 'off' : 'email'}"></div></div>
+          <div id="w-nfat" ${dados.nif ? '' : 'hidden'}><label for="f-nfat">${T('invName')} *</label><input id="f-nfat" value="${esc(dados.nomeFat)}" placeholder="${T('exInv')}" autocomplete="${K ? 'off' : 'name'}"></div>
           <p class="hint">${T('onlyFor')}</p></details>
         <details class="more"><summary>${T('note')}</summary><textarea id="f-nota" rows="2" maxlength="200" placeholder="${T('exNote')}">${esc(dados.nota)}</textarea></details>
-        <button type="button" class="main" id="f-ok">${T('payX')} ${eur(total())}</button><div class="err" id="f-err">${err ? esc(err) : ''}</div>`;
-      document.getElementById('f-ok').onclick = enviar;
+        ${online ? `<button type="button" class="main" id="f-ok">${T('payNow')} · ${eur(tt)}</button><button type="button" class="sec2" id="f-bal">🧾 ${T('payCounter')}</button>`
+                 : `<button type="button" class="main" id="f-bal">${T('sendCounter')} · ${eur(tt)}</button>`}
+        <div class="err" id="f-err">${err ? esc(err) : ''}</div>`;
+      const ok = document.getElementById('f-ok'); if (ok) ok.onclick = () => enviar('agora');
+      document.getElementById('f-bal').onclick = () => enviar('balcao');
+      document.getElementById('f-nif').oninput = e => { document.getElementById('w-nfat').hidden = !e.target.value.trim(); };
+      document.querySelectorAll('#cart-box .tipc').forEach(b => b.onclick = () => {
+        lerCampos();
+        const v = b.dataset.v;
+        if (v === 'x') { const r = prompt(T('tipAsk'), gorj.cent ? (gorj.cent / 100).toFixed(2) : ''); if (r == null) return; const c = Math.round(parseFloat(String(r).replace(',', '.')) * 100); gorj = { pct: c > 0 ? 'x' : 0, cent: Math.max(0, Math.min(c || 0, Math.round(total() * 30))) }; }
+        else gorj = { pct: Number(v), cent: 0 };
+        desenharCarrinho();
+      });
     }
-    function mudar(i, d) { cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); guardar(); render(); desenharCarrinho(); }
-    async function enviar() {
-      const g = id => (document.getElementById(id) || {}).value || '';
-      dados = { nome: g('f-nome').trim(), nif: g('f-nif').replace(/\D/g, ''), email: g('f-email').trim(), nota: g('f-nota').trim() };
+    function mudar(i, d) { lerCampos(); cart[i].qty += d; if (cart[i].qty <= 0) cart.splice(i, 1); guardar(); render(); desenharCarrinho(); }
+    async function enviar(modo) {
+      lerCampos();
+      if (!dados.nome) return desenharCarrinho(T('needName'));
       if (dados.nif && !nifOk(dados.nif)) return desenharCarrinho(T('badNif'));
+      if (dados.nif && dados.nomeFat.split(/\s+/).filter(Boolean).length < 2) { const r = desenharCarrinho(T('needInvName')); const d = document.getElementById('d-fat'); if (d) d.open = true; return r; }
       if (dados.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dados.email)) return desenharCarrinho(T('badEmail2'));
-      try { localStorage.setItem('ds_cliente', JSON.stringify({ nome: dados.nome, nif: dados.nif, email: dados.email })); } catch (_) {}
-      const b = document.getElementById('f-ok'); b.disabled = true; b.textContent = T('preparingPay');
+      if (!K) try { localStorage.setItem('ds_cliente', JSON.stringify({ nome: dados.nome, nif: dados.nif, nomeFat: dados.nomeFat, email: dados.email })); } catch (_) {}
+      const b = document.getElementById(modo === 'balcao' ? 'f-bal' : 'f-ok'); b.disabled = true; b.textContent = modo === 'balcao' ? '…' : T('preparingPay');
       try {
-        const r = await post(FN, { n: N, acao: 'pedir', itens: cart.map(c => ({ id: c.id, key: c.key, qty: c.qty })), nome: dados.nome, nif: dados.nif, email: dados.email, nota: dados.nota });
-        cart = []; guardar();
-        location.href = 'pagar.html?t=' + r.t;
+        const r = await post(FN, { n: N, acao: 'pedir', pagar: modo === 'balcao' ? 'balcao' : 'agora', gorjeta_cent: gorjCent(), itens: cart.map(c => ({ id: c.id, key: c.key, qty: c.qty })), nome: dados.nome, nif: dados.nif, nome_fatura: dados.nomeFat, email: dados.email, nota: dados.nota });
+        cart = []; guardar(); gorj = { pct: 0, cent: 0 };
+        if (r.balcao) return enviado(r);
+        location.href = 'pagar.html?t=' + r.t + '&n=' + N + (K ? '&k=1' : '');
       } catch (e) { desenharCarrinho(e.message); }
+    }
+    function enviado(r) {
+      document.getElementById('cart-box').innerHTML = `<div style="text-align:center;padding:18px 4px 6px">
+        <div style="font-size:46px">✅</div><h3 style="font-size:22px">${T('sentTitle')}</h3>
+        <p style="margin:6px 0 0;color:var(--mut);font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:.08em">${T('orderNo')}</p>
+        <p style="margin:0;font-size:56px;font-weight:900;color:var(--brand);line-height:1.1">#${r.numero}</p>
+        <p style="margin:12px 0 0;font-size:15px">${T('payAt')} <b style="font-size:20px">${eur(r.total_cent / 100)}</b></p>
+        <p style="margin:6px 0 0;color:var(--mut);font-size:13px">${T('weCall')}</p>
+        <button type="button" class="main" id="f-novo">${K ? T('back') : T('newOrder')}</button></div>`;
+      render();
+      const voltar = () => { fechar('sh-cart'); if (K) { dados = { nome: '', nif: '', nomeFat: '', email: '', nota: '' }; scrollTo(0, 0); } };
+      document.getElementById('f-novo').onclick = voltar;
+      if (K) setTimeout(() => { if (document.getElementById('f-novo')) voltar(); }, 15000);
     }
     // pagamento do balcão à espera (cliente encostou o telemóvel na etiqueta do balcão)
     async function vigiarBalcao() {
@@ -199,7 +243,7 @@
       marca();
       // tira do carrinho o que já não existe
       cart = cart.filter(c => data.menu.some(m => m.id === c.id)); guardar();
-      render(); vigiarBalcao();
+      render(); if (!K) vigiarBalcao();
     })();
   </script>
 </body>

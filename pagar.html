@@ -141,7 +141,7 @@
         const email = ((document.getElementById('em') || {}).value || '').trim();
         if (email && !emailOk(email)) { err.textContent = T('emailWrong'); return; }
         btn.disabled = true; btn.textContent = T('processing');
-        const params = { return_url: location.origin + location.pathname + '?t=' + TK + (N ? '&n=' + N : '') };
+        const params = { return_url: location.origin + location.pathname + '?t=' + TK + (N ? '&n=' + N : '') + (new URLSearchParams(location.search).get('k') === '1' ? '&k=1' : '') };
         if (email) params.receipt_email = email;
         const { error, paymentIntent } = await stripe.confirmPayment({ elements, confirmParams: params, redirect: 'if_required' });
         if (error) { err.textContent = traduz(error); btn.disabled = false; btn.textContent = T('payX') + ' ' + eur(info.valor_cent); return; }
@@ -164,7 +164,7 @@
         try { const x = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: N }) }); r = await x.json(); if (!x.ok) throw new Error(r.erro || 'Erro'); }
         catch (e) { app.innerHTML = `<div class="spin">${T('nfcBad')}<br><span style="font-weight:500;font-size:12px">No Dio´Stock: Balcão → Pagamentos → Etiqueta NFC da loja → Copiar, e grave esse link na etiqueta.</span></div>`; return; }
         if (!info) { info = { loja: r.loja, marca: r.marca, teste: false }; marca(); }
-        if (r.t) { TK = r.t; history.replaceState(null, '', location.pathname + '?t=' + TK + '&n=' + N); info = null; return start(); }
+        if (r.t) { TK = r.t; history.replaceState(null, '', location.pathname + '?t=' + TK + '&n=' + N + (new URLSearchParams(location.search).get('k') === '1' ? '&k=1' : '')); info = null; return start(); }
         return location.replace('pedir.html?n=' + N);
         app.innerHTML = `<div class="ok wait"><div class="dot"></div><h1 style="font-size:19px">À espera do valor…</h1><p>Peça no balcão para enviar o pagamento.<br>Esta página abre sozinha.</p></div>`;
         if (n < 200) setTimeout(tick, 2000);
@@ -186,7 +186,10 @@
       // veio pela etiqueta NFC / QR da loja: deixa sempre ir ao menu fazer o próprio pedido
       const o = document.getElementById('outro'); if (!N || !o) return;
       const pago = info && info.estado === 'pago';
-      o.innerHTML = `<a href="pedir.html?n=${encodeURIComponent(N)}" style="display:inline-block;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:800;color:var(--brand);text-decoration:none;background:rgba(255,255,255,.7)">${pago ? '🍽️ ' + T('newOrder') : T('notYours') + ' <u>' + T('seeMenu') + '</u>'} →</a>`;
+      const K = new URLSearchParams(location.search).get('k') === '1';
+      const dest = 'pedir.html?n=' + encodeURIComponent(N) + (K ? '&k=1' : '');
+      if (K && pago && !window._kvolta) window._kvolta = setTimeout(() => location.replace(dest), 15000);
+      o.innerHTML = `<a href="${dest}" style="display:inline-block;padding:10px 14px;border-radius:12px;font-size:13px;font-weight:800;color:var(--brand);text-decoration:none;background:rgba(255,255,255,.7)">${pago ? '🍽️ ' + (K ? T('back') : T('newOrder')) : T('notYours') + ' <u>' + T('seeMenu') + '</u>'} →</a>`;
     }
     document.getElementById('foot').textContent = T('secure');
     langSeletor(document.getElementById('langs'));
