@@ -224,7 +224,7 @@
         n++;
         let r = null;
         try { const x = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ n: N }) }); r = await x.json(); if (!x.ok) throw new Error(r.erro || 'Erro'); }
-        catch (e) { app.innerHTML = `<div class="spin">${T('nfcBad')}<br><span style="font-weight:500;font-size:12px">No Dio´Stock: Balcão → Pagamentos → Etiqueta NFC da loja → Copiar, e grave esse link na etiqueta.</span></div>`; return; }
+        catch (e) { app.innerHTML = `<div class="spin">${T('nfcBad')}<br><span style="font-weight:500;font-size:12px">No Dio’Stock: Balcão → Pagamentos → Etiqueta NFC da loja → Copiar, e grave esse link na etiqueta.</span></div>`; return; }
         if (!info) { info = { loja: r.loja, marca: r.marca, teste: false }; marca(); }
         if (r.t) { TK = r.t; history.replaceState(null, '', location.pathname + '?t=' + TK + '&n=' + N + (new URLSearchParams(location.search).get('k') === '1' ? '&k=1' : '')); info = null; return start(); }
         return location.replace('pedir.html?n=' + N + (new URLSearchParams(location.search).get('k') === '1' ? '&k=1' : ''));
