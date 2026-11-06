@@ -22,6 +22,30 @@
   const instalado = window.matchMedia && matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const podePush = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
+  // pedido de autorização logo no toque de "Pagar"/"Enviar" (o navegador só deixa pedir num toque)
+  window.pedirPermissaoAvisos = function () {
+    acordar();
+    try {
+      if (!podePush) return null;
+      if (Notification.permission !== 'default') return Promise.resolve(Notification.permission);
+      return Notification.requestPermission();
+    } catch (_) { return null; }
+  };
+  // depois de o pedido existir: liga o aviso "pedido pronto" a este telemóvel
+  window.subscreverAvisos = async function (a, perm) {
+    try {
+      if ((await perm) !== 'granted') return false;
+      const r = await post({ acao: 'estado', a });
+      if (!r.vapid) return false;
+      const reg = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(r.vapid) });
+      await post({ acao: 'push', a, sub: sub.toJSON(), lang: window.LANG || 'pt' });
+      return true;
+    } catch (_) { return false; }
+  };
+
   // modo quiosque (tablet da loja): só mostra um QR para o cliente seguir o pedido no próprio telemóvel
   window.acompanharQR = function (el, a) {
     if (!el || !a || typeof qrcode !== 'function') return;

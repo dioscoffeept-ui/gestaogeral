@@ -128,7 +128,7 @@
         if (!its.length) return '';
         return `<p class="sec">${esc(g === 'Outros' ? T('others') : g)}</p>` + its.map(m => { const q = qtdDe(m.id), esg = m.restam === 0, pouco = m.restam != null && m.restam > 0 && m.restam <= 3; return `<button type="button" class="item ${esg ? 'esg' : ''}" ${esg ? 'disabled' : ''} onclick="tocar('${m.id}')">
           <span class="ph" style="${m.foto ? `background-image:url('${esc(m.foto)}')` : ''}">${m.foto ? '' : (m.tipo === 'KITCHEN' ? '🍽️' : '☕')}</span>
-          <span class="tx"><b>${esc(m.nome)}${(m.alerg || []).map(k => `<i class="algb" title="${T('al_' + k)}">${ALG_L[k] || '?'}</i>`).join('')}</b>${m.desc ? `<p>${esc(m.desc)}</p>` : ''}<span class="pr">${eur(m.preco)}${m.vars.length ? ' <span style="color:var(--mut);font-weight:600;font-size:12px">· ' + T('options') + '</span>' : ''}</span></span>
+          <span class="tx"><b>${esc(m.nome)}${(m.alerg || []).map(k => `<i class="algb" title="${T('al_' + k)}">${ALG_L[k] || '?'}</i>`).join('')}</b>${m.desc ? `<p>${esc(m.desc)}</p>` : ''}<span class="pr">${eur(m.preco)}</span></span>
           ${esg ? `<span class="tag">${T('soldOut')}</span>` : q ? `<span class="q">${q}</span>` : '<span class="add">+</span>'}${pouco && !esg ? `<span class="tag pouco">${T('leftN')} ${m.restam}</span>` : ''}</button>`; }).join('');
       }).join('') + legalHtml();
       barra();
@@ -227,10 +227,13 @@
       if (dados.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(dados.email)) return desenharCarrinho(T('badEmail2'));
       // só o nome e o email ficam lembrados; o NIF é escolhido em cada pedido (é sempre opcional)
       if (!K) try { localStorage.setItem('ds_cliente', JSON.stringify({ nome: dados.nome, email: dados.email })); } catch (_) {}
+      // pede já a autorização de avisos (tem de ser no toque do botão); a subscrição é feita quando o pedido existir
+      const perm = K ? null : pedirPermissaoAvisos();
       const b = document.getElementById(modo === 'balcao' ? 'f-bal' : 'f-ok'); b.disabled = true; b.textContent = modo === 'balcao' ? '…' : T('preparingPay');
       try {
         const r = await post(FN, { n: N, acao: 'pedir', pagar: modo === 'balcao' ? 'balcao' : 'agora', gorjeta_cent: 0, itens: cart.map(c => ({ id: c.id, key: c.key, qty: c.qty })), nome: dados.nome, nif: dados.nif, nome_fatura: dados.nomeFat, email: dados.email, nota: dados.nota });
         cart = []; guardar(); gorj = { pct: 0, cent: 0 };
+        if (perm && r.a) { const sub = subscreverAvisos(r.a, perm); if (!r.balcao) await Promise.race([sub, new Promise(ok => setTimeout(ok, 4000))]); }
         if (r.balcao) return enviado(r);
         location.href = 'pagar.html?t=' + r.t + '&n=' + N + (K ? '&k=1' : '');
       } catch (e) {
