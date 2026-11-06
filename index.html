@@ -836,6 +836,13 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         .onl-recusar { display: block; width: 100%; margin-top: 6px; padding: 8px; border-radius: 12px; font-size: 12px; font-weight: 800; color: #b91c1c; background: transparent; }
         .onl-recusar:hover { background: #fef2f2; }
     </style>
+
+    <style>
+        .alg-chip { padding: 5px 10px; border-radius: 99px; border: 1px solid #e2e8f0; background: #fff; font-size: 12px; font-weight: 700; color: #475569; }
+        .alg-chip.on { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+        html.dark .alg-chip { background: transparent; color: #cbd5e1; border-color: #334155; }
+        html.dark .alg-chip.on { background: #78350f; color: #fde68a; border-color: #b45309; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -916,7 +923,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 11:23</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 06/11/2026 11:45</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -13396,6 +13403,64 @@ var qrcode = function() {
                 });
                 return r;
             };
+        })();
+    </script>
+
+    <script>
+        // ======================================================= ALERGÉNIOS + DADOS LEGAIS
+        const ALERGENIOS = [['gluten', 'Glúten', '🌾'], ['crustaceos', 'Crustáceos', '🦐'], ['ovos', 'Ovos', '🥚'], ['peixe', 'Peixe', '🐟'], ['amendoim', 'Amendoins', '🥜'], ['soja', 'Soja', '🫘'], ['leite', 'Leite', '🥛'],
+            ['frutos', 'Frutos de casca rija', '🌰'], ['aipo', 'Aipo', '🥬'], ['mostarda', 'Mostarda', '🟡'], ['sesamo', 'Sésamo', '⚪'], ['sulfitos', 'Sulfitos', '🍷'], ['tremoco', 'Tremoço', '🫛'], ['moluscos', 'Moluscos', '🐚']];
+        (function () {
+            const pvp = document.getElementById('recipe-pvp');
+            const grid = pvp && pvp.closest('.grid');
+            if (grid) grid.insertAdjacentHTML('afterend', `<div id="alg-box" class="rounded-2xl border border-slate-200 p-3">
+                <div class="flex items-center justify-between gap-2 mb-2"><label class="text-xs font-bold text-slate-600 uppercase">Alergénios <span class="normal-case font-semibold text-slate-400">(obrigatório por lei; aparece no menu do cliente)</span></label>
+                <label class="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer shrink-0"><input type="checkbox" id="alg-nenhum" class="rounded"> Não contém</label></div>
+                <div id="alg-chips" class="flex flex-wrap gap-1.5">${ALERGENIOS.map(([k, n, e]) => `<button type="button" class="alg-chip" data-k="${k}" onclick="this.classList.toggle('on');document.getElementById('alg-nenhum').checked=false">${e} ${n}</button>`).join('')}</div>
+                <p class="text-[10px] text-slate-400 mt-2">Marque os que o produto contém (também os vestígios). Se não marcar nada nem "Não contém", o cliente é avisado para perguntar no balcão.</p></div>`);
+            const nen = document.getElementById('alg-nenhum');
+            if (nen) nen.addEventListener('change', () => { if (nen.checked) document.querySelectorAll('.alg-chip.on').forEach(b => b.classList.remove('on')); });
+            const pintar = lista => {
+                document.querySelectorAll('.alg-chip').forEach(b => b.classList.toggle('on', Array.isArray(lista) && lista.includes(b.dataset.k)));
+                if (nen) nen.checked = Array.isArray(lista) && !lista.length;
+            };
+            const oOpen = openRecipeModal;
+            openRecipeModal = function () { const r = oOpen.apply(this, arguments); pintar(null); return r; };
+            const oEdit = editRecipe;
+            editRecipe = function (id) { const r = oEdit.apply(this, arguments); const rc = appState.recipes.find(x => x.id === id); pintar(rc ? rc.alergenios : null); return r; };
+            const oSave = saveRecipe;
+            saveRecipe = function (e) {
+                const id = document.getElementById('recipe-id').value, nome = document.getElementById('recipe-name').value.trim();
+                const sel = [...document.querySelectorAll('.alg-chip.on')].map(b => b.dataset.k);
+                const lista = sel.length ? sel : (nen && nen.checked ? [] : null);
+                const antes = new Set(appState.recipes.map(r => r.id));
+                const prev = id ? (appState.recipes.find(r => r.id === id) || {}) : {};
+                const r = oSave.apply(this, arguments);
+                const rc = id ? appState.recipes.find(x => x.id === id) : (appState.recipes.find(x => !antes.has(x.id)) || appState.recipes.find(x => x.name === nome));
+                if (rc) { if (lista) rc.alergenios = lista; else delete rc.alergenios; saveStorage(); }
+                return r;
+            };
+            // Configurações → Empresa: dados legais que aparecem no menu online
+            const box = document.getElementById('set-plano-box');
+            if (box) box.insertAdjacentHTML('afterend', `<div id="set-legal" class="rounded-2xl border border-slate-200 p-4 space-y-2">
+                <p class="text-xs font-bold text-slate-600 uppercase">Dados legais da loja <span class="normal-case font-semibold text-slate-400">— aparecem no fundo do menu online (obrigatório por lei)</span></p>
+                <div class="grid sm:grid-cols-2 gap-2">
+                    <input id="lg-nome" placeholder="Nome legal (ex.: Giovani Machado ou Dio's Coffee, Lda.)" class="rounded-xl border-slate-300 text-sm">
+                    <input id="lg-nif" placeholder="NIF" inputmode="numeric" maxlength="9" class="rounded-xl border-slate-300 text-sm">
+                    <input id="lg-morada" placeholder="Morada do estabelecimento" class="rounded-xl border-slate-300 text-sm sm:col-span-2">
+                    <input id="lg-contacto" placeholder="Email ou telefone para clientes" class="rounded-xl border-slate-300 text-sm sm:col-span-2">
+                </div>
+                <p id="lg-ok" class="text-[11px] text-slate-400">Guarda sozinho. No menu aparecem também o Livro de Reclamações, a entidade de litígios e a informação de IVA.</p></div>`);
+            const campos = ['nome', 'nif', 'morada', 'contacto'];
+            const encher = () => { const L = (appState.perfil && appState.perfil.legal) || {}; campos.forEach(c => { const el = document.getElementById('lg-' + c); if (el && document.activeElement !== el) el.value = L[c] || ''; }); };
+            let h = null;
+            campos.forEach(c => { const el = document.getElementById('lg-' + c); if (el) el.addEventListener('input', () => {
+                appState.perfil = appState.perfil || {}; const L = appState.perfil.legal = appState.perfil.legal || {};
+                L[c] = el.value.trim(); clearTimeout(h); h = setTimeout(() => { saveStorage(); const ok = document.getElementById('lg-ok'); if (ok) { ok.textContent = '✓ Guardado'; setTimeout(() => ok.textContent = 'Guarda sozinho. No menu aparecem também o Livro de Reclamações, a entidade de litígios e a informação de IVA.', 1500); } }, 600);
+            }); });
+            if (typeof openSettings === 'function') { const oS = openSettings; openSettings = function () { const r = oS.apply(this, arguments); setTimeout(encher, 50); return r; }; }
+            document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-pane="empresa"], [onclick*="Settings"]')) setTimeout(encher, 80); });
+            setTimeout(encher, 1500);
         })();
     </script>
 </body>

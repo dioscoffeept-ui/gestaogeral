@@ -65,6 +65,9 @@
   .banner { display: none; margin: 0 0 12px; padding: 12px 14px; border-radius: 16px; background: var(--ink); color: #fff; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; }
   .banner.on { display: flex; } .banner button { background: #fff; color: var(--ink); padding: 8px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; white-space: nowrap; }
   .empty { text-align: center; color: var(--mut); padding: 50px 16px; font-weight: 600; font-size: 14px; line-height: 1.5; }
+  .alg { margin: 3px 0 0 !important; font-size: 11px !important; color: #b45309 !important; font-weight: 600; }
+  .legal { margin: 26px 2px 110px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 11px; line-height: 1.5; color: #64748b; }
+  .legal p { margin: 0 0 6px; } .legal a { color: inherit; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -124,10 +127,21 @@
         if (!its.length) return '';
         return `<p class="sec">${esc(g === 'Outros' ? T('others') : g)}</p>` + its.map(m => { const q = qtdDe(m.id), esg = m.restam === 0, pouco = m.restam != null && m.restam > 0 && m.restam <= 3; return `<button type="button" class="item ${esg ? 'esg' : ''}" ${esg ? 'disabled' : ''} onclick="tocar('${m.id}')">
           <span class="ph" style="${m.foto ? `background-image:url('${esc(m.foto)}')` : ''}">${m.foto ? '' : (m.tipo === 'KITCHEN' ? '🍽️' : '☕')}</span>
-          <span class="tx"><b>${esc(m.nome)}</b>${m.desc ? `<p>${esc(m.desc)}</p>` : ''}<span class="pr">${eur(m.preco)}${m.vars.length ? ' <span style="color:var(--mut);font-weight:600;font-size:12px">· ' + T('options') + '</span>' : ''}</span></span>
+          <span class="tx"><b>${esc(m.nome)}</b>${m.desc ? `<p>${esc(m.desc)}</p>` : ''}${Array.isArray(m.alerg) ? `<p class="alg">${m.alerg.length ? '⚠️ ' + T('contains') + ': ' + m.alerg.map(k => T('al_' + k)).join(', ') : T('noAlg')}</p>` : ''}<span class="pr">${eur(m.preco)}${m.vars.length ? ' <span style="color:var(--mut);font-weight:600;font-size:12px">· ' + T('options') + '</span>' : ''}</span></span>
           ${esg ? `<span class="tag">${T('soldOut')}</span>` : q ? `<span class="q">${q}</span>` : '<span class="add">+</span>'}${pouco && !esg ? `<span class="tag pouco">${T('leftN')} ${m.restam}</span>` : ''}</button>`; }).join('');
-      }).join('');
+      }).join('') + legalHtml();
       barra();
+    }
+    function legalHtml() {
+      const L = data.legal || {}, loja = L.nome || data.loja || '';
+      const linha = [L.nome, L.nif ? 'NIF ' + L.nif : '', L.morada, L.contacto].filter(Boolean).map(esc).join(' · ');
+      return `<div class="legal">
+        <p>${T('algNote')}</p>
+        <p>${data.ivaIsento ? T('vatExempt') : T('vatIncl')}</p>
+        ${linha ? `<p>${linha}</p>` : ''}
+        <p>${esc(T('privacyTx').replace('{loja}', loja))}</p>
+        <p><a href="https://www.livroreclamacoes.pt/Inicio/" target="_blank" rel="noopener">📕 ${T('complaints')}</a> · ${T('disputes')}</p>
+      </div>`;
     }
     function total() { return Math.round(cart.reduce((a, c) => a + c.preco * c.qty, 0) * 100) / 100; }
     function barra() {
