@@ -972,6 +972,32 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         #pos-dv-bar b { font-size: 15px; }
         .pay-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; padding: 3px 9px; border-radius: 99px; white-space: nowrap; }
     </style>
+
+    <style>
+        #est-scr{position:fixed;inset:0;z-index:70;background:#F3EFE8;display:none;flex-direction:column}
+        #est-scr.on{display:flex}
+        #est-scr .est-top{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding:.75rem 1rem;background:#24150E;color:#fff}
+        #est-scr .est-top h2{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;font-size:1.25rem;margin-right:auto}
+        #est-scr .chip{padding:.45rem .9rem;border-radius:999px;font-weight:800;font-size:.85rem;border:2px solid #ffffff55;color:#fff;background:transparent}
+        #est-scr .chip.on{background:#fff;color:#24150E;border-color:#fff}
+        #est-scr .opt{display:flex;align-items:center;gap:.35rem;font-size:.8rem;font-weight:700;opacity:.9}
+        #est-grid{flex:1;overflow:auto;padding:1rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;align-content:start}
+        .est-t{background:#fff;border-radius:18px;border:2px solid #E4DCCF;display:flex;flex-direction:column;overflow:hidden}
+        .est-t header{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;padding:.7rem .9rem;border-bottom:1px solid #EEE7DC}
+        .est-t header b{font-size:1.1rem;font-weight:900;color:#24150E}
+        .est-t header span{font-size:.8rem;font-weight:800;color:#64748b;white-space:nowrap}
+        .est-t.t10{border-color:#F59E0B}.est-t.t10 header span{color:#B45309}
+        .est-t.t20{border-color:#DC2626}.est-t.t20 header span{color:#DC2626}
+        .est-t ul{list-style:none;margin:0;padding:.6rem .9rem;flex:1}
+        .est-t li{display:flex;gap:.6rem;font-size:1.15rem;font-weight:800;color:#1e293b;padding:.2rem 0}
+        .est-t li i{font-style:normal;min-width:2.2rem;color:#24150E}
+        .est-t li.neg{color:#DC2626;text-decoration:line-through}
+        .est-t .est-tag{font-size:.7rem;font-weight:900;padding:.1rem .45rem;border-radius:6px;background:#FEF3C7;color:#92400E;margin-left:.4rem}
+        .est-t footer{display:flex;gap:.5rem;padding:.6rem .9rem;border-top:1px solid #EEE7DC}
+        .est-t footer button{border-radius:12px;font-weight:900;padding:.75rem;font-size:1rem}
+        .est-vazio{grid-column:1/-1;text-align:center;color:#64748b;font-weight:700;padding:4rem 1rem}
+        #balcao-vendas-card{margin-bottom:0}
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1052,7 +1078,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 19:06</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 19:19</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -14485,6 +14511,292 @@ var qrcode = function() {
                 });
                 return r;
             };
+        })();
+    </script>
+
+    <script>
+        // ======================================================= 1. "VENDIDO" DENTRO DE VENDAS DO DIA
+        (function () {
+            try { if (localStorage.getItem('ds_bal_view') === 'vendas') localStorage.setItem('ds_bal_view', 'registar'); } catch (_) {}
+            const vend = document.getElementById('balcao-vendas'), sales = document.getElementById('tab-sales');
+            if (vend && sales) {
+                const card = document.createElement('div');
+                card.id = 'balcao-vendas-card';
+                card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3';
+                card.innerHTML = '<div class="flex items-center gap-3"><div class="p-2.5 text-white rounded-xl shadow-sm" style="background:var(--brand)"><i class="fas fa-cash-register text-lg"></i></div><div><h2 class="text-xl font-black text-slate-900">Pedidos do balcão</h2><p class="text-xs text-slate-500 font-medium">Tudo o que foi cobrado no Balcão e nas mesas, com a forma de pagamento e a fatura.</p></div></div>';
+                vend.parentNode.removeChild(vend);
+                vend.classList.remove('hidden');
+                card.appendChild(vend);
+                sales.insertBefore(card, sales.firstChild);
+            }
+            const b = document.querySelector('.bal-view[data-v="vendas"]'); if (b) b.remove();
+            const oV = balView;
+            balView = function (v) {
+                if (v === 'vendas') { switchTab('sales'); return; }
+                const r = oV.apply(this, arguments);
+                const el = document.getElementById('balcao-vendas'); if (el) el.classList.remove('hidden');
+                return r;
+            };
+            const oT = switchTab;
+            switchTab = function (t) {
+                const r = oT.apply(this, arguments);
+                if (t === 'sales') { const el = document.getElementById('balcao-vendas'); if (el) el.classList.remove('hidden'); try { balRender(); } catch (_) {} }
+                return r;
+            };
+        })();
+
+        // ======================================================= 2. MESAS: TROCAR SEM PERGUNTAS
+        function msGuardarQuieto() {
+            if (!posMesa) return null;
+            const m = msLista().find(x => x.id === posMesa); if (!m) { posMesa = null; return null; }
+            try { if (typeof posKeyVal === 'function' && posKeyVal() > 0) posKeyAdd(true); } catch (_) {}
+            m.itens = JSON.parse(JSON.stringify(posCart));
+            if (m.itens.length && !m.desde) m.desde = new Date().toISOString();
+            if (!m.itens.length) m.desde = null;
+            estEnviarMesa(m);
+            saveStorage();
+            return m;
+        }
+        msAbrir = function (id) {
+            const m = msLista().find(x => x.id === id); if (!m) return;
+            if (posMesa === id) { balView('registar'); posRenderCart(); posRenderGrid(); return; }
+            let juntar = [];
+            if (posMesa) { const a = msGuardarQuieto(); if (a && a.itens.length) dsToast(msLabel(a) + ' guardada · ' + eur2(msTotal(a))); }
+            else if (posCart.length) juntar = posCart;   // pedido solto vai para a mesa tocada
+            posCart = JSON.parse(JSON.stringify(m.itens || []));
+            juntar.forEach(it => { const ex = posCart.find(c => c.recId === it.recId && c.key === it.key && c.name === it.name && c.price === it.price); if (ex) ex.qty = Math.round((ex.qty + it.qty) * 1000) / 1000; else posCart.push(it); });
+            posMesa = id;
+            balView('registar'); posRenderCart(); posRenderGrid();
+            try { if (window.innerWidth < 1024 && posCart.length) posCartOpen(); } catch (_) {}
+        };
+        (function () {
+            const oG = msGuardar;
+            msGuardar = function () { const m = posMesa && msLista().find(x => x.id === posMesa); if (m) { m.itens = JSON.parse(JSON.stringify(posCart)); estEnviarMesa(m); } return oG.apply(this, arguments); };
+            msSair = function () { const m = msGuardarQuieto(); posMesa = null; posCart = []; try { posCartClose(); } catch (_) {} posRenderCart(); posRenderGrid(); if (m && m.itens.length) dsToast(msLabel(m) + ' guardada · ' + eur2(msTotal(m))); balView('mesas'); };
+            // ir à lista de mesas com uma mesa aberta: guarda sozinho
+            const oV = balView;
+            balView = function (v) {
+                if (v === 'mesas' && posMesa) { const m = msGuardarQuieto(); posMesa = null; posCart = []; try { posCartClose(); } catch (_) {} try { posRenderCart(); posRenderGrid(); } catch (_) {} if (m && m.itens.length) dsToast(msLabel(m) + ' guardada · ' + eur2(msTotal(m))); }
+                return oV.apply(this, arguments);
+            };
+        })();
+
+        // ======================================================= 3. ECRÃS DE PREPARAÇÃO (BAR / COZINHA / ...)
+        const EST_BASE = ['Bar', 'Cozinha', 'Balcão'];
+        function estLista() {
+            if (!Array.isArray(appState.estacoes) || !appState.estacoes.length) appState.estacoes = EST_BASE.slice();
+            return appState.estacoes;
+        }
+        function estDaFicha(r) { if (!r) return ''; return r.estacao || (r.type === 'KITCHEN' ? 'Cozinha' : 'Bar'); }
+        function estDoItem(c) {
+            if (!c || c.livre || c.recId === '__livre') return '';
+            const r = appState.recipes.find(x => x.id === c.recId);
+            return estDaFicha(r);
+        }
+        const estChave = c => (c.recId || '') + '|' + (c.key || '') + '|' + c.name;
+        // envia só o que ainda não foi enviado (diferença), agrupado por ecrã
+        function estEnviar(itens, enviados, origem, nota) {
+            const agora = {}, nomes = {};
+            itens.forEach(c => { const k = estChave(c); agora[k] = Math.round(((agora[k] || 0) + Number(c.qty || 0)) * 1000) / 1000; nomes[k] = c; });
+            const por = {};
+            new Set([...Object.keys(agora), ...Object.keys(enviados || {})]).forEach(k => {
+                const d = Math.round(((agora[k] || 0) - ((enviados || {})[k] || 0)) * 1000) / 1000;
+                if (!d) return;
+                const c = nomes[k] || { name: k.split('|').slice(2).join('|'), recId: k.split('|')[0], key: k.split('|')[1] };
+                const e = estDoItem(c); if (!e) return;
+                (por[e] = por[e] || []).push({ nome: c.name, qtd: d });
+            });
+            const treino = !!(typeof posFin === 'function' && posFin().treino);
+            Object.keys(por).forEach(e => estFila({ estacao: e, origem, itens: por[e], nota: nota || null, treino }));
+            return agora;
+        }
+        function estEnviarMesa(m) { m.enviados = estEnviar(m.itens || [], m.enviados || {}, msLabel(m)); if (!(m.itens || []).length) m.enviados = {}; }
+        // fila local: se a internet falhar, tenta de novo
+        function estFila(t) {
+            if (!t.itens.length) return;
+            let q = []; try { q = JSON.parse(localStorage.getItem('ds_est_fila') || '[]'); } catch (_) {}
+            q.push(Object.assign({ criado_em: new Date().toISOString() }, t));
+            try { localStorage.setItem('ds_est_fila', JSON.stringify(q.slice(-200))); } catch (_) {}
+            estDescarregar();
+        }
+        let estA_enviar = false;
+        async function estDescarregar() {
+            if (estA_enviar || !sb || !currentUser || !dataOwnerId) return;
+            let q = []; try { q = JSON.parse(localStorage.getItem('ds_est_fila') || '[]'); } catch (_) {}
+            if (!q.length) return;
+            estA_enviar = true;
+            try {
+                const { error } = await sb.from('pedidos_estacao').insert(q.map(t => Object.assign({ dono_id: dataOwnerId }, t)));
+                if (!error) { let r = []; try { r = JSON.parse(localStorage.getItem('ds_est_fila') || '[]'); } catch (_) {} try { localStorage.setItem('ds_est_fila', JSON.stringify(r.slice(q.length))); } catch (_) {} }
+            } catch (_) {}
+            estA_enviar = false;
+        }
+        setInterval(estDescarregar, 15000);
+
+        (function () {
+            // cobrar no balcão: o pedido vai para os ecrãs (o que a mesa já enviou não repete)
+            const oCk = posCheckout;
+            posCheckout = function () {
+                const split = typeof dvFila !== 'undefined' && dvFila;
+                const mesaId = posMesa, before = (appState.orders || []).length;
+                const itens = JSON.parse(JSON.stringify(posCart));
+                const m = mesaId ? msLista().find(x => x.id === mesaId) : null;
+                const ped = (appState.orders || []).filter(o => o.date === (appState.orders[0] || {}).date).length + 1;
+                const r = oCk.apply(this, arguments);
+                if ((appState.orders || []).length > before && !split) {
+                    const o = appState.orders[0] || {};
+                    const nota = o.cliente && o.cliente.nome ? o.cliente.nome : null;
+                    if (m) { estEnviar(itens, m.enviados || {}, msLabel(m), nota); m.enviados = {}; saveStorage(); }
+                    else estEnviar(itens, {}, 'Balcão · pedido ' + ped, nota);
+                }
+                return r;
+            };
+            // dividir a conta: envia tudo uma vez, antes de começar a cobrar as partes
+            if (typeof dvComecar === 'function') {
+                const oD = dvComecar;
+                dvComecar = function () {
+                    const mesaId = posMesa, itens = JSON.parse(JSON.stringify(posCart));
+                    const m = mesaId ? msLista().find(x => x.id === mesaId) : null;
+                    const r = oD.apply(this, arguments);
+                    if (typeof dvFila !== 'undefined' && dvFila) {
+                        if (m) { m.enviados = estEnviar(itens, m.enviados || {}, msLabel(m)); saveStorage(); }
+                        else estEnviar(itens, {}, 'Balcão · conta dividida');
+                    }
+                    return r;
+                };
+            }
+        })();
+
+        // ---- campo na ficha: para que ecrã / impressora vai
+        (function () {
+            const cat = document.getElementById('recipe-category');
+            const grid = cat && cat.closest('.grid');
+            if (!grid) return;
+            grid.insertAdjacentHTML('afterend', `<div><label class="block text-xs font-bold text-slate-600 uppercase mb-1">Vai para o ecrã / impressora</label>
+                <div class="flex gap-2"><select id="recipe-estacao" class="flex-1 rounded-xl border-slate-300 text-sm font-bold" onchange="estFichaMuda(this)"></select></div>
+                <p class="text-[11px] text-slate-500 mt-1">Quando este artigo for vendido, aparece neste ecrã (ex.: Cappuccino → Bar, Tosta → Cozinha).</p></div>`);
+            const tp = document.getElementById('recipe-type');
+            if (tp) tp.addEventListener('change', () => { const s = document.getElementById('recipe-estacao'); if (s && !s.dataset.mexido) estFichaOpcoes(tp.value === 'KITCHEN' ? 'Cozinha' : 'Bar'); });
+        })();
+        function estFichaOpcoes(sel) {
+            const s = document.getElementById('recipe-estacao'); if (!s) return;
+            const l = estLista().slice(); if (sel && !l.includes(sel)) l.push(sel);
+            s.innerHTML = l.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('') + '<option value="__nada">Nenhum (não vai a ecrã)</option><option value="__nova">+ Criar outro ecrã…</option>';
+            s.value = sel || l[0];
+        }
+        function estFichaMuda(s) {
+            s.dataset.mexido = '1';
+            if (s.value !== '__nova') return;
+            const n = (prompt('Nome do novo ecrã ou impressora (ex.: Esplanada, Pastelaria):') || '').trim().slice(0, 30);
+            if (n && !estLista().includes(n)) { estLista().push(n); saveStorage(); }
+            estFichaOpcoes(n || estLista()[0]); s.dataset.mexido = '1';
+        }
+        (function () {
+            const oO = openRecipeModal;
+            openRecipeModal = function (t) { const r = oO.apply(this, arguments); const s = document.getElementById('recipe-estacao'); if (s) delete s.dataset.mexido; estFichaOpcoes((t || 'BAR') === 'KITCHEN' ? 'Cozinha' : 'Bar'); return r; };
+            const oE = editRecipe;
+            editRecipe = function (id) {
+                const r = oE.apply(this, arguments);
+                const rec = appState.recipes.find(x => x.id === id), s = document.getElementById('recipe-estacao');
+                if (s) { s.dataset.mexido = '1'; if (rec && rec.estacao === '-') { estFichaOpcoes('Bar'); s.value = '__nada'; } else estFichaOpcoes(estDaFicha(rec)); }
+                return r;
+            };
+            const oS = saveRecipe;
+            saveRecipe = function (e) {
+                const id = document.getElementById('recipe-id').value, n0 = appState.recipes.length;
+                const s = document.getElementById('recipe-estacao'), v = s ? s.value : '';
+                const res = oS.apply(this, arguments);
+                const rec = id ? appState.recipes.find(x => x.id === id) : (appState.recipes.length > n0 ? appState.recipes[appState.recipes.length - 1] : null);
+                if (rec && v && v !== '__nova') { rec.estacao = v === '__nada' ? '-' : v; saveStorage(); }
+                return res;
+            };
+        })();
+        // "-" = a ficha não vai a nenhum ecrã
+        const _estDaFicha = estDaFicha;
+        estDaFicha = function (r) { if (r && r.estacao === '-') return ''; return _estDaFicha(r); };
+
+        // ---- o ecrã (tablet do bar, da cozinha...)
+        let estSel = 'Bar', estTimer = null, estVistos = new Set(), estPrimeira = true, estDados = [], estAudio = null;
+        function estCfg(k, v) { try { if (v === undefined) return localStorage.getItem('ds_est_' + k); localStorage.setItem('ds_est_' + k, v); } catch (_) {} return null; }
+        function estAbrir(nome) {
+            if (!document.getElementById('est-scr')) document.body.insertAdjacentHTML('beforeend', '<div id="est-scr" role="dialog" aria-label="Ecrã de preparação"><div class="est-top"></div><div id="est-grid"></div></div>');
+            estSel = nome || estCfg('sel') || estLista()[0];
+            try { estAudio = estAudio || new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+            document.getElementById('est-scr').classList.add('on');
+            try { document.getElementById('account-menu').classList.add('hidden'); } catch (_) {}
+            estVistos = new Set(); estPrimeira = true;
+            estTopo(); estBuscar();
+            clearInterval(estTimer); estTimer = setInterval(estBuscar, 4000);
+            try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(() => {}); } catch (_) {}
+        }
+        function estFechar() { clearInterval(estTimer); estTimer = null; const s = document.getElementById('est-scr'); if (s) s.classList.remove('on'); if (location.hash.startsWith('#ecra')) history.replaceState(null, '', location.pathname + location.search); }
+        function estTopo() {
+            const som = estCfg('som') !== '0', imp = estCfg('imp') === '1';
+            const chips = estLista().concat(['Todos']).map(e => `<button type="button" class="chip ${e === estSel ? 'on' : ''}" onclick="estEscolher('${escapeHtml(e).replace(/'/g, "\\'")}')">${escapeHtml(e)}</button>`).join('');
+            document.querySelector('#est-scr .est-top').innerHTML = `<h2><i class="fas fa-fire-burner mr-2"></i>Ecrã de preparação</h2>${chips}
+                <label class="opt"><input type="checkbox" ${som ? 'checked' : ''} onchange="estCfg('som',this.checked?'1':'0')"> Som</label>
+                <label class="opt"><input type="checkbox" ${imp ? 'checked' : ''} onchange="estCfg('imp',this.checked?'1':'0')"> Imprimir sozinho</label>
+                <button type="button" class="chip" onclick="estFechar()" aria-label="Fechar"><i class="fas fa-xmark"></i> Fechar</button>`;
+        }
+        function estEscolher(e) { estSel = e; estCfg('sel', e); estTopo(); estPintar(); }
+        async function estBuscar() {
+            if (!sb || !dataOwnerId) { estPintar('Entre na conta para ver os pedidos.'); return; }
+            estDescarregar();
+            const desde = new Date(Date.now() - 12 * 3600e3).toISOString();
+            const { data, error } = await sb.from('pedidos_estacao').select('*').eq('dono_id', dataOwnerId).eq('estado', 'novo').gte('criado_em', desde).order('criado_em', { ascending: true }).limit(120);
+            if (error) { estPintar('Sem ligação. A tentar de novo…'); return; }
+            estDados = data || [];
+            const meus = estDados.filter(t => estSel === 'Todos' || t.estacao === estSel);
+            const novos = meus.filter(t => !estVistos.has(t.id));
+            novos.forEach(t => estVistos.add(t.id));
+            if (!estPrimeira && novos.length) {
+                if (estCfg('som') !== '0') estBip();
+                if (estCfg('imp') === '1') estImprimir(novos);
+            }
+            estPrimeira = false;
+            estPintar();
+        }
+        function estBip() {
+            try { const a = estAudio; if (!a) return; if (a.state === 'suspended') a.resume();
+                [0, .18].forEach(d => { const o = a.createOscillator(), g = a.createGain(); o.frequency.value = 880; o.connect(g); g.connect(a.destination); g.gain.setValueAtTime(.25, a.currentTime + d); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + d + .15); o.start(a.currentTime + d); o.stop(a.currentTime + d + .16); });
+            } catch (_) {}
+        }
+        function estMin(t) { return Math.max(0, Math.floor((Date.now() - new Date(t.criado_em).getTime()) / 60000)); }
+        function estPintar(msg) {
+            const g = document.getElementById('est-grid'); if (!g) return;
+            if (msg) { g.innerHTML = `<p class="est-vazio">${escapeHtml(msg)}</p>`; return; }
+            const meus = estDados.filter(t => estSel === 'Todos' || t.estacao === estSel);
+            if (!meus.length) { g.innerHTML = `<p class="est-vazio"><i class="fas fa-mug-hot text-3xl mb-3 block"></i>Sem pedidos para ${escapeHtml(estSel === 'Todos' ? 'nenhum ecrã' : estSel)}.<br><span class="text-sm font-semibold">Os pedidos aparecem aqui sozinhos.</span></p>`; return; }
+            g.innerHTML = meus.map(t => { const mn = estMin(t); return `<article class="est-t ${mn >= 20 ? 't20' : mn >= 10 ? 't10' : ''}">
+                <header><b>${escapeHtml(t.origem || 'Pedido')}${t.treino ? '<span class="est-tag">TREINO</span>' : ''}${estSel === 'Todos' ? '<span class="est-tag" style="background:#E0E7FF;color:#3730A3">' + escapeHtml(t.estacao) + '</span>' : ''}</b><span>${mn ? 'há ' + mn + ' min' : 'agora'} · ${new Date(t.criado_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span></header>
+                <ul>${(t.itens || []).map(i => `<li class="${i.qtd < 0 ? 'neg' : ''}"><i>${i.qtd < 0 ? '−' + fmtQtdEst(-i.qtd) : fmtQtdEst(i.qtd) + '×'}</i><span>${escapeHtml(i.nome)}${i.qtd < 0 ? ' (retirar)' : ''}</span></li>`).join('')}</ul>
+                ${t.nota ? `<p class="px-4 pb-2 text-sm font-bold text-slate-600"><i class="fas fa-user mr-1"></i>${escapeHtml(t.nota)}</p>` : ''}
+                <footer><button type="button" onclick="estImprimirId('${t.id}')" class="bg-slate-100 text-slate-700" aria-label="Imprimir"><i class="fas fa-print"></i></button><button type="button" onclick="estPronto('${t.id}')" class="flex-1 text-white" style="background:#15803D"><i class="fas fa-check mr-1"></i>Pronto</button></footer></article>`; }).join('');
+        }
+        const fmtQtdEst = q => (Math.round(q * 100) / 100).toString().replace('.', ',');
+        async function estPronto(id) {
+            estDados = estDados.filter(t => t.id !== id); estPintar();
+            try { await sb.from('pedidos_estacao').update({ estado: 'pronto', pronto_em: new Date().toISOString() }).eq('id', id); } catch (_) {}
+        }
+        function estImprimirId(id) { const t = estDados.find(x => x.id === id); if (t) estImprimir([t]); }
+        function estImprimir(lista) {
+            const css = '@page{size:58mm auto;margin:2mm}body{font-family:Arial,sans-serif;width:54mm;margin:0;color:#000}h1{font-size:15px;margin:0 0 2px}p{margin:0 0 4px;font-size:11px}li{font-size:15px;font-weight:bold;margin:2px 0}ul{padding-left:0;list-style:none;margin:4px 0}hr{border:0;border-top:1px dashed #000;margin:6px 0}';
+            const html = lista.map(t => `<h1>${escapeHtml(t.estacao)} · ${escapeHtml(t.origem || '')}</h1><p>${new Date(t.criado_em).toLocaleString('pt-PT', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}${t.treino ? ' · TREINO' : ''}</p><ul>${(t.itens || []).map(i => `<li>${i.qtd < 0 ? 'RETIRAR ' + fmtQtdEst(-i.qtd) : fmtQtdEst(i.qtd) + 'x'} ${escapeHtml(i.nome)}</li>`).join('')}</ul>${t.nota ? '<p>' + escapeHtml(t.nota) + '</p>' : ''}<hr>`).join('');
+            let f = document.getElementById('est-print'); if (f) f.remove();
+            f = document.createElement('iframe'); f.id = 'est-print'; f.style.cssText = 'position:fixed;width:0;height:0;border:0;right:0;bottom:0';
+            document.body.appendChild(f);
+            const d = f.contentWindow.document; d.open(); d.write('<!doctype html><html><head><meta charset="utf-8"><style>' + css + '</style></head><body>' + html + '</body></html>'); d.close();
+            setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (_) {} }, 150);
+        }
+        (function () {
+            const menu = document.getElementById('account-menu');
+            const lig = menu && [...menu.querySelectorAll('button')].find(b => /ligAbrir/.test(b.getAttribute('onclick') || ''));
+            const html = '<button type="button" onclick="estAbrir()" class="menu-item"><i class="fas fa-fire-burner"></i> Ecrã do bar / cozinha</button>';
+            if (lig) lig.insertAdjacentHTML('afterend', html); else if (menu) menu.insertAdjacentHTML('beforeend', html);
+            // atalho para o tablet: ...#ecra=Cozinha
+            const abrirHash = () => { const m = location.hash.match(/^#ecra(?:=(.+))?$/); if (m && currentUser) estAbrir(m[1] ? decodeURIComponent(m[1]) : undefined); return !!m; };
+            window.addEventListener('hashchange', abrirHash);
+            let n = 0; const t = setInterval(() => { if (abrirHash() && currentUser || ++n > 40) clearInterval(t); }, 500);
         })();
     </script>
 </body>
