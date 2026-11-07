@@ -956,7 +956,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 14:21</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 14:42</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -1111,6 +1111,13 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                             <div class="ds-field"><label>Acessórios: tampa, autocolante (€)</label><input id="m-acess" type="number" step="0.01" min="0" value="0.08" oninput="dsMargin(true)"></div>
                         </div>
 
+
+                        <div class="ds-group">Custos do negócio</div>
+                        <div class="ds-fields">
+                            <div class="ds-field"><label>Taxa do pagamento (%)</label><input id="m-taxa" type="number" step="0.05" min="0" value="1.5" oninput="dsMargin(true)"><small>Terminal SumUp: 1,5% (plano sem mensalidade). Dinheiro: 0.</small></div>
+                            <div class="ds-field"><label>Custos fixos do período (€)</label><input id="m-fixos" type="number" step="1" min="0" value="0" oninput="dsMargin(true)"><small>Ex.: inscrição na feira, transporte, gás, Vendus.</small></div>
+                            <div class="ds-field"><label>Unidades vendidas no período</label><input id="m-unid" type="number" step="1" min="0" value="100" oninput="dsMargin(true)"><small>Os custos fixos são divididos por estas unidades.</small></div>
+                        </div>
                         <div class="ds-group">Retenção e purga do moinho</div>
                         <div class="ds-fields">
                             <div class="ds-field"><label>Retenção e purga na extração (%)</label><input id="m-ret" type="number" step="0.5" min="0" value="4" oninput="dsMargin(true)"><small>Café perdido no moinho e na purga, aplicado ao custo de produção.</small></div>
@@ -1132,6 +1139,12 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                             <div class="ds-line"><span>IVA retido</span><span id="r-iva"></span></div>
                         </div>
                         <div class="ds-profit"><span>Lucro bruto por unidade</span><span id="r-lucro"></span></div>
+                        <div class="ds-lines" style="margin-top:10px">
+                            <div class="ds-line"><span>Taxa do pagamento</span><span id="r-taxa"></span></div>
+                            <div class="ds-line"><span>Custos fixos por unidade</span><span id="r-fixo"></span></div>
+                        </div>
+                        <div class="ds-profit" id="r-liq-box" style="background:#0f172a;color:#fff"><span>Lucro líquido por unidade<small id="r-liqm" style="display:block;font-size:11px;font-weight:700;opacity:.75"></small></span><span id="r-lucroliq"></span></div>
+                        <p class="ds-pvp-hint" id="r-periodo"></p>
                         <p class="ds-pvp-hint" id="r-hint"></p>
                         <div class="ds-rule"><b>Regra de negócio:</b> uma cafetaria de especialidade saudável deve visar uma margem bruta acima de 65% para cobrir custos fixos elevados (renda, staff especializado) e garantir rentabilidade líquida.</div>
                     </div>
@@ -13719,11 +13732,11 @@ var qrcode = function() {
             if (r.numero) { dsToast('Fatura de teste ' + r.numero + ' emitida'); const o = { id: 'teste', fiscal: r }; appState.__vdTeste = o; vdPdfRaw(r.id); }
             else posWarnToast(r.erro || 'Falhou');
         }
-        function vdApagarTreino() {
+        async function vdApagarTreino() {
             const l = (appState.orders || []).filter(o => o.treino); if (!l.length) return;
             if (!confirm('Anular os ' + l.length + ' pedidos de treino? O estoque volta ao que estava e saem das vendas. Não há faturas envolvidas.')) return;
-            const oc = window.confirm; window.confirm = () => true;
-            try { l.forEach(o => { try { posCancelOrder(o.id); } catch (_) {} }); } finally { window.confirm = oc; }
+            const oc = window.confirm, od = dsDialog; window.confirm = () => true; dsDialog = () => Promise.resolve(true);
+            try { for (const o of l) { try { await posCancelOrder(o.id); } catch (_) {} } } finally { window.confirm = oc; dsDialog = od; }
             appState.orders = (appState.orders || []).filter(o => !o.treino); saveStorage();
             dsToast(l.length + ' pedidos de treino anulados'); vdPintar(); try { posTodayCount(); } catch (_) {}
         }
@@ -13750,13 +13763,26 @@ var qrcode = function() {
                 });
                 return r;
             };
-            // anular um pedido com fatura: avisa que a fatura se anula no Vendus (nota de crédito)
+            // anular um pedido com fatura: o Dio'Stock emite a nota de crédito no Vendus e só depois anula o pedido
             const oCancel = posCancelOrder;
-            posCancelOrder = function (id) {
-                const o = (appState.orders || []).find(x => x.id === id);
-                if (o && o.fiscal && o.fiscal.numero && o.fiscal.modo !== 'tests') alert('Este pedido tem a fatura ' + o.fiscal.numero + '.\n\nO estoque volta ao que estava, mas a fatura não desaparece: para a anular emita uma Nota de Crédito no Vendus (Documentos → ' + o.fiscal.numero + ' → Nota de crédito).');
-                if (o && o.fiscal && o.fiscal.pendente) o.anulado = true;
-                return oCancel.apply(this, arguments);
+            posCancelOrder = async function (id) {
+                const o = (appState.orders || []).find(x => x.id === id); if (!o) return;
+                if (o.fiscal && o.fiscal.pendente && !o.fiscal.numero) o.anulado = true;
+                if (!(o.fiscal && o.fiscal.numero)) return oCancel.apply(this, arguments);
+                const teste = o.fiscal.modo === 'tests';
+                const motivo = await dsDialog({ title: 'Anular o pedido de ' + eur2(o.total) + '?', icon: 'fa-rotate-left', danger: true, ok: 'Anular e emitir nota de crédito',
+                    msg: 'A fatura ' + o.fiscal.numero + (teste ? ' (teste)' : '') + ' vai ser anulada com uma nota de crédito no Vendus' + (teste ? '' : ', comunicada às Finanças') + '. O estoque volta ao que estava. Motivo:',
+                    input: 'Devolução ao cliente' });
+                if (motivo === null || motivo === false || motivo === undefined) return;
+                dsToast('A emitir a nota de crédito…');
+                const r = await vdCall('anular', { id: o.fiscal.id, modo: o.fiscal.modo, motivo: (typeof motivo === 'string' && motivo.trim()) || 'Anulação do pedido' });
+                if (!r || !r.numero) return posWarnToast('Não foi anulado: ' + ((r && r.erro) || 'sem resposta do Vendus') + '. Tente de novo.');
+                appState.notasCredito = [{ numero: r.numero, id: r.id, modo: r.modo, fatura: o.fiscal.numero, total: o.total, em: r.em, motivo: String(motivo || '') }].concat(appState.notasCredito || []).slice(0, 500);
+                const oc = window.confirm, od = dsDialog; window.confirm = () => true; dsDialog = () => Promise.resolve(true);
+                try { await oCancel.call(this, id); } finally { window.confirm = oc; dsDialog = od; }
+                saveStorage();
+                dsToast('Nota de crédito ' + r.numero + (r.modo === 'tests' ? ' (teste)' : '') + ' emitida · pedido anulado');
+                try { const box = document.getElementById('pos-today'); if (box && !box.classList.contains('hidden')) { posTodayToggle(); posTodayToggle(); } } catch (_) {}
             };
             posFinancasInfo = function () {
                 if (vdState && vdState.disponivel) { payModalOpen(); return; }
@@ -13789,6 +13815,73 @@ var qrcode = function() {
                 if (g) {
                     g.classList.toggle('pos-lista', !!q);
                     if (q) g.querySelectorAll('.pos-item .tx b').forEach(b => marcar(b, q));
+                }
+                return r;
+            };
+        })();
+    </script>
+
+    <script>
+        (function () {
+            // ---- simulador: lucro líquido
+            const oM = dsMargin;
+            dsMargin = function (save) {
+                const r = oM.apply(this, arguments);
+                try {
+                    const n = id => { const el = document.getElementById(id); const v = el ? parseFloat(String(el.value).replace(',', '.')) : 0; return isFinite(v) && v > 0 ? v : 0; };
+                    const eur = v => v.toLocaleString('pt-PT', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + '€';
+                    const iva = n('m-iva') / 100, pvp = n('m-pvp'), liq = pvp / (1 + iva);
+                    const total = (n('m-cafe') * n('m-dose') / 1000 + n('m-leite') * n('m-ml') / 1000 + n('m-copo') + n('m-acess')) * (1 + n('m-ret') / 100);
+                    const bruto = liq - total, taxa = pvp * n('m-taxa') / 100, un = n('m-unid'), fixo = un ? n('m-fixos') / un : 0;
+                    const lq = bruto - taxa - fixo, mq = liq > 0 ? lq / liq * 100 : 0;
+                    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+                    set('r-taxa', '−' + eur(taxa)); set('r-fixo', '−' + eur(fixo)); set('r-lucroliq', eur(lq));
+                    set('r-liqm', 'margem líquida ' + mq.toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%');
+                    const box = document.getElementById('r-liq-box'); if (box) box.style.background = lq < 0 ? '#b91c1c' : '#0f172a';
+                    const p = document.getElementById('r-periodo');
+                    if (p) p.innerHTML = un ? `Com <b>${un}</b> unidades no período: lucro líquido de <b>${(lq * un).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</b>${n('m-fixos') ? ' (já pagos ' + n('m-fixos').toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '€ de custos fixos)' : ''}. Antes do IRS.` : '';
+                    if (save && appState && appState.simulador) setTimeout(() => { appState.simulador = appState.simulador || {}; ['m-taxa', 'm-fixos', 'm-unid'].forEach(id => appState.simulador[id] = document.getElementById(id).value); saveStorage(); }, 900);
+                } catch (_) {}
+                return r;
+            };
+            // repõe os valores guardados destes campos novos
+            setTimeout(() => { try { const s = appState && appState.simulador; if (s) ['m-taxa', 'm-fixos', 'm-unid'].forEach(id => { if (s[id] != null && document.getElementById(id)) document.getElementById(id).value = s[id]; }); dsMargin(false); } catch (_) {} }, 2500);
+
+            // ---- balcão: Dinheiro, Terminal (ou Cartão sem terminal) e MB WAY
+            function payArrumar() {
+                const tem = id => POS_PAY.findIndex(p => p[0] === id);
+                let i;
+                ['outro', 'qr', 'link'].forEach(x => { if ((i = tem(x)) >= 0) POS_PAY.splice(i, 1); });
+                const mb = tem('multibanco');
+                if (tem('sumup') >= 0) { if (mb >= 0) POS_PAY.splice(mb, 1); }
+                else if (mb >= 0) POS_PAY[mb] = ['multibanco', 'Cartão', 'fa-credit-card'];
+                const w = tem('mbway'); if (w >= 0 && w !== POS_PAY.length - 1) POS_PAY.push(POS_PAY.splice(w, 1)[0]);
+                if (!POS_PAY.some(p => p[0] === posPay) && !['stripe', 'online', 'qr', 'link'].includes(posPay)) posPay = POS_PAY[0][0];
+            }
+            payArrumar();
+            const oSu = suRefresh;
+            suRefresh = async function () { const r = await oSu.apply(this, arguments); payArrumar(); try { posRenderCart(); posPaybar && posPaybar(); } catch (_) {} return r; };
+            // MB WAY: gera o QR com o valor exato; o cliente lê, escolhe MB WAY e confirma no telemóvel
+            const oPagar = posPagar;
+            // com a Stripe em modo real: QR com o valor exato; sem ela, usa o QR fixo da loja (se existir)
+            const mbwDinamico = () => !!(payState && payState.ativo !== false && payState.teste === false) || !mbwQr();
+            posPagar = function () { if (posPay === 'mbway' && posCart.length && mbwDinamico()) return posPayQr(); return oPagar.apply(this, arguments); };
+            setTimeout(() => { try { if (typeof currentUser !== 'undefined' && currentUser && !payState) payRefresh(); } catch (_) {} }, 3500);
+            const oCk = posCheckout;
+            posCheckout = function () {
+                const quer = posPay === 'mbway', before = (appState.orders || []).length;
+                const r = oCk.apply(this, arguments);
+                if (quer && (appState.orders || []).length > before) { appState.orders[0].pay = 'mbway'; saveStorage(); }
+                return r;
+            };
+            const oCart = posRenderCart;
+            posRenderCart = function () {
+                const r = oCart.apply(this, arguments);
+                const box = document.getElementById('pos-cart');
+                if (box && posCart.length && posPay === 'mbway' && mbwDinamico()) {
+                    const fx = box.querySelector('#pos-mbw'); if (fx) fx.remove();
+                    const c = [...box.querySelectorAll('button')].find(x => (x.getAttribute('onclick') || '') === 'posPagar()');
+                    if (c) c.innerHTML = '<i class="fas fa-qrcode mr-1"></i> Cobrar ' + eur2(Math.round(posTotal() * 100) / 100) + ' · MB WAY (QR)';
                 }
                 return r;
             };
