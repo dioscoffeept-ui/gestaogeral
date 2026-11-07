@@ -1168,6 +1168,21 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         #est-grid .est-velhos { column-span: all; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #FEF3C7; color: #78350F; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; font-weight: 700; }
         #est-grid .est-velhos button { background: #fff; border-radius: 10px; padding: 7px 12px; font-weight: 800; color: #78350F; white-space: nowrap; }
     </style>
+
+    <style>
+        #est-grid .est-t li { cursor: pointer; border-radius: 10px; margin: 0 -.4rem; padding: .3rem .4rem; -webkit-tap-highlight-color: transparent; }
+        #est-grid .est-t li:hover { background: #F8F4EE; }
+        #est-grid .est-t li .ck { margin-left: auto; width: 26px; height: 26px; border-radius: 8px; border: 2px solid #D9CFC2; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; color: transparent; }
+        #est-grid .est-t li.ok { color: #94a3b8; }
+        #est-grid .est-t li.ok span:not(.ck) { text-decoration: line-through; }
+        #est-grid .est-t li.ok i { color: #94a3b8; }
+        #est-grid .est-t li.ok .ck { background: #15803D; border-color: #15803D; color: #fff; }
+        #est-grid .est-t .prog { font-size: .75rem; font-weight: 900; color: #15803D; background: #DCFCE7; border-radius: 6px; padding: .1rem .45rem; margin-left: .4rem; }
+        #est-grid .est-t.feito { opacity: .85; border-color: #BBF7D0; }
+        #est-scr .chip.feitos { border-style: dashed; }
+        #est-undo { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 72; background: #24150E; color: #fff; border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; box-shadow: 0 12px 30px -10px rgba(0,0,0,.5); max-width: calc(100vw - 32px); width: max-content; }
+        #est-undo button { background: #fff; color: #24150E; border-radius: 10px; padding: 7px 12px; font-weight: 900; white-space: nowrap; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1248,7 +1263,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:26</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:33</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -15543,6 +15558,94 @@ var qrcode = function() {
                 return r;
             };
         })();
+    </script>
+
+    <script>
+        let estVista = 'novos', estFeitos = [], estUndoT = null;
+        (function () {
+            // topo: mais um separador "Feitos"
+            const oT = estTopo;
+            estTopo = function () {
+                oT.apply(this, arguments);
+                const row = document.querySelector('#est-scr .est-chips'); if (!row) return;
+                if (estVista === 'feitos') row.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+                const l1 = document.querySelector('#est-scr .est-l1 .ib');
+                if (l1) l1.insertAdjacentHTML('beforebegin', `<button type="button" class="ib ${estVista === 'feitos' ? 'on' : ''}" aria-label="Pedidos feitos" title="Feitos (recuperar)" onclick="${estVista === 'feitos' ? "estEscolher(estSel)" : 'estVerFeitos()'}"><i class="fas fa-rotate-left"></i></button>`);
+                if (estVista === 'feitos') { const h = document.querySelector('#est-scr .est-l1 h2'); if (h) h.innerHTML = '<i class="fas fa-rotate-left mr-2"></i>Feitos'; }
+            };
+            const oE = estEscolher;
+            estEscolher = function () { const era = estVista; estVista = 'novos'; const r = oE.apply(this, arguments); if (era === 'feitos') estBuscar(); return r; };
+            // buscar: na vista Feitos, os prontos das últimas 3 h
+            const oB = estBuscar;
+            estBuscar = async function () {
+                if (estVista !== 'feitos') return oB.apply(this, arguments);
+                if (!sb || !dataOwnerId) return;
+                const desde = new Date(Date.now() - 3 * 3600e3).toISOString();
+                const { data, error } = await sb.from('pedidos_estacao').select('*').eq('dono_id', dataOwnerId).eq('estado', 'pronto').gte('pronto_em', desde).order('pronto_em', { ascending: false }).limit(60);
+                if (!error) estFeitos = data || [];
+                estPintar();
+            };
+            // pintar: artigos com visto; vista Feitos com "Voltar a abrir"
+            const oP = estPintar;
+            estPintar = function (msg) {
+                if (estVista === 'feitos' && !msg) {
+                    try { estTopo(); } catch (_) {}
+                    const g = document.getElementById('est-grid'); if (!g) return;
+                    const l = estFeitos;
+                    g.innerHTML = l.length ? l.map(t => `<article class="est-t feito"><header><b>${escapeHtml(t.origem || 'Pedido')}<span class="est-tag" style="background:#E0E7FF;color:#3730A3">${escapeHtml(t.estacao)}</span>${t.treino ? '<span class="est-tag">TREINO</span>' : ''}</b><span>feito às ${new Date(t.pronto_em || t.criado_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span></header>
+                        <ul>${(t.itens || []).map(i => `<li style="cursor:default"><i>${fmtQtdEst(Math.abs(i.qtd))}×</i><span>${escapeHtml(i.nome)}</span></li>`).join('')}</ul>
+                        <footer><button type="button" onclick="estReabrir('${t.id}')" class="flex-1 text-white" style="background:#24150E"><i class="fas fa-rotate-left mr-1"></i>Voltar a abrir</button></footer></article>`).join('')
+                        : '<p class="est-vazio">Nenhum pedido feito nas últimas 3 horas.</p>';
+                    return;
+                }
+                oP.apply(this, arguments);
+                document.querySelectorAll('#est-grid article.est-t').forEach(a => {
+                    const id = ((a.querySelector('footer button[onclick^="estPronto("]') || {}).getAttribute?.('onclick') || '').match(/estPronto\('([^']+)'\)/)?.[1];
+                    const t = id && estDados.find(x => x.id === id); if (!t) return;
+                    const lis = a.querySelectorAll('ul li');
+                    let ok = 0;
+                    lis.forEach((li, k) => {
+                        const it = (t.itens || [])[k]; if (!it) return;
+                        if (it.feito) { li.classList.add('ok'); ok++; }
+                        li.insertAdjacentHTML('beforeend', '<span class="ck" aria-hidden="true"><i class="fas fa-check" style="color:inherit;min-width:0"></i></span>');
+                        li.setAttribute('role', 'checkbox'); li.setAttribute('aria-checked', it.feito ? 'true' : 'false'); li.tabIndex = 0;
+                        li.onclick = () => estItem(id, k);
+                    });
+                    if (ok) { const b = a.querySelector('header b'); if (b) b.insertAdjacentHTML('beforeend', `<span class="prog">${ok}/${lis.length}</span>`); }
+                    if (ok && ok === lis.length) { const p = a.querySelector('footer button[onclick^="estPronto("]'); if (p) p.innerHTML = '<i class="fas fa-check-double mr-1"></i>Tudo saiu · Pronto'; }
+                });
+            };
+            // Pronto: aviso com "Desfazer"
+            const oPr = estPronto;
+            estPronto = async function (id) {
+                const t = estDados.find(x => x.id === id);
+                const r = await oPr.apply(this, arguments);
+                if (t) estUndo(t);
+                return r;
+            };
+        })();
+        async function estItem(id, k) {
+            const t = estDados.find(x => x.id === id); if (!t || !t.itens || !t.itens[k]) return;
+            t.itens[k].feito = !t.itens[k].feito;
+            estPintar();
+            try { await sb.from('pedidos_estacao').update({ itens: t.itens }).eq('id', id); } catch (_) {}
+        }
+        function estVerFeitos() { estVista = 'feitos'; estFeitos = []; estPintar(); estBuscar(); }
+        async function estReabrir(id) {
+            estFeitos = estFeitos.filter(t => t.id !== id); estPintar();
+            try { await sb.from('pedidos_estacao').update({ estado: 'novo', pronto_em: null }).eq('id', id); } catch (_) {}
+            dsToast('Pedido voltou a ficar aberto');
+        }
+        function estUndo(t) {
+            let u = document.getElementById('est-undo'); if (u) u.remove();
+            document.getElementById('est-scr').insertAdjacentHTML('beforeend', `<div id="est-undo" role="status"><span>${escapeHtml(t.origem || 'Pedido')} pronto</span><button type="button" onclick="estDesfazer('${t.id}')">Desfazer</button></div>`);
+            clearTimeout(estUndoT); estUndoT = setTimeout(() => { const x = document.getElementById('est-undo'); if (x) x.remove(); }, 7000);
+        }
+        async function estDesfazer(id) {
+            const x = document.getElementById('est-undo'); if (x) x.remove();
+            try { await sb.from('pedidos_estacao').update({ estado: 'novo', pronto_em: null }).eq('id', id); } catch (_) {}
+            estBuscar();
+        }
     </script>
 </body>
 </html>
