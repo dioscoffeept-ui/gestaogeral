@@ -1080,6 +1080,59 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         .ct-lnk i { width: 1.6rem; text-align: center; font-size: 1.2rem; color: var(--brand); }
         .ct-lnk small { display: block; font-weight: 600; color: #64748b; font-size: 12px; }
     </style>
+
+    <style>
+        #balcao-mesas .bal-card { background: #FBF8F3; border-color: #EEE6DA; }
+        .ms-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .ms-seg { display: inline-flex; background: #F1EAE0; border-radius: 999px; padding: 4px; gap: 2px; }
+        .ms-seg button { border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; color: #7A6A60; display: inline-flex; align-items: center; gap: 6px; }
+        .ms-seg button.on { background: #fff; color: #24150E; box-shadow: 0 1px 2px rgba(36,21,14,.08), 0 4px 12px -6px rgba(36,21,14,.18); }
+        .ms-seg button i { font-style: normal; font-size: 11px; font-weight: 800; background: #E7DDD0; color: #6B5A50; border-radius: 999px; padding: 1px 7px; }
+        .ms-seg button.on i { background: #FBEDE6; color: var(--brand); }
+        .ms-acts { display: flex; gap: 6px; }
+        .ms-acts button { border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+        .ms-acts .novo { background: #FBEDE6; color: var(--brand); }
+        .ms-acts .novo:hover { background: #F7E1D6; }
+        .ms-acts .ed { color: #7A6A60; }
+        .ms-acts .ed:hover { background: #F1EAE0; }
+        .ms-acts .ed.on { background: #24150E; color: #fff; }
+        .ms-resumo { font-size: 13px; color: #7A6A60; font-weight: 600; }
+        .ms-resumo b { color: #24150E; }
+        .ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 12px; }
+        .ms-t { position: relative; background: #fff; border: 1px solid #EEE6DA; border-radius: 22px; padding: 14px 14px 12px; min-height: 118px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; box-shadow: 0 1px 0 rgba(36,21,14,.03); transition: transform .12s ease, box-shadow .12s ease; }
+        .ms-t:hover { box-shadow: 0 10px 24px -16px rgba(36,21,14,.35); }
+        .ms-t:active { transform: scale(.98); }
+        .ms-t .n { font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -.02em; color: #24150E; word-break: break-word; }
+        .ms-t .d { display: block; margin-top: 4px; font-size: 12.5px; font-weight: 600; color: #7A6A60; line-height: 1.25; }
+        .ms-t .mesa-ico { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; }
+        .ms-t .mesa-ico::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; border: 2px solid #E7DDD0; }
+        .ms-t .mesa-ico span { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #E7DDD0; }
+        .ms-t .mesa-ico span:nth-child(1) { top: 0; left: 12px; } .ms-t .mesa-ico span:nth-child(2) { bottom: 0; left: 12px; }
+        .ms-t .mesa-ico span:nth-child(3) { left: 0; top: 12px; } .ms-t .mesa-ico span:nth-child(4) { right: 0; top: 12px; }
+        .ms-t .st { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; font-weight: 700; color: #4C8A62; }
+        .ms-t .st .dot { width: 7px; height: 7px; border-radius: 50%; background: #6FB28A; display: inline-block; margin-right: 6px; }
+        .ms-t .pp { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 999px; background: #F1EAE0; color: #5B4A40; font-size: 11.5px; font-weight: 800; }
+        .ms-t .pp:hover { background: #E7DDD0; }
+        .ms-t.ocup { background: linear-gradient(160deg, #FFF6F1 0%, #FBE9DF 100%); border-color: #F2D3C3; }
+        .ms-t.ocup::after { content: ''; position: absolute; left: 0; top: 18px; bottom: 18px; width: 4px; border-radius: 0 4px 4px 0; background: var(--brand); }
+        .ms-t.ocup .mesa-ico::before { border-color: #E9B9A2; } .ms-t.ocup .mesa-ico span { background: #E9B9A2; }
+        .ms-t.ocup .n { color: #24150E; } .ms-t.ocup .d { color: #9A6A55; }
+        .ms-t.ocup .tot { font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; font-weight: 800; color: var(--brand); line-height: 1; }
+        .ms-t.ocup .tm { font-size: 11.5px; font-weight: 700; color: #9A6A55; }
+        .ms-t.ocup .pp { background: #fff; color: var(--brand); }
+        .ms-t.longa::after { background: #D97706; }
+        .ms-t.longa .tm { color: #B45309; }
+        .ms-t.edit { border-style: dashed; }
+        .ms-t .del { position: absolute; top: 8px; right: 8px; width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #FBEDE6; color: #B91C1C; font-size: 12px; }
+        .ms-t.novo { border-style: dashed; background: transparent; align-items: center; justify-content: center; color: #7A6A60; font-weight: 700; font-size: 13px; text-align: center; box-shadow: none; }
+        .ms-vazio { text-align: center; padding: 36px 12px; }
+        .ms-vazio .mesa-big { width: 64px; height: 64px; margin: 0 auto 12px; position: relative; }
+        .ms-vazio .mesa-big::before { content: ''; position: absolute; inset: 14px; border-radius: 50%; border: 3px solid #E7DDD0; }
+        .ms-vazio .mesa-big span { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #E7DDD0; }
+        .ms-vazio .mesa-big span:nth-child(1) { top: 0; left: 26px; } .ms-vazio .mesa-big span:nth-child(2) { bottom: 0; left: 26px; }
+        .ms-vazio .mesa-big span:nth-child(3) { left: 0; top: 26px; } .ms-vazio .mesa-big span:nth-child(4) { right: 0; top: 26px; }
+        @media (max-width: 480px) { .ms-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } .ms-seg button { padding: 7px 11px; } }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1160,7 +1213,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 21:31</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:09</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -15206,6 +15259,48 @@ var qrcode = function() {
             el.innerHTML = it.length ? it.map(([k, n, ic]) => `<a class="ct-lnk" href="${escapeHtml(links[k])}" target="_blank" rel="noopener"><i class="${ic}"></i><span>${n}<small>${escapeHtml(links[k].replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''))}</small></span></a>`).join('')
                 : '<p class="text-sm text-slate-500 sm:col-span-2">As redes sociais do Dio’Stock chegam em breve.</p>';
         }
+    </script>
+
+    <script>
+        msRender = function () {
+            const box = document.getElementById('balcao-mesas'); if (!box) return;
+            const l = msLista(), z = l.filter(m => m.zona === msZona), pro = isPro();
+            const lim = pro ? Infinity : MS_LIM[msZona];
+            const min = t => Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 60000));
+            const fmt = m => m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0');
+            const ocup = l.filter(m => (m.itens || []).length), aberto = ocup.reduce((a, m) => a + msTotal(m), 0);
+            const ico = '<span class="mesa-ico" aria-hidden="true"><span></span><span></span><span></span><span></span></span>';
+            const pp = m => `<span class="pp" role="button" tabindex="0" aria-label="Pessoas na mesa" onclick="event.stopPropagation();ppAbrir('${m.id}')"><i class="fas fa-user-group"></i>${m.pessoas || '+'}</span>`;
+            box.innerHTML = `<div class="bal-card space-y-4">
+                <div class="ms-top">
+                    <div class="ms-seg" role="tablist">${MS_ZONAS.map(([k, n]) => { const c = l.filter(m => m.zona === k), oc = c.filter(m => (m.itens || []).length).length; return `<button type="button" role="tab" aria-selected="${k === msZona}" class="${k === msZona ? 'on' : ''}" onclick="msZona='${k}';msEditar=false;msRender()">${n}${oc ? `<i>${oc}</i>` : ''}</button>`; }).join('')}</div>
+                    <div class="ms-acts">
+                        ${msEditar ? '' : `<button type="button" class="novo" onclick="msEditor()"><i class="fas fa-plus"></i>${msZona === 'eventos' ? 'Mesa do evento' : 'Nova mesa'}</button>`}
+                        ${z.length ? `<button type="button" class="ed ${msEditar ? 'on' : ''}" onclick="msEditar=!msEditar;msRender()"><i class="fas ${msEditar ? 'fa-check' : 'fa-pen'}"></i>${msEditar ? 'Concluir' : 'Editar'}</button>` : ''}
+                    </div>
+                </div>
+                ${ocup.length ? `<p class="ms-resumo"><b>${ocup.length}</b> ${ocup.length === 1 ? 'mesa ocupada' : 'mesas ocupadas'} · <b>${eur2(aberto)}</b> por cobrar</p>` : ''}
+                ${!z.length && !msEditar ? `<div class="ms-vazio"><div class="mesa-big" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                    <p class="text-base font-black text-slate-800">${msZona === 'eventos' ? 'Ainda não há mesas para eventos' : 'Ainda não há mesas ' + (msZona === 'sala' ? 'na sala' : 'na esplanada')}</p>
+                    <p class="text-sm text-slate-500 mt-1 mb-5">${msZona === 'eventos' ? 'Mesas extra para dias de evento. Cada uma pode ter uma descrição (ex.: Renato e Cátia).' : 'Crie as mesas com os números que usa.'}</p>
+                    <button type="button" onclick="msCriarVarias()" class="px-5 py-3 rounded-full text-sm font-black text-white" style="background:var(--brand)">Criar mesas 1 a ${pro ? 10 : lim}</button>
+                    <button type="button" onclick="msEditor()" class="px-4 py-3 rounded-full text-sm font-bold text-slate-600 ml-1">Só uma</button></div>` : `
+                <div class="ms-grid">${z.map(m => {
+                    const t = msTotal(m), oc = (m.itens || []).length, mn = oc ? min(m.desde || new Date().toISOString()) : 0;
+                    const cls = ['ms-t', oc ? 'ocup' : '', oc && mn >= 60 ? 'longa' : '', msEditar ? 'edit' : ''].join(' ');
+                    return `<button type="button" class="${cls}" onclick="${msEditar ? `msEditor('${m.id}')` : `msAbrir('${m.id}')`}" aria-label="${escapeHtml(msLabel(m))}${oc ? ', ' + eur2(t) : ', livre'}">
+                        ${msEditar ? `<span class="del" role="button" aria-label="Apagar mesa" onclick="event.stopPropagation();msApagar('${m.id}')"><i class="fas fa-trash"></i></span>` : ico}
+                        <span><span class="n">${escapeHtml(m.nome)}</span>${m.desc ? `<span class="d">${escapeHtml(m.desc)}</span>` : ''}</span>
+                        ${msEditar ? '<span class="st" style="color:#7A6A60">Tocar para editar</span>'
+                            : oc ? `<span><span class="tot">${eur2(t)}</span><span class="st" style="margin-top:6px"><span class="tm">${fmt(mn)}</span>${pp(m)}</span></span>`
+                            : `<span class="st"><span><span class="dot"></span>Livre</span>${m.pessoas ? pp(m) : ''}</span>`}
+                    </button>`; }).join('')}
+                    ${z.length >= lim && !msEditar ? `<button type="button" class="ms-t novo" onclick="openUpgrade('pro', 'No plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos')"><i class="fas fa-crown text-lg mb-1"></i>Mais mesas com o PRO</button>` : ''}</div>`}
+                <p class="text-[11px] text-slate-400">${pro ? 'Plano PRO: mesas e eventos sem limite.' : 'Plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos.'} Toque numa mesa para abrir a conta. Toque nas pessoas para mudar o número.</p>
+            </div>`;
+        };
+        // atualiza os minutos das mesas abertas
+        setInterval(() => { try { const b = document.getElementById('balcao-mesas'); if (b && !b.classList.contains('hidden') && !msEditar && !document.querySelector('#pp-modal.on')) msRender(); } catch (_) {} }, 60000);
     </script>
 </body>
 </html>
