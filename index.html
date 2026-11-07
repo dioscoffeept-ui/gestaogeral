@@ -1183,6 +1183,19 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         #est-undo { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 72; background: #24150E; color: #fff; border-radius: 14px; padding: 10px 10px 10px 16px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; box-shadow: 0 12px 30px -10px rgba(0,0,0,.5); max-width: calc(100vw - 32px); width: max-content; }
         #est-undo button { background: #fff; color: #24150E; border-radius: 10px; padding: 7px 12px; font-weight: 900; white-space: nowrap; }
     </style>
+
+    <style>
+        /* Safari/iPhone: sem colunas (cortavam o cartão); lista simples que cresce para baixo */
+        #est-scr { height: 100dvh; }
+        #est-grid { display: flex !important; flex-wrap: wrap; align-content: flex-start; align-items: flex-start; gap: 14px; columns: auto !important; min-height: 0; -webkit-overflow-scrolling: touch; }
+        #est-grid > * { flex: 1 1 300px; max-width: 100%; }
+        #est-grid .est-velhos, #est-grid .est-vazio { flex-basis: 100%; }
+        #est-grid .est-t { margin: 0 !important; overflow: visible !important; height: auto !important; }
+        #est-grid .est-t header { display: block !important; }
+        #est-grid .est-t header b { display: block; }
+        #est-grid .est-t header > span { display: block; margin-top: 4px; }
+        #est-grid .est-t li .ck { text-decoration: none; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1263,7 +1276,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:33</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:39</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
