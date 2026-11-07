@@ -1160,7 +1160,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 20:47</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 21:08</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -1560,7 +1560,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <p class="text-xs text-slate-500 font-medium">Registe os pedidos e veja tudo o que vendeu</p></div>
                 </div>
                 <div class="flex rounded-xl bg-slate-100 p-1 w-full sm:w-auto">
-                    <button type="button" data-v="registar" onclick="balView('registar')" class="bal-view flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-black"><i class="fas fa-plus mr-1"></i>Novo pedido</button>
+                    <button type="button" data-v="registar" onclick="balView('registar')" class="bal-view flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-black"><i class="fas fa-cash-register mr-1"></i>Balcão</button>
                     <button type="button" data-v="vendas" onclick="balView('vendas')" class="bal-view flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-black"><i class="fas fa-chart-column mr-1"></i>Vendido</button>
                 </div>
             </div>
@@ -6406,7 +6406,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
     <script>
         // ===== Início + planos =====
-        const DS_CONTACT_EMAIL = 'dioscoffeept@gmail.com';
+        const DS_CONTACT_EMAIL = 'diostockpt@gmail.com';
         let dsSaveTimer = null;
         function dsMargin(save) {
             const n = id => { const v = parseFloat(String(document.getElementById(id).value).replace(',', '.')); return isFinite(v) && v > 0 ? v : 0; };
@@ -6612,7 +6612,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         function openPortal() {
             const em = (currentUser && currentUser.email) || '';
             if (PAYMENT_LINKS.portal) return window.open(PAYMENT_LINKS.portal + (PAYMENT_LINKS.portal.includes('?') ? '&' : '?') + 'prefilled_email=' + encodeURIComponent(em), '_blank');
-            location.href = 'mailto:dioscoffeept@gmail.com?subject=' + encodeURIComponent('Dio’Stock — gerir/cancelar assinatura') + '&body=' + encodeURIComponent('Empresa: ' + (currentEmpresa || '') + '\nE-mail: ' + em);
+            location.href = 'mailto:diostockpt@gmail.com?subject=' + encodeURIComponent('Dio’Stock — gerir/cancelar assinatura') + '&body=' + encodeURIComponent('Empresa: ' + (currentEmpresa || '') + '\nE-mail: ' + em);
         }
         (function () {
             const orig = applyPlan;
@@ -13027,7 +13027,7 @@ var qrcode = function() {
             <div class="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center text-2xl" style="background:var(--brand-soft);color:var(--brand)"><i class="fas fa-lock"></i></div>
             <h3 class="text-xl font-black text-slate-900">Acesso suspenso</h3>
             <p id="acesso-bloqueado-msg" class="text-sm text-slate-600 mt-2">O acesso desta conta está suspenso. Fale connosco para voltar a ativar.</p>
-            <p class="text-xs text-slate-400 mt-3">dioscoffeept@gmail.com</p>
+            <p class="text-xs text-slate-400 mt-3">diostockpt@gmail.com</p>
             <button type="button" onclick="logout()" class="mt-5 w-full py-3 rounded-xl font-black text-white" style="background:var(--brand)">Sair</button>
         </div>
     </div>
@@ -14195,7 +14195,7 @@ var qrcode = function() {
             try { [su, vd, pay] = await Promise.all([typeof suCall === 'function' ? suCall('estado').catch(() => null) : null, typeof vdRefresh === 'function' ? vdRefresh().catch(() => null) : null, typeof payRefresh === 'function' ? payRefresh().catch(() => null) : null]); } catch (_) {}
             const est = (ok, txt) => `<span class="est" style="background:${ok === true ? '#E3F1E8;color:#2F7D4F' : ok === 'meio' ? '#FEF3C7;color:#92400E' : '#F2ECE4;color:#5B4A40'}">${txt}</span>`;
             const card = (t, s, estado, passos, extra) => `<div class="lig"><div class="flex items-start justify-between gap-3"><div><h4>${t}</h4><p class="text-[13px] text-slate-500 mt-0.5">${s}</p></div>${estado}</div><ol>${passos.map(p => '<li>' + p + '</li>').join('')}</ol>${extra || ''}</div>`;
-            const contacto = '<a href="mailto:dioscoffeept@gmail.com?subject=' + encodeURIComponent('Ligação ao Dio’Stock') + '" class="font-bold underline" style="color:var(--brand)">dioscoffeept@gmail.com</a>';
+            const contacto = '<a href="mailto:diostockpt@gmail.com?subject=' + encodeURIComponent('Ligação ao Dio’Stock') + '" class="font-bold underline" style="color:var(--brand)">diostockpt@gmail.com</a>';
             const suOk = su && !su.erro && su.ligado, suDisp = su && su.erro !== 'sem_sumup';
             const vdOk = vd && vd.ligado, vdDisp = vd && vd.disponivel;
             const payLive = pay && pay.ativo !== false && pay.teste === false;
@@ -15192,7 +15192,7 @@ var qrcode = function() {
             conta.insertAdjacentHTML('afterend', `<section class="settings-pane hidden space-y-4" data-pane="contactos">
                 <div><h4 class="text-lg font-black text-slate-900">Fale com o Dio’Stock</h4><p class="text-sm text-slate-500">Dúvidas, ajuda ou sugestões: estamos aqui.</p></div>
                 <div class="grid sm:grid-cols-2 gap-2">
-                    <a class="ct-lnk" href="mailto:dioscoffeept@gmail.com?subject=Dio%E2%80%99Stock"><i class="fas fa-envelope"></i><span>E-mail<small>dioscoffeept@gmail.com</small></span></a>
+                    <a class="ct-lnk" href="mailto:diostockpt@gmail.com?subject=Dio%E2%80%99Stock"><i class="fas fa-envelope"></i><span>E-mail<small>diostockpt@gmail.com</small></span></a>
                     <a class="ct-lnk" href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/" target="_blank" rel="noopener"><i class="fas fa-globe"></i><span>Site<small>Planos e novidades</small></span></a>
                 </div>
                 <div><p class="text-xs font-black text-slate-600 mb-2">Redes sociais</p><div id="ct-redes" class="grid sm:grid-cols-2 gap-2"><p class="text-sm text-slate-500">A carregar…</p></div></div>
