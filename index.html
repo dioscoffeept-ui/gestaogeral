@@ -956,7 +956,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 14:42</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 16:47</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -13885,6 +13885,10 @@ var qrcode = function() {
                 }
                 return r;
             };
+            // vindo do site (botão "Criar conta grátis"): abre já o registo
+            try { if (/criar-conta/.test(location.hash) && typeof authShow === 'function') { authShow('first'); history.replaceState(null, '', location.pathname + location.search); } } catch (_) {}
+            // no ecrã de entrada: link para o site
+            try { const a = document.getElementById('auth-screen'); if (a && !document.getElementById('auth-site')) { const m = a.querySelector('#auth-msg'); const box = m && m.parentElement; if (box) box.insertAdjacentHTML('beforeend', '<p id="auth-site" class="text-center text-xs mt-4"><a href="conhecer/" class="font-bold underline" style="color:var(--brand)">Conheça o Dio’Stock e os planos</a></p>'); } } catch (_) {}
         })();
     </script>
 </body>
