@@ -86,7 +86,8 @@ p{margin:0}
 .ficha td small{display:block;color:var(--ink-3);font-size:13px}
 .ficha tr.tot td{border-bottom:0;font-weight:700;padding-top:12px}
 .preco{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--foam);border-radius:14px;padding:12px 14px;margin-top:10px}
-.preco span{font-weight:600;font-size:15px}
+.preco span{font-weight:600;font-size:15px;white-space:nowrap}
+@media (max-width:420px){.step output{min-width:78px;font-size:21px}.step button{width:34px;height:34px}.preco{padding:10px 12px}}
 .step{display:flex;align-items:center;gap:6px}
 .step button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;font-size:20px;font-weight:700;cursor:pointer;color:var(--ink);line-height:1}
 .step button:hover{background:var(--ink);color:#fff}
@@ -95,6 +96,20 @@ p{margin:0}
 .margem .big{font-family:var(--display);font-weight:800;font-size:64px;line-height:.9;letter-spacing:-.04em;color:var(--green);transition:color .2s}
 .margem .big.mal{color:#B42318}
 .margem p{font-size:14px;color:var(--ink-2);text-align:right;max-width:20ch}
+.bebidas{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+.bebidas button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:inherit;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer}
+.bebidas button:hover{border-color:var(--ink);color:var(--ink)}
+.bebidas button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.lin{display:grid;grid-template-columns:1fr auto auto 64px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--foam);font-size:15px}
+.lin output{text-align:right;font-weight:600}
+.lin .in{display:inline-flex;align-items:center;gap:4px;color:var(--ink-3);font-size:13px;white-space:nowrap}
+.lin input{width:58px;border:0;border-bottom:1.5px solid var(--line);background:transparent;font:inherit;font-size:15px;font-weight:600;color:var(--ink);text-align:right;padding:3px 2px;-moz-appearance:textfield}
+.lin input::-webkit-outer-spin-button,.lin input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.lin input:focus{outline:0;border-color:var(--brand)}
+.lin.tot{grid-template-columns:1fr auto;border-bottom:0;font-weight:700;padding-top:12px}
+.lin.off{opacity:.35}
+.iva{display:inline-flex;align-items:center;gap:5px;margin-left:4px;color:var(--ink-2);font-weight:600;cursor:pointer;white-space:nowrap}
+@media (max-width:420px){.lin{grid-template-columns:1fr auto auto;}.lin output{grid-column:1 / -1;text-align:right;margin-top:-6px}.lin.tot output{grid-column:auto;margin:0}.lin input{width:50px}}
 .ficha .dica{font-size:13px;color:var(--ink-3);margin-top:14px}
 
 /* faixa de prova */
@@ -253,17 +268,37 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       <p class="nota">Sem cartão para começar. Funciona no telemóvel, tablet e computador.</p>
     </div>
 
-    <div class="ficha" aria-label="Exemplo de ficha técnica">
+    <div class="ficha" aria-label="Calculadora de ficha técnica">
       <div class="ficha-h">
-        <div><b>Latte</b><small>Ficha técnica · 1 copo de 300 ml</small></div>
-        <span class="tag">Bar</span>
+        <div><b id="f-nome">Latte</b><small id="f-copo">Ficha técnica · copo de 300 ml</small></div>
+        <span class="tag">Experimente</span>
       </div>
-      <table class="num">
-        <tr><td>Café de especialidade<small>18 g a 26,00 €/kg</small></td><td>0,47 €</td></tr>
-        <tr><td>Leite meio-gordo<small>160 ml a 1,20 €/L</small></td><td>0,19 €</td></tr>
-        <tr><td>Copo, tampa e manga<small>embalagem</small></td><td>0,20 €</td></tr>
-        <tr class="tot"><td>Custo de produção</td><td id="f-custo">0,86 €</td></tr>
-      </table>
+      <div class="bebidas" role="group" aria-label="Bebida">
+        <button type="button" data-b="expresso">Expresso</button>
+        <button type="button" data-b="cappuccino">Cappuccino</button>
+        <button type="button" data-b="latte" aria-pressed="true">Latte</button>
+        <button type="button" data-b="flat">Flat White</button>
+        <button type="button" data-b="iced">Iced Latte</button>
+      </div>
+      <div class="lin num">
+        <label for="f-kg">Café</label>
+        <span class="in"><input id="f-kg" type="number" inputmode="decimal" step="0.5" min="0" value="26"> €/kg</span>
+        <span class="in"><input id="f-g" type="number" inputmode="decimal" step="0.5" min="0" value="18"> g</span>
+        <output id="o-cafe">0,47 €</output>
+      </div>
+      <div class="lin num" id="l-leite">
+        <label for="f-l">Leite</label>
+        <span class="in"><input id="f-l" type="number" inputmode="decimal" step="0.05" min="0" value="1.20"> €/L</span>
+        <span class="in"><input id="f-ml" type="number" inputmode="numeric" step="10" min="0" value="160"> ml</span>
+        <output id="o-leite">0,19 €</output>
+      </div>
+      <div class="lin num">
+        <label for="f-emb">Copo e tampa</label>
+        <span class="in"><input id="f-emb" type="number" inputmode="decimal" step="0.01" min="0" value="0.20"> €</span>
+        <span></span>
+        <output id="o-emb">0,20 €</output>
+      </div>
+      <div class="lin tot num"><span>Custo de produção</span><output id="f-custo">0,86 €</output></div>
       <div class="preco">
         <span>Preço no menu</span>
         <div class="step">
@@ -274,9 +309,9 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       </div>
       <div class="margem">
         <span class="big num" id="f-margem">74%</span>
-        <p id="f-txt">de margem. Sobram <b class="num">2,50 €</b> por copo, já sem IVA.</p>
+        <p id="f-txt">de margem.</p>
       </div>
-      <p class="dica">Experimente mudar o preço. No Dio’Stock, esta conta é feita para cada bebida e prato.</p>
+      <p class="dica">Ponha os seus valores. IVA da restauração (13%) já descontado. <label class="iva"><input type="checkbox" id="f-isento"> Sou isento de IVA</label></p>
     </div>
   </div>
 </section>
@@ -322,7 +357,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
           <li>Alergénios marcados em cada ficha</li>
           <li>Simulador de margem e de lucro líquido</li>
         </ul>
-        <span class="plano">Grátis até 40 fichas do bar</span>
+        <span class="plano">Grátis até 3 fichas</span>
       </div>
       <div class="ecra">
         <div class="ui">
@@ -441,8 +476,9 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
     <div class="func inv">
       <div class="txt">
         <h3>Encomendas ao fornecedor num toque</h3>
-        <p>O Dio’Stock junta o que está abaixo do mínimo, separa por fornecedor e prepara a mensagem. Só tem de carregar em enviar.</p>
+        <p>O Dio’Stock junta o que está abaixo do mínimo, separa por fornecedor, mostra quanto vai gastar e escreve a mensagem com o nome da sua empresa. Só tem de carregar em enviar.</p>
         <ul>
+          <li>Valor estimado de cada encomenda e do total</li>
           <li>Produção do dia calculada pelas vendas</li>
           <li>Faturas de compra lidas por foto, e o que falta pagar</li>
           <li>Colaboradores com acesso só ao que precisam</li>
@@ -452,11 +488,11 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       <div class="ecra">
         <div class="zap">
           <b>Para: Lacticínios do Vale</b>
-          Bom dia! Para amanhã, por favor:<br>
-          · 12 L leite meio-gordo<br>
-          · 6 L bebida de aveia<br>
-          · 2 kg manteiga<br>
-          Obrigado, Dio’s Coffee
+          Olá, boa tarde!<br>Gostaria de fazer uma encomenda, seriam:<br><br>
+          • Leite meio-gordo — 12 L<br>
+          • Bebida de aveia — 6 L<br>
+          • Manteiga — 2 kg<br><br>
+          Obrigado e fico a aguardar a confirmação.<br><br>Atenciosamente,<br>Dio’s Coffee
           <small>enviado pelo Dio’Stock</small>
         </div>
       </div>
@@ -479,12 +515,12 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
     <div class="planos">
       <div class="pl">
         <h3>Grátis</h3>
-        <p class="para">Para conhecer e fazer as contas às suas bebidas.</p>
+        <p class="para">Para fazer as contas às suas bebidas e experimentar.</p>
         <p class="val num">0 €</p>
         <p class="eq">para sempre</p>
         <ul>
           <li>Simulador de margem e lucro líquido</li>
-          <li>Até 40 fichas técnicas do bar</li>
+          <li>Até 3 fichas técnicas do bar, para experimentar</li>
           <li>Custos calculados sozinhos</li>
         </ul>
         <a class="btn btn-line" href="../#criar-conta">Criar conta grátis</a>
@@ -557,7 +593,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
     <div class="fim">
       <div>
         <h2>Comece hoje com as suas bebidas.</h2>
-        <p>Crie a conta, faça as primeiras fichas e veja a margem de cada uma. É grátis até 40 fichas.</p>
+        <p>Crie a conta, faça as primeiras fichas e veja a margem de cada uma. O simulador de margem é grátis, para sempre.</p>
       </div>
       <a class="btn" href="../#criar-conta">Criar conta grátis</a>
     </div>
@@ -581,20 +617,40 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 
 <script>
 (function () {
-  // ficha do topo: margem ao vivo
-  const custo = 0.86, iva = 0.13; let preco = 3.80;
+  // ficha do topo: calculadora com valores do visitante
+  const B = {
+    expresso:   { nome: 'Expresso duplo', copo: 'Ficha técnica · chávena de 60 ml', g: 18, ml: 0,   emb: 0.06, preco: 2.00 },
+    cappuccino: { nome: 'Cappuccino',     copo: 'Ficha técnica · copo de 180 ml',  g: 18, ml: 120, emb: 0.15, preco: 3.50 },
+    latte:      { nome: 'Latte',          copo: 'Ficha técnica · copo de 300 ml',  g: 18, ml: 160, emb: 0.20, preco: 3.80 },
+    flat:       { nome: 'Flat White',     copo: 'Ficha técnica · copo de 180 ml',  g: 18, ml: 110, emb: 0.15, preco: 3.80 },
+    iced:       { nome: 'Iced Latte',     copo: 'Ficha técnica · copo de 400 ml com gelo', g: 18, ml: 180, emb: 0.24, preco: 5.00 }
+  };
+  let preco = 3.80;
+  const $ = id => document.getElementById(id);
+  const n = id => { const v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) && v > 0 ? v : 0; };
   const fmt = v => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-  const out = document.getElementById('f-preco'), mg = document.getElementById('f-margem'), tx = document.getElementById('f-txt');
   function draw() {
-    const liq = preco / (1 + iva), sobra = liq - custo, m = liq > 0 ? sobra / liq * 100 : 0;
-    out.textContent = fmt(preco);
-    mg.textContent = Math.round(m) + '%';
-    mg.classList.toggle('mal', m < 60);
-    tx.innerHTML = sobra > 0 ? 'de margem. Sobram <b class="num">' + fmt(sobra) + '</b> por copo, já sem IVA.' : 'de margem. A este preço, perde dinheiro em cada copo.';
+    const cafe = n('f-kg') * n('f-g') / 1000, leite = n('f-l') * n('f-ml') / 1000, emb = n('f-emb'), custo = cafe + leite + emb;
+    $('o-cafe').textContent = fmt(cafe); $('o-leite').textContent = fmt(leite); $('o-emb').textContent = fmt(emb); $('f-custo').textContent = fmt(custo);
+    $('l-leite').classList.toggle('off', !n('f-ml'));
+    const iva = $('f-isento').checked ? 0 : 0.13, liq = preco / (1 + iva), sobra = liq - custo, m = liq > 0 ? sobra / liq * 100 : 0;
+    $('f-preco').textContent = fmt(preco);
+    $('f-margem').textContent = Math.round(m) + '%';
+    $('f-margem').classList.toggle('mal', m < 60);
+    $('f-txt').innerHTML = sobra > 0 ? 'de margem. Sobram <b class="num">' + fmt(sobra) + '</b> por bebida' + (iva ? ', já sem IVA.' : '.') : 'de margem. A este preço, perde dinheiro em cada bebida.';
   }
-  document.getElementById('f-mais').onclick = () => { preco = Math.min(9.9, Math.round((preco + 0.1) * 100) / 100); draw(); };
-  document.getElementById('f-menos').onclick = () => { preco = Math.max(0.5, Math.round((preco - 0.1) * 100) / 100); draw(); };
-  draw();
+  function escolher(k) {
+    const b = B[k]; preco = b.preco;
+    $('f-nome').textContent = b.nome; $('f-copo').textContent = b.copo;
+    $('f-g').value = b.g; $('f-ml').value = b.ml; $('f-emb').value = b.emb.toFixed(2);
+    document.querySelectorAll('.bebidas button').forEach(x => x.setAttribute('aria-pressed', x.dataset.b === k));
+    draw();
+  }
+  document.querySelectorAll('.bebidas button').forEach(x => x.onclick = () => escolher(x.dataset.b));
+  ['f-kg', 'f-g', 'f-l', 'f-ml', 'f-emb', 'f-isento'].forEach(id => $(id).addEventListener('input', draw));
+  $('f-mais').onclick = () => { preco = Math.min(19.9, Math.round((preco + 0.1) * 100) / 100); draw(); };
+  $('f-menos').onclick = () => { preco = Math.max(0.5, Math.round((preco - 0.1) * 100) / 100); draw(); };
+  escolher('latte');
   // planos: mensal / anual
   document.querySelectorAll('.toggle button').forEach(b => b.onclick = () => {
     const p = b.dataset.p;
