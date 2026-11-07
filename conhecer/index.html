@@ -3,10 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dio’Stock — App de gestão para cafés, bares e restaurantes</title>
-<meta name="description" content="Fichas técnicas com custos, estoque que desconta sozinho, ponto de venda, menu por QR e faturação certificada. O Dio’Stock é a app de gestão feita em Portugal para cafés, bares, brunch e restaurantes.">
+<title>Dio’Stock · Gestão de stock, fichas técnicas e POS para cafés e restaurantes</title>
+<meta name="description" content="App de gestão para cafés, bares e restaurantes em Portugal: fichas técnicas com custo e margem, gestão de stock, POS com mesas, menu digital por QR e faturação certificada. Comece grátis.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="pt-PT" href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/">
+<link rel="alternate" hreflang="x-default" href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/">
 <link rel="canonical" href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/">
 <meta property="og:type" content="website">
+<meta property="og:locale" content="pt_PT">
+<meta property="og:site_name" content="Dio’Stock">
+<meta name="twitter:card" content="summary">
 <meta property="og:title" content="Dio’Stock — saiba quanto ganha em cada café">
 <meta property="og:description" content="Fichas técnicas, estoque, balcão, menu por QR e faturas num só app. Comece grátis.">
 <meta property="og:image" content="https://dioscoffeept-ui.github.io/gestaogeral/icon-512.png">
@@ -19,6 +25,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Dio’Stock","applicationCategory":"BusinessApplication","operatingSystem":"Web, Android, iOS","description":"App de gestão para cafés, bares e restaurantes: fichas técnicas com custos, estoque, ponto de venda, menu por QR e faturação.","offers":[{"@type":"Offer","name":"Grátis","price":"0","priceCurrency":"EUR"},{"@type":"Offer","name":"Café","price":"7","priceCurrency":"EUR"},{"@type":"Offer","name":"PRO","price":"17","priceCurrency":"EUR"}],"publisher":{"@type":"Organization","name":"Dio’s Coffee","email":"dioscoffeept@gmail.com"}}
+</script>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://dioscoffeept-ui.github.io/gestaogeral/#org", "name": "Dio’Stock", "url": "https://dioscoffeept-ui.github.io/gestaogeral/conhecer/", "logo": "https://dioscoffeept-ui.github.io/gestaogeral/icon-512.png", "email": "dioscoffeept@gmail.com", "address": {"@type": "PostalAddress", "addressLocality": "Cascais", "addressCountry": "PT"}}, {"@type": "WebSite", "name": "Dio’Stock", "url": "https://dioscoffeept-ui.github.io/gestaogeral/conhecer/", "inLanguage": "pt-PT", "publisher": {"@id": "https://dioscoffeept-ui.github.io/gestaogeral/#org"}}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Preciso de instalar alguma coisa?", "acceptedAnswer": {"@type": "Answer", "text": "Não. O Dio’Stock abre no navegador do telemóvel, tablet ou computador. Se quiser, adicione-o ao ecrã principal e passa a abrir como uma app."}}, {"@type": "Question", "name": "Os meus dados ficam guardados?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. Cada empresa tem o seu login e os seus dados, guardados na nuvem. Entre noutro aparelho e encontra tudo como deixou. Pode ainda descarregar uma cópia de segurança quando quiser."}}, {"@type": "Question", "name": "Posso pôr a minha equipa a usar?", "acceptedAnswer": {"@type": "Answer", "text": "Sim, no plano PRO. Cada colaborador entra com o seu acesso e vê só o que precisa, por exemplo o balcão sem os custos."}}, {"@type": "Question", "name": "O Dio’Stock emite faturas?", "acceptedAnswer": {"@type": "Answer", "text": "Emite através do Vendus, que é certificado pela Autoridade Tributária. Nós ligamos a sua conta Vendus ao Dio’Stock e, a partir daí, cada pedido fechado gera a fatura sozinho. Sem Vendus, o Dio’Stock regista as vendas e o estoque, e as faturas são feitas no seu programa de faturação."}}, {"@type": "Question", "name": "Serve para uma banca em feiras?", "acceptedAnswer": {"@type": "Answer", "text": "Serve. Foi feito numa. O balcão funciona no telemóvel, o terminal liga ao hotspot e o menu por QR evita filas."}}, {"@type": "Question", "name": "Como cancelo?", "acceptedAnswer": {"@type": "Answer", "text": "Na própria app, em Planos. Não há fidelização: no plano mensal paga mês a mês; no anual, paga uma vez por ano."}}]}]}
 </script>
 <style>
 :root{
@@ -243,7 +252,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 
 <header class="top" id="topo">
   <div class="wrap">
-    <a class="logo" href="#"><img src="../icon-192.png" alt="" width="34" height="34">Dio’Stock</a>
+    <a class="logo" href="#"><img src="../icon-192.png" alt="Dio’Stock" width="34" height="34">Dio’Stock</a>
     <nav class="nav" aria-label="Secções">
       <a href="#como">Como funciona</a>
       <a href="#funcionalidades">Funcionalidades</a>
@@ -260,7 +269,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
   <div class="wrap">
     <div>
       <h1>Saiba quanto ganha em cada café.</h1>
-      <p class="lead">O Dio’Stock junta as fichas técnicas, o estoque, o balcão e as faturas do seu café, bar ou restaurante. Cada venda desconta o que gastou e mostra o que sobra no fim do dia.</p>
+      <p class="lead">O Dio’Stock junta as fichas técnicas, o stock, o balcão e as faturas do seu café, bar ou restaurante. Cada venda desconta o que gastou e mostra o que sobra no fim do dia.</p>
       <div class="ctas">
         <a class="btn btn-main" href="../#criar-conta">Criar conta grátis</a>
         <a class="btn btn-line" href="#planos">Ver planos</a>
@@ -373,10 +382,11 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 
     <div class="func inv">
       <div class="txt">
-        <h3>Estoque que desconta sozinho</h3>
+        <h3>Stock que desconta sozinho</h3>
         <p>Cada café vendido tira 18 g ao saco. Sabe sempre o que tem, o que está a acabar e quanto vale o que está na prateleira.</p>
         <ul>
           <li>Alertas quando passa abaixo do mínimo</li>
+          <li>Compras registadas por foto da fatura ou por voz</li>
           <li>Vendas do dia pela foto do talão ou pelo SAF-T</li>
           <li>Pare a venda de um produto quando o ingrediente acaba</li>
         </ul>
@@ -395,11 +405,12 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 
     <div class="func">
       <div class="txt">
-        <h3>Um balcão rápido, para dias cheios</h3>
+        <h3>Um POS rápido, para dias cheios</h3>
         <p>Toque nos produtos, escolha como o cliente paga e está feito. Com o terminal SumUp ligado, o valor aparece sozinho no terminal, sem o escrever.</p>
         <ul>
           <li>Dinheiro, terminal de cartão e MB WAY</li>
-          <li>Pedidos suspensos, clientes com NIF e descontos</li>
+          <li>Mesas, esplanada e eventos com a conta aberta</li>
+          <li>Clientes com NIF, descontos e pedidos suspensos</li>
           <li>Modo treino para praticar sem faturar</li>
           <li>Resumo de vendas em PDF e CSV para o contabilista</li>
         </ul>
@@ -424,7 +435,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 
     <div class="func inv">
       <div class="txt">
-        <h3>Menu por QR, e o cliente sabe quando está pronto</h3>
+        <h3>Menu digital por QR, e o cliente sabe quando está pronto</h3>
         <p>O cliente lê o QR na mesa ou encosta o telemóvel ao autocolante NFC, escolhe e pede. O pedido entra no seu balcão com som. Quando toca em “Pronto”, o telemóvel dele avisa.</p>
         <ul>
           <li>Menu em português, inglês, espanhol, francês, alemão e italiano</li>
@@ -520,8 +531,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
         <p class="eq">para sempre</p>
         <ul>
           <li>Simulador de margem e lucro líquido</li>
-          <li>Até 3 fichas técnicas do bar, para experimentar</li>
-          <li>Custos calculados sozinhos</li>
+          <li>Até 3 fichas técnicas, para experimentar</li>
+          <li>Custos e margem calculados sozinhos</li>
         </ul>
         <a class="btn btn-line" href="../#criar-conta">Criar conta grátis</a>
       </div>
@@ -533,8 +544,9 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
         <p class="eq num" data-mes="ou 70 € por ano" data-ano="equivale a 5,83 € por mês">ou 70 € por ano</p>
         <ul>
           <li>Fichas do bar ilimitadas, com foto</li>
-          <li>Estoque e porções prontas</li>
-          <li>Balcão: dinheiro, terminal e MB WAY</li>
+          <li>Gestão de stock e porções prontas</li>
+          <li>POS com mesas (10 + 10 esplanada + 5 eventos)</li>
+          <li>Dinheiro, terminal e MB WAY</li>
           <li>Menu por QR e NFC, com pedidos</li>
           <li>Vendas do dia por foto ou SAF-T</li>
           <li>Faturação automática (com Vendus)</li>
@@ -552,6 +564,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
           <li>Produção e encomendas por fornecedor</li>
           <li>Fornecedores e faturas de compra</li>
           <li>Colaboradores com acessos próprios</li>
+          <li>Mesas e eventos sem limite</li>
         </ul>
         <a class="btn btn-line" href="../#criar-conta">Começar com o PRO</a>
       </div>
