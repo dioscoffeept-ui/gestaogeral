@@ -1164,6 +1164,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         #est-grid .est-t li { font-size: 1.1rem; }
         #est-grid .est-t footer button { padding: .65rem; }
         #est-grid .est-t.velho { opacity: .6; }
+        #est-grid .est-t li.neg, #est-grid .est-t li.neg i { color: #78350F; text-decoration: none !important; }
+        #est-grid .est-t li.neg span { text-decoration: none !important; }
+        #est-grid .est-t li .nf { font-style: normal; font-size: .7rem; font-weight: 900; background: #FEF3C7; color: #92400E; border-radius: 6px; padding: .1rem .45rem; margin-left: .35rem; vertical-align: middle; white-space: nowrap; }
+        #est-grid .est-t li.ok .nf { background: #F1F5F9; color: #94a3b8; }
         #est-grid .est-vazio { column-span: all; }
         #est-grid .est-velhos { column-span: all; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #FEF3C7; color: #78350F; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; font-weight: 700; }
         #est-grid .est-velhos button { background: #fff; border-radius: 10px; padding: 7px 12px; font-weight: 800; color: #78350F; white-space: nowrap; }
@@ -1276,7 +1280,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:39</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:43</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -14979,7 +14983,7 @@ var qrcode = function() {
         function estImprimirId(id) { const t = estDados.find(x => x.id === id); if (t) estImprimir([t]); }
         function estImprimir(lista) {
             const css = '@page{size:58mm auto;margin:2mm}body{font-family:Arial,sans-serif;width:54mm;margin:0;color:#000}h1{font-size:15px;margin:0 0 2px}p{margin:0 0 4px;font-size:11px}li{font-size:15px;font-weight:bold;margin:2px 0}ul{padding-left:0;list-style:none;margin:4px 0}hr{border:0;border-top:1px dashed #000;margin:6px 0}';
-            const html = lista.map(t => `<h1>${escapeHtml(t.estacao)} · ${escapeHtml(t.origem || '')}</h1><p>${new Date(t.criado_em).toLocaleString('pt-PT', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}${t.treino ? ' · TREINO' : ''}</p><ul>${(t.itens || []).map(i => `<li>${i.qtd < 0 ? 'RETIRAR ' + fmtQtdEst(-i.qtd) : fmtQtdEst(i.qtd) + 'x'} ${escapeHtml(i.nome)}</li>`).join('')}</ul>${t.nota ? '<p>' + escapeHtml(t.nota) + '</p>' : ''}<hr>`).join('');
+            const html = lista.map(t => `<h1>${escapeHtml(t.estacao)} · ${escapeHtml(t.origem || '')}</h1><p>${new Date(t.criado_em).toLocaleString('pt-PT', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}${t.treino ? ' · TREINO' : ''}</p><ul>${(t.itens || []).map(i => `<li>${fmtQtdEst(Math.abs(i.qtd))}x ${escapeHtml(i.nome)}${i.qtd < 0 ? ' — NÃO FAZER' : ''}</li>`).join('')}</ul>${t.nota ? '<p>' + escapeHtml(t.nota) + '</p>' : ''}<hr>`).join('');
             let f = document.getElementById('est-print'); if (f) f.remove();
             f = document.createElement('iframe'); f.id = 'est-print'; f.style.cssText = 'position:fixed;width:0;height:0;border:0;right:0;bottom:0';
             document.body.appendChild(f);
@@ -15455,7 +15459,7 @@ var qrcode = function() {
         // comanda (bar / cozinha)
         function prtComanda(t) {
             prtImprimir(`<h2 class="c">${prtEsc(t.estacao)}</h2><p class="c b" style="font-size:1.3em">${prtEsc(t.origem || '')}</p><p class="c">${prtData(t.criado_em)}${t.treino ? ' · TREINO' : ''}</p><hr>
-                <table class="big">${(t.itens || []).map(i => `<tr><td class="q">${i.qtd < 0 ? '−' + prtQ(-i.qtd) : prtQ(i.qtd)}×</td><td>${prtEsc(i.nome)}${i.qtd < 0 ? ' (RETIRAR)' : ''}</td></tr>`).join('')}</table>${t.nota ? '<hr><p class="b">' + prtEsc(t.nota) + '</p>' : ''}`);
+                <table class="big">${(t.itens || []).map(i => `<tr><td class="q">${prtQ(Math.abs(i.qtd))}×</td><td>${prtEsc(i.nome)}${i.qtd < 0 ? ' — NÃO FAZER' : ''}</td></tr>`).join('')}</table>${t.nota ? '<hr><p class="b">' + prtEsc(t.nota) + '</p>' : ''}`);
         }
         // conta da mesa (antes de pagar)
         function prtConta(id) {
@@ -15549,7 +15553,7 @@ var qrcode = function() {
             g.innerHTML = (velhos.length ? `<div class="est-velhos"><span>${velhos.length} pedido${velhos.length === 1 ? '' : 's'} com mais de 1 h 30 ainda por marcar.</span><button type="button" onclick="estLimparVelhos()">Marcar como prontos</button></div>` : '')
                 + meus.map(t => { const mn = estMin(t); return `<article class="est-t ${mn >= 90 ? 'velho' : ''} ${mn >= 20 ? 't20' : mn >= 10 ? 't10' : ''}">
                 <header><b>${escapeHtml(t.origem || 'Pedido')}${t.treino ? '<span class="est-tag">TREINO</span>' : ''}${estSel === 'Todos' ? '<span class="est-tag" style="background:#E0E7FF;color:#3730A3">' + escapeHtml(t.estacao) + '</span>' : ''}</b><span>${estTempo(mn)} · ${new Date(t.criado_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span></header>
-                <ul>${(t.itens || []).map(i => `<li class="${i.qtd < 0 ? 'neg' : ''}"><i>${i.qtd < 0 ? '−' + fmtQtdEst(-i.qtd) : fmtQtdEst(i.qtd) + '×'}</i><span>${escapeHtml(i.nome)}${i.qtd < 0 ? ' (retirar)' : ''}</span></li>`).join('')}</ul>
+                <ul>${(t.itens || []).map(i => `<li class="${i.qtd < 0 ? 'neg' : ''}"><i>${fmtQtdEst(Math.abs(i.qtd))}×</i><span>${escapeHtml(i.nome)}${i.qtd < 0 ? ' <em class="nf">Não fazer</em>' : ''}</span></li>`).join('')}</ul>
                 ${t.nota ? `<p class="px-4 pb-2 text-sm font-bold text-slate-600"><i class="fas fa-user mr-1"></i>${escapeHtml(t.nota)}</p>` : ''}
                 <footer><button type="button" onclick="estImprimirId('${t.id}')" class="bg-slate-100 text-slate-700" aria-label="Imprimir"><i class="fas fa-print"></i></button><button type="button" onclick="estPronto('${t.id}')" class="flex-1 text-white" style="background:#15803D"><i class="fas fa-check mr-1"></i>Pronto</button></footer></article>`; }).join('');
         };
