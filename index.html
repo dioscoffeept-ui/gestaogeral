@@ -1144,6 +1144,30 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         .prt-seg button { white-space: nowrap; padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #7A6A60; }
         .prt-seg button.on { background: #fff; color: #24150E; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
     </style>
+
+    <style>
+        #est-scr .est-top { display: block; padding: calc(10px + env(safe-area-inset-top)) 14px 10px; }
+        #est-scr .est-l1 { display: flex; align-items: center; gap: 8px; }
+        #est-scr .est-l1 h2 { flex: 1; font-size: 1.1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #est-scr .ib { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: #ffffff1a; color: #fff; font-size: 15px; flex-shrink: 0; }
+        #est-scr .ib.on { background: #fff; color: #24150E; }
+        #est-scr .est-chips { display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-bottom: 2px; scrollbar-width: none; }
+        #est-scr .est-chips::-webkit-scrollbar { display: none; }
+        #est-scr .chip { flex-shrink: 0; padding: 8px 16px; font-size: 14px; border-width: 1.5px; }
+        #est-scr .chip b { font-weight: 900; margin-left: 6px; opacity: .7; }
+        #est-grid { display: block !important; columns: 300px; column-gap: 14px; padding: 14px !important; }
+        #est-grid .est-t { display: block; break-inside: avoid; margin: 0 0 14px; width: 100%; }
+        #est-grid .est-t header { align-items: flex-start; flex-wrap: wrap; }
+        #est-grid .est-t header b { font-size: 1.05rem; line-height: 1.25; flex: 1; min-width: 60%; }
+        #est-grid .est-t header span { font-size: .78rem; }
+        #est-grid .est-t ul { padding: .5rem .9rem .3rem; }
+        #est-grid .est-t li { font-size: 1.1rem; }
+        #est-grid .est-t footer button { padding: .65rem; }
+        #est-grid .est-t.velho { opacity: .6; }
+        #est-grid .est-vazio { column-span: all; }
+        #est-grid .est-velhos { column-span: all; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #FEF3C7; color: #78350F; border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; font-weight: 700; }
+        #est-grid .est-velhos button { background: #fff; border-radius: 10px; padding: 7px 12px; font-weight: 800; color: #78350F; white-space: nowrap; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1224,7 +1248,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:22</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:26</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -15472,6 +15496,52 @@ var qrcode = function() {
             const ref = menu && [...menu.querySelectorAll('button')].find(b => /estAbrir/.test(b.getAttribute('onclick') || ''));
             const html = '<button type="button" onclick="prtAbrir()" class="menu-item"><i class="fas fa-print"></i> Impressora</button>';
             if (ref) ref.insertAdjacentHTML('afterend', html); else if (menu) menu.insertAdjacentHTML('beforeend', html);
+        })();
+    </script>
+
+    <script>
+        const estTempo = mn => mn < 1 ? 'agora' : mn < 60 ? 'há ' + mn + ' min' : 'há ' + Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0');
+        estTopo = function () {
+            const som = estCfg('som') !== '0', imp = estCfg('imp') === '1';
+            const n = e => estDados.filter(t => e === 'Todos' || t.estacao === e).length;
+            const chips = estLista().concat(['Todos']).map(e => `<button type="button" class="chip ${e === estSel ? 'on' : ''}" onclick="estEscolher('${escapeHtml(e).replace(/'/g, "\\'")}')">${escapeHtml(e)}${n(e) ? '<b>' + n(e) + '</b>' : ''}</button>`).join('');
+            document.querySelector('#est-scr .est-top').innerHTML = `<div class="est-l1"><h2><i class="fas fa-fire-burner mr-2"></i>${escapeHtml(estSel === 'Todos' ? 'Todos os ecrãs' : estSel)}</h2>
+                <button type="button" class="ib ${som ? 'on' : ''}" aria-label="Som" title="Som" onclick="estCfg('som',${som ? "'0'" : "'1'"});estTopo()"><i class="fas ${som ? 'fa-bell' : 'fa-bell-slash'}"></i></button>
+                <button type="button" class="ib ${imp ? 'on' : ''}" aria-label="Imprimir sozinho" title="Imprimir sozinho" onclick="estCfg('imp',${imp ? "'0'" : "'1'"});estTopo()"><i class="fas fa-print"></i></button>
+                <button type="button" class="ib" aria-label="Fechar" onclick="estFechar()"><i class="fas fa-xmark"></i></button></div>
+                <div class="est-chips">${chips}</div>`;
+        };
+        estPintar = function (msg) {
+            const g = document.getElementById('est-grid'); if (!g) return;
+            try { estTopo(); } catch (_) {}
+            if (msg) { g.innerHTML = `<p class="est-vazio">${escapeHtml(msg)}</p>`; return; }
+            const meus = estDados.filter(t => estSel === 'Todos' || t.estacao === estSel);
+            if (!meus.length) { g.innerHTML = `<p class="est-vazio"><i class="fas fa-mug-hot text-3xl mb-3 block"></i>Sem pedidos ${estSel === 'Todos' ? '' : 'para ' + escapeHtml(estSel)}.<br><span class="text-sm font-semibold">Os pedidos novos aparecem aqui sozinhos.</span></p>`; return; }
+            const velhos = meus.filter(t => estMin(t) >= 90);
+            g.innerHTML = (velhos.length ? `<div class="est-velhos"><span>${velhos.length} pedido${velhos.length === 1 ? '' : 's'} com mais de 1 h 30 ainda por marcar.</span><button type="button" onclick="estLimparVelhos()">Marcar como prontos</button></div>` : '')
+                + meus.map(t => { const mn = estMin(t); return `<article class="est-t ${mn >= 90 ? 'velho' : ''} ${mn >= 20 ? 't20' : mn >= 10 ? 't10' : ''}">
+                <header><b>${escapeHtml(t.origem || 'Pedido')}${t.treino ? '<span class="est-tag">TREINO</span>' : ''}${estSel === 'Todos' ? '<span class="est-tag" style="background:#E0E7FF;color:#3730A3">' + escapeHtml(t.estacao) + '</span>' : ''}</b><span>${estTempo(mn)} · ${new Date(t.criado_em).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span></header>
+                <ul>${(t.itens || []).map(i => `<li class="${i.qtd < 0 ? 'neg' : ''}"><i>${i.qtd < 0 ? '−' + fmtQtdEst(-i.qtd) : fmtQtdEst(i.qtd) + '×'}</i><span>${escapeHtml(i.nome)}${i.qtd < 0 ? ' (retirar)' : ''}</span></li>`).join('')}</ul>
+                ${t.nota ? `<p class="px-4 pb-2 text-sm font-bold text-slate-600"><i class="fas fa-user mr-1"></i>${escapeHtml(t.nota)}</p>` : ''}
+                <footer><button type="button" onclick="estImprimirId('${t.id}')" class="bg-slate-100 text-slate-700" aria-label="Imprimir"><i class="fas fa-print"></i></button><button type="button" onclick="estPronto('${t.id}')" class="flex-1 text-white" style="background:#15803D"><i class="fas fa-check mr-1"></i>Pronto</button></footer></article>`; }).join('');
+        };
+        async function estLimparVelhos() {
+            const ids = estDados.filter(t => (estSel === 'Todos' || t.estacao === estSel) && estMin(t) >= 90).map(t => t.id);
+            if (!ids.length) return;
+            estDados = estDados.filter(t => !ids.includes(t.id)); estPintar();
+            try { await sb.from('pedidos_estacao').update({ estado: 'pronto', pronto_em: new Date().toISOString() }).in('id', ids); } catch (_) {}
+        }
+        // só mostra as últimas 6 horas (pedidos de ontem não aparecem)
+        (function () {
+            const oB = estBuscar;
+            estBuscar = async function () {
+                const r = await oB.apply(this, arguments);
+                const lim = Date.now() - 6 * 3600e3;
+                const antes = estDados.length;
+                estDados = estDados.filter(t => new Date(t.criado_em).getTime() >= lim);
+                if (estDados.length !== antes) estPintar();
+                return r;
+            };
         })();
     </script>
 </body>
