@@ -934,7 +934,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 07:33</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 07:43</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -12012,8 +12012,8 @@ var qrcode = function() {
             const list = balOrders().slice().reverse();
             const n = v => String(Math.round((Number(v) || 0) * 100) / 100).replace('.', ',');
             const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-            const rows = [['Data', 'Hora', 'Pedido', 'Produto', 'Quantidade', 'Preço unitário (€)', 'Total linha (€)', 'Total pedido (€)', 'Pagamento', 'Estado']];
-            list.forEach(o => (o.items || []).forEach((i, k) => rows.push([dmy(o.date), new Date(o.at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }), o.id.replace('ped_', ''), i.name, n(i.qty), n(i.price), n(i.qty * (i.price || 0)), k ? '' : n(o.total), balPayName(o.pay), o.estado === 'pendente' ? 'Por pagar' : o.estado === 'expirado' ? 'Não pago' : 'Pago'])));
+            const rows = [['Data', 'Hora', 'Pedido', 'Produto', 'Quantidade', 'Preço unitário (€)', 'Total linha (€)', 'Total pedido (€)', 'Pagamento', 'Estado', 'Fatura']];
+            list.forEach(o => (o.items || []).forEach((i, k) => rows.push([dmy(o.date), new Date(o.at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }), o.id.replace('ped_', ''), i.name, n(i.qty), n(i.price), n(i.qty * (i.price || 0)), k ? '' : n(o.total), balPayName(o.pay), o.estado === 'pendente' ? 'Por pagar' : o.estado === 'expirado' ? 'Não pago' : 'Pago', k ? '' : (o.fiscal && o.fiscal.numero ? o.fiscal.numero + (o.fiscal.modo === 'tests' ? ' (teste)' : '') : o.fiscal && o.fiscal.pendente ? 'por emitir' : '')])));
             const s = balStats(list);
             rows.push([]); rows.push(['Resumo']); rows.push(['Total vendido', '', '', '', '', '', '', n(s.total)]);
             Object.entries(s.byPay).forEach(([k, v]) => rows.push([balPayName(k), '', '', '', '', '', '', n(v)]));
@@ -12042,9 +12042,9 @@ var qrcode = function() {
                 ${Object.keys(days).length > 1 ? `<h2>Por dia</h2><table><tr><th>Dia</th><th class="r">Pedidos</th><th class="r">Valor</th></tr>${Object.entries(days).map(([d, v]) => `<tr><td>${dmy(d)}</td><td class="r">${v.n}</td><td class="r">${eur2(v.t)}</td></tr>`).join('')}</table>` : ''}
                 <h2>Produtos vendidos</h2><table><tr><th>Produto</th><th class="r">Qtd.</th><th class="r">Valor</th></tr>
                 ${prods.map(p => `<tr><td>${e(p.name)}</td><td class="r">${fmtQ(p.qty)}</td><td class="r">${eur2(p.total)}</td></tr>`).join('')}</table>
-                <h2>Pedidos</h2><table><tr><th>Data / hora</th><th>Artigos</th><th>Pagamento</th><th class="r">Total</th></tr>
-                ${list.map(o => `<tr><td style="white-space:nowrap">${dmy(o.date)} ${new Date(o.at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</td><td>${(o.items || []).map(i => fmtQ(i.qty) + '× ' + e(i.name)).join(', ')}</td><td>${e(balPayName(o.pay))}${o.estado === 'pendente' ? ' (por pagar)' : o.estado === 'expirado' ? ' (não pago)' : ''}</td><td class="r">${eur2(o.total)}</td></tr>`).join('')}</table>
-                <div class="note"><b>Documento interno de apoio, gerado pelo Dio’Stock.</b> Resume os pedidos registados no balcão, com IVA incluído tal como cobrado ao cliente. Não é fatura, não tem validade fiscal e não substitui o ficheiro SAF-T nem a faturação certificada pela AT. Entregue ao seu contabilista apenas como apoio.</div>
+                <h2>Pedidos</h2><table><tr><th>Data / hora</th><th>Artigos</th><th>Pagamento</th><th>Fatura</th><th class="r">Total</th></tr>
+                ${list.map(o => `<tr><td style="white-space:nowrap">${dmy(o.date)} ${new Date(o.at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</td><td>${(o.items || []).map(i => fmtQ(i.qty) + '× ' + e(i.name)).join(', ')}</td><td>${e(balPayName(o.pay))}${o.estado === 'pendente' ? ' (por pagar)' : o.estado === 'expirado' ? ' (não pago)' : ''}</td><td style="white-space:nowrap">${o.fiscal && o.fiscal.numero ? e(o.fiscal.numero) + (o.fiscal.modo === 'tests' ? ' (teste)' : '') : o.fiscal && o.fiscal.pendente ? 'por emitir' : '—'}</td><td class="r">${eur2(o.total)}</td></tr>`).join('')}</table>
+                <div class="note"><b>Documento interno de apoio, gerado pelo Dio’Stock.</b> Resume os pedidos registados no balcão, pelos valores cobrados ao cliente${(posFin().provider === 'vendus') ? ' (IVA isento, art. 53.º do CIVA)' : ' (com IVA incluído, quando aplicável)'}. Este resumo não é fatura: ${(posFin().provider === 'vendus') ? 'as faturas certificadas são as indicadas na coluna «Fatura», emitidas no Vendus e comunicadas à AT.' : 'a faturação certificada é feita no seu programa certificado pela AT.'} Entregue ao seu contabilista apenas como apoio.</div>
             </body></html>`;
         }
         function balPrint() {
