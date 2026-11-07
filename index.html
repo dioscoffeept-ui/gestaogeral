@@ -998,6 +998,25 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         .est-vazio{grid-column:1/-1;text-align:center;color:#64748b;font-weight:700;padding:4rem 1rem}
         #balcao-vendas-card{margin-bottom:0}
     </style>
+
+    <style>
+        @media (max-width: 1023px) {
+            #pos-cart > * { flex-shrink: 0 !important; }
+            #pos-cart > div.overflow-y-auto, #balcao-registar #pos-cart > div.overflow-y-auto, #balcao-registar #pos-cart.aberto > div.overflow-y-auto { max-height: none !important; overflow: visible !important; flex: 0 0 auto !important; }
+        }
+        #ms-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        #ms-acoes button { padding: .6rem .5rem; border-radius: .9rem; font-size: .8rem; font-weight: 800; background: #fff; border: 1px solid #E4DCCF; color: #24150E; }
+        #ms-parte-bar { display: flex; align-items: center; gap: .6rem; padding: .7rem .9rem; border-radius: 1rem; background: #FEF3C7; color: #78350F; font-size: .85rem; }
+        .mss-row { display: flex; align-items: center; gap: .6rem; padding: .55rem 0; border-bottom: 1px solid #F1EBE2; }
+        .mss-row .q { display: flex; align-items: center; gap: .35rem; }
+        .mss-row .q button { width: 2.2rem; height: 2.2rem; border-radius: .7rem; font-weight: 900; background: #F3EFE8; color: #24150E; }
+        .mss-row .q button.mais { background: var(--brand); color: #fff; }
+        .mss-row .q b { min-width: 3.2rem; text-align: center; font-size: .9rem; }
+        .mss-dest { display: flex; flex-wrap: wrap; gap: .4rem; }
+        .mss-dest button { padding: .5rem .8rem; border-radius: 999px; font-weight: 800; font-size: .85rem; border: 2px solid #E4DCCF; background: #fff; color: #24150E; }
+        .mss-dest button.on { background: #24150E; border-color: #24150E; color: #fff; }
+        .mss-dest button small { font-weight: 700; opacity: .7; margin-left: .25rem; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1078,7 +1097,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 19:19</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 19:39</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -14643,7 +14662,7 @@ var qrcode = function() {
                 const m = mesaId ? msLista().find(x => x.id === mesaId) : null;
                 const ped = (appState.orders || []).filter(o => o.date === (appState.orders[0] || {}).date).length + 1;
                 const r = oCk.apply(this, arguments);
-                if ((appState.orders || []).length > before && !split) {
+                if ((appState.orders || []).length > before && !split && !window.estSemEnvio) {
                     const o = appState.orders[0] || {};
                     const nota = o.cliente && o.cliente.nome ? o.cliente.nome : null;
                     if (m) { estEnviar(itens, m.enviados || {}, msLabel(m), nota); m.enviados = {}; saveStorage(); }
@@ -14658,7 +14677,7 @@ var qrcode = function() {
                     const mesaId = posMesa, itens = JSON.parse(JSON.stringify(posCart));
                     const m = mesaId ? msLista().find(x => x.id === mesaId) : null;
                     const r = oD.apply(this, arguments);
-                    if (typeof dvFila !== 'undefined' && dvFila) {
+                    if (typeof dvFila !== 'undefined' && dvFila && !window.estSemEnvio) {
                         if (m) { m.enviados = estEnviar(itens, m.enviados || {}, msLabel(m)); saveStorage(); }
                         else estEnviar(itens, {}, 'Balcão · conta dividida');
                     }
@@ -14797,6 +14816,150 @@ var qrcode = function() {
             const abrirHash = () => { const m = location.hash.match(/^#ecra(?:=(.+))?$/); if (m && currentUser) estAbrir(m[1] ? decodeURIComponent(m[1]) : undefined); return !!m; };
             window.addEventListener('hashchange', abrirHash);
             let n = 0; const t = setInterval(() => { if (abrirHash() && currentUser || ++n > 40) clearInterval(t); }, 500);
+        })();
+    </script>
+
+    <script>
+        // ======================================================= GUARDAR SOZINHO
+        let msEnvioTimer = null, msParcial = null, msSel = null;
+        (function () {
+            const oR = posRenderCart;
+            posRenderCart = function () {
+                const r = oR.apply(this, arguments);
+                const box = document.getElementById('pos-cart'); if (!box) return r;
+                [...box.querySelectorAll('button')].forEach(b => { if ((b.getAttribute('onclick') || '') === 'msGuardar()') b.remove(); });
+                if (posMesa) {
+                    const m = msLista().find(x => x.id === posMesa);
+                    if (m) {
+                        m.itens = JSON.parse(JSON.stringify(posCart));
+                        if (m.itens.length && !m.desde) m.desde = new Date().toISOString();
+                        if (!m.itens.length) m.desde = null;
+                        saveStorage();
+                        clearTimeout(msEnvioTimer);
+                        const id = m.id;
+                        msEnvioTimer = setTimeout(() => { const mm = msLista().find(x => x.id === id); if (mm) { estEnviarMesa(mm); saveStorage(); } }, 8000);
+                        const bar = document.getElementById('pos-mesa-bar');
+                        if (bar) {
+                            const p = bar.querySelector('p'); if (p) p.textContent = (m.itens.length ? 'Guardado automaticamente' : 'Conta vazia') + (m.desde ? ' · aberta desde ' + new Date(m.desde).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '');
+                            if (m.itens.length) bar.insertAdjacentHTML('afterend', '<div id="ms-acoes"><button type="button" onclick="msSelAbrir(\'mover\')"><i class="fas fa-right-left mr-1"></i>Passar para outra mesa</button><button type="button" onclick="msSelAbrir(\'parte\')"><i class="fas fa-coins mr-1"></i>Pagar só uma parte</button></div>');
+                        }
+                    }
+                }
+                if (msParcial && !posMesa) {
+                    box.insertAdjacentHTML('afterbegin', `<div id="ms-parte-bar"><i class="fas fa-coins"></i><div class="flex-1 min-w-0"><b>Parte da ${escapeHtml(msParcial.label)}</b><p class="text-[11px]">O resto fica na mesa, com a conta aberta.</p></div><button type="button" onclick="msParteCancelar()" class="text-xs font-bold underline">Cancelar</button></div>`);
+                }
+                return r;
+            };
+            // ao trocar de mesa ou sair, o envio ao ecrã é feito já (msGuardarQuieto); cancela o atraso
+            const oQ = msGuardarQuieto;
+            msGuardarQuieto = function () { clearTimeout(msEnvioTimer); return oQ.apply(this, arguments); };
+            const oA = msAbrir;
+            msAbrir = function (id) {
+                if (msParcial) { msParcial = null; posCart = []; }
+                return oA.apply(this, arguments);
+            };
+        })();
+
+        // ======================================================= ESCOLHER ARTIGOS (MOVER / PAGAR PARTE)
+        function msSelAbrir(modo) {
+            if (!posMesa || !posCart.length) return;
+            msSel = { modo, q: posCart.map(() => 0), dest: null };
+            if (!document.getElementById('mss-modal')) document.body.insertAdjacentHTML('beforeend', '<div id="mss-modal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-[65] p-4" onclick="if(event.target===this)msSelFechar()"><div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-xl" id="mss-body"></div></div>');
+            const md = document.getElementById('mss-modal'); md.classList.remove('hidden'); md.classList.add('flex');
+            msSelPintar();
+        }
+        function msSelFechar() { const md = document.getElementById('mss-modal'); if (md) { md.classList.add('hidden'); md.classList.remove('flex'); } msSel = null; }
+        const msQ = q => (Math.round(q * 1000) / 1000).toString().replace('.', ',');
+        function msSelQ(i, d) { const max = posCart[i].qty; msSel.q[i] = Math.max(0, Math.min(max, Math.round((msSel.q[i] + d) * 1000) / 1000)); msSelPintar(); }
+        function msSelTudo() { const todos = msSel.q.every((q, i) => q === posCart[i].qty); msSel.q = posCart.map(c => todos ? 0 : c.qty); msSelPintar(); }
+        function msSelPintar() {
+            const m = msLista().find(x => x.id === posMesa); if (!m || !msSel) return;
+            const n = msSel.q.reduce((a, q) => a + q, 0), tot = msSel.q.reduce((a, q, i) => a + q * posCart[i].price, 0);
+            const mover = msSel.modo === 'mover';
+            const outras = msLista().filter(x => x.id !== m.id);
+            document.getElementById('mss-body').innerHTML = `
+                <div class="flex items-start justify-between gap-3"><div><h3 class="text-xl font-black text-slate-900">${mover ? 'Passar para outra mesa' : 'Pagar só uma parte'}</h3><p class="text-sm text-slate-500">${mover ? 'Escolha os artigos e a mesa para onde vão.' : 'Escolha o que vai pagar agora. O resto fica na ' + escapeHtml(msLabel(m)) + '.'}</p></div><button type="button" onclick="msSelFechar()" class="text-slate-400 text-xl" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+                <div><div class="flex justify-between items-center mb-1"><p class="text-xs font-black text-slate-600">Artigos da ${escapeHtml(msLabel(m))}</p><button type="button" onclick="msSelTudo()" class="text-xs font-bold underline" style="color:var(--brand)">Tudo / nada</button></div>
+                ${posCart.map((c, i) => `<div class="mss-row"><div class="flex-1 min-w-0"><p class="text-sm font-bold text-slate-800">${escapeHtml(c.name)}</p><p class="text-[11px] text-slate-500">${c.price ? eur2(c.price) : 'sem preço'}</p></div>
+                    <div class="q"><button type="button" onclick="msSelQ(${i},-1)" aria-label="Menos">−</button><b>${msQ(msSel.q[i])} / ${msQ(c.qty)}</b><button type="button" class="mais" onclick="msSelQ(${i},1)" aria-label="Mais">+</button></div></div>`).join('')}</div>
+                ${mover ? `<div><p class="text-xs font-black text-slate-600 mb-2">Para que mesa?</p>${outras.length ? '<div class="mss-dest">' + outras.map(x => `<button type="button" class="${msSel.dest === x.id ? 'on' : ''}" onclick="msSel.dest='${x.id}';msSelPintar()">${escapeHtml(msLabel(x))}${(x.itens || []).length ? '<small>' + eur2(msTotal(x)) + '</small>' : ''}</button>`).join('') + '</div>' : '<p class="text-sm text-slate-500">Ainda não há outras mesas. Crie-as em Mesas → Criar mesa.</p>'}</div>` : ''}
+                <button type="button" onclick="${mover ? 'msMover()' : 'msParte()'}" ${!n || (mover && !msSel.dest) ? 'disabled' : ''} class="w-full py-3.5 rounded-xl text-white font-black disabled:opacity-40" style="background:var(--brand)">${mover ? (n ? 'Passar ' + msQ(n) + ' artigo' + (n === 1 ? '' : 's') : 'Escolha os artigos') : (n ? 'Cobrar ' + eur2(tot) : 'Escolha os artigos')}</button>`;
+        }
+        function msTirar(lista, k, q) { let r = q; for (const c of lista) { if (r <= 0) break; if (estChave(c) !== k) continue; const t = Math.min(c.qty, r); c.qty = Math.round((c.qty - t) * 1000) / 1000; r -= t; } return lista.filter(c => c.qty > 0); }
+        function msMover() {
+            const m = msLista().find(x => x.id === posMesa), d = msLista().find(x => x.id === msSel.dest); if (!m || !d) return;
+            clearTimeout(msEnvioTimer); estEnviarMesa(m);           // o que é novo já segue para o ecrã
+            m.enviados = m.enviados || {}; d.enviados = d.enviados || {}; d.itens = d.itens || [];
+            let n = 0;
+            const sel = posCart.map((c, i) => ({ c, q: msSel.q[i] })).filter(x => x.q > 0);
+            sel.forEach(({ c, q }) => {
+                const k = estChave(c);
+                const it = Object.assign({}, c, { qty: q });
+                const ex = d.itens.find(x => estChave(x) === k && x.price === c.price); if (ex) ex.qty = Math.round((ex.qty + q) * 1000) / 1000; else d.itens.push(it);
+                const env = Math.min(m.enviados[k] || 0, q); if (env) { m.enviados[k] = Math.round((m.enviados[k] - env) * 1000) / 1000; d.enviados[k] = Math.round(((d.enviados[k] || 0) + env) * 1000) / 1000; }
+                c.qty = Math.round((c.qty - q) * 1000) / 1000; n += q;
+            });
+            posCart = posCart.filter(c => c.qty > 0);
+            if (!d.desde) d.desde = new Date().toISOString();
+            msSelFechar(); saveStorage();
+            dsToast(msQ(n) + ' artigo' + (n === 1 ? '' : 's') + ' passaram para a ' + msLabel(d));
+            if (!posCart.length) { posMesa = null; m.itens = []; m.desde = null; m.enviados = {}; saveStorage(); try { posCartClose(); } catch (_) {} posRenderCart(); posRenderGrid(); balView('mesas'); }
+            else { posRenderCart(); posRenderGrid(); }
+        }
+        function msParte() {
+            const m = msLista().find(x => x.id === posMesa); if (!m) return;
+            clearTimeout(msEnvioTimer); estEnviarMesa(m); saveStorage();
+            const sel = posCart.map((c, i) => Object.assign({}, c, { qty: msSel.q[i] })).filter(c => c.qty > 0);
+            msParcial = { id: m.id, label: msLabel(m), itens: JSON.parse(JSON.stringify(sel)) };
+            msSelFechar();
+            posMesa = null; posCart = sel;
+            posRenderCart(); posRenderGrid();
+            try { if (window.innerWidth < 1024) posCartOpen(); } catch (_) {}
+        }
+        function msParteCancelar() { const id = msParcial && msParcial.id; msParcial = null; posCart = []; if (id) msAbrir(id); else { posRenderCart(); posRenderGrid(); } }
+        (function () {
+            const oCk = posCheckout;
+            posCheckout = function () {
+                const p = msParcial, before = (appState.orders || []).length;
+                if (p) window.estSemEnvio = true;
+                let r; try { r = oCk.apply(this, arguments); } finally { window.estSemEnvio = false; }
+                if (p && (appState.orders || []).length > before) {
+                    const o = appState.orders[0]; o.mesa = p.label + ' · parte';
+                    const fila = typeof dvFila !== 'undefined' && dvFila;
+                    if (!fila) msParteFim(p);
+                }
+                return r;
+            };
+            // conta dividida dentro de uma parte: só fecha a parte no fim
+            if (typeof dvComecar === 'function') {
+                const oD = dvComecar;
+                dvComecar = function () { if (msParcial) window.estSemEnvio = true; try { return oD.apply(this, arguments); } finally { window.estSemEnvio = false; } };
+            }
+            setInterval(() => { if (msParcial && msParcial.pago && !(typeof dvFila !== 'undefined' && dvFila)) msParteFim(msParcial); }, 1000);
+        })();
+        function msParteFim(p) {
+            const m = msLista().find(x => x.id === p.id); msParcial = null;
+            if (m) {
+                let it = JSON.parse(JSON.stringify(m.itens || []));
+                m.enviados = m.enviados || {};
+                p.itens.forEach(c => { const k = estChave(c); it = msTirar(it, k, c.qty); if (m.enviados[k]) { m.enviados[k] = Math.max(0, Math.round((m.enviados[k] - c.qty) * 1000) / 1000); if (!m.enviados[k]) delete m.enviados[k]; } });
+                m.itens = it; if (!it.length) { m.desde = null; m.enviados = {}; }
+                saveStorage();
+                setTimeout(() => {
+                    if (it.length) { dsToast('Parte paga · ficam ' + eur2(msTotal(m)) + ' na ' + msLabel(m)); posCart = []; msAbrir(m.id); }
+                    else { dsToast(msLabel(m) + ' paga por completo'); balView('mesas'); }
+                }, 400);
+            }
+        }
+        // parte paga em várias pessoas (Dividir a conta): marca quando o último pagamento entra
+        (function () {
+            const oCk = posCheckout;
+            posCheckout = function () {
+                const p = msParcial, fila = typeof dvFila !== 'undefined' && dvFila;
+                const r = oCk.apply(this, arguments);
+                if (p && fila && !(typeof dvFila !== 'undefined' && dvFila)) p.pago = true;
+                return r;
+            };
         })();
     </script>
 </body>
