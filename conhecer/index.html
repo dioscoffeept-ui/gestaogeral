@@ -24,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Dio’Stock","applicationCategory":"BusinessApplication","operatingSystem":"Web, Android, iOS","description":"App de gestão para cafés, bares e restaurantes: fichas técnicas com custos, estoque, ponto de venda, menu por QR e faturação.","offers":[{"@type":"Offer","name":"Grátis","price":"0","priceCurrency":"EUR"},{"@type":"Offer","name":"Café","price":"7","priceCurrency":"EUR"},{"@type":"Offer","name":"PRO","price":"17","priceCurrency":"EUR"}],"publisher":{"@type":"Organization","name":"Dio’s Coffee","email":"dioscoffeept@gmail.com"}}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Dio’Stock","applicationCategory":"BusinessApplication","operatingSystem":"Web, Android, iOS","description":"App de gestão para cafés, bares e restaurantes: fichas técnicas com custos, estoque, ponto de venda, menu por QR e faturação.","offers":[{"@type":"Offer","name":"Grátis","price":"0","priceCurrency":"EUR"},{"@type":"Offer","name":"Café","price":"15","priceCurrency":"EUR"},{"@type":"Offer","name":"PRO","price":"32","priceCurrency":"EUR"}],"publisher":{"@type":"Organization","name":"Dio’s Coffee","email":"dioscoffeept@gmail.com"}}
 </script>
 <script type="application/ld+json">
 {"@context": "https://schema.org", "@graph": [{"@type": "Organization", "@id": "https://dioscoffeept-ui.github.io/gestaogeral/#org", "name": "Dio’Stock", "url": "https://dioscoffeept-ui.github.io/gestaogeral/conhecer/", "logo": "https://dioscoffeept-ui.github.io/gestaogeral/icon-512.png", "email": "dioscoffeept@gmail.com", "address": {"@type": "PostalAddress", "addressLocality": "Cascais", "addressCountry": "PT"}}, {"@type": "WebSite", "name": "Dio’Stock", "url": "https://dioscoffeept-ui.github.io/gestaogeral/conhecer/", "inLanguage": "pt-PT", "publisher": {"@id": "https://dioscoffeept-ui.github.io/gestaogeral/#org"}}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Preciso de instalar alguma coisa?", "acceptedAnswer": {"@type": "Answer", "text": "Não. O Dio’Stock abre no navegador do telemóvel, tablet ou computador. Se quiser, adicione-o ao ecrã principal e passa a abrir como uma app."}}, {"@type": "Question", "name": "Os meus dados ficam guardados?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. Cada empresa tem o seu login e os seus dados, guardados na nuvem. Entre noutro aparelho e encontra tudo como deixou. Pode ainda descarregar uma cópia de segurança quando quiser."}}, {"@type": "Question", "name": "Posso pôr a minha equipa a usar?", "acceptedAnswer": {"@type": "Answer", "text": "Sim, no plano PRO. Cada colaborador entra com o seu acesso e vê só o que precisa, por exemplo o balcão sem os custos."}}, {"@type": "Question", "name": "O Dio’Stock emite faturas?", "acceptedAnswer": {"@type": "Answer", "text": "Emite através do Vendus, que é certificado pela Autoridade Tributária. Nós ligamos a sua conta Vendus ao Dio’Stock e, a partir daí, cada pedido fechado gera a fatura sozinho. Sem Vendus, o Dio’Stock regista as vendas e o estoque, e as faturas são feitas no seu programa de faturação."}}, {"@type": "Question", "name": "Serve para uma banca em feiras?", "acceptedAnswer": {"@type": "Answer", "text": "Serve. Foi feito numa. O balcão funciona no telemóvel, o terminal liga ao hotspot e o menu por QR evita filas."}}, {"@type": "Question", "name": "Como cancelo?", "acceptedAnswer": {"@type": "Answer", "text": "Na própria app, em Planos. Não há fidelização: no plano mensal paga mês a mês; no anual, paga uma vez por ano."}}]}]}
@@ -371,7 +371,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       <div class="ecra">
         <div class="ui">
           <div class="ui-t">Fichas do bar <small>12 fichas</small></div>
-          <div class="linha"><b>Expresso duplo</b><span class="num">custo 0,49 € · <b style="color:var(--green)">71%</b></span></div>
+          <div class="linha"><b>Expresso</b><span class="num">custo 0,26 € · <b style="color:var(--green)">70%</b></span></div>
           <div class="linha"><b>Cappuccino</b><span class="num">custo 0,82 € · <b style="color:var(--green)">74%</b></span></div>
           <div class="linha"><b>Iced Matcha</b><span class="num">custo 1,36 € · <b style="color:var(--green)">69%</b></span></div>
           <div class="linha"><b>Nitro Cold Brew</b><span class="num">custo 1,30 € · <b style="color:#D97706">63%</b></span></div>
@@ -421,7 +421,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
           <div class="ui-t">Balcão <small>pedido #42</small></div>
           <div class="pos num">
             <div class="on">Latte<span>3,80 € · 2</span></div>
-            <div>Expresso<span>2,00 €</span></div>
+            <div>Expresso<span>1,00 €</span></div>
             <div>Cappuccino<span>3,50 €</span></div>
             <div>Flat White<span>3,80 €</span></div>
             <div class="on">Bolo de banana<span>2,00 € · 1</span></div>
@@ -540,8 +540,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
         <span class="rot">O mais escolhido</span>
         <h3>Café</h3>
         <p class="para">Para um café, uma banca ou um bar a funcionar todos os dias.</p>
-        <p class="val num" data-mes="7 €" data-ano="70 €">7 €<small> /mês</small></p>
-        <p class="eq num" data-mes="ou 70 € por ano" data-ano="equivale a 5,83 € por mês">ou 70 € por ano</p>
+        <p class="val num" data-mes="15 €" data-ano="149 €">15 €<small> /mês</small></p>
+        <p class="eq num" data-mes="ou 149 € por ano" data-ano="equivale a 12,42 € por mês">ou 149 € por ano</p>
         <ul>
           <li>Fichas do bar ilimitadas, com foto</li>
           <li>Gestão de stock e porções prontas</li>
@@ -556,8 +556,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       <div class="pl">
         <h3>PRO</h3>
         <p class="para">Para restaurantes e brunch com cozinha, equipa e fornecedores.</p>
-        <p class="val num" data-mes="17 €" data-ano="170 €">17 €<small> /mês</small></p>
-        <p class="eq num" data-mes="ou 170 € por ano" data-ano="equivale a 14,17 € por mês">ou 170 € por ano</p>
+        <p class="val num" data-mes="32 €" data-ano="320 €">32 €<small> /mês</small></p>
+        <p class="eq num" data-mes="ou 320 € por ano" data-ano="equivale a 26,67 € por mês">ou 320 € por ano</p>
         <ul>
           <li>Tudo o que o plano Café inclui</li>
           <li>Fichas da cozinha e do brunch</li>
@@ -570,6 +570,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       </div>
     </div>
     <p class="pl-nota">Preços finais, sem IVA a acrescentar. O terminal SumUp e a conta Vendus são contratados à parte, diretamente a essas empresas.</p>
+    <p class="pl-nota">Pagamentos online dos seus clientes (QR, link ou menu online, pela Stripe): pagam-se as taxas da Stripe mais <b>0,5%</b> do Dio’Stock por pagamento. Em dinheiro, no terminal e por MB WAY com o QR da loja não há comissão.</p>
   </div>
 </section>
 
@@ -632,7 +633,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 (function () {
   // ficha do topo: calculadora com valores do visitante
   const B = {
-    expresso:   { nome: 'Expresso duplo', copo: 'Ficha técnica · chávena de 60 ml', g: 18, ml: 0,   emb: 0.06, preco: 2.00 },
+    expresso:   { nome: 'Expresso',       copo: 'Ficha técnica · chávena de 30 ml', g: 9,  ml: 0,   emb: 0.03, preco: 1.00 },
     cappuccino: { nome: 'Cappuccino',     copo: 'Ficha técnica · copo de 180 ml',  g: 18, ml: 120, emb: 0.15, preco: 3.50 },
     latte:      { nome: 'Latte',          copo: 'Ficha técnica · copo de 300 ml',  g: 18, ml: 160, emb: 0.20, preco: 3.80 },
     flat:       { nome: 'Flat White',     copo: 'Ficha técnica · copo de 180 ml',  g: 18, ml: 110, emb: 0.15, preco: 3.80 },
