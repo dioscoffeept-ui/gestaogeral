@@ -1312,7 +1312,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 08/11/2026 21:07</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 08/11/2026 21:20</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -15967,7 +15967,7 @@ var qrcode = function() {
             gerProteger('posCancelOrder', id => { const o = (appState.orders || []).find(x => x.id === id); return 'Anular o pedido' + (o ? ' de ' + eur2(o.total) : '') + (o && o.fiscal && o.fiscal.numero ? ' e emitir nota de crédito' : ''); });
             gerProteger('vdApagarTreino', 'Anular todos os pedidos de treino');
             gerProteger('posLimpar', 'Limpar os pedidos', () => posCart.length && (posMesa ? (msLista().find(x => x.id === posMesa) || {}).enviados && Object.keys((msLista().find(x => x.id === posMesa) || {}).enviados || {}).length : true));
-            gerProteger('posQty', function (i, d) { return 'Tirar ' + ((posCart[i] || {}).name || 'um artigo') + ' que já foi para o bar/cozinha'; }, function (i, d) { return d < 0 && posCart[i] && typeof rtJaFoi === 'function' && rtJaFoi(posCart[i]); });
+            // tirar artigos já enviados: o staff pode (acontece durante o serviço); fica registado em Retirados
             gerProteger('posSuspApagar', 'Apagar um pedido suspenso');
             gerProteger('posDescartar', 'Fechar o pedido sem registar', () => posCart.length > 0);
             gerProteger('deleteRecipe', 'Apagar uma ficha técnica');
@@ -16015,7 +16015,7 @@ var qrcode = function() {
                     <button type="button" onclick="gerGuardar()" class="w-full py-2.5 rounded-xl text-white text-sm font-black" style="background:var(--brand)">${c.hash ? 'Mudar o código' : 'Guardar o código'}</button>
                     <label class="flex items-start justify-between gap-3 pt-2 border-t border-slate-100"><span><b class="block text-sm text-slate-800">Pedir o código também na minha conta</b><span class="block text-xs text-slate-500">Ligue se a equipa usa o tablet com a sua sessão iniciada.</span></span><input type="checkbox" class="w-5 h-5 mt-1" ${c.sempre ? 'checked' : ''} ${c.hash ? '' : 'disabled'} onchange="gerSempre(this)"></label>
                 </div>
-                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-sm font-bold text-slate-800 mb-1">Pede o código para:</p><p class="text-xs text-slate-600 leading-relaxed">Anular pedidos e emitir notas de crédito · tirar artigos que já foram para o bar/cozinha · limpar pedidos · apagar suspensos, fichas, insumos, fornecedores, categorias e mesas · ligar/desligar o modo treino · anular os pedidos de treino · importar backup · apagar tudo · remover colaboradores.</p><p class="text-xs text-slate-500 mt-2">Depois do código certo, fica desbloqueado ${GER_MIN} minutos nesse aparelho.</p></div>
+                <div class="rounded-2xl bg-slate-50 p-4"><p class="text-sm font-bold text-slate-800 mb-1">Pede o código para:</p><p class="text-xs text-slate-600 leading-relaxed">Anular pedidos e emitir notas de crédito · limpar pedidos · apagar suspensos, fichas, insumos, fornecedores, categorias e mesas · ligar/desligar o modo treino · anular os pedidos de treino · importar backup · apagar tudo · remover colaboradores.</p><p class="text-xs text-slate-500 mt-2">Depois do código certo, fica desbloqueado ${GER_MIN} minutos nesse aparelho.</p></div>
                 ${aut.length ? `<div><p class="text-sm font-bold text-slate-800 mb-1">Últimas autorizações</p>${aut.map(a => `<p class="text-xs text-slate-600 py-1 border-b border-slate-100">${new Date(a.at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · <b>${escapeHtml(a.acao)}</b> · ${escapeHtml(a.por)}</p>`).join('')}</div>` : ''}`;
         }
         async function gerGuardar() {

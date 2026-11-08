@@ -97,6 +97,9 @@ body{overflow-x:hidden}
     <label class="f"><span>Palavra-passe</span><input id="lp" type="password" autocomplete="current-password" required minlength="6"></label>
     <button class="btn p w" style="margin-top:18px" id="lb">Entrar</button>
     <p class="msg" id="lm" role="status"></p>
+    <div id="cb" class="hide" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><label class="f" style="margin-top:0"><span>Código que recebeu por e-mail</span><input id="lcod" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></label>
+      <button type="button" class="btn p w" style="margin-top:10px" id="lcb">Confirmar código</button></div>
+    <button type="button" class="lk" id="ltc">Tenho um código</button>
     <button type="button" class="lk" id="lr">Esqueci a palavra-passe</button>
     <button type="button" class="lk" id="lc" style="margin-left:12px">Primeira vez? Criar acesso</button>
   </form>
@@ -132,10 +135,25 @@ $('#lf').onsubmit = async e => { e.preventDefault(); $('#lm').className = 'msg';
   if (error) { $('#lm').className = 'msg e'; $('#lm').textContent = /Invalid/.test(error.message) ? 'E-mail ou palavra-passe errados.' : (/confirm/i.test(error.message) ? 'Confirme primeiro o e-mail (veja a caixa de entrada).' : error.message); return; }
   arrancar(); };
 $('#lr').onclick = async () => { const em = $('#le').value.trim(); if (!em) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva primeiro o e-mail.'; return; }
-  await sb.auth.resetPasswordForEmail(em, { redirectTo: location.href }); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Se o e-mail existir, chega um link para mudar a palavra-passe.'; };
+  await sb.auth.resetPasswordForEmail(em, { redirectTo: location.href }); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Se o e-mail existir, chega um código. Escreva-o abaixo.'; mostrarCod('recovery'); };
 $('#lc').onclick = async () => { const em = $('#le').value.trim(), pw = $('#lp').value; if (!em || pw.length < 8) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva o e-mail e uma palavra-passe com 8 ou mais caracteres.'; return; }
   const { error } = await sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.href } });
-  $('#lm').className = 'msg ' + (error ? 'e' : 'ok'); $('#lm').textContent = error ? error.message : 'Acesso criado. Confirme o e-mail pelo link que recebeu e depois entre.'; };
+  $('#lm').className = 'msg ' + (error ? 'e' : 'ok'); $('#lm').textContent = error ? (/registered/i.test(error.message) ? 'Este e-mail já tem conta. Entre com a palavra-passe ou use "Esqueci a palavra-passe".' : error.message) : 'Enviámos um código para ' + em + '. Escreva-o abaixo.'; if (!error) mostrarCod('signup'); };
+let codTipo = 'signup';
+const mostrarCod = t => { codTipo = t; $('#cb').classList.remove('hide'); $('#lcod').focus(); };
+$('#ltc').onclick = () => mostrarCod(codTipo);
+$('#lcb').onclick = async () => {
+  const email = $('#le').value.trim(), token = $('#lcod').value.replace(/\s/g, '');
+  if (!email || token.length < 6) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva o e-mail e o código de 6 números.'; return; }
+  let ok = null, err = null;
+  for (const type of [codTipo, 'signup', 'email', 'recovery'].filter((v, i, a) => a.indexOf(v) === i)) {
+    const { data, error } = await sb.auth.verifyOtp({ email, token, type });
+    if (!error && data && data.session) { ok = type; break; } err = error;
+  }
+  if (!ok) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Código errado ou expirado. Peça outro.'; return; }
+  if (ok === 'recovery') { const n = prompt('Escreva a nova palavra-passe (8 ou mais caracteres):'); if (n && n.length >= 8) { const { error } = await sb.auth.updateUser({ password: n }); toast(error ? error.message : 'Palavra-passe mudada'); } }
+  arrancar();
+};
 $('#out').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 $('#rf').onclick = () => carregar();
 
