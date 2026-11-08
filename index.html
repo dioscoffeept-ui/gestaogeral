@@ -1200,6 +1200,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         #est-grid .est-t header > span { display: block; margin-top: 4px; }
         #est-grid .est-t li .ck { text-decoration: none; }
     </style>
+
+    <style>
+        #pos-limpar { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; background: #fff; border: 1px solid #E4DCCF; font-size: 12.5px; font-weight: 800; color: #7A6A60; }
+        #pos-limpar:hover { color: #B91C1C; border-color: #FCA5A5; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1280,7 +1285,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 07/11/2026 23:46</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 08/11/2026 00:16</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -15663,6 +15668,33 @@ var qrcode = function() {
             try { await sb.from('pedidos_estacao').update({ estado: 'novo', pronto_em: null }).eq('id', id); } catch (_) {}
             estBuscar();
         }
+    </script>
+
+    <script>
+        (function () {
+            const oR = posRenderCart;
+            posRenderCart = function () {
+                const r = oR.apply(this, arguments);
+                const box = document.getElementById('pos-cart'); if (!box) return r;
+                const head = [...box.children].find(el => el.tagName === 'DIV' && el.id !== 'pos-mesa-bar' && /Pedidos/.test(el.textContent) && el.querySelector('button') && !el.classList.contains('overflow-y-auto'));
+                if (!head) return r;
+                if (box.firstElementChild !== head) box.insertBefore(head, box.firstElementChild);
+                head.style.justifyContent = 'flex-start'; head.style.gap = '12px';
+                const limpar = [...head.querySelectorAll('button')].find(b => b.textContent.trim() === 'Limpar');
+                const lista = box.querySelector(':scope > div.overflow-y-auto');
+                if (limpar && lista) {
+                    limpar.remove();
+                    if (posCart.length) {
+                        const b = document.createElement('button');
+                        b.type = 'button'; b.id = 'pos-limpar'; b.setAttribute('onclick', limpar.getAttribute('onclick') || '');
+                        if (!b.getAttribute('onclick')) b.onclick = limpar.onclick;
+                        b.innerHTML = '<i class="fas fa-trash-can"></i>Limpar pedidos';
+                        lista.insertAdjacentElement('afterend', b);
+                    }
+                }
+                return r;
+            };
+        })();
     </script>
 </body>
 </html>
