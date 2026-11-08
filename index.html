@@ -1205,6 +1205,19 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         #pos-limpar { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 12px; background: #fff; border: 1px solid #E4DCCF; font-size: 12.5px; font-weight: 800; color: #7A6A60; }
         #pos-limpar:hover { color: #B91C1C; border-color: #FCA5A5; }
     </style>
+
+    <style>
+        #rt-modal { position: fixed; inset: 0; z-index: 74; background: rgba(15,23,42,.5); display: none; align-items: flex-end; justify-content: center; padding: 16px; }
+        #rt-modal.on { display: flex; }
+        @media (min-width: 640px) { #rt-modal { align-items: center; } }
+        #rt-modal .rt-ops { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        #rt-modal .rt-ops button { padding: 14px 10px; border-radius: 14px; background: #F3EFE8; font-weight: 800; font-size: 14px; color: #24150E; text-align: left; }
+        #rt-modal .rt-ops button i { display: block; font-size: 18px; margin-bottom: 6px; color: var(--brand); }
+        #rt-card table { width: 100%; font-size: 13px; }
+        #rt-card td { padding: 8px 6px; border-top: 1px solid #F1EBE2; vertical-align: top; }
+        #rt-card .mt { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 6px; padding: 2px 7px; background: #F1EAE0; color: #5B4A40; white-space: nowrap; }
+        #rt-card .mt.desp { background: #FEE2E2; color: #991B1B; } #rt-card .mt.ofer { background: #DCFCE7; color: #166534; } #rt-card .mt.anul { background: #E0E7FF; color: #3730A3; }
+    </style>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -1285,7 +1298,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 08/11/2026 00:16</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 08/11/2026 11:57</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -15694,6 +15707,99 @@ var qrcode = function() {
                 }
                 return r;
             };
+        })();
+    </script>
+
+    <script>
+        const RT_MOT = [['Engano', 'fa-rotate-left', ''], ['Cliente desistiu', 'fa-user-xmark', ''], ['Oferta da casa', 'fa-gift', 'ofer'], ['Estragou / desperdício', 'fa-trash-can', 'desp']];
+        function rtQuem() { try { return (currentUser && (currentUser.user_metadata && currentUser.user_metadata.nome)) || (currentUser && currentUser.email) || 'Equipa'; } catch (_) { return 'Equipa'; } }
+        function rtRegistar(itens, origem, motivo, tipo) {
+            itens = (itens || []).filter(i => Number(i.qty) > 0); if (!itens.length) return;
+            appState.retirados = Array.isArray(appState.retirados) ? appState.retirados : [];
+            appState.retirados.unshift({ id: 'rt_' + Date.now() + Math.random().toString(36).slice(2, 6), at: new Date().toISOString(), por: rtQuem(), origem, motivo, tipo: tipo || 'artigo',
+                itens: itens.map(i => ({ nome: i.name || i.nome, qty: Number(i.qty), preco: Number(i.price != null ? i.price : i.preco || 0) })),
+                valor: Math.round(itens.reduce((a, i) => a + Number(i.qty) * Number(i.price != null ? i.price : i.preco || 0), 0) * 100) / 100 });
+            const lim = Date.now() - 90 * 864e5; appState.retirados = appState.retirados.filter(r => new Date(r.at).getTime() >= lim).slice(0, 2000);
+            saveStorage();
+            try { rtPintar(); } catch (_) {}
+        }
+        // pergunta o motivo (só quando o artigo já tinha ido para o bar/cozinha ou ao limpar)
+        function rtMotivo(titulo, sub) {
+            return new Promise(res => {
+                if (!document.getElementById('rt-modal')) document.body.insertAdjacentHTML('beforeend', '<div id="rt-modal" role="dialog" aria-modal="true"><div class="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl" id="rt-body"></div></div>');
+                const md = document.getElementById('rt-modal');
+                document.getElementById('rt-body').innerHTML = `<div><h3 class="text-lg font-black text-slate-900">${escapeHtml(titulo)}</h3><p class="text-sm text-slate-500">${escapeHtml(sub || 'Fica registado em Vendas do Dia → Retirados.')}</p></div>
+                    <div class="rt-ops">${RT_MOT.map(([m, ic]) => `<button type="button" data-m="${m}"><i class="fas ${ic}"></i>${m}</button>`).join('')}</div>
+                    <div class="flex gap-2"><input id="rt-outro" type="text" maxlength="80" placeholder="Outro motivo…" class="flex-1 rounded-xl border-slate-300 text-sm"><button type="button" data-m="__outro" class="px-4 rounded-xl text-white font-black" style="background:var(--brand)">OK</button></div>`;
+                md.classList.add('on');
+                md.querySelectorAll('button[data-m]').forEach(b => b.onclick = () => {
+                    let m = b.dataset.m; if (m === '__outro') m = (document.getElementById('rt-outro').value || '').trim() || 'Outro';
+                    md.classList.remove('on'); res(m);
+                });
+            });
+        }
+        const rtOrigem = () => posMesa ? msLabel(msLista().find(x => x.id === posMesa) || {}) : (typeof msParcial !== 'undefined' && msParcial ? msParcial.label : 'Balcão');
+        const rtJaFoi = c => { if (!posMesa) return false; const m = msLista().find(x => x.id === posMesa); return !!(m && m.enviados && (m.enviados[estChave(c)] || 0) >= c.qty); };
+        (function () {
+            // − num artigo
+            const oQ = posQty;
+            posQty = function (i, d) {
+                const c = posCart[i];
+                if (!c || d >= 0) return oQ.apply(this, arguments);
+                const snap = Object.assign({}, c, { qty: Math.min(-d, c.qty) }), origem = rtOrigem(), foi = rtJaFoi(c);
+                const r = oQ.apply(this, arguments);
+                if (foi) rtMotivo('Porque saiu ' + c.name + '?', 'Já tinha ido para o ' + (estDoItem(c) || 'bar') + '. Fica registado em Vendas do Dia → Retirados.').then(m => rtRegistar([snap], origem, m));
+                else rtRegistar([snap], origem, 'Corrigido antes de enviar');
+                return r;
+            };
+            // Limpar pedidos
+            posLimpar = async function () {
+                if (!posCart.length) return;
+                if (!(await dsConfirm('Limpar os pedidos?', 'Os artigos saem e ficam registados em Vendas do Dia → Retirados.', { ok: 'Limpar', danger: true, icon: 'fa-broom' }))) return;
+                const itens = JSON.parse(JSON.stringify(posCart)), origem = rtOrigem();
+                posCart = []; posClienteSel = null; posRenderCart(); posRenderGrid();
+                const m = await rtMotivo('Porque saíram estes pedidos?', itens.length + ' artigo' + (itens.length === 1 ? '' : 's') + ' · ' + eur2(itens.reduce((a, c) => a + c.qty * c.price, 0)));
+                rtRegistar(itens, origem, m, 'limpar');
+            };
+            // Fechar sem registar (teclado)
+            const oDs = posDescartar;
+            posDescartar = function () { const itens = JSON.parse(JSON.stringify(posCart)), origem = rtOrigem(); const r = oDs.apply(this, arguments); if (itens.length && !posCart.length) rtRegistar(itens, origem, 'Descartado', 'limpar'); return r; };
+            // apagar um suspenso
+            const oSa = posSuspApagar;
+            posSuspApagar = function (id) { const s = (posSusp() || []).find(x => x.id === id); const r = oSa.apply(this, arguments); if (s && !(posSusp() || []).find(x => x.id === id)) rtRegistar(s.itens || s.cart || [], 'Pedido suspenso' + (s.nome ? ' · ' + s.nome : ''), 'Suspenso apagado', 'limpar'); return r; };
+            // anular um pedido já pago
+            const oC = posCancelOrder;
+            posCancelOrder = async function (id) {
+                const ord = (appState.orders || []).find(x => x.id === id), snap = ord && JSON.parse(JSON.stringify(ord));
+                const r = await oC.apply(this, arguments);
+                const depois = (appState.orders || []).find(x => x.id === id);
+                if (snap && (!depois || depois.anulado || depois.estado === 'anulado' || depois.cancelado)) rtRegistar(snap.items || [], snap.mesa || 'Balcão', 'Pedido anulado' + (snap.fiscal && snap.fiscal.numero ? ' · fatura ' + snap.fiscal.numero : ''), 'anulado');
+                return r;
+            };
+        })();
+
+        // ---- Vendas do Dia → Retirados
+        let rtDia = 0;
+        function rtPintar() {
+            const sales = document.getElementById('tab-sales'); if (!sales) return;
+            let card = document.getElementById('rt-card');
+            if (!card) { card = document.createElement('div'); card.id = 'rt-card'; card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3'; const ref = document.getElementById('balcao-vendas-card'); if (ref) ref.insertAdjacentElement('afterend', card); else sales.insertBefore(card, sales.firstChild); }
+            const d0 = new Date(); d0.setHours(0, 0, 0, 0); d0.setDate(d0.getDate() - rtDia); const d1 = new Date(d0); d1.setDate(d1.getDate() + 1);
+            const l = (appState.retirados || []).filter(r => { const t = new Date(r.at); return t >= d0 && t < d1; });
+            const tot = l.reduce((a, r) => a + (r.valor || 0), 0);
+            const por = {}; l.forEach(r => { const k = /desperd|Estragou/.test(r.motivo) ? 'Desperdício' : /Oferta/.test(r.motivo) ? 'Ofertas' : r.tipo === 'anulado' ? 'Anulados' : 'Outros'; por[k] = (por[k] || 0) + (r.valor || 0); });
+            const cls = r => /desperd|Estragou/.test(r.motivo) ? 'desp' : /Oferta/.test(r.motivo) ? 'ofer' : r.tipo === 'anulado' ? 'anul' : '';
+            card.innerHTML = `<div class="flex items-center gap-3 flex-wrap"><div class="p-2.5 rounded-xl" style="background:#FBEDE6;color:var(--brand)"><i class="fas fa-clipboard-list text-lg"></i></div><div class="flex-1 min-w-0"><h2 class="text-xl font-black text-slate-900">Retirados</h2><p class="text-xs text-slate-500 font-medium">Tudo o que saiu dos pedidos sem ser vendido: onde, quem, porquê.</p></div>
+                <div class="inline-flex bg-slate-100 rounded-full p-1">${['Hoje', 'Ontem'].map((t, k) => `<button type="button" onclick="rtDia=${k};rtPintar()" class="px-3 py-1.5 rounded-full text-xs font-black ${rtDia === k ? 'bg-white shadow text-slate-900' : 'text-slate-500'}">${t}</button>`).join('')}</div></div>
+                ${l.length ? `<p class="text-sm text-slate-600"><b class="text-slate-900">${eur2(tot)}</b> em ${l.length} registo${l.length === 1 ? '' : 's'}${Object.keys(por).length ? ' · ' + Object.entries(por).map(([k, v]) => k + ' ' + eur2(v)).join(' · ') : ''}</p>
+                <div class="overflow-x-auto"><table><tbody>${l.map(r => `<tr><td class="whitespace-nowrap text-slate-500">${new Date(r.at).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td><b class="text-slate-800">${r.itens.map(i => (Math.round(i.qty * 1000) / 1000).toString().replace('.', ',') + '× ' + escapeHtml(i.nome)).join(', ')}</b><br><span class="text-slate-500">${escapeHtml(r.origem || '')} · ${escapeHtml(r.por || '')}</span></td>
+                    <td class="text-right whitespace-nowrap"><span class="mt ${cls(r)}">${escapeHtml(r.motivo || '')}</span><br><b class="text-slate-800">${eur2(r.valor || 0)}</b></td></tr>`).join('')}</tbody></table></div>`
+                : `<p class="text-sm text-slate-500">Nada retirado ${rtDia ? 'ontem' : 'hoje'}.</p>`}`;
+        }
+        (function () {
+            const oT = switchTab;
+            switchTab = function (t) { const r = oT.apply(this, arguments); if (t === 'sales') try { rtPintar(); } catch (_) {} return r; };
         })();
     </script>
 </body>

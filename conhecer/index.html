@@ -79,7 +79,10 @@ p{margin:0}
 .hero .lead{margin-top:24px}
 .hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
 .hero .nota{margin-top:18px;font-size:14px;color:var(--ink-3)}
-@media (max-width:920px){.hero .wrap{grid-template-columns:1fr;gap:44px}.hero{padding-top:36px}}
+@media (max-width:920px){.hero .wrap{grid-template-columns:minmax(0,1fr);gap:44px}.hero{padding-top:36px}}
+.wrap>*,[class*=grid]>*{min-width:0}
+html,body{overflow-x:hidden}
+img,svg,video{max-width:100%}
 
 /* a ficha técnica (elemento principal) */
 .ficha{background:var(--paper);border:1.5px solid var(--ink);border-radius:20px;box-shadow:10px 10px 0 var(--brand);padding:26px 26px 22px;max-width:480px;justify-self:end;width:100%;position:relative}
@@ -96,7 +99,7 @@ p{margin:0}
 .ficha tr.tot td{border-bottom:0;font-weight:700;padding-top:12px}
 .preco{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--foam);border-radius:14px;padding:12px 14px;margin-top:10px}
 .preco span{font-weight:600;font-size:15px;white-space:nowrap}
-@media (max-width:420px){.step output{min-width:78px;font-size:21px}.step button{width:34px;height:34px}.preco{padding:10px 12px}}
+@media (max-width:420px){.step output{min-width:64px;font-size:20px}.step button{width:32px;height:32px;flex-shrink:0}.step{gap:6px}.preco{padding:10px 10px;gap:8px}.preco span{font-size:13.5px;white-space:normal;line-height:1.2}.pos div{font-size:12px;padding:10px 8px;min-height:64px}.pos div span{font-size:11.5px}}
 .step{display:flex;align-items:center;gap:6px}
 .step button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;font-size:20px;font-weight:700;cursor:pointer;color:var(--ink);line-height:1}
 .step button:hover{background:var(--ink);color:#fff}
