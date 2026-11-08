@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Dio’Stock · Gestão</title>
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F6F2EC;--card:#fff;--ink:#24150E;--ink2:#4A3B31;--ink3:#7A6A60;--line:#E9E1D6;--soft:#F1EAE0;--brand:#9C3815;--brand-soft:#FBEDE6;--green:#15803D;--green-soft:#DCFCE7;--amber:#B45309;--amber-soft:#FEF3C7;--red:#B91C1C;--red-soft:#FEE2E2;--blue:#1D4ED8;--blue-soft:#DBEAFE}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17110D;--card:#211812;--ink:#F5EDE6;--ink2:#D9CCC2;--ink3:#A8978B;--line:#3A2C23;--soft:#2C211A;--brand-soft:#3A2016;--green-soft:#123222;--amber-soft:#3A2A10;--red-soft:#3A1515;--blue-soft:#14223F}}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Schibsted Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.d{font-family:"Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.02em;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+a{color:var(--brand)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+.hide{display:none!important}
+/* login */
+#login{min-height:100dvh;display:grid;place-items:center;padding:24px 16px}
+.lg{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:28px}
+.lg .mk{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.lg h1{font-size:26px}
+.f{display:block;margin-top:14px}.f span{display:block;font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.f input,.f select,.f textarea{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:11px 13px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:11px 16px;font-weight:700;background:var(--soft);color:var(--ink)}
+.btn.p{background:var(--brand);color:#fff}.btn.w{width:100%}
+.msg{font-size:13.5px;margin-top:12px;min-height:20px}.msg.e{color:var(--red)}.msg.ok{color:var(--green)}
+.lk{font-size:13.5px;color:var(--ink3);text-decoration:underline;margin-top:12px;display:inline-block}
+/* app */
+header{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line)}
+.hd{max-width:1240px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.hd .t{font-size:19px;font-weight:800}.hd .t small{display:block;font:600 12px "Schibsted Grotesk",system-ui,sans-serif;color:var(--ink3);letter-spacing:0}
+.hd .sp{flex:1}.hd .me{font-size:13px;color:var(--ink3)}
+nav.tabs{max-width:1240px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{padding:10px 14px;font-weight:700;color:var(--ink3);border-bottom:2.5px solid transparent;white-space:nowrap;display:inline-flex;gap:8px;align-items:center}
+nav.tabs button.on{color:var(--ink);border-color:var(--brand)}
+nav.tabs .bd{background:var(--brand);color:#fff;border-radius:999px;font-size:11.5px;padding:1px 7px}
+main{max-width:1240px;margin:0 auto;padding:22px 20px 60px}
+.grid{display:grid;gap:14px}
+.k4{grid-template-columns:repeat(4,minmax(0,1fr))}.k2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:900px){.k4{grid-template-columns:repeat(2,minmax(0,1fr))}.k2{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px}
+.card h2{font-size:18px;margin-bottom:12px}
+.kpi .l{font-size:13.5px;font-weight:700;color:var(--ink3)}
+.kpi .v{font:800 32px/1.1 "Bricolage Grotesque",system-ui,sans-serif;margin-top:6px;letter-spacing:-.02em}
+.kpi .s{font-size:13px;color:var(--ink3);margin-top:4px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.pl{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.pl.g{background:var(--green-soft);color:var(--green)}.pl.a{background:var(--amber-soft);color:var(--amber)}.pl.r{background:var(--red-soft);color:var(--red)}.pl.b{background:var(--blue-soft);color:var(--blue)}.pl.n{background:var(--soft);color:var(--ink2)}.pl.br{background:var(--brand-soft);color:var(--brand)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+.tools input{flex:1;min-width:200px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:10px 13px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{padding:8px 12px;border-radius:999px;font-size:13px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--ink2)}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:13px;color:var(--ink3);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14.5px}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--soft)}
+td .sub{display:block;font-size:13px;color:var(--ink3)}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:20px;background:var(--card)}
+@media (max-width:760px){
+  .tw{border:0;background:none}
+  table.resp thead{display:none}
+  table.resp tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:10px}
+  table.resp td{border:0;padding:0}
+  table.resp td:first-child{grid-column:1/-1}
+  table.resp td[data-l]::before{content:attr(data-l);display:block;font-size:12px;font-weight:700;color:var(--ink3)}
+  table.resp .num{text-align:left}
+}
+@media (max-width:640px){.hd .me{display:none}.hd{padding:10px 14px;gap:10px}main{padding:16px 14px 50px}nav.tabs{padding:0 10px}}
+body{overflow-x:hidden}
+.vazio{padding:28px;text-align:center;color:var(--ink3)}
+/* gaveta */
+#gv{position:fixed;inset:0;z-index:30;background:rgba(15,10,6,.45);display:none;justify-content:flex-end}
+#gv.on{display:flex}
+#gv .pn{width:min(520px,100%);height:100%;background:var(--bg);overflow-y:auto;padding:22px 20px 40px;box-shadow:-20px 0 40px -20px rgba(0,0,0,.4)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}.kv div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px}.kv b{display:block;font-size:17px}.kv span{font-size:12.5px;color:var(--ink3);font-weight:600}
+.msgc{border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--card);margin-bottom:10px}
+.msgc .meta{font-size:13px;color:var(--ink3)}
+.msgc .resp{margin-top:10px;background:var(--soft);border-radius:12px;padding:10px 12px}
+.msgc textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:var(--card)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;z-index:50;display:none}
+</style>
+</head>
+<body>
+<section id="login">
+  <form class="lg" id="lf" autocomplete="on">
+    <div class="mk"><svg width="44" height="44" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#9C3815"/><g transform="translate(137.6 105.6) scale(0.62)"><path fill="#fff" fill-rule="evenodd" d="M0 0H242L382 300L352 485H0Z M100 213V387H208V213Z"/></g></svg><div><h1>Gestão</h1><span style="color:var(--ink3);font-size:13.5px">Dio’Stock · área reservada</span></div></div>
+    <label class="f"><span>E-mail</span><input id="le" type="email" autocomplete="username" required></label>
+    <label class="f"><span>Palavra-passe</span><input id="lp" type="password" autocomplete="current-password" required minlength="6"></label>
+    <button class="btn p w" style="margin-top:18px" id="lb">Entrar</button>
+    <p class="msg" id="lm" role="status"></p>
+    <button type="button" class="lk" id="lr">Esqueci a palavra-passe</button>
+    <button type="button" class="lk" id="lc" style="margin-left:12px">Primeira vez? Criar acesso</button>
+  </form>
+</section>
+
+<div id="app" class="hide">
+  <header>
+    <div class="hd"><svg width="36" height="36" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#9C3815"/><g transform="translate(137.6 105.6) scale(0.62)"><path fill="#fff" fill-rule="evenodd" d="M0 0H242L382 300L352 485H0Z M100 213V387H208V213Z"/></g></svg>
+      <div class="t d">Dio’Stock<small>Gestão de clientes</small></div><div class="sp"></div>
+      <span class="me" id="me"></span><button class="btn" id="rf" title="Atualizar">↻</button><button class="btn" id="out">Sair</button></div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+  <main id="mn"></main>
+</div>
+<div id="gv" role="dialog" aria-modal="true"><div class="pn" id="gvp"></div></div>
+<div id="toast" role="status"></div>
+
+<script src="supabase.js"></script>
+<script>
+const sb = supabase.createClient('https://brisrzuvvxkkzhmhsgro.supabase.co', 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', { auth: { persistSession: true, storageKey: 'ds-gestor-auth' } });
+const PRECO = { cafe: 15, pro: 32 }, PNOME = { free: 'Grátis', gratis: 'Grátis', cafe: 'Café', pro: 'PRO' };
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = v => (Number(v) || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+const dia = d => d ? new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
+const ha = d => { if (!d) return 'nunca'; const m = (Date.now() - new Date(d)) / 60000; if (m < 60) return 'há ' + Math.max(1, Math.round(m)) + ' min'; if (m < 1440) return 'há ' + Math.round(m / 60) + ' h'; const dd = Math.round(m / 1440); return dd === 1 ? 'ontem' : 'há ' + dd + ' dias'; };
+const toast = t => { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', 2800); };
+let D = null, tab = 'geral', filtro = 'todos', busca = '';
+
+// ---------- login
+$('#lf').onsubmit = async e => { e.preventDefault(); $('#lm').className = 'msg'; $('#lm').textContent = 'A entrar…';
+  const { error } = await sb.auth.signInWithPassword({ email: $('#le').value.trim(), password: $('#lp').value });
+  if (error) { $('#lm').className = 'msg e'; $('#lm').textContent = /Invalid/.test(error.message) ? 'E-mail ou palavra-passe errados.' : (/confirm/i.test(error.message) ? 'Confirme primeiro o e-mail (veja a caixa de entrada).' : error.message); return; }
+  arrancar(); };
+$('#lr').onclick = async () => { const em = $('#le').value.trim(); if (!em) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva primeiro o e-mail.'; return; }
+  await sb.auth.resetPasswordForEmail(em, { redirectTo: location.href }); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Se o e-mail existir, chega um link para mudar a palavra-passe.'; };
+$('#lc').onclick = async () => { const em = $('#le').value.trim(), pw = $('#lp').value; if (!em || pw.length < 8) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva o e-mail e uma palavra-passe com 8 ou mais caracteres.'; return; }
+  const { error } = await sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.href } });
+  $('#lm').className = 'msg ' + (error ? 'e' : 'ok'); $('#lm').textContent = error ? error.message : 'Acesso criado. Confirme o e-mail pelo link que recebeu e depois entre.'; };
+$('#out').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$('#rf').onclick = () => carregar();
+
+async function arrancar() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $('#login').classList.remove('hide'); $('#app').classList.add('hide'); return; }
+  const { data: adm } = await sb.rpc('is_admin');
+  if (adm !== true) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Esta conta (' + session.user.email + ') não tem acesso de gestor.'; await sb.auth.signOut(); return; }
+  $('#me').textContent = session.user.email; $('#login').classList.add('hide'); $('#app').classList.remove('hide');
+  carregar();
+}
+async function carregar() {
+  $('#mn').innerHTML = '<p class="vazio">A carregar…</p>';
+  const { data, error } = await sb.rpc('admin_painel');
+  if (error) { $('#mn').innerHTML = '<p class="vazio">Não foi possível carregar: ' + esc(error.message) + '</p>'; return; }
+  D = data; D.empresas.forEach(classificar); pintar();
+}
+function classificar(e) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  const valido = !e.plano_valido_ate || e.plano_valido_ate >= hoje;
+  const pago = (e.pago_total_cent || 0) > 0 || e.stripe_sub;
+  e.pl = (e.plano || 'free').toLowerCase();
+  e.pagante = (e.pl === 'cafe' || e.pl === 'pro') && valido && pago;
+  e.oferta = (e.pl === 'cafe' || e.pl === 'pro') && valido && !pago;
+  e.expirado = (e.pl === 'cafe' || e.pl === 'pro') && !valido && !!e.plano_valido_ate;
+  const ativo = [e.ultimo_pedido, e.last_sign_in_at, e.dados_em].filter(Boolean).map(x => new Date(x).getTime());
+  e.ult_ativ = ativo.length ? new Date(Math.max(...ativo)).toISOString() : null;
+  const dias = e.ult_ativ ? (Date.now() - new Date(e.ult_ativ)) / 864e5 : 999;
+  const expiraEm = e.plano_valido_ate ? (new Date(e.plano_valido_ate) - Date.now()) / 864e5 : 999;
+  e.risco = !e.bloqueado && ((e.pagante && (dias > 10 || expiraEm < 7)) || (e.oferta && expiraEm < 7));
+  e.estado = e.bloqueado ? ['Bloqueado', 'r'] : e.pagante ? ['A pagar', 'g'] : e.oferta ? ['Oferta / teste', 'b'] : e.expirado ? ['Expirou', 'a'] : ['Grátis', 'n'];
+}
+function pintar() {
+  const nm = D.mensagens.filter(m => m.estado === 'nova').length;
+  const T = [['geral', 'Visão geral'], ['clientes', 'Clientes'], ['mensagens', 'Mensagens' + (nm ? ` <span class="bd">${nm}</span>` : '')], ['cancel', 'Cancelamentos'], ['pag', 'Pagamentos']];
+  $('#tabs').innerHTML = T.map(([k, t]) => `<button class="${k === tab ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { tab = b.dataset.t; pintar(); });
+  ({ geral: vGeral, clientes: vClientes, mensagens: vMensagens, cancel: vCancel, pag: vPag })[tab]();
+}
+// ---------- visão geral
+function vGeral() {
+  const E = D.empresas, pag = E.filter(e => e.pagante), mrr = pag.reduce((a, e) => a + (PRECO[e.pl] || 0), 0);
+  const ativos = E.filter(e => e.ult_ativ && Date.now() - new Date(e.ult_ativ) < 7 * 864e5).length;
+  const novos = E.filter(e => Date.now() - new Date(e.criado_em) < 30 * 864e5).length;
+  const risco = E.filter(e => e.risco);
+  const vend = E.filter(e => (e.vendas_30d || 0) > 0).sort((a, b) => b.vendas_30d - a.vendas_30d), maxV = vend[0] ? vend[0].vendas_30d : 1;
+  const parados = E.filter(e => !(e.vendas_30d > 0)).sort((a, b) => new Date(a.ult_ativ || 0) - new Date(b.ult_ativ || 0));
+  const mot = {}; D.cancelamentos.forEach(c => mot[c.motivo] = (mot[c.motivo] || 0) + 1); const mtot = D.cancelamentos.length || 1;
+  $('#mn').innerHTML = `<div class="grid k4">
+    ${kpi('Clientes', E.length, novos + ' novos nos últimos 30 dias')}
+    ${kpi('A pagar', pag.length, 'receita mensal ≈ ' + eur(mrr))}
+    ${kpi('Ativos esta semana', ativos, 'de ' + E.length + ' contas')}
+    ${kpi('Em risco', risco.length, 'parados ou o plano a acabar')}</div>
+  <div class="grid k2" style="margin-top:14px">
+    <div class="card"><h2>Quem mais vende · 30 dias</h2>${vend.length ? vend.slice(0, 8).map(e => `<div class="row" data-u="${e.user_id}" style="cursor:pointer"><div style="flex:1;min-width:0"><b>${esc(e.nome)}</b><div class="bar"><i style="width:${Math.max(4, e.vendas_30d / maxV * 100)}%"></i></div></div><span class="num"><b>${eur(e.vendas_30d)}</b><span style="display:block;font-size:12.5px;color:var(--ink3)">${e.pedidos_30d} pedidos</span></span></div>`).join('') : '<p class="vazio">Ainda nenhum cliente registou vendas no Balcão.</p>'}</div>
+    <div class="card"><h2>Menos movimento</h2>${parados.slice(0, 8).map(e => `<div class="row" data-u="${e.user_id}" style="cursor:pointer"><div style="flex:1;min-width:0"><b>${esc(e.nome)}</b><span style="display:block;font-size:13px;color:var(--ink3)">sem vendas em 30 dias · ativo ${ha(e.ult_ativ)}</span></div><span class="pl ${e.estado[1]}">${e.estado[0]}</span></div>`).join('') || '<p class="vazio">Todos estão a vender.</p>'}</div>
+    <div class="card"><h2>Precisa de atenção</h2>${risco.length ? risco.map(e => `<div class="row" data-u="${e.user_id}" style="cursor:pointer"><div style="flex:1;min-width:0"><b>${esc(e.nome)}</b><span style="display:block;font-size:13px;color:var(--ink3)">${PNOME[e.pl] || e.pl} até ${dia(e.plano_valido_ate)} · ativo ${ha(e.ult_ativ)}</span></div><span class="pl a">em risco</span></div>`).join('') : '<p class="vazio">Nada em risco agora.</p>'}</div>
+    <div class="card"><h2>Porque cancelam</h2>${D.cancelamentos.length ? Object.entries(mot).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<div class="row"><div style="flex:1"><b>${esc(m)}</b><div class="bar"><i style="width:${n / mtot * 100}%"></i></div></div><span class="num"><b>${n}</b></span></div>`).join('') : '<p class="vazio">Ainda ninguém cancelou.</p>'}</div>
+  </div>`;
+  $('#mn').querySelectorAll('[data-u]').forEach(r => r.onclick = () => abrir(r.dataset.u));
+}
+const kpi = (l, v, s) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+// ---------- clientes
+function vClientes() {
+  const F = [['todos', 'Todos'], ['pagantes', 'A pagar'], ['oferta', 'Oferta / teste'], ['gratis', 'Grátis'], ['risco', 'Em risco'], ['bloq', 'Bloqueados']];
+  const ok = e => filtro === 'todos' || (filtro === 'pagantes' && e.pagante) || (filtro === 'oferta' && e.oferta) || (filtro === 'gratis' && !e.pagante && !e.oferta) || (filtro === 'risco' && e.risco) || (filtro === 'bloq' && e.bloqueado);
+  const q = busca.toLowerCase(), L = D.empresas.filter(e => ok(e) && (!q || (e.nome + ' ' + (e.email || '')).toLowerCase().includes(q)));
+  $('#mn').innerHTML = `<div class="tools"><input id="q" type="search" placeholder="Procurar empresa ou e-mail…" value="${esc(busca)}"><div class="chips">${F.map(([k, t]) => `<button class="${k === filtro ? 'on' : ''}" data-f="${k}">${t}</button>`).join('')}</div></div>
+  <div class="tw"><table class="resp"><thead><tr><th>Empresa</th><th>Plano</th><th class="num">Vendas 30 d</th><th>Última atividade</th><th class="num">Fichas</th><th class="num">Pago</th><th>Estado</th></tr></thead><tbody>
+  ${L.map(e => `<tr data-u="${e.user_id}"><td><b>${esc(e.nome)}</b><span class="sub">${esc(e.email || '')}</span></td>
+    <td data-l="Plano">${PNOME[e.pl] || esc(e.pl)}<span class="sub">${e.plano_valido_ate ? 'até ' + dia(e.plano_valido_ate) : '—'}</span></td>
+    <td data-l="Vendas 30 dias" class="num">${eur(e.vendas_30d)}<span class="sub">${e.pedidos_30d || 0} pedidos</span></td>
+    <td data-l="Última atividade">${ha(e.ult_ativ)}</td>
+    <td data-l="Fichas" class="num">${e.fichas}</td>
+    <td data-l="Pago no total" class="num">${eur((e.pago_total_cent || 0) / 100)}</td>
+    <td data-l="Estado"><span class="pl ${e.estado[1]}">${e.estado[0]}</span>${e.mensagens_novas ? ' <span class="pl br">' + e.mensagens_novas + ' msg</span>' : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="vazio">Nenhum cliente com este filtro.</td></tr>'}
+  </tbody></table></div>`;
+  const qi = $('#q'); qi.oninput = () => { busca = qi.value; const p = qi.selectionStart; vClientes(); const n = $('#q'); n.focus(); n.setSelectionRange(p, p); };
+  $('#mn').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { filtro = b.dataset.f; vClientes(); });
+  $('#mn').querySelectorAll('tr[data-u]').forEach(r => r.onclick = () => abrir(r.dataset.u));
+}
+// ---------- ficha do cliente (gaveta)
+function abrir(uid) {
+  const e = D.empresas.find(x => x.user_id === uid); if (!e) return;
+  const msgs = D.mensagens.filter(m => m.dono_id === uid), canc = D.cancelamentos.filter(c => c.dono_id === uid), pags = D.pagamentos.filter(p => p.dono_id === uid);
+  $('#gvp').innerHTML = `<div style="display:flex;align-items:flex-start;gap:12px"><div style="flex:1;min-width:0"><h2 style="font-size:24px">${esc(e.nome)}</h2><p style="margin:4px 0 0;color:var(--ink3)">${esc(e.email || '')} · cliente desde ${dia(e.criado_em)}</p></div><button class="btn" id="gx" aria-label="Fechar">✕</button></div>
+    <p style="margin:12px 0"><span class="pl ${e.estado[1]}">${e.estado[0]}</span> ${e.risco ? '<span class="pl a">em risco</span>' : ''}</p>
+    <div class="kv"><div><span>Vendas 30 dias</span><b>${eur(e.vendas_30d)}</b></div><div><span>Vendas 7 dias</span><b>${eur(e.vendas_7d)}</b></div><div><span>Pedidos 30 dias</span><b>${e.pedidos_30d || 0}</b></div><div><span>Último pedido</span><b>${ha(e.ultimo_pedido)}</b></div>
+      <div><span>Último login</span><b>${ha(e.last_sign_in_at)}</b></div><div><span>Fichas · insumos</span><b>${e.fichas} · ${e.insumos}</b></div><div><span>Colaboradores</span><b>${e.membros}</b></div><div><span>Pago no total</span><b>${eur((e.pago_total_cent || 0) / 100)}</b></div></div>
+    <div class="card" style="margin-top:14px"><h2>Plano e acesso</h2>
+      <label class="f"><span>Plano</span><select id="g-pl">${['free', 'cafe', 'pro'].map(p => `<option value="${p}" ${e.pl === p ? 'selected' : ''}>${PNOME[p]}</option>`).join('')}</select></label>
+      <label class="f"><span>Válido até</span><input id="g-va" type="date" value="${e.plano_valido_ate || ''}"></label>
+      <label class="f" style="display:flex;align-items:center;gap:10px"><input id="g-bl" type="checkbox" ${e.bloqueado ? 'checked' : ''} style="width:20px;height:20px"><span style="margin:0">Conta bloqueada</span></label>
+      <label class="f"><span>Mensagem de bloqueio (o cliente vê)</span><input id="g-bm" value="${esc(e.bloqueio_msg || '')}" placeholder="Ex.: pagamento em atraso"></label>
+      <label class="f"><span>Notas internas (só o gestor vê)</span><textarea id="g-no" rows="3">${esc(e.nota_admin || '')}</textarea></label>
+      <button class="btn p w" style="margin-top:14px" id="g-sv">Guardar</button></div>
+    <div class="card" style="margin-top:14px"><h2>Mensagens</h2>${msgs.length ? msgs.map(m => `<p style="margin:0 0 10px"><span class="pl ${m.estado === 'nova' ? 'br' : 'n'}">${m.estado === 'nova' ? 'Nova' : 'Respondida'}</span> <b>${esc(m.assunto || '')}</b> · ${dia(m.criado_em)}<br>${esc(m.texto)}</p>`).join('') : '<p style="color:var(--ink3);margin:0">Sem mensagens.</p>'}</div>
+    <div class="card" style="margin-top:14px"><h2>Cancelamentos</h2>${canc.length ? canc.map(c => `<p style="margin:0 0 8px"><b>${esc(c.motivo)}</b> · ${dia(c.criado_em)}${c.detalhe ? '<br>' + esc(c.detalhe) : ''}</p>`).join('') : '<p style="color:var(--ink3);margin:0">Nunca cancelou.</p>'}</div>
+    <div class="card" style="margin-top:14px"><h2>Pagamentos</h2>${pags.length ? pags.map(p => `<div class="row"><div style="flex:1">${PNOME[p.plano] || esc(p.plano || '')} · ${esc(p.periodo || '')}<span style="display:block;font-size:13px;color:var(--ink3)">${dia(p.criado_em)} · válido até ${dia(p.valido_ate)}</span></div><b>${eur(p.valor_cent / 100)}</b></div>`).join('') : '<p style="color:var(--ink3);margin:0">Sem pagamentos registados.</p>'}</div>`;
+  $('#gv').classList.add('on');
+  $('#gx').onclick = fechar;
+  $('#g-sv').onclick = async () => {
+    const { error } = await sb.rpc('admin_atualizar', { p_user: uid, p_plano: $('#g-pl').value, p_validade: $('#g-va').value || null, p_bloqueado: $('#g-bl').checked, p_msg: $('#g-bm').value || null, p_balcao: e.balcao || null, p_nota: $('#g-no').value || null });
+    if (error) return toast('Não guardou: ' + error.message);
+    toast('Guardado'); fechar(); carregar();
+  };
+}
+function fechar() { $('#gv').classList.remove('on'); }
+$('#gv').onclick = ev => { if (ev.target.id === 'gv') fechar(); };
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape') fechar(); });
+// ---------- mensagens
+function vMensagens() {
+  const M = D.mensagens;
+  $('#mn').innerHTML = M.length ? M.map(m => `<div class="msgc"><div class="meta"><span class="pl ${m.estado === 'nova' ? 'br' : 'n'}">${m.estado === 'nova' ? 'Nova' : 'Respondida'}</span> <b style="color:var(--ink)">${esc(m.empresa || '')}</b> · ${esc(m.autor_email || '')} · ${new Date(m.criado_em).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' })}</div>
+    <p style="margin:8px 0 0"><b>${esc(m.assunto || '')}</b><br><span style="white-space:pre-line">${esc(m.texto)}</span></p>
+    ${m.resposta ? `<div class="resp"><b style="color:var(--brand)">A sua resposta</b> · ${dia(m.respondido_em)}<br><span style="white-space:pre-line">${esc(m.resposta)}</span></div>` : `<textarea rows="3" id="r-${m.id}" placeholder="Escrever resposta… (o cliente vê na app, em Configurações → Contactos)"></textarea><button class="btn p" style="margin-top:8px" data-r="${m.id}">Enviar resposta</button>`}</div>`).join('') : '<p class="vazio">Ainda não há mensagens dos clientes.</p>';
+  $('#mn').querySelectorAll('[data-r]').forEach(b => b.onclick = async () => { const t = ($('#r-' + b.dataset.r).value || '').trim(); if (!t) return;
+    const { error } = await sb.rpc('admin_responder', { p_id: b.dataset.r, p_resposta: t }); if (error) return toast('Não enviou: ' + error.message); toast('Resposta enviada'); carregar(); });
+}
+// ---------- cancelamentos
+function vCancel() {
+  const C = D.cancelamentos;
+  $('#mn').innerHTML = C.length ? `<div class="tw"><table class="resp"><thead><tr><th>Empresa</th><th>Motivo</th><th>Detalhe</th><th>Plano</th><th>Data</th></tr></thead><tbody>${C.map(c => `<tr data-u="${c.dono_id || ''}"><td><b>${esc(c.empresa || '')}</b><span class="sub">${esc(c.email || '')}</span></td><td data-l="Motivo"><b>${esc(c.motivo)}</b></td><td data-l="Detalhe">${esc(c.detalhe || '—')}</td><td data-l="Plano">${PNOME[c.plano] || esc(c.plano || '')}</td><td data-l="Data">${dia(c.criado_em)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Ainda ninguém cancelou. Quando alguém cancela na app, o motivo aparece aqui.</p>';
+  $('#mn').querySelectorAll('tr[data-u]').forEach(r => r.dataset.u && (r.onclick = () => abrir(r.dataset.u)));
+}
+// ---------- pagamentos
+function vPag() {
+  const P = D.pagamentos, tot = P.reduce((a, p) => a + (p.valor_cent || 0), 0) / 100;
+  $('#mn').innerHTML = `<div class="grid k4" style="margin-bottom:14px">${kpi('Recebido (registado)', eur(tot), P.length + ' pagamentos')}</div>` + (P.length ? `<div class="tw"><table class="resp"><thead><tr><th>Empresa</th><th>Plano</th><th>Período</th><th class="num">Valor</th><th>Data</th><th>Válido até</th></tr></thead><tbody>${P.map(p => `<tr data-u="${p.dono_id}"><td><b>${esc(p.empresa || '')}</b><span class="sub">${esc(p.email || '')}</span></td><td data-l="Plano">${PNOME[p.plano] || esc(p.plano || '')}</td><td data-l="Período">${esc(p.periodo || '')}</td><td data-l="Valor" class="num">${eur(p.valor_cent / 100)}</td><td data-l="Data">${dia(p.criado_em)}</td><td data-l="Válido até">${dia(p.valido_ate)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Ainda não há pagamentos registados.</p>');
+  $('#mn').querySelectorAll('tr[data-u]').forEach(r => r.onclick = () => abrir(r.dataset.u));
+}
+sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { const n = prompt('Escreva a nova palavra-passe (8 ou mais caracteres):'); if (n && n.length >= 8) sb.auth.updateUser({ password: n }).then(({ error }) => toast(error ? error.message : 'Palavra-passe mudada')); } });
+arrancar();
+</script>
+</body>
+</html>
