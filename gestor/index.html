@@ -125,7 +125,7 @@ body{overflow-x:hidden}
 <script src="supabase.js"></script>
 <script>
 const sb = supabase.createClient('https://brisrzuvvxkkzhmhsgro.supabase.co', 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', { auth: { persistSession: true, storageKey: 'ds-gestor-auth' } });
-const PRECO = { cafe: 15, pro: 32 }, PNOME = { free: 'Grátis', gratis: 'Grátis', cafe: 'Café', pro: 'PRO' };
+const PRECO = { gratis: 5, cafe: 15, pro: 32 }, PNOME = { free: 'Fichas', gratis: 'Fichas', cafe: 'Café', pro: 'PRO' };
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const eur = v => (Number(v) || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
@@ -209,15 +209,15 @@ function classificar(e) {
   const valido = !e.plano_valido_ate || e.plano_valido_ate >= hoje;
   const pago = (e.pago_total_cent || 0) > 0 || e.stripe_sub;
   e.pl = (e.plano || 'gratis').toLowerCase(); if (e.pl === 'free') e.pl = 'gratis';
-  e.pagante = (e.pl === 'cafe' || e.pl === 'pro') && valido && pago;
-  e.oferta = (e.pl === 'cafe' || e.pl === 'pro') && valido && !pago;
-  e.expirado = (e.pl === 'cafe' || e.pl === 'pro') && !valido && !!e.plano_valido_ate;
+  e.pagante = valido && pago;
+  e.oferta = valido && !pago;
+  e.expirado = !valido && !!e.plano_valido_ate;
   const ativo = [e.ultimo_pedido, e.last_sign_in_at, e.dados_em].filter(Boolean).map(x => new Date(x).getTime());
   e.ult_ativ = ativo.length ? new Date(Math.max(...ativo)).toISOString() : null;
   const dias = e.ult_ativ ? (Date.now() - new Date(e.ult_ativ)) / 864e5 : 999;
   const expiraEm = e.plano_valido_ate ? (new Date(e.plano_valido_ate) - Date.now()) / 864e5 : 999;
   e.risco = !e.bloqueado && ((e.pagante && (dias > 10 || expiraEm < 7)) || (e.oferta && expiraEm < 7));
-  e.estado = e.bloqueado ? ['Bloqueado', 'r'] : e.pagante ? ['A pagar', 'g'] : e.oferta ? ['Oferta / teste', 'b'] : e.expirado ? ['Expirou', 'a'] : ['Grátis', 'n'];
+  e.estado = e.bloqueado ? ['Bloqueado', 'r'] : e.pagante ? ['A pagar', 'g'] : e.oferta ? ['Oferta / teste', 'b'] : e.expirado ? ['Expirou', 'a'] : ['Fichas', 'n'];
 }
 function pintar() {
   const nm = D.mensagens.filter(m => m.estado === 'nova').length;
@@ -251,7 +251,7 @@ function vGeral() {
 const kpi = (l, v, s) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
 // ---------- clientes
 function vClientes() {
-  const F = [['todos', 'Todos'], ['pagantes', 'A pagar'], ['oferta', 'Oferta / teste'], ['gratis', 'Grátis'], ['risco', 'Em risco'], ['bloq', 'Bloqueados']];
+  const F = [['todos', 'Todos'], ['pagantes', 'A pagar'], ['oferta', 'Oferta / teste'], ['gratis', 'Fichas'], ['risco', 'Em risco'], ['bloq', 'Bloqueados']];
   const ok = e => filtro === 'todos' || (filtro === 'pagantes' && e.pagante) || (filtro === 'oferta' && e.oferta) || (filtro === 'gratis' && !e.pagante && !e.oferta) || (filtro === 'risco' && e.risco) || (filtro === 'bloq' && e.bloqueado);
   const q = busca.toLowerCase(), L = D.empresas.filter(e => ok(e) && (!q || (e.nome + ' ' + (e.email || '')).toLowerCase().includes(q)));
   $('#mn').innerHTML = `<div class="tools"><input id="q" type="search" placeholder="Procurar empresa ou e-mail…" value="${esc(busca)}"><div class="chips">${F.map(([k, t]) => `<button class="${k === filtro ? 'on' : ''}" data-f="${k}">${t}</button>`).join('')}</div></div>
@@ -279,7 +279,7 @@ function abrir(uid) {
     <div class="card" style="margin-top:14px"><h2>Plano e acesso</h2>
       <label class="f"><span>Plano</span><select id="g-pl">${['gratis', 'cafe', 'pro'].map(p => `<option value="${p}" ${e.pl === p ? 'selected' : ''}>${PNOME[p]}</option>`).join('')}</select></label>
       <label class="f"><span>Válido até</span><input id="g-va" type="date" value="${e.plano_valido_ate || ''}"></label>
-      <label class="f"><span>Balcão (pedidos e pagamentos)</span><select id="g-bc"><option value="" ${!e.balcao ? 'selected' : ''}>Padrão (${CFG.balcao_global === 'on' ? 'ligado para todos' : 'ligado no PRO, desligado no Café e Grátis'})</option><option value="on" ${e.balcao === 'on' ? 'selected' : ''}>Ligado nesta conta</option><option value="off" ${e.balcao === 'off' ? 'selected' : ''}>Desligado nesta conta</option></select></label>
+      <label class="f"><span>Balcão (pedidos e pagamentos)</span><select id="g-bc"><option value="" ${!e.balcao ? 'selected' : ''}>Padrão (${CFG.balcao_global === 'on' ? 'ligado para todos' : 'ligado no Café e no PRO'})</option><option value="on" ${e.balcao === 'on' ? 'selected' : ''}>Ligado nesta conta</option><option value="off" ${e.balcao === 'off' ? 'selected' : ''}>Desligado nesta conta</option></select></label>
       <label class="f" style="display:flex;align-items:center;gap:10px"><input id="g-iv" type="checkbox" ${e.iva_isento ? 'checked' : ''} style="width:20px;height:20px"><span style="margin:0">Isento de IVA (art. 53.º) — esconde as taxas de IVA nas fichas</span></label>
       <label class="f" style="display:flex;align-items:center;gap:10px"><input id="g-bl" type="checkbox" ${e.bloqueado ? 'checked' : ''} style="width:20px;height:20px"><span style="margin:0">Conta bloqueada</span></label>
       <label class="f"><span>Mensagem de bloqueio (o cliente vê)</span><input id="g-bm" value="${esc(e.bloqueio_msg || '')}" placeholder="Ex.: pagamento em atraso"></label>
@@ -302,13 +302,13 @@ const REDES = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tiktok', 
 function vDef() {
   const bal = CFG.balcao_global === 'on';
   $('#mn').innerHTML = `<div class="card"><h2>Funções para todas as contas</h2>
-    <div class="row"><div style="flex:1"><b>Balcão (pedidos e pagamentos)</b><span style="display:block;font-size:13px;color:var(--ink3)">${bal ? 'Ligado para todos os planos.' : 'Ligado só no PRO. No Café e no Grátis os clientes veem "Em desenvolvimento".'} Cada conta pode ter uma exceção na ficha do cliente.</span></div><button class="btn ${bal ? '' : 'p'}" id="d-bal">${bal ? 'Só no PRO' : 'Ligar para todos'}</button></div>
+    <div class="row"><div style="flex:1"><b>Balcão (pedidos e pagamentos)</b><span style="display:block;font-size:13px;color:var(--ink3)">${bal ? 'Ligado para todos os planos.' : 'Ligado no Café e no PRO. No plano Fichas aparece bloqueado.'} Cada conta pode ter uma exceção na ficha do cliente.</span></div><button class="btn ${bal ? '' : 'p'}" id="d-bal">${bal ? 'Voltar ao padrão (Café e PRO)' : 'Ligar para todos'}</button></div>
     <div class="row"><div style="flex:1"><b>Taxa dos pagamentos</b><span style="display:block;font-size:13px;color:var(--ink3)">Comissão do Dio’Stock em cada pagamento por QR, link ou NFC (0 a 10%).</span></div><input id="d-tx" type="number" step="0.1" min="0" max="10" value="${esc(CFG.pagamentos_taxa_pct || '0')}" style="width:90px"><button class="btn" id="d-txg">Guardar</button></div></div>
    <div class="card" style="margin-top:14px"><h2>Redes sociais e contactos</h2><p style="margin:0 0 10px;color:var(--ink3);font-size:13.5px">Aparecem nas Configurações da app de todos os clientes, em Contactos.</p>
     ${REDES.map(([k, t]) => `<label class="f"><span>${t}</span><input data-rede="${k}" type="url" placeholder="https://…" value="${esc(CFG['link_rede_' + k] || '')}"></label>`).join('')}
     <button class="btn p w" style="margin-top:14px" id="d-rg">Guardar redes</button></div>
    <div class="card" style="margin-top:14px"><h2>Links de pagamento dos planos</h2><p style="margin:0 0 10px;color:var(--ink3);font-size:13.5px">Links da Stripe que a app abre quando o cliente escolhe um plano.</p>
-    ${[['link_cafe_mes', 'Café · mensal'], ['link_cafe_ano', 'Café · anual'], ['link_pro_mes', 'PRO · mensal'], ['link_pro_ano', 'PRO · anual'], ['link_portal', 'Portal do cliente (faturas e cancelamento)']].map(([k, t]) => `<label class="f"><span>${t}${/test_/.test(CFG[k] || '') ? ' <span class="pl a">modo teste</span>' : ''}</span><input data-lk="${k}" type="url" value="${esc(CFG[k] || '')}"></label>`).join('')}
+    ${[['link_gratis_mes', 'Fichas · mensal'], ['link_cafe_mes', 'Café · mensal'], ['link_cafe_ano', 'Café · anual'], ['link_pro_mes', 'PRO · mensal'], ['link_pro_ano', 'PRO · anual'], ['link_portal', 'Portal do cliente (faturas e cancelamento)']].map(([k, t]) => `<label class="f"><span>${t}${/test_/.test(CFG[k] || '') ? ' <span class="pl a">modo teste</span>' : ''}</span><input data-lk="${k}" type="url" value="${esc(CFG[k] || '')}"></label>`).join('')}
     <button class="btn p w" style="margin-top:14px" id="d-lg">Guardar links</button></div>`;
   const guardar = async (k, v) => { const { error } = await sb.rpc('admin_config', { p_chave: k, p_valor: v }); if (error) throw error; CFG[k] = v; };
   $('#d-bal').onclick = async () => { try { await guardar('balcao_global', bal ? 'off' : 'on'); toast('Guardado'); vDef(); } catch (er) { toast('Não guardou: ' + er.message); } };

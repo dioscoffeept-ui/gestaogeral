@@ -1314,7 +1314,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 13:30</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 15:10</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -6600,17 +6600,17 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
     <script>
         // ===== Planos Grátis / Café / PRO =====
         // Links de pagamento (Stripe Payment Links). Enquanto estiverem vazios, o botão envia um e-mail.
-        const PAYMENT_LINKS = { cafe_mes: '', cafe_ano: '', pro_mes: '', pro_ano: '', portal: '' };
+        const PAYMENT_LINKS = { gratis_mes: '', cafe_mes: '', cafe_ano: '', pro_mes: '', pro_ano: '', portal: '' };
         const PLANS = {
-            gratis: { nome: 'Grátis', desc: 'Simulador de margem e até 3 fichas do bar' },
-            cafe: { nome: 'Café', mes: 15, ano: 149, desc: 'Estoque e vendas do dia',
-                    feats: ['Fichas do bar ilimitadas, com foto', 'Estoque e porções prontas', 'Vendas do dia pela foto do caixa ou SAF-T'] },
+            gratis: { nome: 'Fichas', mes: 5, desc: 'Para fazer as contas às suas bebidas', feats: ['Simulador de margem e lucro líquido', 'Até 10 fichas do bar, com foto', 'Custos e margem calculados sozinhos'] },
+            cafe: { nome: 'Café', mes: 15, ano: 149, desc: 'Balcão, stock e vendas do dia',
+                    feats: ['Fichas do bar ilimitadas, com foto e custo', 'Stock e porções prontas', 'Balcão com mesas (10 + 10 esplanada + 5 eventos)', 'Ecrãs do bar e da cozinha, e sessões de caixa', 'Ligação ao POS: Vendus, ou SAF-T e foto de qualquer POS'] },
             pro: { nome: 'PRO', mes: 32, ano: 320, desc: 'Gestão completa: pedidos, fornecedores, equipa e cozinha',
-                   feats: ['Tudo o que o plano Café inclui', 'Produção e pedidos por fornecedor (WhatsApp)', 'Fornecedores', 'Colaboradores (equipa)', 'Fichas da cozinha e do brunch, com foto', 'Pratos e brunch nas vendas do dia'] }
+                   feats: ['Tudo o que o plano Café inclui', 'Mesas e eventos sem limite, na planta da sala', 'Fichas da cozinha e do brunch', 'Equipa, relatórios, reservas e pontos', 'Produção, encomendas e fornecedores'] }
         };
         const PLAN_RANK = { gratis: 0, cafe: 1, pro: 2 };
         const TAB_PLAN = { inventory: 'cafe', sales: 'cafe', production: 'pro', suppliers: 'pro', kitchen: 'pro' };
-        const FREE_BAR_LIMIT = 3;
+        const FREE_BAR_LIMIT = 10;
         function hasPlan(p) { return (PLAN_RANK[currentPlan] || 0) >= (PLAN_RANK[p] || 0); }
         function isPro() { return hasPlan('pro'); }
         const LOCK_BADGE = p => `<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:${p === 'pro' ? '#fef3c7;color:#92400e' : 'var(--brand-soft);color:var(--brand)'};font-weight:900">${p === 'pro' ? 'PRO' : 'CAFÉ'}</span>`;
@@ -6680,12 +6680,12 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (currentPlan !== 'gratis') { el.classList.add('hidden'); return; }
             const n = barCount();
             el.classList.remove('hidden');
-            el.innerHTML = `<span><i class="fas fa-circle-info mr-1"></i>Plano Grátis: <b>${n} de ${FREE_BAR_LIMIT}</b> fichas do bar.</span> <button type="button" onclick="openUpgrade('cafe')" class="font-bold underline" style="color:var(--brand)">Fichas ilimitadas no plano Café</button>`;
+            el.innerHTML = `<span><i class="fas fa-circle-info mr-1"></i>Plano Fichas: <b>${n} de ${FREE_BAR_LIMIT}</b> fichas do bar.</span> <button type="button" onclick="openUpgrade('cafe')" class="font-bold underline" style="color:var(--brand)">Fichas ilimitadas no plano Café</button>`;
         }
 
         function newRecipe(type) {
             if (type === 'KITCHEN' && !isPro()) return openUpgrade('pro');
-            if (type !== 'KITCHEN' && currentPlan === 'gratis' && barCount() >= FREE_BAR_LIMIT) return openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Grátis');
+            if (type !== 'KITCHEN' && currentPlan === 'gratis' && barCount() >= FREE_BAR_LIMIT) return openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Fichas');
             openRecipeModal(type);
         }
 
@@ -6702,8 +6702,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             need = need || (currentPlan === 'cafe' ? 'pro' : 'cafe');
             document.getElementById('upgrade-title').innerHTML = '<i class="fas fa-lock mr-1" style="color:#fcd34d"></i> ' + (reason || ('Disponível no plano ' + PLANS[need].nome));
             document.getElementById('upgrade-sub').textContent = 'O seu plano atual é o ' + (PLANS[currentPlan] || PLANS.gratis).nome + '. Escolha um plano para desbloquear.';
-            document.getElementById('upgrade-cards').innerHTML = ['cafe', 'pro'].map(k => {
-                const p = PLANS[k], cur = currentPlan === k, owned = hasPlan(k), hl = k === need;
+            document.getElementById('upgrade-cards').innerHTML = (need === 'gratis' ? ['gratis', 'cafe', 'pro'] : ['cafe', 'pro']).map(k => {
+                const p = PLANS[k], exp = typeof dsAcesso !== 'undefined' && dsAcesso.expirado, cur = !exp && currentPlan === k && !(typeof dsAcesso !== 'undefined' && dsAcesso.teste), owned = !exp && !(typeof dsAcesso !== 'undefined' && dsAcesso.teste) && hasPlan(k), hl = need === 'gratis' ? k === 'cafe' : k === need;
                 return `<div class="rounded-2xl border ${hl ? 'border-2' : 'border-slate-200'} p-4 flex flex-col" style="${hl ? 'border-color:var(--brand)' : ''}">
                     <div class="flex items-center justify-between">
                         <p class="text-lg font-black text-slate-900">${k === 'pro' ? '<i class="fas fa-crown mr-1" style="color:var(--brand)"></i>' : '<i class="fas fa-mug-hot mr-1" style="color:var(--brand)"></i>'}${p.nome}</p>
@@ -6711,12 +6711,12 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                     <p class="text-xs text-slate-500">${p.desc}</p>
                     <p class="mt-3"><span class="text-3xl font-black text-slate-900">${eurTxt(p.mes)}</span><span class="text-sm text-slate-500 font-semibold"> /mês</span></p>
-                    <p class="text-xs text-slate-500">ou <b class="text-slate-800">${eurTxt(p.ano)}/ano</b> — 2 meses grátis</p>
+                    ${p.ano ? `<p class="text-xs text-slate-500">ou <b class="text-slate-800">${eurTxt(p.ano)}/ano</b> — 2 meses grátis</p>` : '<p class="text-xs text-slate-500">pagamento mensal</p>'}
                     <ul class="mt-3 space-y-1.5 text-xs text-slate-700 flex-1">${p.feats.map(f => `<li class="flex gap-2"><i class="fas fa-check mt-0.5 text-emerald-600"></i><span>${f}</span></li>`).join('')}</ul>
                     ${owned ? '<p class="mt-4 text-xs font-bold text-emerald-700 text-center"><i class="fas fa-check-circle mr-1"></i>Incluído no seu plano</p>' : `
-                    <div class="mt-4 grid grid-cols-2 gap-2">
+                    <div class="mt-4 grid ${p.ano ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
                         <a href="${payHref(k, 'mes')}" target="_blank" rel="noopener" class="text-center px-3 py-2.5 text-xs font-bold rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50">Mensal</a>
-                        <a href="${payHref(k, 'ano')}" target="_blank" rel="noopener" class="text-center px-3 py-2.5 text-xs font-bold text-white rounded-xl" style="background:var(--brand)">Anual</a>
+                        ${p.ano ? `<a href="${payHref(k, 'ano')}" target="_blank" rel="noopener" class="text-center px-3 py-2.5 text-xs font-bold text-white rounded-xl" style="background:var(--brand)">Anual</a>` : ''}
                     </div>`}
                 </div>`;
             }).join('');
@@ -17082,6 +17082,58 @@ var qrcode = function() {
             const t = document.querySelector('#auth-screen a[href="termos.html"]'); const p = t && t.closest('p');
             if (!p || document.getElementById('auth-contactos')) return;
             p.insertAdjacentHTML('afterend', `<div id="auth-contactos"><div class="l"><a href="conhecer/" target="_blank" rel="noopener"><i class="fas fa-globe mr-1"></i>Site</a><a href="mailto:diostockpt@gmail.com"><i class="fas fa-envelope mr-1"></i>diostockpt@gmail.com</a><a href="https://www.instagram.com/diostockpt/" target="_blank" rel="noopener"><i class="fab fa-instagram mr-1"></i>@diostockpt</a></div></div>`);
+        })();
+    </script>
+
+    <style>
+        #home-teste { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #FBEDE6; color: #5B2A12; border-radius: 16px; padding: 12px 16px; font-weight: 700; font-size: 14.5px; margin-bottom: 14px; }
+        #home-teste button { margin-left: auto; background: var(--brand); color: #fff; border-radius: 10px; padding: 8px 14px; font-weight: 900; white-space: nowrap; }
+        #upgrade-modal.acima { z-index: 9000 !important; }
+    </style>
+
+    <script>
+        (function () {
+            const oA = acessoAplicar;
+            acessoAplicar = function () {
+                const r = oA.apply(this, arguments);
+                try { planoEstado(); } catch (_) {}
+                return r;
+            };
+        })();
+        const diasAteData = d => Math.ceil((new Date(d + 'T23:59:59') - Date.now()) / 864e5);
+        function planoEstado() {
+            const b = document.getElementById('acesso-bloqueado');
+            if (dsAcesso.expirado && !dsAcesso.bloqueado && b) {
+                const teste = !!dsAcesso.teste, dono = dsAcesso.dono !== false;
+                b.querySelector('h3').textContent = teste ? 'O seu teste de 14 dias terminou' : 'O seu plano terminou';
+                document.getElementById('acesso-bloqueado-msg').innerHTML = (teste ? 'Esperamos que tenha gostado do Dio’Stock. ' : '') + 'As suas fichas, o stock e as vendas estão guardados. ' + (dono ? 'Escolha um plano para continuar — a partir de 5 € por mês.' : 'Peça ao responsável da conta para escolher um plano.');
+                if (dono && !document.getElementById('plano-escolher')) {
+                    const sair = b.querySelector('button[onclick="logout()"]');
+                    sair.insertAdjacentHTML('beforebegin', '<button type="button" id="plano-escolher" onclick="planoEscolher()" class="mt-5 w-full py-3 rounded-xl font-black text-white" style="background:var(--brand)">Escolher um plano</button>');
+                    sair.className = 'mt-2 w-full py-3 rounded-xl font-black'; sair.style.cssText = 'background:#F3EFE8;color:#3A2A22';
+                }
+                b.classList.remove('hidden'); b.classList.add('flex');
+            }
+            // aviso do teste no Início
+            const tab = document.getElementById('tab-home'); if (!tab) return;
+            let el = document.getElementById('home-teste');
+            if (!(dsAcesso.teste && !dsAcesso.expirado && dsAcesso.valido_ate)) { if (el) el.remove(); return; }
+            const n = Math.max(0, diasAteData(dsAcesso.valido_ate));
+            if (!el) { el = document.createElement('div'); el.id = 'home-teste'; tab.prepend(el); }
+            el.innerHTML = `<i class="fas fa-crown"></i><span>Está a experimentar o PRO: ${n === 0 ? 'último dia' : 'faltam ' + n + ' dia' + (n === 1 ? '' : 's')}. Os dados ficam guardados quando escolher um plano.</span>${dsAcesso.dono !== false ? '<button type="button" onclick="planoEscolher()">Escolher plano</button>' : ''}`;
+        }
+        function planoEscolher() {
+            openUpgrade('gratis', dsAcesso.expirado ? 'Escolha um plano para continuar' : 'Escolha o seu plano');
+            const m = document.getElementById('upgrade-modal'); if (m) m.classList.add('acima');
+            const sub = document.getElementById('upgrade-sub'); if (sub) sub.textContent = dsAcesso.expirado ? 'Os seus dados estão guardados. Escolha o plano e continue de onde parou.' : (dsAcesso.teste ? 'Está a experimentar o PRO. Escolha o plano que quer manter.' : sub.textContent);
+        }
+        (function () {
+            const w = document.getElementById('first-empresa-wrap');
+            if (w && !document.getElementById('first-teste')) w.insertAdjacentHTML('beforeend', '<span id="first-teste" class="block mt-2 text-[12px] font-bold" style="color:var(--brand)"><i class="fas fa-crown mr-1"></i>14 dias com o plano PRO completo, para experimentar. Sem cartão.</span>');
+        })();
+        (function () {
+            const oC = closeUpgrade;
+            closeUpgrade = function () { const m = document.getElementById('upgrade-modal'); if (m) m.classList.remove('acima'); return oC.apply(this, arguments); };
         })();
     </script>
 </body>

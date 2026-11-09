@@ -95,10 +95,12 @@
     <h2>2. Planos e preços</h2>
     <table>
       <tr><th>Plano</th><th>Inclui</th><th>Preço</th></tr>
-      <tr><td><b>Grátis</b></td><td>Simulador de margem e até 3 fichas técnicas do bar.</td><td>0 €</td></tr>
-      <tr><td><b>Café</b></td><td>Fichas do bar ilimitadas, estoque (com porções prontas) e vendas do dia.</td><td>15 €/mês ou 149 €/ano</td></tr>
-      <tr><td><b>PRO</b></td><td>Tudo o que o plano Café inclui, mais produção e pedidos a fornecedores, fornecedores, colaboradores e as fichas da cozinha e do brunch.</td><td>32 €/mês ou 320 €/ano</td></tr>
+      <tr><td><b>Fichas</b></td><td>Simulador de margem e até 10 fichas técnicas do bar, com custos e margem calculados.</td><td>5 €/mês</td></tr>
+      <tr><td><b>Café</b></td><td>Fichas do bar ilimitadas, stock (com porções prontas), vendas do dia, ligação ao POS (Vendus, ou SAF-T e foto do relatório) e balcão com até 10 mesas na sala, 10 na esplanada e 5 para eventos.</td><td>15 €/mês ou 149 €/ano</td></tr>
+      <tr><td><b>PRO</b></td><td>Tudo o que o plano Café inclui, mais mesas e eventos sem limite, produção e encomendas a fornecedores, fornecedores, equipa e as fichas da cozinha e do brunch.</td><td>32 €/mês ou 320 €/ano</td></tr>
     </table>
+    <h3>Teste de 14 dias</h3>
+    <p>Todas as contas novas começam com 14 dias do plano PRO completo, sem pedir cartão. No fim do teste escolhe o plano que quer manter. Se não escolher nenhum, a conta fica suspensa: os dados ficam guardados e voltam a estar disponíveis assim que ativar um plano.</p>
     <p>Os preços são finais. IVA: isento ao abrigo do artigo 53.º do Código do IVA. O plano aplica-se a toda a empresa (titular e colaboradores).</p>
     <h3>Comissão nos pagamentos online</h3>
     <p>Se ativar os pagamentos online (QR, link de pagamento ou menu online, processados pela Stripe na sua própria conta Stripe), o Dio’Stock cobra uma comissão de <b>0,5% sobre o valor de cada pagamento recebido</b>, além das taxas da própria Stripe. A comissão é retida automaticamente pela Stripe no momento do pagamento e aparece no seu painel Stripe. Gorjetas não pagam comissão. Os pagamentos em dinheiro e no terminal (SumUp ou outro) não têm qualquer comissão do Dio’Stock. Alterações a esta percentagem são avisadas com pelo menos 30 dias de antecedência e não se aplicam a pagamentos já feitos.</p>
@@ -108,18 +110,18 @@
     <h2>3. Política de Pagamento</h2>
     <ul>
       <li>Os pagamentos são processados pela <b>Stripe</b>, numa página de pagamento segura. Não guardamos os dados do seu cartão.</li>
-      <li>Meios aceites: cartão de débito/crédito e outros meios apresentados na página de pagamento (por exemplo, Multibanco nos pagamentos únicos).</li>
+      <li>Meios aceites: cartão de débito/crédito e outros meios apresentados na página de pagamento.</li>
       <li><b>Plano mensal:</b> é uma assinatura. A primeira cobrança é feita no momento da compra e as seguintes são feitas automaticamente no mesmo dia de cada mês, até cancelar.</li>
-      <li><b>Plano anual:</b> é um pagamento único que dá acesso por 12 meses. <b>Não renova automaticamente.</b> Perto do fim, pode voltar a pagar para continuar.</li>
+      <li><b>Plano anual:</b> é uma assinatura anual. É cobrada no momento da compra e renova automaticamente a cada 12 meses, até cancelar.</li>
       <li>O plano é ativado automaticamente logo que a Stripe confirma o pagamento. No Multibanco, isso só acontece depois de a referência ser paga.</li>
       <li>O recibo é enviado por e-mail pela Stripe. As faturas da assinatura mensal podem ser consultadas em <b>Configurações → Empresa → Gerir assinatura</b>.</li>
-      <li>Se uma renovação mensal falhar (por exemplo, cartão expirado), a Stripe tenta novamente durante alguns dias. Se não for possível cobrar, a conta passa ao plano Grátis no fim do período pago, sem perda de dados.</li>
+      <li>Se uma renovação mensal falhar (por exemplo, cartão expirado), a Stripe tenta novamente durante alguns dias. Se não for possível cobrar, a conta fica suspensa no fim do período pago, sem perda de dados, até o pagamento ser feito.</li>
     </ul>
   </section>
 
   <section id="cancelamento">
     <h2>4. Política de Cancelamento e Reembolsos</h2>
-    <div class="box"><b>Resumo:</b> pode cancelar o plano mensal quando quiser, em 2 cliques, sem multas. O plano fica ativo até ao fim do período já pago e depois passa ao Grátis. Os seus dados não são apagados.</div>
+    <div class="box"><b>Resumo:</b> pode cancelar o plano mensal quando quiser, em 2 cliques, sem multas. O plano fica ativo até ao fim do período já pago e depois a conta fica suspensa. Os seus dados não são apagados.</div>
     <h3>4.1 Como cancelar</h3>
     <ul>
       <li>No app: <b>Configurações → Empresa → Gerir assinatura, faturas ou cancelar</b>. Abre o portal seguro da Stripe, onde pode cancelar, trocar o cartão e ver as faturas.</li>
@@ -128,8 +130,8 @@
     <h3>4.2 O que acontece depois</h3>
     <ul>
       <li><b>Mensal:</b> não há mais cobranças. O plano continua ativo até ao fim do mês já pago. Não há reembolso proporcional do mês em curso.</li>
-      <li><b>Anual:</b> como não renova sozinho, não precisa de cancelar. O acesso termina no fim dos 12 meses.</li>
-      <li>Quando o plano termina, a conta volta ao <b>Grátis</b>: as fichas e restantes dados ficam guardados e voltam a estar disponíveis se reativar um plano. Pode também exportá-los com <b>Baixar backup</b>.</li>
+      <li><b>Anual:</b> não há mais renovações. O plano continua ativo até ao fim dos 12 meses já pagos.</li>
+      <li>Quando o plano termina, a conta fica <b>suspensa</b>: as fichas e restantes dados ficam guardados e voltam a estar disponíveis se reativar um plano, a partir de 5 € por mês. Pode também exportá-los com <b>Baixar backup</b>.</li>
       <li>Para apagar definitivamente a conta e todos os dados, peça por e-mail. Fazemo-lo no prazo máximo de 30 dias.</li>
     </ul>
     <h3>4.3 Direito de livre resolução (consumidores)</h3>
