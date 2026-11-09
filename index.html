@@ -1312,7 +1312,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 11:13</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 11:37</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -12122,7 +12122,7 @@ var qrcode = function() {
             const b = document.getElementById('pay-modal-body');
             const taxa = st && st.taxa_pct !== undefined ? String(st.taxa_pct).replace('.', ',') + '%' : '—';
             const como = `<div class="rounded-xl bg-slate-50 p-3 text-[11px] text-slate-600 space-y-1">
-                    <p><b class="text-slate-800">Como funciona:</b> ao fechar um pedido, mostra um QR code ao cliente. Ele paga no telemóvel com cartão ou MB WAY. O dinheiro vai para a <b>sua</b> conta Stripe e daí para o seu banco — o Dio’Stock nunca toca no dinheiro.</p>
+                    <p><b class="text-slate-800">Como funciona:</b> ao fechar um pedido, mostra um QR code ao cliente. Ele paga no telemóvel com cartão, Apple Pay ou Google Pay. O dinheiro vai para a <b>sua</b> conta Stripe e daí para o seu banco — o Dio’Stock nunca toca no dinheiro.</p>
                     <p><b class="text-slate-800">Custos:</b> as taxas normais da Stripe + <b>${taxa}</b> da plataforma Dio’Stock por pagamento. Sem mensalidade extra.</p></div>`;
             if (!st || st.erro) {
                 b.innerHTML = (st && st.erro === 'sem_chave'
@@ -12178,7 +12178,7 @@ var qrcode = function() {
             b.innerHTML = `<div class="flex items-center justify-between"><p class="text-xs font-black uppercase tracking-wide text-slate-500">Pagar com o telemóvel</p>${payBadgeTest()}</div>
                 <p class="text-4xl font-black text-slate-900">${eur2(t)}</p>
                 <div class="mx-auto w-60 h-60 rounded-2xl border-4 p-1" style="border-color:var(--brand)">${payQrSvg(r.url)}</div>
-                <p class="text-xs text-slate-600">Peça ao cliente para apontar a câmara ao código.<br>${(r.metodos || []).includes('mb_way') ? 'Cartão ou <b>MB WAY</b>' : 'Cartão, Apple Pay ou Google Pay'}.</p>
+                <p class="text-xs text-slate-600">Peça ao cliente para apontar a câmara ao código.<br>Cartão, Apple Pay ou Google Pay.</p>
                 <p id="payqr-status" class="text-sm font-bold" style="color:var(--brand)"><i class="fas fa-spinner fa-spin mr-1"></i> À espera do pagamento…</p>
                 <div class="grid grid-cols-2 gap-2"><button type="button" onclick="payQrCopy()" class="py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700"><i class="fas fa-link mr-1"></i>Copiar link</button>
                 <button type="button" onclick="payQrCancel()" class="py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50">Cancelar</button></div>`;
@@ -12488,7 +12488,7 @@ var qrcode = function() {
                     <button type="button" onclick="linkShare()" class="py-2.5 rounded-xl text-sm font-black border border-slate-200 text-slate-800"><i class="fas fa-share-nodes mr-1"></i>Partilhar</button>
                 </div>
                 <details class="text-left"><summary class="text-xs font-bold text-slate-500 cursor-pointer text-center">Mostrar QR code</summary><div class="mx-auto mt-2 w-48 h-48 rounded-2xl border-4 p-1" style="border-color:var(--brand)">${payQrSvg(r.url)}</div></details>
-                <p class="text-[11px] text-slate-500">Cartão${(r.metodos || []).includes('mb_way') ? ' ou MB WAY' : ', Apple Pay ou Google Pay'} · o link é válido até ${exp || '23 h'}.</p>
+                <p class="text-[11px] text-slate-500">Cartão, Apple Pay ou Google Pay · o link é válido até ${exp || '23 h'}.</p>
                 <p id="paylink-status" class="text-sm font-bold" style="color:var(--brand)"><i class="fas fa-spinner fa-spin mr-1"></i> À espera do pagamento…</p>
                 <button type="button" onclick="linkLater()" class="w-full py-3 rounded-xl text-white font-black" style="background:var(--brand)"><i class="fas fa-check mr-1"></i> Fechar pedido — pago depois</button>
                 <p class="text-[10px] text-slate-400 -mt-2">O pedido fica registado como "por pagar" e passa a pago sozinho quando o cliente pagar.</p>
@@ -13143,7 +13143,7 @@ var qrcode = function() {
                 if (b && st && st.ativo) {
                     const tp = [...b.querySelectorAll('div.border-dashed')].find(d => /Tap to Pay/.test(d.textContent));
                     const html = `<div class="rounded-xl border border-slate-200 p-3 space-y-2" id="nfc-box"><p class="text-sm font-black text-slate-900"><i class="fas fa-wifi fa-rotate-90 mr-1" style="color:var(--brand)"></i> Etiqueta NFC da loja</p>
-                        <p class="text-[11px] text-slate-600 leading-snug">Grave este link numa etiqueta NFC e cole-a no balcão. Ao cobrar com <b>QR</b>, o cliente pode só <b>encostar o telemóvel</b> à etiqueta: abre o pagamento com Apple Pay, Google Pay, MB WAY ou cartão.</p>
+                        <p class="text-[11px] text-slate-600 leading-snug">Grave este link numa etiqueta NFC e cole-a no balcão. Ao cobrar com <b>QR</b>, o cliente pode só <b>encostar o telemóvel</b> à etiqueta: abre o pagamento com Apple Pay, Google Pay ou cartão.</p>
                         <div id="nfc-link"><button type="button" onclick="nfcMostrar()" class="w-full py-2.5 rounded-xl text-sm font-black border-2" style="border-color:var(--brand);color:var(--brand)">Mostrar o link NFC</button></div></div>`;
                     if (tp) tp.outerHTML = html; else b.insertAdjacentHTML('beforeend', html);
                 }
@@ -13542,7 +13542,7 @@ var qrcode = function() {
                 const b = document.getElementById('nfc-box');
                 if (b) {
                     const p = b.querySelector('p.text-\\[11px\\]');
-                    if (p) p.innerHTML = 'Grave este link numa etiqueta NFC (ou imprima o QR) e ponha no balcão e nas mesas. O cliente encosta o telemóvel e: <b>faz o pedido sozinho</b> pelo menu e paga, ou — se o balcão enviou um valor — paga esse valor. Apple Pay, Google Pay, MB WAY ou cartão.';
+                    if (p) p.innerHTML = 'Grave este link numa etiqueta NFC (ou imprima o QR) e ponha no balcão e nas mesas. O cliente encosta o telemóvel e: <b>faz o pedido sozinho</b> pelo menu e paga, ou — se o balcão enviou um valor — paga esse valor. Apple Pay, Google Pay ou cartão.';
                 }
                 const body = document.getElementById('pay-modal-body');
                 if (body && st && st.ativo && !document.getElementById('dom-box'))
@@ -14226,7 +14226,7 @@ var qrcode = function() {
             // MB WAY: gera o QR com o valor exato; o cliente lê, escolhe MB WAY e confirma no telemóvel
             const oPagar = posPagar;
             // com a Stripe em modo real: QR com o valor exato; sem ela, usa o QR fixo da loja (se existir)
-            const mbwDinamico = () => !!(payState && payState.ativo !== false && payState.teste === false) || !mbwQr();
+            const mbwDinamico = () => false;
             posPagar = function () { if (posPay === 'mbway' && posCart.length && mbwDinamico()) return posPayQr(); return oPagar.apply(this, arguments); };
             setTimeout(() => { try { if (typeof currentUser !== 'undefined' && currentUser && !payState) payRefresh(); } catch (_) {} }, 3500);
             const oCk = posCheckout;
@@ -14364,12 +14364,12 @@ var qrcode = function() {
                      'No Vendus: <b>Definições → Lojas → Caixa</b>, tipo <b>API</b>; o Modo fica em Testes até ao primeiro dia de vendas.',
                      'Gere a chave da API no Vendus e escreva-nos (' + contacto + ') para a ligarmos à sua conta. A chave nunca se envia por mensagem: combinamos como a guardar.',
                      'Quando estiver pronto, no Vendus mude o Modo da caixa para <b>Normal</b>.']) +
-                card('Pagamento no telemóvel (cartão e MB WAY)', 'O cliente paga o pedido do QR, ou o QR que o Balcão mostra com o valor certo.',
+                card('Pagamento no telemóvel (cartão, Apple Pay e Google Pay)', 'O cliente paga o pedido do QR, ou o QR que o Balcão mostra com o valor certo.',
                     payLive ? est(true, 'Ligado') : est(false, 'Brevemente'),
-                    ['No Balcão: <b>Pagamentos → Ligar pagamentos online</b> e preencha os dados da empresa e o IBAN na Stripe.', 'Ative o <b>MB WAY</b> nos métodos de pagamento da Stripe.', 'No Balcão, escolha <b>MB WAY</b> ao cobrar: aparece um QR com o valor; o cliente confirma no telemóvel.']) +
+                    ['No Balcão: <b>Pagamentos → Ligar pagamentos online</b> e preencha os dados da empresa e o IBAN na Stripe.', 'Ao cobrar, escolha <b>QR</b>: aparece um código com o valor certo e o cliente paga no telemóvel.']) +
                 card('Menu por QR e NFC', 'O cliente vê o menu, pede e é avisado quando está pronto.', est(true, 'Incluído'),
                     ['<b>Balcão → Pagamentos → Menu para as mesas</b>.', 'Imprima o QR ou grave o link num autocolante NFC (app NFC Tools, opção “Escrever → URL”).', 'Para um tablet à entrada, use o botão <b>Tablet (quiosque)</b>.']) +
-                card('MB WAY com QR fixo da loja', 'Para receber por MB WAY antes de ter os pagamentos online.', est(true, 'Incluído'),
+                card('MB WAY com QR fixo da loja', 'Para registar os pagamentos por MB WAY feitos para o telemóvel da loja. O Dio’Stock não está ligado ao MB WAY: confirme o recebimento na sua app antes de tocar em Pagar.', est(true, 'Incluído'),
                     ['Na app do seu banco ou do MB WAY, gere o QR de pagamento da conta da empresa e guarde a imagem.', 'No Balcão escolha <b>MB WAY</b> e toque em <b>Adicionar QR</b>.', 'O cliente lê o QR e escreve o valor que aparece no ecrã; confirme o recebimento antes de tocar em Pagar.']) +
                 card('Encomendas por WhatsApp', 'As encomendas aos fornecedores saem prontas a enviar.', est(true, 'Incluído'),
                     ['Em <b>Estoque → Fornecedores</b>, ponha o telemóvel de cada fornecedor com o indicativo (ex.: 351 912 345 678).', 'Em cada insumo, escolha o fornecedor e o estoque mínimo.', '<b>Gerar pedidos</b> junta o que falta por fornecedor; toque em <b>WhatsApp</b>.']);
