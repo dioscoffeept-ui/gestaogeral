@@ -1312,7 +1312,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 09:40</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 11:13</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -13207,7 +13207,7 @@ var qrcode = function() {
             const b = document.getElementById('acesso-bloqueado');
             if (b) { b.classList.toggle('hidden', !dsAcesso.bloqueado); b.classList.toggle('flex', !!dsAcesso.bloqueado);
                 if (dsAcesso.mensagem) document.getElementById('acesso-bloqueado-msg').textContent = dsAcesso.mensagem; }
-            const na = document.getElementById('nav-admin'); if (na) na.classList.toggle('hidden', !dsAcesso.admin);
+            const na = document.getElementById('nav-admin'); if (na) na.classList.toggle('hidden', !false);
             balcaoAplicar(); try { renderDashboard(); } catch (_) {}
             try { ivaUi(); } catch (_) {}
         }
@@ -13234,7 +13234,7 @@ var qrcode = function() {
             posOpen = function () { if (!dsAcesso.balcao) { switchTab('balcao'); return; } return oOpen.apply(this, arguments); };
             const oTab = switchTab;
             switchTab = function (t) {
-                if (t === 'admin' && !dsAcesso.admin) return;
+                if (t === 'admin' && !false) return;
                 const r = oTab.apply(this, arguments);
                 if (t === 'balcao') balcaoAplicar();
                 if (t === 'admin') admCarregar();
@@ -13248,7 +13248,7 @@ var qrcode = function() {
         const ADM_PL = { gratis: 'Grátis', cafe: 'Café', pro: 'PRO' };
         async function admCarregar() {
             const body = document.getElementById('adm-body'); if (!body) return;
-            if (!dsAcesso.admin) { body.innerHTML = '<p class="text-sm text-slate-500">Sem permissão.</p>'; return; }
+            if (!false) { body.innerHTML = '<p class="text-sm text-slate-500">Sem permissão.</p>'; return; }
             const [a, c] = await Promise.all([sb.rpc('admin_listar'), sb.rpc('admin_config_ler')]);
             if (a.error) { body.innerHTML = `<p class="text-sm text-rose-600">${escapeHtml(a.error.message)}</p>`; return; }
             admContas = a.data || []; admCfg = {}; (c.data || []).forEach(r => admCfg[r.chave] = r.valor);
@@ -13341,7 +13341,7 @@ var qrcode = function() {
             renderDashboard = function () {
                 const r = o.apply(this, arguments);
                 const el = document.getElementById('dash');
-                if (el && dsAcesso.admin && !document.getElementById('dash-admin'))
+                if (el && false && !document.getElementById('dash-admin'))
                     el.insertAdjacentHTML('afterbegin', `<button type="button" id="dash-admin" onclick="switchTab('admin')" class="w-full mb-4 flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 text-left hover:border-slate-300"><span class="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0" style="background:var(--ink,#0f172a)"><i class="fas fa-user-shield"></i></span><span class="flex-1"><b class="block text-sm text-slate-900">Gestor da app</b><span class="text-[11px] text-slate-500">Contas, planos, bloqueios e funções</span></span><i class="fas fa-chevron-right text-slate-300"></i></button>`);
                 return r;
             };

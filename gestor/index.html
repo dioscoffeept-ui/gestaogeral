@@ -131,7 +131,7 @@ const eur = v => (Number(v) || 0).toLocaleString('pt-PT', { style: 'currency', c
 const dia = d => d ? new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 const ha = d => { if (!d) return 'nunca'; const m = (Date.now() - new Date(d)) / 60000; if (m < 60) return 'há ' + Math.max(1, Math.round(m)) + ' min'; if (m < 1440) return 'há ' + Math.round(m / 60) + ' h'; const dd = Math.round(m / 1440); return dd === 1 ? 'ontem' : 'há ' + dd + ' dias'; };
 const toast = t => { const e = $('#toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => e.style.display = 'none', 2800); };
-let D = null, tab = 'geral', filtro = 'todos', busca = '';
+let CFG = {}, D = null, tab = 'geral', filtro = 'todos', busca = '';
 
 // ---------- login
 let modo = 'entrar', codTipo = 'email';
@@ -198,7 +198,8 @@ async function arrancar() {
 }
 async function carregar() {
   $('#mn').innerHTML = '<p class="vazio">A carregar…</p>';
-  const { data, error } = await sb.rpc('admin_painel');
+  const [{ data, error }, cf] = await Promise.all([sb.rpc('admin_painel'), sb.rpc('admin_config_ler')]);
+  CFG = {}; ((cf && cf.data) || []).forEach(r => CFG[r.chave] = r.valor);
   if (error) { $('#mn').innerHTML = '<p class="vazio">Não foi possível carregar: ' + esc(error.message) + '</p>'; return; }
   D = data; D.empresas.forEach(classificar); pintar();
 }
@@ -206,7 +207,7 @@ function classificar(e) {
   const hoje = new Date().toISOString().slice(0, 10);
   const valido = !e.plano_valido_ate || e.plano_valido_ate >= hoje;
   const pago = (e.pago_total_cent || 0) > 0 || e.stripe_sub;
-  e.pl = (e.plano || 'free').toLowerCase();
+  e.pl = (e.plano || 'gratis').toLowerCase(); if (e.pl === 'free') e.pl = 'gratis';
   e.pagante = (e.pl === 'cafe' || e.pl === 'pro') && valido && pago;
   e.oferta = (e.pl === 'cafe' || e.pl === 'pro') && valido && !pago;
   e.expirado = (e.pl === 'cafe' || e.pl === 'pro') && !valido && !!e.plano_valido_ate;
@@ -219,10 +220,10 @@ function classificar(e) {
 }
 function pintar() {
   const nm = D.mensagens.filter(m => m.estado === 'nova').length;
-  const T = [['geral', 'Visão geral'], ['clientes', 'Clientes'], ['mensagens', 'Mensagens' + (nm ? ` <span class="bd">${nm}</span>` : '')], ['cancel', 'Cancelamentos'], ['pag', 'Pagamentos']];
+  const T = [['geral', 'Visão geral'], ['clientes', 'Clientes'], ['mensagens', 'Mensagens' + (nm ? ` <span class="bd">${nm}</span>` : '')], ['cancel', 'Cancelamentos'], ['pag', 'Pagamentos'], ['def', 'Definições']];
   $('#tabs').innerHTML = T.map(([k, t]) => `<button class="${k === tab ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { tab = b.dataset.t; pintar(); });
-  ({ geral: vGeral, clientes: vClientes, mensagens: vMensagens, cancel: vCancel, pag: vPag })[tab]();
+  ({ geral: vGeral, clientes: vClientes, mensagens: vMensagens, cancel: vCancel, pag: vPag, def: vDef })[tab]();
 }
 // ---------- visão geral
 function vGeral() {
@@ -275,8 +276,10 @@ function abrir(uid) {
     <div class="kv"><div><span>Vendas 30 dias</span><b>${eur(e.vendas_30d)}</b></div><div><span>Vendas 7 dias</span><b>${eur(e.vendas_7d)}</b></div><div><span>Pedidos 30 dias</span><b>${e.pedidos_30d || 0}</b></div><div><span>Último pedido</span><b>${ha(e.ultimo_pedido)}</b></div>
       <div><span>Último login</span><b>${ha(e.last_sign_in_at)}</b></div><div><span>Fichas · insumos</span><b>${e.fichas} · ${e.insumos}</b></div><div><span>Colaboradores</span><b>${e.membros}</b></div><div><span>Pago no total</span><b>${eur((e.pago_total_cent || 0) / 100)}</b></div></div>
     <div class="card" style="margin-top:14px"><h2>Plano e acesso</h2>
-      <label class="f"><span>Plano</span><select id="g-pl">${['free', 'cafe', 'pro'].map(p => `<option value="${p}" ${e.pl === p ? 'selected' : ''}>${PNOME[p]}</option>`).join('')}</select></label>
+      <label class="f"><span>Plano</span><select id="g-pl">${['gratis', 'cafe', 'pro'].map(p => `<option value="${p}" ${e.pl === p ? 'selected' : ''}>${PNOME[p]}</option>`).join('')}</select></label>
       <label class="f"><span>Válido até</span><input id="g-va" type="date" value="${e.plano_valido_ate || ''}"></label>
+      <label class="f"><span>Balcão (pedidos e pagamentos)</span><select id="g-bc"><option value="" ${!e.balcao ? 'selected' : ''}>Padrão (${CFG.balcao_global === 'on' ? 'ligado' : 'desligado'} para todos)</option><option value="on" ${e.balcao === 'on' ? 'selected' : ''}>Ligado nesta conta</option><option value="off" ${e.balcao === 'off' ? 'selected' : ''}>Desligado nesta conta</option></select></label>
+      <label class="f" style="display:flex;align-items:center;gap:10px"><input id="g-iv" type="checkbox" ${e.iva_isento ? 'checked' : ''} style="width:20px;height:20px"><span style="margin:0">Isento de IVA (art. 53.º) — esconde as taxas de IVA nas fichas</span></label>
       <label class="f" style="display:flex;align-items:center;gap:10px"><input id="g-bl" type="checkbox" ${e.bloqueado ? 'checked' : ''} style="width:20px;height:20px"><span style="margin:0">Conta bloqueada</span></label>
       <label class="f"><span>Mensagem de bloqueio (o cliente vê)</span><input id="g-bm" value="${esc(e.bloqueio_msg || '')}" placeholder="Ex.: pagamento em atraso"></label>
       <label class="f"><span>Notas internas (só o gestor vê)</span><textarea id="g-no" rows="3">${esc(e.nota_admin || '')}</textarea></label>
@@ -287,10 +290,30 @@ function abrir(uid) {
   $('#gv').classList.add('on');
   $('#gx').onclick = fechar;
   $('#g-sv').onclick = async () => {
-    const { error } = await sb.rpc('admin_atualizar', { p_user: uid, p_plano: $('#g-pl').value, p_validade: $('#g-va').value || null, p_bloqueado: $('#g-bl').checked, p_msg: $('#g-bm').value || null, p_balcao: e.balcao || null, p_nota: $('#g-no').value || null });
+    const { error } = await sb.rpc('admin_atualizar', { p_user: uid, p_plano: $('#g-pl').value, p_validade: $('#g-va').value || null, p_bloqueado: $('#g-bl').checked, p_msg: $('#g-bm').value || null, p_balcao: $('#g-bc').value || null, p_nota: $('#g-no').value || null });
     if (error) return toast('Não guardou: ' + error.message);
+    if (!!$('#g-iv').checked !== !!e.iva_isento) { const r2 = await sb.rpc('admin_iva', { p_user: uid, p_isento: $('#g-iv').checked }); if (r2.error) return toast('Não guardou o IVA: ' + r2.error.message); }
     toast('Guardado'); fechar(); carregar();
   };
+}
+// ---------- definições da plataforma
+const REDES = [['instagram', 'Instagram'], ['facebook', 'Facebook'], ['tiktok', 'TikTok'], ['linkedin', 'LinkedIn'], ['youtube', 'YouTube'], ['whatsapp', 'WhatsApp'], ['x', 'X (Twitter)']];
+function vDef() {
+  const bal = CFG.balcao_global === 'on';
+  $('#mn').innerHTML = `<div class="card"><h2>Funções para todas as contas</h2>
+    <div class="row"><div style="flex:1"><b>Balcão (pedidos e pagamentos)</b><span style="display:block;font-size:13px;color:var(--ink3)">${bal ? 'Ligado para todos.' : 'Desligado — os clientes veem "Em desenvolvimento".'} Cada conta pode ter uma exceção na ficha do cliente.</span></div><button class="btn ${bal ? '' : 'p'}" id="d-bal">${bal ? 'Desligar para todos' : 'Ligar para todos'}</button></div>
+    <div class="row"><div style="flex:1"><b>Taxa dos pagamentos</b><span style="display:block;font-size:13px;color:var(--ink3)">Comissão do Dio’Stock em cada pagamento por QR, link ou NFC (0 a 10%).</span></div><input id="d-tx" type="number" step="0.1" min="0" max="10" value="${esc(CFG.pagamentos_taxa_pct || '0')}" style="width:90px"><button class="btn" id="d-txg">Guardar</button></div></div>
+   <div class="card" style="margin-top:14px"><h2>Redes sociais e contactos</h2><p style="margin:0 0 10px;color:var(--ink3);font-size:13.5px">Aparecem nas Configurações da app de todos os clientes, em Contactos.</p>
+    ${REDES.map(([k, t]) => `<label class="f"><span>${t}</span><input data-rede="${k}" type="url" placeholder="https://…" value="${esc(CFG['link_rede_' + k] || '')}"></label>`).join('')}
+    <button class="btn p w" style="margin-top:14px" id="d-rg">Guardar redes</button></div>
+   <div class="card" style="margin-top:14px"><h2>Links de pagamento dos planos</h2><p style="margin:0 0 10px;color:var(--ink3);font-size:13.5px">Links da Stripe que a app abre quando o cliente escolhe um plano.</p>
+    ${[['link_cafe_mes', 'Café · mensal'], ['link_cafe_ano', 'Café · anual'], ['link_pro_mes', 'PRO · mensal'], ['link_pro_ano', 'PRO · anual'], ['link_portal', 'Portal do cliente (faturas e cancelamento)']].map(([k, t]) => `<label class="f"><span>${t}${/test_/.test(CFG[k] || '') ? ' <span class="pl a">modo teste</span>' : ''}</span><input data-lk="${k}" type="url" value="${esc(CFG[k] || '')}"></label>`).join('')}
+    <button class="btn p w" style="margin-top:14px" id="d-lg">Guardar links</button></div>`;
+  const guardar = async (k, v) => { const { error } = await sb.rpc('admin_config', { p_chave: k, p_valor: v }); if (error) throw error; CFG[k] = v; };
+  $('#d-bal').onclick = async () => { try { await guardar('balcao_global', bal ? 'off' : 'on'); toast('Guardado'); vDef(); } catch (er) { toast('Não guardou: ' + er.message); } };
+  $('#d-txg').onclick = async () => { const n = parseFloat(String($('#d-tx').value).replace(',', '.')); if (!(n >= 0 && n <= 10)) return toast('Escreva um valor entre 0 e 10.'); try { await guardar('pagamentos_taxa_pct', String(n)); toast('Taxa guardada'); } catch (er) { toast('Não guardou: ' + er.message); } };
+  $('#d-rg').onclick = async () => { try { for (const i of $('#mn').querySelectorAll('[data-rede]')) { const v = i.value.trim(); if (v !== (CFG['link_rede_' + i.dataset.rede] || '')) await guardar('link_rede_' + i.dataset.rede, v); } toast('Redes guardadas'); } catch (er) { toast('Não guardou: ' + er.message); } };
+  $('#d-lg').onclick = async () => { try { for (const i of $('#mn').querySelectorAll('[data-lk]')) { const v = i.value.trim(); if (v && v !== (CFG[i.dataset.lk] || '')) await guardar(i.dataset.lk, v); } toast('Links guardados'); } catch (er) { toast('Não guardou: ' + er.message); } };
 }
 function fechar() { $('#gv').classList.remove('on'); }
 $('#gv').onclick = ev => { if (ev.target.id === 'gv') fechar(); };
