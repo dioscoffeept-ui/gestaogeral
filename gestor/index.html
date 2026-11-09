@@ -91,20 +91,21 @@ body{overflow-x:hidden}
 </head>
 <body>
 <section id="login">
-  <form class="lg" id="lf" autocomplete="on">
-    <div class="mk"><svg width="44" height="44" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#9C3815"/><g transform="translate(137.6 105.6) scale(0.62)"><path fill="#fff" fill-rule="evenodd" d="M0 0H242L382 300L352 485H0Z M100 213V387H208V213Z"/></g></svg><div><h1>Gestão</h1><span style="color:var(--ink3);font-size:13.5px">Dio’Stock · área reservada</span></div></div>
-    <label class="f"><span>E-mail</span><input id="le" type="email" autocomplete="username" required></label>
-    <label class="f"><span>Palavra-passe</span><input id="lp" type="password" autocomplete="current-password" required minlength="6"></label>
-    <button class="btn p w" style="margin-top:18px" id="lb">Entrar</button>
+  <form class="lg" id="lf" autocomplete="on" novalidate>
+    <div class="mk"><svg width="44" height="44" viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="112" fill="#9C3815"/><g transform="translate(137.6 105.6) scale(0.62)"><path fill="#fff" fill-rule="evenodd" d="M0 0H242L382 300L352 485H0Z M100 213V387H208V213Z"/></g></svg><div><h1 id="lt">Gestão</h1><span id="ls" style="color:var(--ink3);font-size:13.5px">Dio’Stock · área reservada</span></div></div>
+    <div data-m="entrar pedir"><label class="f"><span>E-mail</span><input id="le" type="email" autocomplete="username" inputmode="email"></label></div>
+    <div data-m="entrar"><label class="f"><span>Palavra-passe</span><input id="lp" type="password" autocomplete="current-password"></label>
+      <button class="btn p w" style="margin-top:18px" id="lb">Entrar</button></div>
+    <div data-m="pedir"><button type="button" class="btn p w" style="margin-top:18px" id="lenv">Enviar código</button></div>
+    <div data-m="codigo"><label class="f"><span>Código de 6 números</span><input id="lcod" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456" style="font-size:22px;letter-spacing:6px;text-align:center"></label>
+      <button type="button" class="btn p w" style="margin-top:14px" id="lcb">Confirmar código</button>
+      <button type="button" class="lk" id="lre">Não chegou? Enviar outra vez</button></div>
+    <div data-m="senha"><label class="f"><span>Nova palavra-passe (8 ou mais caracteres)</span><input id="np1" type="password" autocomplete="new-password"></label>
+      <label class="f"><span>Repita a palavra-passe</span><input id="np2" type="password" autocomplete="new-password"></label>
+      <button type="button" class="btn p w" style="margin-top:14px" id="npg">Guardar e entrar</button></div>
     <p class="msg" id="lm" role="status"></p>
-    <div id="cb" class="hide" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><label class="f" style="margin-top:0"><span>Código que recebeu por e-mail</span><input id="lcod" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></label>
-      <button type="button" class="btn p w" style="margin-top:10px" id="lcb">Confirmar código</button></div>
-    <div id="npb" class="hide" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><label class="f" style="margin-top:0"><span>Crie a sua palavra-passe (8 ou mais caracteres)</span><input id="np1" type="password" autocomplete="new-password" minlength="8"></label>
-      <label class="f"><span>Repita a palavra-passe</span><input id="np2" type="password" autocomplete="new-password" minlength="8"></label>
-      <button type="button" class="btn p w" style="margin-top:10px" id="npg">Guardar e entrar</button><button type="button" class="lk" onclick="$('#npb').classList.add('hide');arrancar()">Agora não, só entrar</button></div>
-    <button type="button" class="lk" id="ltc">Tenho um código</button>
-    <button type="button" class="lk" id="lr">Esqueci a palavra-passe</button>
-    <button type="button" class="lk" id="lc" style="margin-left:12px">Primeira vez? Receber código</button>
+    <div data-m="entrar" style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><button type="button" class="lk" id="lr">Esqueci a palavra-passe</button><button type="button" class="lk" id="lc">Primeira vez? Criar acesso</button></div>
+    <div data-m="pedir codigo senha"><button type="button" class="lk" id="lv">← Voltar a entrar com palavra-passe</button></div>
   </form>
 </section>
 
@@ -133,38 +134,57 @@ const toast = t => { const e = $('#toast'); e.textContent = t; e.style.display =
 let D = null, tab = 'geral', filtro = 'todos', busca = '';
 
 // ---------- login
-$('#lf').onsubmit = async e => { e.preventDefault(); $('#lm').className = 'msg'; $('#lm').textContent = 'A entrar…';
-  const { error } = await sb.auth.signInWithPassword({ email: $('#le').value.trim(), password: $('#lp').value });
-  if (error) { $('#lm').className = 'msg e'; $('#lm').textContent = /Invalid/.test(error.message) ? 'E-mail ou palavra-passe errados.' : (/confirm/i.test(error.message) ? 'Confirme primeiro o e-mail (veja a caixa de entrada).' : error.message); return; }
+let modo = 'entrar', codTipo = 'email';
+const msg = (t, c) => { $('#lm').className = 'msg ' + (c || ''); $('#lm').textContent = t || ''; };
+function irPara(m, titulo, sub) {
+  modo = m; document.querySelectorAll('#lf [data-m]').forEach(el => el.classList.toggle('hide', !el.dataset.m.split(' ').includes(m)));
+  $('#lt').textContent = titulo || 'Gestão'; $('#ls').textContent = sub || 'Dio’Stock · área reservada'; msg('');
+  setTimeout(() => { const f = { entrar: $('#le').value ? '#lp' : '#le', pedir: '#le', codigo: '#lcod', senha: '#np1' }[m]; if (f) $(f).focus(); }, 30);
+}
+const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+$('#lf').onsubmit = async e => { e.preventDefault();
+  if (modo === 'pedir') return $('#lenv').click(); if (modo === 'codigo') return $('#lcb').click(); if (modo === 'senha') return $('#npg').click();
+  const em = $('#le').value.trim(), pw = $('#lp').value;
+  if (!emailOk(em)) return msg('Escreva o seu e-mail.', 'e'); if (!pw) return msg('Escreva a palavra-passe.', 'e');
+  msg('A entrar…');
+  const { error } = await sb.auth.signInWithPassword({ email: em, password: pw });
+  if (error) return msg(/Invalid/.test(error.message) ? 'E-mail ou palavra-passe errados. Se não se lembra, use "Esqueci a palavra-passe".' : error.message, 'e');
   arrancar(); };
-$('#lr').onclick = async () => { const em = $('#le').value.trim(); if (!em) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva primeiro o e-mail.'; return; }
-  await sb.auth.resetPasswordForEmail(em, { redirectTo: location.href }); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Se o e-mail existir, chega um código. Escreva-o abaixo.'; mostrarCod('recovery'); };
-$('#lc').onclick = async () => { const em = $('#le').value.trim(); if (!em) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva primeiro o seu e-mail.'; return; }
-  $('#lm').className = 'msg'; $('#lm').textContent = 'A enviar…';
-  const { error } = await sb.auth.signInWithOtp({ email: em, options: { shouldCreateUser: true, emailRedirectTo: location.href } });
-  $('#lm').className = 'msg ' + (error ? 'e' : 'ok'); $('#lm').textContent = error ? (/rate|seconds/i.test(error.message) ? 'Espere um minuto e peça de novo.' : error.message) : 'Enviámos um código para ' + em + '. Escreva-o abaixo.'; if (!error) mostrarCod('email'); };
-const pedirSenha = () => { $('#cb').classList.add('hide'); $('#npb').classList.remove('hide'); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Código certo. Agora crie a palavra-passe.'; $('#np1').focus(); };
-$('#npg').onclick = async () => { const a = $('#np1').value, b = $('#np2').value;
-  if (a.length < 8) { $('#lm').className = 'msg e'; $('#lm').textContent = 'A palavra-passe precisa de 8 ou mais caracteres.'; return; }
-  if (a !== b) { $('#lm').className = 'msg e'; $('#lm').textContent = 'As duas palavras-passe não são iguais.'; return; }
-  const { error } = await sb.auth.updateUser({ password: a });
-  if (error) { $('#lm').className = 'msg e'; $('#lm').textContent = /different|same/i.test(error.message) ? 'Escolha uma palavra-passe diferente da anterior.' : error.message; return; }
-  $('#npb').classList.add('hide'); toast('Palavra-passe guardada'); arrancar(); };
-let codTipo = 'signup';
-const mostrarCod = t => { codTipo = t; $('#cb').classList.remove('hide'); $('#lcod').focus(); };
-$('#ltc').onclick = () => mostrarCod(codTipo);
+$('#lr').onclick = () => { codTipo = 'recovery'; irPara('pedir', 'Recuperar acesso', 'Enviamos um código para o seu e-mail'); };
+$('#lc').onclick = () => { codTipo = 'email'; irPara('pedir', 'Criar acesso', 'Enviamos um código para o seu e-mail'); };
+$('#lv').onclick = () => irPara('entrar');
+async function enviarCodigo() {
+  const em = $('#le').value.trim(); if (!emailOk(em)) return msg('Escreva o seu e-mail.', 'e');
+  msg('A enviar…'); $('#lenv').disabled = true;
+  const { error } = codTipo === 'recovery'
+    ? await sb.auth.resetPasswordForEmail(em, { redirectTo: location.href })
+    : await sb.auth.signInWithOtp({ email: em, options: { shouldCreateUser: true, emailRedirectTo: location.href } });
+  $('#lenv').disabled = false;
+  if (error) return msg(/rate|seconds|after/i.test(error.message) ? 'Já enviámos um código há pouco. Espere um minuto e tente outra vez.' : error.message, 'e');
+  irPara('codigo', 'Escreva o código', 'Enviado para ' + em); msg('Veja a caixa de entrada (e o Spam). O código vale 1 hora.', 'ok');
+}
+$('#lenv').onclick = enviarCodigo;
+$('#lre').onclick = enviarCodigo;
+const pedirSenha = () => { irPara('senha', 'Nova palavra-passe', 'Escolha uma que não use noutros sites'); };
 $('#lcb').onclick = async () => {
   const email = $('#le').value.trim(), token = $('#lcod').value.replace(/\s/g, '');
-  if (!email || token.length < 6) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva o e-mail e o código de 6 números.'; return; }
-  let ok = null, err = null;
+  if (token.length < 6) return msg('Escreva o código de 6 números.', 'e');
+  msg('A confirmar…'); let ok = null;
   for (const type of [codTipo, 'email', 'recovery', 'signup'].filter((v, i, a) => a.indexOf(v) === i)) {
     const { data, error } = await sb.auth.verifyOtp({ email, token, type });
-    if (!error && data && data.session) { ok = type; break; } err = error;
+    if (!error && data && data.session) { ok = type; break; }
   }
-  if (!ok) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Código errado ou expirado. Peça outro.'; return; }
-  if (ok === 'recovery' || ok === 'email' || ok === 'signup') { pedirSenha(); return; }
-  arrancar();
+  if (!ok) return msg('Código errado ou expirado. Confira os números ou peça outro.', 'e');
+  pedirSenha();
 };
+$('#npg').onclick = async () => { const a = $('#np1').value, b = $('#np2').value;
+  if (a.length < 8) return msg('A palavra-passe precisa de 8 ou mais caracteres.', 'e');
+  if (a !== b) return msg('As duas palavras-passe não são iguais.', 'e');
+  msg('A guardar…');
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error && !/different|same/i.test(error.message)) return msg(error.message, 'e');
+  toast('Palavra-passe guardada'); arrancar(); };
+irPara('entrar');
 $('#out').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 $('#rf').onclick = () => carregar();
 

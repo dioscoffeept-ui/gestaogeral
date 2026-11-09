@@ -1312,7 +1312,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 09:10</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 09:24</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -7684,11 +7684,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
         let aiWarned = false;
         // a IA falhou: pergunta antes de usar a leitura simples (que se engana muito em faturas de grossistas)
-        function aiFallbackAsk(res) {
+        async function aiFallbackAsk(res) {
             if (!res || res.ok) return true;
             if (res.code === 'sem_chave' || res.code === 'plano') return true;
             const why = res.code === 'limite' ? 'O limite gratuito diário de leituras com IA (Google) está esgotado por agora. Volta a funcionar daqui a algumas horas.' : (res.msg || 'A leitura com IA falhou.');
-            const ok = confirm(why + '\n\nQuer usar a leitura simples, sem IA? Em faturas compridas ou de grossistas (Makro, Recheio…) costuma ter muitos erros — terá de conferir tudo.\n\nOK = ler sem IA · Cancelar = tentar mais tarde ou escrever à mão');
+            const ok = await dsConfirmar(why + '\n\nQuer usar a leitura simples, sem IA? Em faturas compridas ou de grossistas (Makro, Recheio…) costuma ter muitos erros — terá de conferir tudo.\n\nOK = ler sem IA · Cancelar = tentar mais tarde ou escrever à mão');
             if (!ok) {
                 document.getElementById('purchase-table-box').classList.add('hidden');
                 const p = document.getElementById('purchase-progress');
@@ -7763,7 +7763,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 const res = await aiReadInvoice(aiBlob, 'image/jpeg', qrRaw, extraBlobs);
                 clearInterval(tick);
                 if (res && res.ok) { purchaseProgress(null); return startPurchaseFromAi(res.fatura, qr); }
-                if (!aiFallbackAsk(res)) return;
+                if (!(await aiFallbackAsk(res))) return;
                 purchaseProgress('A ler a fatura…', 30);
                 const text = await localOcrText(blob, pr => purchaseProgress('A ler a fatura (leitura local)…', 30 + pr * 70));
                 purchaseProgress(null);
@@ -7802,7 +7802,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     purchaseProgress('A ler a fatura com IA… (10–30 segundos)', 15);
                     const res = await aiReadInvoice(file, 'application/pdf', '');
                     if (res && res.ok) { purchaseProgress(null); return startPurchaseFromAi(res.fatura, null); }
-                    if (!aiFallbackAsk(res)) return;
+                    if (!(await aiFallbackAsk(res))) return;
                 }
                 purchaseProgress('A abrir o PDF…', 5);
                 await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
@@ -16354,6 +16354,7 @@ var qrcode = function() {
                 ${cxEst().fechos.length ? `${cxHojeHtml()}<p class="sec">Sessões fechadas</p>${cxEst().fechos.slice(0, 6).map((f, i) => `<div class="lin"><span>Sessão ${f.n} · ${new Date(f.abertura).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })} ${new Date(f.abertura).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}–${new Date(f.fecho).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span><span><b>${eurN(f.total)}</b> <button type="button" class="text-xs font-bold underline ml-2" style="color:var(--brand)" onclick="cxImprimirZ(${i})">Imprimir</button></span></div>`).join('')}` : ''}`);
             const s = cxResumo(ab), mv = ab.movs || [];
             dsModal('cx-modal', `<div class="flex items-start justify-between gap-3"><div><h3>${cxVelha() ? 'Sessão de ' + cxDia(ab.at) + ' por fechar' : 'Sessão aberta'}</h3><p class="text-sm text-slate-500">Desde ${new Date(ab.at).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} por ${escapeHtml(ab.por || '')}</p></div><button type="button" class="x" onclick="dsModalFechar('cx-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+                ${(() => { const t0 = new Date(ab.at).getTime(), tr = (appState.orders || []).filter(o => o.treino && new Date(o.at).getTime() >= t0); return tr.length ? `<div style="background:#FEF3C7;color:#78350F;border-radius:12px;padding:10px 12px;font-size:13.5px;font-weight:700;margin-top:10px"><i class="fas fa-graduation-cap mr-1"></i>${tr.length} venda${tr.length === 1 ? '' : 's'} em modo treino (${eurN(tr.reduce((a, o) => a + (Number(o.total) || 0), 0))}) — não contam para a gaveta.</div>` : ''; })()}
                 <p class="sec">Vendas (${s.ords.length} pedidos)</p>
                 ${Object.entries(s.pag).map(([k, v]) => `<div class="lin"><span>${k}</span><b>${eurN(v)}</b></div>`).join('') || '<p class="text-sm text-slate-500">Ainda sem vendas.</p>'}
                 <div class="lin tot"><span>Total vendido</span><span>${eurN(s.total)}</span></div>
@@ -16818,6 +16819,80 @@ var qrcode = function() {
                 return r;
             };
             setTimeout(() => { try { const on = document.querySelector('.tab-content:not(.hidden)'); const t = on ? on.id.replace('tab-', '') : 'home'; dsOndePintar(t); cxAvisoBalcao(); } catch (_) {} }, 600);
+        })();
+    </script>
+
+    <style>
+        #dlg-ov { position: fixed; inset: 0; z-index: 9999; background: rgba(36,21,14,.45); display: flex; align-items: center; justify-content: center; padding: 16px; animation: dlgIn .14s ease-out; }
+        @keyframes dlgIn { from { opacity: 0 } to { opacity: 1 } }
+        #dlg-card { width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto; background: #fff; border-radius: 22px; padding: 22px 20px 18px; box-shadow: 0 24px 60px -20px rgba(36,21,14,.45); }
+        #dlg-card .ic { width: 42px; height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 12px; background: #FBEDE6; color: var(--brand); }
+        #dlg-card .ic.av { background: #FEF3C7; color: #92400E; }
+        #dlg-card .tx { font-size: 15.5px; line-height: 1.5; color: #24150E; white-space: pre-line; font-weight: 600; }
+        #dlg-card input { width: 100%; margin-top: 14px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 12px 14px; font-size: 16px; }
+        #dlg-card input:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: transparent; }
+        #dlg-card .bt { display: flex; gap: 8px; margin-top: 18px; }
+        #dlg-card .bt button { flex: 1; padding: 13px 14px; border-radius: 14px; font-weight: 900; font-size: 15px; }
+        #dlg-card .bt .no { background: #F3EFE8; color: #3A2A22; }
+        #dlg-card .bt .ok { background: var(--brand); color: #fff; }
+        #dlg-card .bt .ok.perigo { background: #B91C1C; }
+    </style>
+
+    <script>
+        (function () {
+            const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+            let ultimo = null, aRepetir = false;
+            ['click', 'change', 'keydown', 'submit'].forEach(t => document.addEventListener(t, e => {
+                if (aRepetir || (t === 'keydown' && e.key !== 'Enter')) return;
+                if (e.target && e.target.closest && e.target.closest('#dlg-ov')) return;
+                ultimo = { type: t, target: e.target, key: e.key, at: Date.now() };
+            }, true));
+            const aprovadas = new Map(); // chave -> { v, ate }
+            const guardada = k => { const a = aprovadas.get(k); if (a && a.ate > Date.now()) return a; aprovadas.delete(k); return null; };
+            function repetir() {
+                const ev = ultimo; if (!ev || !ev.target || !ev.target.isConnected) return false;
+                aRepetir = true;
+                try {
+                    if (ev.type === 'click') ev.target.click();
+                    else if (ev.type === 'keydown') ev.target.dispatchEvent(new KeyboardEvent('keydown', { key: ev.key, bubbles: true }));
+                    else if (ev.type === 'submit') { const f = ev.target; if (f.requestSubmit) f.requestSubmit(); else f.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })); }
+                    else ev.target.dispatchEvent(new Event(ev.type, { bubbles: true }));
+                } finally { setTimeout(() => { aRepetir = false; }, 0); }
+                return true;
+            }
+            const perigoso = t => /apagar|excluir|anular|eliminar|retirar|substituir|desfazer|de vez|restaurar/i.test(t);
+            function cartao({ tipo, msg, valor, ok, no }) {
+                const old = document.getElementById('dlg-ov'); if (old) old.remove();
+                const ov = document.createElement('div'); ov.id = 'dlg-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
+                const lin = String(msg || '');
+                const okTxt = tipo === 'alert' ? 'Entendi' : tipo === 'prompt' ? 'Confirmar' : (perigoso(lin) ? 'Sim, continuar' : 'Sim');
+                ov.innerHTML = `<div id="dlg-card"><div class="ic ${tipo === 'alert' ? 'av' : ''}"><i class="fas ${tipo === 'alert' ? 'fa-circle-info' : tipo === 'prompt' ? 'fa-pen' : 'fa-circle-question'}"></i></div>
+                    <p class="tx">${esc(lin)}</p>${tipo === 'prompt' ? `<input id="dlg-in" type="text" value="${esc(valor == null ? '' : valor)}">` : ''}
+                    <div class="bt">${tipo === 'alert' ? '' : '<button type="button" class="no">Cancelar</button>'}<button type="button" class="ok ${tipo === 'confirm' && perigoso(lin) ? 'perigo' : ''}">${okTxt}</button></div></div>`;
+                document.body.appendChild(ov);
+                const fechar = () => ov.remove();
+                const inp = ov.querySelector('#dlg-in');
+                ov.querySelector('.ok').onclick = () => { const v = inp ? inp.value : true; fechar(); ok && ok(v); };
+                const nb = ov.querySelector('.no'); if (nb) nb.onclick = () => { fechar(); no && no(); };
+                ov.addEventListener('click', e => { if (e.target === ov && tipo !== 'prompt') { fechar(); no && no(); } });
+                ov.addEventListener('keydown', e => { if (e.key === 'Escape') { fechar(); no && no(); } if (e.key === 'Enter' && inp) { e.preventDefault(); ov.querySelector('.ok').click(); } });
+                setTimeout(() => { if (inp) { inp.focus(); inp.select(); } else ov.querySelector('.ok').focus(); }, 30);
+            }
+            window.dsCartao = cartao;
+            window.alert = function (msg) { cartao({ tipo: 'alert', msg }); };
+            window.confirm = function (msg) {
+                const k = 'c:' + msg; if (guardada(k)) return true;
+                cartao({ tipo: 'confirm', msg, ok: () => { aprovadas.set(k, { v: true, ate: Date.now() + 30000 }); repetir(); } });
+                return false;
+            };
+            window.prompt = function (msg, def) {
+                const k = 'p:' + msg; const g = guardada(k); if (g) { aprovadas.delete(k); return g.v; }
+                cartao({ tipo: 'prompt', msg, valor: def, ok: v => { aprovadas.set(k, { v: v, ate: Date.now() + 30000 }); repetir(); } });
+                return null;
+            };
+            // versões com espera, para código novo
+            window.dsConfirmar = msg => new Promise(r => cartao({ tipo: 'confirm', msg, ok: () => r(true), no: () => r(false) }));
+            window.dsPerguntar = (msg, def) => new Promise(r => cartao({ tipo: 'prompt', msg, valor: def, ok: v => r(v), no: () => r(null) }));
         })();
     </script>
 </body>
