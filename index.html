@@ -1314,7 +1314,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 13:02</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 09/11/2026 13:30</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -17066,12 +17066,12 @@ var qrcode = function() {
                 if (dev && !dev.dataset.pro) {
                     dev.dataset.pro = '1';
                     dev.innerHTML = `<div class="bal-pro"><div class="ic"><i class="fas fa-lock"></i></div>
-                        <h3 class="text-xl font-black text-slate-900">O Balcão faz parte do plano PRO</h3>
+                        <h3 class="text-xl font-black text-slate-900">O Balcão faz parte dos planos Café e PRO</h3>
                         <p class="text-sm text-slate-600 mt-2 leading-relaxed">Registe os pedidos, receba e veja tudo o que vendeu, no mesmo sítio onde tem as fichas e o stock.</p>
                         <ul><li><i class="fas fa-check"></i>Pedidos ao balcão e nas mesas, com a planta da sala</li><li><i class="fas fa-check"></i>Ecrãs para o bar e a cozinha, e impressora</li><li><i class="fas fa-check"></i>Sessões de caixa, descontos, gorjetas e reservas</li><li><i class="fas fa-check"></i>Cada venda desconta o stock pela ficha técnica</li></ul>
-                        <button type="button" onclick="openUpgrade('pro','O Balcão faz parte do plano PRO')" class="mt-5 px-6 py-3 rounded-xl text-white font-black" style="background:var(--brand)">Ver o plano PRO</button></div>`;
+                        <p class="text-xs text-slate-500 mt-3">No Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos. No PRO: sem limite.</p><button type="button" onclick="openUpgrade('cafe','O Balcão faz parte dos planos Café e PRO')" class="mt-4 px-6 py-3 rounded-xl text-white font-black" style="background:var(--brand)">Ver os planos</button></div>`;
                 }
-                document.querySelectorAll('.ds-breve').forEach(t => { t.classList.add('pro'); t.innerHTML = '<i class="fas fa-lock" style="font-size:8px"></i> PRO'; });
+                document.querySelectorAll('.ds-breve').forEach(t => { t.classList.add('pro'); t.innerHTML = '<i class="fas fa-lock" style="font-size:8px"></i> Café'; });
                 return r;
             };
             try { balcaoAplicar(); } catch (_) {}
