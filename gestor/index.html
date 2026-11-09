@@ -99,9 +99,12 @@ body{overflow-x:hidden}
     <p class="msg" id="lm" role="status"></p>
     <div id="cb" class="hide" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><label class="f" style="margin-top:0"><span>Código que recebeu por e-mail</span><input id="lcod" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></label>
       <button type="button" class="btn p w" style="margin-top:10px" id="lcb">Confirmar código</button></div>
+    <div id="npb" class="hide" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line)"><label class="f" style="margin-top:0"><span>Crie a sua palavra-passe (8 ou mais caracteres)</span><input id="np1" type="password" autocomplete="new-password" minlength="8"></label>
+      <label class="f"><span>Repita a palavra-passe</span><input id="np2" type="password" autocomplete="new-password" minlength="8"></label>
+      <button type="button" class="btn p w" style="margin-top:10px" id="npg">Guardar e entrar</button><button type="button" class="lk" onclick="$('#npb').classList.add('hide');arrancar()">Agora não, só entrar</button></div>
     <button type="button" class="lk" id="ltc">Tenho um código</button>
     <button type="button" class="lk" id="lr">Esqueci a palavra-passe</button>
-    <button type="button" class="lk" id="lc" style="margin-left:12px">Primeira vez? Criar acesso</button>
+    <button type="button" class="lk" id="lc" style="margin-left:12px">Primeira vez? Receber código</button>
   </form>
 </section>
 
@@ -136,9 +139,17 @@ $('#lf').onsubmit = async e => { e.preventDefault(); $('#lm').className = 'msg';
   arrancar(); };
 $('#lr').onclick = async () => { const em = $('#le').value.trim(); if (!em) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva primeiro o e-mail.'; return; }
   await sb.auth.resetPasswordForEmail(em, { redirectTo: location.href }); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Se o e-mail existir, chega um código. Escreva-o abaixo.'; mostrarCod('recovery'); };
-$('#lc').onclick = async () => { const em = $('#le').value.trim(), pw = $('#lp').value; if (!em || pw.length < 8) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva o e-mail e uma palavra-passe com 8 ou mais caracteres.'; return; }
-  const { error } = await sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.href } });
-  $('#lm').className = 'msg ' + (error ? 'e' : 'ok'); $('#lm').textContent = error ? (/registered/i.test(error.message) ? 'Este e-mail já tem conta. Entre com a palavra-passe ou use "Esqueci a palavra-passe".' : error.message) : 'Enviámos um código para ' + em + '. Escreva-o abaixo.'; if (!error) mostrarCod('signup'); };
+$('#lc').onclick = async () => { const em = $('#le').value.trim(); if (!em) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva primeiro o seu e-mail.'; return; }
+  $('#lm').className = 'msg'; $('#lm').textContent = 'A enviar…';
+  const { error } = await sb.auth.signInWithOtp({ email: em, options: { shouldCreateUser: true, emailRedirectTo: location.href } });
+  $('#lm').className = 'msg ' + (error ? 'e' : 'ok'); $('#lm').textContent = error ? (/rate|seconds/i.test(error.message) ? 'Espere um minuto e peça de novo.' : error.message) : 'Enviámos um código para ' + em + '. Escreva-o abaixo.'; if (!error) mostrarCod('email'); };
+const pedirSenha = () => { $('#cb').classList.add('hide'); $('#npb').classList.remove('hide'); $('#lm').className = 'msg ok'; $('#lm').textContent = 'Código certo. Agora crie a palavra-passe.'; $('#np1').focus(); };
+$('#npg').onclick = async () => { const a = $('#np1').value, b = $('#np2').value;
+  if (a.length < 8) { $('#lm').className = 'msg e'; $('#lm').textContent = 'A palavra-passe precisa de 8 ou mais caracteres.'; return; }
+  if (a !== b) { $('#lm').className = 'msg e'; $('#lm').textContent = 'As duas palavras-passe não são iguais.'; return; }
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error) { $('#lm').className = 'msg e'; $('#lm').textContent = /different|same/i.test(error.message) ? 'Escolha uma palavra-passe diferente da anterior.' : error.message; return; }
+  $('#npb').classList.add('hide'); toast('Palavra-passe guardada'); arrancar(); };
 let codTipo = 'signup';
 const mostrarCod = t => { codTipo = t; $('#cb').classList.remove('hide'); $('#lcod').focus(); };
 $('#ltc').onclick = () => mostrarCod(codTipo);
@@ -146,12 +157,12 @@ $('#lcb').onclick = async () => {
   const email = $('#le').value.trim(), token = $('#lcod').value.replace(/\s/g, '');
   if (!email || token.length < 6) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Escreva o e-mail e o código de 6 números.'; return; }
   let ok = null, err = null;
-  for (const type of [codTipo, 'signup', 'email', 'recovery'].filter((v, i, a) => a.indexOf(v) === i)) {
+  for (const type of [codTipo, 'email', 'recovery', 'signup'].filter((v, i, a) => a.indexOf(v) === i)) {
     const { data, error } = await sb.auth.verifyOtp({ email, token, type });
     if (!error && data && data.session) { ok = type; break; } err = error;
   }
   if (!ok) { $('#lm').className = 'msg e'; $('#lm').textContent = 'Código errado ou expirado. Peça outro.'; return; }
-  if (ok === 'recovery') { const n = prompt('Escreva a nova palavra-passe (8 ou mais caracteres):'); if (n && n.length >= 8) { const { error } = await sb.auth.updateUser({ password: n }); toast(error ? error.message : 'Palavra-passe mudada'); } }
+  if (ok === 'recovery' || ok === 'email' || ok === 'signup') { pedirSenha(); return; }
   arrancar();
 };
 $('#out').onclick = async () => { await sb.auth.signOut(); location.reload(); };
@@ -285,7 +296,7 @@ function vPag() {
   $('#mn').innerHTML = `<div class="grid k4" style="margin-bottom:14px">${kpi('Recebido (registado)', eur(tot), P.length + ' pagamentos')}</div>` + (P.length ? `<div class="tw"><table class="resp"><thead><tr><th>Empresa</th><th>Plano</th><th>Período</th><th class="num">Valor</th><th>Data</th><th>Válido até</th></tr></thead><tbody>${P.map(p => `<tr data-u="${p.dono_id}"><td><b>${esc(p.empresa || '')}</b><span class="sub">${esc(p.email || '')}</span></td><td data-l="Plano">${PNOME[p.plano] || esc(p.plano || '')}</td><td data-l="Período">${esc(p.periodo || '')}</td><td data-l="Valor" class="num">${eur(p.valor_cent / 100)}</td><td data-l="Data">${dia(p.criado_em)}</td><td data-l="Válido até">${dia(p.valido_ate)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Ainda não há pagamentos registados.</p>');
   $('#mn').querySelectorAll('tr[data-u]').forEach(r => r.onclick = () => abrir(r.dataset.u));
 }
-sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') { const n = prompt('Escreva a nova palavra-passe (8 ou mais caracteres):'); if (n && n.length >= 8) sb.auth.updateUser({ password: n }).then(({ error }) => toast(error ? error.message : 'Palavra-passe mudada')); } });
+sb.auth.onAuthStateChange((ev) => { if (ev === 'PASSWORD_RECOVERY') setTimeout(pedirSenha, 50); });
 arrancar();
 </script>
 </body>
