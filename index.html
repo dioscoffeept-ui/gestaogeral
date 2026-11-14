@@ -17266,5 +17266,26 @@ var qrcode = function() {
             closeUpgrade = function () { const m = document.getElementById('upgrade-modal'); if (m) m.classList.remove('acima'); return oC.apply(this, arguments); };
         })();
     </script>
+
+    <style>
+        #vd-aviso-teste { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: #FEF3C7; border: 1px solid #FCD34D; color: #78350F; border-radius: 16px; padding: 12px 14px; margin: 8px 0 12px; font-size: 14px; }
+        #vd-aviso-teste b { display: block; font-size: 15px; }
+    </style>
+    <script>
+        function vdAvisoTeste() {
+            const tab = document.getElementById('tab-balcao'); if (!tab) return;
+            let el = document.getElementById('vd-aviso-teste');
+            const teste = typeof vdState !== 'undefined' && vdState && vdState.ligado && vdState.modo === 'tests' && !posFin().treino;
+            if (!teste) { if (el) el.remove(); return; }
+            if (!el) { el = document.createElement('div'); el.id = 'vd-aviso-teste'; const ref = document.getElementById('bal-ferr') || tab.firstElementChild; ref.insertAdjacentElement('afterend', el); }
+            el.innerHTML = `<i class="fas fa-triangle-exclamation text-lg"></i><div class="flex-1 min-w-0"><b>As faturas estão a sair em modo de teste</b>A caixa "${escapeHtml(vdState.caixa || 'Vendus')}" está em modo Testes no Vendus. Estas faturas não valem para as Finanças. Peça ao apoio do Vendus para pôr a caixa em modo Normal.</div>`;
+        }
+        (function () {
+            const oB = vdBadge;
+            vdBadge = function () { const r = oB.apply(this, arguments); try { vdAvisoTeste(); } catch (_) {} return r; };
+            const oT = switchTab;
+            switchTab = function (t) { const r = oT.apply(this, arguments); if (t === 'balcao') setTimeout(() => { try { vdAvisoTeste(); } catch (_) {} }, 150); return r; };
+        })();
+    </script>
 </body>
 </html>
