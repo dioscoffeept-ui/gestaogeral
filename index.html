@@ -4049,6 +4049,55 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (!Array.isArray(appState.salesHistory)) appState.salesHistory = [];
             if (!appState.prepStock || typeof appState.prepStock !== 'object') appState.prepStock = {};
             if (!appState.salesAliases || typeof appState.salesAliases !== 'object') appState.salesAliases = {};
+            if (!appState._mod || typeof appState._mod !== 'object') appState._mod = {};
+            if (!appState.prepDel || typeof appState.prepDel !== 'object') appState.prepDel = {};
+            dsSnap = null; dsStamp(); // estado acabado de carregar: só as alterações daqui para a frente contam como "minhas"
+        }
+
+        // ---------- sincronização entre aparelhos sem apagar o trabalho dos outros ----------
+        // Cada parte dos dados (e cada porção pronta) guarda a hora da última alteração feita neste aparelho.
+        // Ao gravar, se outro aparelho gravou entretanto, junta-se: fica a alteração mais recente de cada parte.
+        let dsSnap = null;
+        const DS_SYNC_SKIP = ['_mod', 'prepDel', 'prepStock'];
+        function dsPrepSig(p) { const c = Object.assign({}, p); delete c.t; return JSON.stringify(c); }
+        function dsStamp(all) {
+            if (!appState) return;
+            const now = Date.now(), mod = appState._mod = appState._mod || {};
+            const ps = appState.prepStock = appState.prepStock || {}, del = appState.prepDel = appState.prepDel || {};
+            const prev = dsSnap, next = { k: {}, p: {} };
+            Object.keys(appState).forEach(k => {
+                if (DS_SYNC_SKIP.includes(k)) return;
+                const s = JSON.stringify(appState[k]); next.k[k] = s;
+                if (all || (prev && prev.k[k] !== s)) mod[k] = now;
+            });
+            Object.keys(ps).forEach(id => {
+                const s = dsPrepSig(ps[id]); next.p[id] = s;
+                if (all || (prev && prev.p[id] !== s)) { ps[id].t = now; delete del[id]; }
+            });
+            if (prev) Object.keys(prev.p).forEach(id => { if (!ps[id]) del[id] = now; });
+            dsSnap = next;
+        }
+        function dsMerge(loc, srv) {
+            if (!srv || typeof srv !== 'object') return loc;
+            const lm = loc._mod || {}, sm = srv._mod || {}, out = {};
+            new Set([...Object.keys(loc), ...Object.keys(srv)]).forEach(k => {
+                if (DS_SYNC_SKIP.includes(k)) return;
+                const usaLocal = !(k in srv) || ((k in loc) && (lm[k] || 0) > (sm[k] || 0));
+                out[k] = usaLocal ? loc[k] : srv[k];
+            });
+            out._mod = Object.assign({}, sm);
+            Object.keys(lm).forEach(k => { if ((lm[k] || 0) > (out._mod[k] || 0)) out._mod[k] = lm[k]; });
+            const del = Object.assign({}, srv.prepDel || {});
+            Object.entries(loc.prepDel || {}).forEach(([id, t]) => { if (t > (del[id] || 0)) del[id] = t; });
+            const lp = loc.prepStock || {}, sp = srv.prepStock || {}, ps = {};
+            new Set([...Object.keys(lp), ...Object.keys(sp)]).forEach(id => {
+                const a = lp[id], b = sp[id];
+                const p = !b ? a : !a ? b : ((a.t || 0) > (b.t || 0) ? a : b);
+                if (p && !((del[id] || 0) > (p.t || 0))) ps[id] = p;
+            });
+            Object.keys(del).forEach(id => { if (ps[id]) delete del[id]; });
+            out.prepStock = ps; out.prepDel = del;
+            return out;
         }
 
         const RECIPES_VERSION = 3;
@@ -4520,6 +4569,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
 
         function saveStorage() {
+            try { dsStamp(); } catch (e) { console.error(e); }
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
                 storageOK = true;
@@ -4543,13 +4593,28 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (!currentUser || !sb || !dataOwnerId) return;
             if (cloudBusy) { cloudTimer = setTimeout(pushCloud, 800); return; }
             cloudBusy = true;
+            try {
+                // outro aparelho gravou depois da nossa última leitura? junta antes de gravar (não apaga o trabalho dele)
+                const { data: srv } = await sb.from(CLOUD_TABLE).select('atualizado_em').eq('user_id', dataOwnerId).maybeSingle();
+                if (!window.dsSemJuntar && srv && (!lastCloudStamp || new Date(srv.atualizado_em) > new Date(lastCloudStamp))) {
+                    const { data: full, error: e2 } = await sb.from(CLOUD_TABLE).select('dados, atualizado_em').eq('user_id', dataOwnerId).maybeSingle();
+                    if (e2) throw e2;
+                    if (full && full.dados && Array.isArray(full.dados.recipes)) {
+                        try { dsStamp(); } catch (_) {}
+                        appState = dsMerge(appState, full.dados);
+                        normalizeState();
+                        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch (_) {}
+                        try { renderProfile(); renderBarRecipes(); renderKitchenRecipes(); renderInventory(); renderProductionTab(); renderSuppliers(); renderSalesHistory(); } catch (e3) { console.error(e3); }
+                    }
+                }
+            } catch (e) { console.error('Falha ao comparar com a nuvem:', e); }
             const stamp = new Date().toISOString();
             try {
                 const { error } = await sb.from(CLOUD_TABLE).upsert({
                     user_id: dataOwnerId, empresa: currentEmpresa, dados: appState, atualizado_em: stamp
                 });
                 if (error) throw error;
-                cloudOK = true; cloudDirty = false; lastCloudStamp = stamp;
+                cloudOK = true; cloudDirty = false; lastCloudStamp = stamp; window.dsSemJuntar = false;
                 pendingFlag(false);
                 markSaved();
             } catch (e) {
@@ -4573,8 +4638,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         async function refreshFromCloud() {
             if (!currentUser || !dataOwnerId || cloudDirty || cloudBusy) return;
             try {
+                const { data: h } = await sb.from(CLOUD_TABLE).select('atualizado_em').eq('user_id', dataOwnerId).maybeSingle();
+                if (!h || (lastCloudStamp && new Date(h.atualizado_em) <= new Date(lastCloudStamp))) return;
                 const { data, error } = await sb.from(CLOUD_TABLE).select('dados, atualizado_em').eq('user_id', dataOwnerId).maybeSingle();
                 if (error || !data || !data.dados) return;
+                if (cloudDirty || cloudBusy) return;
                 if (lastCloudStamp && new Date(data.atualizado_em) <= new Date(lastCloudStamp)) return;
                 appState = data.dados;
                 lastCloudStamp = data.atualizado_em;
@@ -5382,6 +5450,14 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (document.visibilityState === 'hidden' && cloudDirty) pushCloud();
             if (document.visibilityState === 'visible') refreshFromCloud();
         });
+        // tablet sempre aberto: vai buscar o que os outros aparelhos gravaram (sem atrapalhar quem está a escrever)
+        setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+            const a = document.activeElement;
+            if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+            if (document.getElementById('dlg-ov')) return;
+            refreshFromCloud();
+        }, 60000);
 
         // Sincroniza se o site estiver aberto em outra aba
         window.addEventListener('storage', (e) => {
@@ -5421,6 +5497,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     if (!confirm('Importar este backup vai substituir todos os dados atuais. Continuar?')) return;
                     appState = data;
                     normalizeState();
+                    dsStamp(true); window.dsSemJuntar = true; // o backup importado substitui o que está na nuvem
                     saveStorage();
                     (currentUser ? pushCloud() : Promise.resolve()).then(() => window.location.reload());
                 } catch (e) {
@@ -6372,6 +6449,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         ${pac > 1 ? `<button type="button" onclick="prepPack('${id}',1)" class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black text-slate-600" title="Somar 1 pacote">+</button>` : ''}
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1">${packTxt(p.tenho, pac)}</p>
+                    ${prepVarsHtml(id, p)}
                 </td>
                 <td class="px-4 py-3"><input type="number" min="0" step="1" value="${Number(p.meta) || 0}" onchange="prepSet('${id}','meta',this.value)" class="w-20 text-center font-bold"><p class="text-[11px] text-slate-400 mt-1">${packTxt(p.meta, pac)}</p></td>
                 <td class="px-4 py-3"><input type="number" min="1" step="1" value="${pac}" onchange="prepSet('${id}','pacote',this.value)" class="w-16 text-center"></td>
@@ -6523,18 +6601,70 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
         function prepRemove(id) {
             const r = appState.recipes.find(x => x.id === id);
-            if (!confirm('Deixar de acompanhar as porções prontas de "' + (r ? r.name : '') + '"?')) return;
-            delete appState.prepStock[id];
+            dsConfirmar('Deixar de acompanhar as porções prontas de "' + (r ? r.name : '') + '"?').then(ok => {
+                if (!ok) return;
+                delete appState.prepStock[id];
+                saveStorage(); renderPrep();
+            });
+        }
+        // variações da mesma porção (ex.: Frutas Vermelhas "com banana"): fazem parte do total "Tenho"
+        function prepVarsHtml(id, p) {
+            const vars = Array.isArray(p.vars) ? p.vars : [];
+            const tot = Number(p.tenho) || 0;
+            // vendas tiram do total: se o total ficou abaixo das variações, acerta-as (das últimas para as primeiras)
+            let exc = vars.reduce((a, v) => a + (Number(v.q) || 0), 0) - tot;
+            for (let i = vars.length - 1; i >= 0 && exc > 0; i--) { const t = Math.min(Number(vars[i].q) || 0, exc); vars[i].q = (Number(vars[i].q) || 0) - t; exc -= t; }
+            const somaV = vars.reduce((a, v) => a + (Number(v.q) || 0), 0);
+            const linhas = vars.map((v, i) => `<div class="flex items-center gap-1 mt-1">
+                    <span class="text-[11px] font-bold text-slate-600 truncate" style="max-width:7rem" title="${escapeHtml(v.n)}">↳ ${escapeHtml(v.n)}</span>
+                    <input type="number" min="0" step="1" value="${Number(v.q) || 0}" onchange="prepVarSet('${id}',${i},this.value)" class="w-14 text-center text-[11px] font-black" style="padding:2px 4px">
+                    <button type="button" onclick="prepVarDel('${id}',${i})" class="text-slate-300 hover:text-red-600 text-[11px] px-1" title="Tirar variação"><i class="fas fa-xmark"></i></button>
+                </div>`).join('');
+            const resto = vars.length && tot - somaV > 0 ? `<p class="text-[11px] text-slate-400 mt-0.5">↳ ${tot - somaV} sem variação</p>` : '';
+            return linhas + resto + `<button type="button" onclick="prepVarAdd('${id}')" class="mt-1 text-[11px] font-bold hover:underline" style="color:var(--brand)"><i class="fas fa-plus mr-0.5"></i>variação</button>`;
+        }
+        async function prepVarAdd(id) {
+            const p = appState.prepStock[id]; if (!p) return;
+            const nome = await dsPerguntar('Nome da variação (ex.: com banana):', '');
+            if (!nome || !String(nome).trim()) return;
+            const q = await dsPerguntar('Quantas unidades "' + String(nome).trim() + '" tem?', '0');
+            if (q === null) return;
+            const n = Math.max(0, Math.round(parseFloat(String(q).replace(',', '.')) || 0));
+            p.vars = Array.isArray(p.vars) ? p.vars : [];
+            p.vars.push({ n: String(nome).trim(), q: n });
+            prepVarFix(p); saveStorage(); renderPrep();
+        }
+        function prepVarSet(id, i, val) {
+            const p = appState.prepStock[id]; if (!p || !p.vars || !p.vars[i]) return;
+            p.vars[i].q = Math.max(0, Math.round(parseFloat(String(val).replace(',', '.')) || 0));
+            prepVarFix(p); saveStorage(); renderPrep();
+        }
+        async function prepVarDel(id, i) {
+            const p = appState.prepStock[id]; if (!p || !p.vars || !p.vars[i]) return;
+            if (!(await dsConfirmar('Tirar a variação "' + p.vars[i].n + '"? (as unidades continuam no total)'))) return;
+            p.vars.splice(i, 1); if (!p.vars.length) delete p.vars;
             saveStorage(); renderPrep();
         }
-        function prepProduce(id) {
+        // o total nunca fica abaixo da soma das variações
+        function prepVarFix(p) {
+            const somaV = (p.vars || []).reduce((a, v) => a + (Number(v.q) || 0), 0);
+            if ((Number(p.tenho) || 0) < somaV) p.tenho = somaV;
+        }
+        function prepToast(txt) {
+            const old = document.getElementById('prep-toast'); if (old) old.remove();
+            const d = document.createElement('div'); d.id = 'prep-toast';
+            d.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;max-width:92vw;background:#24150E;color:#fff;border-radius:14px;padding:12px 16px;font-size:13px;font-weight:700;box-shadow:0 18px 40px -16px rgba(36,21,14,.6);white-space:pre-line';
+            d.textContent = txt; document.body.appendChild(d);
+            setTimeout(() => d.remove(), 4500);
+        }
+        async function prepProduce(id) {
             const r = appState.recipes.find(x => x.id === id), p = appState.prepStock[id];
             if (!r || !p) return;
             const sug = prepFalta(p) || Number(p.pacote) || 1;
-            const v = prompt('Quantas unidades de "' + r.name + '" produziu agora?\n\nSão somadas às porções prontas e os ingredientes saem do estoque pela ficha técnica.', sug);
+            const v = await dsPerguntar('Quantas unidades de "' + r.name + '" produziu agora?\n\nSão somadas às porções prontas e os ingredientes saem do estoque pela ficha técnica.\n(Para só corrigir a contagem, escreva o número direto em "Tenho".)', sug);
             if (v === null) return;
             const n = parseFloat(String(v).replace(',', '.'));
-            if (!(n > 0)) return alert('Indique um número maior que zero.');
+            if (!(n > 0)) return dsCartao({ tipo: 'alert', msg: 'Indique um número maior que zero.' });
             const used = [];
             (r.ingredients || []).forEach(ing => {
                 const iq = Number(ing.quantity);
@@ -6547,8 +6677,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             });
             p.tenho = (Number(p.tenho) || 0) + n;
             saveStorage();
-            renderInventory();
-            alert('Produção registrada: +' + n + ' un de ' + r.name + '.' + (used.length ? '\n\nDescontado do estoque:\n' + used.join('\n') : ''));
+            renderInventory(); renderPrep();
+            prepToast('✓ +' + n + ' un de ' + r.name + ' · agora tem ' + p.tenho + (used.length ? '\nDescontado: ' + used.join(', ') : ''));
         }
         function prepGoToOrders() {
             switchTab('production');
