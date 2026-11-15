@@ -4554,7 +4554,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 // empresa nova: dados reservados para este e-mail (se houver) ou exemplos genéricos
                 let reserved = null;
                 try { const r = await sb.rpc('levantar_dados_reservados'); reserved = r.data; } catch (_) {}
-                appState = reserved && Array.isArray(reserved.recipes) ? reserved : JSON.parse(JSON.stringify(defaultData));
+                appState = reserved && Array.isArray(reserved.recipes) ? reserved : Object.assign(JSON.parse(JSON.stringify(defaultData)), { inventory: [], recipes: [], suppliers: [] });
                 cloudDirty = true;
             } else if (localUser) {
                 appState = localUser; cloudDirty = true;
@@ -17500,6 +17500,183 @@ var qrcode = function() {
             startReview({ date: '', items });
             const rv = document.getElementById('sales-review'); if (rv) rv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+    </script>
+
+    <style>
+        #dash.dh { display: flex; flex-direction: column; gap: 14px; }
+        .dh-hero { background: #fff; border: 1px solid #EEE6DA; border-radius: 22px; padding: 20px 20px 16px; }
+        .dh-hero .l { font-size: 14px; font-weight: 700; color: #5B4A40; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .dh-hero .l button { font-size: 13px; font-weight: 800; color: var(--brand); }
+        .dh-hero .v { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 40px; letter-spacing: -0.02em; line-height: 1.1; color: #231F20; margin-top: 4px; }
+        .dh-hero .s { font-size: 13.5px; color: #7A6A60; margin-top: 2px; }
+        .dh-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 120px; margin-top: 18px; border-bottom: 1px solid #EEE6DA; }
+        .dh-bars .b { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+        .dh-bars .b span { width: 100%; max-width: 30px; border-radius: 8px 8px 2px 2px; background: #E8DED3; min-height: 3px; }
+        .dh-bars .b.on span { background: var(--brand); }
+        .dh-dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 6px; text-align: center; font-size: 12.5px; font-weight: 700; color: #7A6A60; }
+        .dh-dias .hoje { color: var(--brand); }
+        .dh-vazio { margin-top: 14px; background: #F6F3F0; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #5B4A40; display: flex; gap: 10px; align-items: center; }
+        .dh-vazio button { margin-left: auto; background: var(--brand); color: #fff; font-weight: 800; border-radius: 10px; padding: 8px 12px; white-space: nowrap; font-size: 13px; }
+        .dh-acts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .dh-acts button { background: #fff; border: 1px solid #EEE6DA; border-radius: 16px; padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; color: #24150E; line-height: 1.2; text-align: center; }
+        .dh-acts button i { width: 38px; height: 38px; border-radius: 12px; background: #FBEDE6; color: var(--brand); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .dh-acts button:hover { border-color: var(--brand); }
+        .dh-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+        .dh-tile { background: #fff; border: 1px solid #EEE6DA; border-radius: 18px; padding: 14px 16px; text-align: left; }
+        .dh-tile .l { font-size: 13px; font-weight: 700; color: #7A6A60; }
+        .dh-tile .v { font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 800; color: #231F20; margin-top: 2px; letter-spacing: -0.01em; }
+        .dh-tile .s { font-size: 12px; color: #7A6A60; }
+        .dh-card { background: #fff; border: 1px solid #EEE6DA; border-radius: 22px; overflow: hidden; }
+        .dh-card > h4 { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 18px 8px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; font-weight: 800; color: #231F20; }
+        .dh-card > h4 button { font-family: 'Schibsted Grotesk', sans-serif; font-size: 13px; font-weight: 800; color: var(--brand); }
+        .dh-lin { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 18px; border-top: 1px solid #F3EFE8; font-size: 14.5px; }
+        .dh-lin:hover { background: #FFFCF8; }
+        .dh-lin .n { flex: 1; min-width: 0; font-weight: 700; color: #24150E; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dh-lin .n small { display: block; font-weight: 500; font-size: 12.5px; color: #7A6A60; white-space: normal; }
+        .dh-lin .q { font-weight: 800; color: #24150E; white-space: nowrap; }
+        .dh-lin .ic { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+        .dh-pill { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+        .dh-nota { padding: 10px 18px 14px; font-size: 12px; color: #7A6A60; border-top: 1px solid #F3EFE8; }
+        @media (min-width: 1024px) { .dh-duas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; } .dh-duas > * + * { margin-top: 0 !important; } }
+        @media (max-width: 1023px) { .dh-duas { display: flex; flex-direction: column; gap: 14px; } }
+        .dh-bal-off { display: none !important; }
+    </style>
+
+    <script>
+        // ---- valor real das vendas: preço do pedido quando existe, senão o PVP da ficha
+        function dhAlvo(t) {
+            t = String(t || ''); const k = t.split('@')[0];
+            if (k.startsWith('rec:')) return appState.recipes.find(x => x.id === k.slice(4)) || null;
+            if (k.startsWith('inv:')) return appState.inventory.find(x => x.id === k.slice(4)) || null;
+            return null;
+        }
+        saleValue = function (h) {
+            let v = 0, units = 0, priced = 0;
+            (h.items || []).forEach(i => {
+                const q = Number(i.qty) || 0; units += q;
+                if (Number(i.price) > 0) { v += q * Number(i.price); priced += q; return; }
+                const rc = String(i.target || '').startsWith('rec:') ? dhAlvo(i.target) : null;
+                if (rc && Number(rc.pvp) > 0) { v += q * Number(rc.pvp); priced += q; }
+            });
+            return { v, units, priced };
+        };
+
+        function dhDiaCurto(d) { return ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][new Date(d + 'T12:00:00').getDay()]; }
+        function dhBalcaoOn() { return typeof dsAcesso !== 'undefined' && !!dsAcesso.balcao; }
+
+        renderDashboard = function () {
+            const el = document.getElementById('dash'); if (!el || !appState) return;
+            el.className = 'dh mb-6';
+            const today = new Date(), tIso = isoD(today);
+            const canInv = hasPlan('cafe'), pro = isPro();
+            const sales = appState.salesHistory || [];
+            const days = []; for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); days.push(isoD(d)); }
+            const byDay = {}; sales.forEach(h => { const d = saleDay(h); const s = saleValue(h); byDay[d] = byDay[d] || { v: 0, u: 0 }; byDay[d].v += s.v; byDay[d].u += s.units; });
+            const week = days.reduce((a, d) => ({ v: a.v + ((byDay[d] || {}).v || 0), u: a.u + ((byDay[d] || {}).u || 0) }), { v: 0, u: 0 });
+            const useVal = week.v > 0;
+            const val = d => useVal ? ((byDay[d] || {}).v || 0) : ((byDay[d] || {}).u || 0);
+            const maxDay = Math.max(1, ...days.map(val));
+            const purchases = appState.purchases || [];
+            const open = purchases.filter(p => !p.paid), owed = open.reduce((a, p) => a + (p.total || 0), 0);
+            const in7 = isoD(new Date(today.getTime() + 7 * 864e5));
+            const late = open.filter(p => p.due && p.due < tIso), dueSoon = open.filter(p => p.due && p.due >= tIso && p.due <= in7);
+            const ym = tIso.slice(0, 7);
+            const months = []; for (let i = 5; i >= 0; i--) { const d = new Date(today.getFullYear(), today.getMonth() - i, 1); months.push(isoD(d).slice(0, 7)); }
+            const byMonth = {}; purchases.forEach(p => { const k = String(p.date).slice(0, 7); byMonth[k] = (byMonth[k] || 0) + (p.total || 0); });
+            const maxM = Math.max(1, ...months.map(m => byMonth[m] || 0));
+            const inv = appState.inventory || [];
+            const expiring = inv.filter(i => i.validade && i.validade <= in7).sort((a, b) => a.validade.localeCompare(b.validade));
+            const stockValue = inv.reduce((a, i) => { const uc = itemUnitCost(i); return a + (uc ? uc * (Number(i.stock) || 0) : 0); }, 0);
+            const recs = appState.recipes || [];
+            const margins = recs.map(r => ({ r, m: recipeMargin(r) })).filter(x => x.m);
+            const avgM = margins.length ? margins.reduce((a, x) => a + x.m.pct, 0) / margins.length : null;
+            const noPrice = recs.filter(r => !(Number(r.pvp) > 0));
+            const lowMargin = margins.filter(x => x.m.pct < 60).sort((a, b) => a.m.pct - b.m.pct);
+            // mais vendidos: só o que está ligado a uma ficha ou a um produto do stock que existe
+            const lim30 = isoD(new Date(today.getTime() - 30 * 864e5));
+            const top = {}; sales.filter(h => saleDay(h) >= lim30).forEach(h => (h.items || []).forEach(i => { const a = dhAlvo(i.target); if (!a) return; top[a.id] = top[a.id] || { nome: a.name, q: 0 }; top[a.id].q += Number(i.qty) || 0; }));
+            const topList = Object.values(top).filter(x => x.q > 0).sort((a, b) => b.q - a.q).slice(0, 5);
+            // stock com mínimo definido
+            const stk = canInv ? inv.map(i => ({ i, n: stkNivel(i) })).filter(x => x.n) : [];
+            const cont = [0, 0, 0]; stk.forEach(x => cont[x.n.k]++);
+            const stkLista = stk.sort((a, b) => (a.i.stock / a.i.minStock) - (b.i.stock / b.i.minStock)).slice(0, 5);
+
+            // ---- topo: vendas
+            const dmyC = d => d.slice(8, 10) + '/' + d.slice(5, 7);
+            const temVendas = days.some(d => val(d) > 0);
+            const hero = `<section class="dh-hero">
+                <p class="l"><span>Vendas · últimos 7 dias</span>${canInv ? `<button type="button" onclick="dashGo('sales')">Registar vendas</button>` : ''}</p>
+                <p class="v">${useVal ? eur2(week.v) : fmtQ(week.u) + (week.u === 1 ? ' venda' : ' vendas')}</p>
+                <p class="s">${dmyC(days[0])}–${dmyC(days[6])}${week.u ? ' · ' + fmtQ(week.u) + ' produto' + (week.u === 1 ? '' : 's') + ' vendido' + (week.u === 1 ? '' : 's') : ''}</p>
+                ${temVendas ? `<div class="dh-bars">${days.map(d => `<div class="b ${val(d) ? 'on' : ''}" title="${dmy(d)}: ${useVal ? eur2(val(d)) : fmtQ(val(d)) + ' un'}"><span style="height:${Math.round(val(d) / maxDay * 100)}%"></span></div>`).join('')}</div>
+                <div class="dh-dias">${days.map(d => `<span class="${d === tIso ? 'hoje' : ''}">${dhDiaCurto(d)}</span>`).join('')}</div>` :
+                `<div class="dh-vazio"><i class="fas fa-receipt" style="color:var(--brand)"></i><span>Ainda sem vendas nestes dias.</span>${canInv ? `<button type="button" onclick="dashGo('sales')">Registar</button>` : ''}</div>`}
+            </section>`;
+
+            // ---- atalhos (4)
+            const lock = need => !hasPlan(need);
+            const act = (icon, t, fn, need) => `<button type="button" onclick="${lock(need) ? `openUpgrade('${need}')` : fn}" ${lock(need) ? 'style="opacity:.55"' : ''}><i class="fas ${icon}"></i>${t}</button>`;
+            const acts = `<div class="dh-acts">
+                ${act('fa-receipt', 'Vendas do dia', "dashGo('sales')", 'cafe')}
+                ${act('fa-file-invoice-dollar', 'Registar compra', "dashGo('inventory', openPurchase)", 'cafe')}
+                ${act('fa-plus', 'Nova ficha', "dashGo('bar', () => openRecipeModal('BAR'))", 'gratis')}
+                ${pro ? act('fa-truck-fast', 'Encomendas', "dashGo('inventory', ordersGenerate)", 'pro') : act('fa-calculator', 'Simulador', 'simOpen()', 'gratis')}
+            </div>`;
+
+            // ---- números (só os que existem)
+            const tiles = [];
+            if (avgM !== null) tiles.push(`<button type="button" class="dh-tile" onclick="dashGo('bar')"><p class="l">Margem média</p><p class="v">${Math.round(avgM)}%</p><p class="s">${margins.length} ficha${margins.length === 1 ? '' : 's'} com custo</p></button>`);
+            if (canInv && stockValue > 0) tiles.push(`<button type="button" class="dh-tile" onclick="dashGo('inventory')"><p class="l">Stock vale</p><p class="v">${eur2(stockValue)}</p><p class="s">ao preço de compra, sem IVA</p></button>`);
+            if (pro && open.length) tiles.push(`<button type="button" class="dh-tile" onclick="openAllInvoices('abertas')"><p class="l">Por pagar</p><p class="v">${eur2(owed)}</p><p class="s">${open.length} fatura${open.length > 1 ? 's' : ''}${late.length ? ' · ' + late.length + ' em atraso' : ''}</p></button>`);
+
+            // ---- precisa de atenção
+            const al = [];
+            const lin = (ic, cor, t, s, fn) => `<button type="button" class="dh-lin" onclick="${fn}"><span class="ic" style="${cor}"><i class="fas ${ic}"></i></span><span class="n">${t}<small>${s}</small></span><i class="fas fa-chevron-right" style="color:#C9BBAF"></i></button>`;
+            if (canInv && cont[0]) al.push(lin('fa-arrow-trend-down', 'background:#FEE2E2;color:#B91C1C', `${cont[0]} produto${cont[0] > 1 ? 's' : ''} para encomendar`, escapeHtml(stk.filter(x => x.n.k === 0).slice(0, 4).map(x => x.i.name).join(', ')), pro ? "dashGo('inventory', ordersGenerate)" : "dashGo('inventory')"));
+            if (pro && late.length) al.push(lin('fa-file-circle-exclamation', 'background:#FEE2E2;color:#B91C1C', `${late.length} fatura${late.length > 1 ? 's' : ''} em atraso`, eur2(late.reduce((a, p) => a + (p.total || 0), 0)) + ' · ' + escapeHtml(invSupName(late[0])), "openAllInvoices('abertas')"));
+            if (pro && dueSoon.length) al.push(lin('fa-calendar-day', 'background:#FEF3C7;color:#92400E', `${dueSoon.length} fatura${dueSoon.length > 1 ? 's' : ''} a vencer em 7 dias`, eur2(dueSoon.reduce((a, p) => a + (p.total || 0), 0)), "openAllInvoices('abertas')"));
+            if (canInv && expiring.length) al.push(lin('fa-hourglass-half', 'background:#FEF3C7;color:#92400E', `${expiring.length} produto${expiring.length > 1 ? 's' : ''} a perder a validade`, expiring.slice(0, 3).map(i => escapeHtml(i.name) + ' (' + dmy(i.validade) + ')').join(', '), "dashGo('inventory')"));
+            if (lowMargin.length) al.push(lin('fa-percent', 'background:#FBEDE6;color:var(--brand)', `${lowMargin.length} ficha${lowMargin.length > 1 ? 's' : ''} com margem abaixo de 60%`, lowMargin.slice(0, 3).map(x => escapeHtml(x.r.name) + ' ' + Math.round(x.m.pct) + '%').join(' · '), `openRecipeViewModal('${lowMargin[0].r.id}')`));
+            if (noPrice.length) al.push(lin('fa-tag', 'background:#F3EFE8;color:#5B4A40', `${noPrice.length} ficha${noPrice.length > 1 ? 's' : ''} sem preço de venda`, 'Ponha o preço para ver o lucro de cada uma', `dashGo('${noPrice[0].type === 'KITCHEN' ? 'kitchen' : 'bar'}')`));
+
+            const card = (t, btn, corpo) => `<section class="dh-card"><h4><span>${t}</span>${btn || ''}</h4>${corpo}</section>`;
+            const blocos = [];
+            if (al.length) blocos.push(card('Precisa de atenção', '', al.join('')));
+            if (stkLista.length) blocos.push(card('Stock', `<button type="button" onclick="dashGo('inventory')">Ver tudo</button>`,
+                stkLista.map(({ i, n }) => `<button type="button" class="dh-lin" onclick="dashGo('inventory', () => { const s = document.getElementById('inv-search'); if (s) { s.value = ${JSON.stringify(String(i.name)).replace(/"/g, '&quot;')}; s.dispatchEvent(new Event('input')); } })"><span class="n">${escapeHtml(i.name)}</span><span class="q">${fmtQty(i.stock, i.unit)}</span><span class="dh-pill" style="background:${n.bg};color:${n.c}">${n.t}</span></button>`).join('') +
+                `<p class="dh-nota">${cont[0]} para encomendar · ${cont[1]} a acabar · ${cont[2]} com stock. Só entram os produtos com stock mínimo definido.</p>`));
+            if (topList.length) blocos.push(card('Mais vendidos · 30 dias', '', topList.map((x, i) => `<div class="dh-lin"><span class="n">${i + 1}. ${escapeHtml(x.nome)}</span><span class="q">${fmtQ(x.q)}</span></div>`).join('')));
+            if (margins.length) blocos.push(card('Fichas mais rentáveis', '', margins.slice().sort((a, b) => b.m.lucro - a.m.lucro).slice(0, 5).map(x => `<button type="button" class="dh-lin" onclick="openRecipeViewModal('${x.r.id}')"><span class="n">${escapeHtml(x.r.name)}</span><span class="q">${eur2(x.m.lucro)}</span><span class="dh-pill ${x.m.pct >= 65 ? 'bg-emerald-100 text-emerald-700' : x.m.pct >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-700'}">${Math.round(x.m.pct)}%</span></button>`).join('') + '<p class="dh-nota">Lucro por unidade, sem IVA e já com a taxa do cartão.</p>'));
+            if (pro && purchases.length) blocos.push(card('Compras · 6 meses', `<button type="button" onclick="openAllInvoices('todas')">Faturas</button>`,
+                `<div style="padding:0 18px 14px"><div class="dh-bars">${months.map(m => `<div class="b ${m === ym ? 'on' : ''}" title="${eur2(byMonth[m] || 0)}"><span style="height:${Math.round((byMonth[m] || 0) / maxM * 100)}%"></span></div>`).join('')}</div><div class="dh-dias" style="grid-template-columns:repeat(6,1fr)">${months.map(m => `<span>${new Date(m + '-15T12:00:00').toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '')}</span>`).join('')}</div></div><p class="dh-nota">Total com IVA das faturas registadas.</p>`));
+
+            const metade = Math.ceil(blocos.length / 2);
+            el.innerHTML = hero + acts + (tiles.length ? `<div class="dh-tiles">${tiles.join('')}</div>` : '') +
+                (blocos.length ? `<div class="dh-duas"><div style="display:flex;flex-direction:column;gap:14px">${blocos.slice(0, metade).join('')}</div><div style="display:flex;flex-direction:column;gap:14px">${blocos.slice(metade).join('')}</div></div>` : '');
+        };
+
+        // ---- Balcão: só aparece a quem o tem ativo
+        (function () {
+            const oA = balcaoAplicar;
+            balcaoAplicar = function () {
+                const r = oA.apply(this, arguments);
+                const on = dhBalcaoOn();
+                document.querySelectorAll('#nav-balcao, #ds-bottom-nav button[data-tab=balcao], [data-tab=balcao]').forEach(b => b.classList.toggle('dh-bal-off', !on));
+                document.querySelectorAll('#ds-ferr button[onclick^="estAbrir"], #ds-ferr button[onclick^="prtAbrir"]').forEach(b => b.classList.toggle('dh-bal-off', !on));
+                if (!on) { const t = document.getElementById('tab-balcao'); if (t && !t.classList.contains('hidden')) switchTab('home'); }
+                return r;
+            };
+            try { balcaoAplicar(); } catch (_) {}
+            const oO = posOpen;
+            posOpen = function () { if (!dhBalcaoOn()) return; return oO.apply(this, arguments); };
+        })();
+
+        // ---- planos sem o Balcão
+        try {
+            PLANS.cafe.desc = 'Fichas, stock e vendas do dia';
+            PLANS.cafe.feats = ['Fichas do bar ilimitadas, com foto e custo', 'Stock, porções prontas e validades', 'Vendas do dia: SumUp, foto do relatório, SAF-T ou à mão', 'Alertas de stock e de margem'];
+            PLANS.pro.feats = ['Tudo o que o plano Café inclui', 'Fichas da cozinha e do brunch', 'Fornecedores, encomendas por WhatsApp e faturas', 'Produção e equipa', 'Vendas automáticas do Vendus'];
+        } catch (_) {}
     </script>
 </body>
 </html>
