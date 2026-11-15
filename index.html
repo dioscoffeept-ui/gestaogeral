@@ -4554,7 +4554,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 // empresa nova: dados reservados para este e-mail (se houver) ou exemplos genéricos
                 let reserved = null;
                 try { const r = await sb.rpc('levantar_dados_reservados'); reserved = r.data; } catch (_) {}
-                appState = reserved && Array.isArray(reserved.recipes) ? reserved : Object.assign(JSON.parse(JSON.stringify(defaultData)), { inventory: [], recipes: [], suppliers: [] });
+                appState = reserved && Array.isArray(reserved.recipes) ? reserved : JSON.parse(JSON.stringify(defaultData));
                 cloudDirty = true;
             } else if (localUser) {
                 appState = localUser; cloudDirty = true;
@@ -17677,6 +17677,21 @@ var qrcode = function() {
             PLANS.cafe.feats = ['Fichas do bar ilimitadas, com foto e custo', 'Stock, porções prontas e validades', 'Vendas do dia: SumUp, foto do relatório, SAF-T ou à mão', 'Alertas de stock e de margem'];
             PLANS.pro.feats = ['Tudo o que o plano Café inclui', 'Fichas da cozinha e do brunch', 'Fornecedores, encomendas por WhatsApp e faturas de compra', 'Produção do dia e equipa', 'Validades e desperdício a descontar o stock'];
         } catch (_) {}
+    </script>
+
+    <script>
+        const DS_EX = (function () { const m = {}; (defaultData.inventory || []).forEach(i => m['i:' + i.id] = i); (defaultData.recipes || []).forEach(r => m['r:' + r.id] = r); return m; })();
+        function invExemplo(i) { const d = DS_EX['i:' + i.id]; return !!d && d.name === i.name && Number(d.stock) === Number(i.stock); }
+        function recExemplo(r) { const d = DS_EX['r:' + r.id]; return !!d && d.name === r.name; }
+        (function () {
+            const o = renderDashboard;
+            renderDashboard = function () {
+                if (!appState) return o.apply(this, arguments);
+                const real = appState;
+                appState = Object.assign({}, real, { inventory: (real.inventory || []).filter(i => !invExemplo(i)), recipes: (real.recipes || []).filter(r => !recExemplo(r)) });
+                try { return o.apply(this, arguments); } finally { appState = real; }
+            };
+        })();
     </script>
 </body>
 </html>
