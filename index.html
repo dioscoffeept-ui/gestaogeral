@@ -1728,7 +1728,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     <div class="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm"><i class="fas fa-receipt text-lg"></i></div>
                     <div>
                         <h2 class="text-xl font-black text-slate-900">Vendas do Dia</h2>
-                        <p class="text-xs text-slate-500 font-medium">Envie o relatório "Vendas por produtos" e o estoque é descontado com base nas fichas técnicas</p>
+                        <p class="text-xs text-slate-500 font-medium">Junte as vendas do dia — foto do relatório, SumUp, SAF-T ou contadas à mão — e o stock é descontado pelas fichas.</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -5342,7 +5342,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 appliedAt: new Date().toISOString(),
                 reportDate: date,
                 source: salesSource,
-                items: salesRows.filter(r => r.name && r.qty).map(r => ({ name: r.name, qty: r.qty, target: r.target })),
+                items: salesRows.filter(r => r.name && r.qty).map(r => ({ name: r.name, qty: r.qty, target: r.target, perSale: r.target && r.target.startsWith('inv:') ? (Number(r.perSale) || 0) : undefined })),
                 moves,
                 prepMoves: prepApplied
             });
@@ -5375,7 +5375,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const box = document.getElementById('sales-history');
             if (!box) return;
             const list = appState.salesHistory || [];
-            const icon = { foto: 'fa-camera', texto: 'fa-keyboard', saft: 'fa-file-code' };
+            const icon = { foto: 'fa-camera', texto: 'fa-keyboard', saft: 'fa-file-code', sumup: 'fa-credit-card', mao: 'fa-hand-pointer', misto: 'fa-layer-group' };
             box.innerHTML = list.map(h => {
                 const d = h.reportDate ? h.reportDate.split('-').reverse().join('/') : '—';
                 const units = h.items.reduce((s, it) => s + (Number(it.qty) || 0), 0);
@@ -5384,11 +5384,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <div class="flex items-center gap-3 text-xs">
                             <i class="fas ${icon[h.source] || 'fa-receipt'} text-slate-400"></i>
                             <span class="font-extrabold text-slate-800">${d}</span>
-                            <span class="text-slate-500">${h.items.length} produtos · ${units} vendas · ${h.moves.length} insumos descontados</span>
+                            <span class="text-slate-500">${h.items.length} produtos · ${units} vendas · ${h.moves.length} insumos descontados${h.corrigido ? ' · corrigido' : ''}</span>
                         </div>
-                        <button type="button" onclick="event.preventDefault(); salesUndo('${h.id}')" class="text-[11px] font-bold text-slate-400 hover:text-red-600 whitespace-nowrap"><i class="fas fa-rotate-left mr-1"></i>Desfazer</button>
+                        <span class="flex items-center gap-3 whitespace-nowrap"><button type="button" onclick="event.preventDefault(); salesEditar('${h.id}')" class="text-[11px] font-bold text-slate-500 hover:text-slate-900"><i class="fas fa-pen mr-1"></i>Corrigir</button><button type="button" onclick="event.preventDefault(); salesUndo('${h.id}')" class="text-[11px] font-bold text-slate-400 hover:text-red-600"><i class="fas fa-rotate-left mr-1"></i>Desfazer</button></span>
                     </summary>
-                    <div class="px-5 pb-4 grid sm:grid-cols-2 gap-4 text-xs">
+                    ${(h.fontes || []).length ? `<p class="px-5 pb-2 text-xs text-slate-500">${h.fontes.map(escapeHtml).join('<br>')}</p>` : ''}<div class="px-5 pb-4 grid sm:grid-cols-2 gap-4 text-xs">
                         <div><p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Vendas</p>${h.items.map(it => `<div class="flex justify-between border-b border-slate-50 py-0.5"><span>${escapeHtml(it.name)}</span><b>${it.qty}</b></div>`).join('')}</div>
                         <div><p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Descontado</p>${h.moves.map(m => `<div class="flex justify-between border-b border-slate-50 py-0.5"><span>${escapeHtml(m.name)}</span><b>− ${fmtNum(m.amount)} ${escapeHtml(m.unit)}</b></div>`).join('') || '<span class="text-slate-400">Nada</span>'}</div>
                     </div>
@@ -17286,6 +17286,220 @@ var qrcode = function() {
             const oT = switchTab;
             switchTab = function (t) { const r = oT.apply(this, arguments); if (t === 'balcao') setTimeout(() => { try { vdAvisoTeste(); } catch (_) {} }, 150); return r; };
         })();
+    </script>
+
+    <style>
+        #sales-mais { display: flex; flex-wrap: wrap; gap: 8px; }
+        #sales-mais button { padding: 10px 14px; border-radius: 12px; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #E4DCCF; color: #24150E; }
+        #sales-mais button:hover { border-color: var(--brand); color: var(--brand); }
+        #sales-fontes { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 20px; border-bottom: 1px solid #EEE6DA; background: #FFFCF8; }
+        #sales-fontes .ch { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #FBEDE6; color: #5B2A12; }
+        #sales-fontes .ch.av { background: #FEF3C7; color: #92400E; }
+        #sales-fontes .dica { font-size: 12px; color: #7A6A60; width: 100%; }
+        #sales-editando { padding: 10px 20px; background: #FEF3C7; color: #92400E; font-size: 13px; font-weight: 700; border-bottom: 1px solid #FDE68A; }
+        #mao-lista { max-height: 52vh; overflow-y: auto; margin-top: 10px; border: 1px solid #EEE6DA; border-radius: 14px; }
+        #mao-lista .lin { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid #F3EFE8; }
+        #mao-lista .lin:last-child { border-bottom: 0; }
+        #mao-lista .lin.tem { background: #FBEDE6; }
+        #mao-lista .nm { flex: 1; min-width: 0; font-weight: 700; font-size: 14.5px; color: #24150E; }
+        #mao-lista .nm small { display: block; font-weight: 600; font-size: 11.5px; color: #7A6A60; }
+        #mao-lista .bt { width: 38px; height: 38px; border-radius: 12px; background: #F3EFE8; color: #24150E; font-weight: 900; font-size: 18px; flex: 0 0 auto; }
+        #mao-lista .bt.mais { background: var(--brand); color: #fff; }
+        #mao-lista .n { width: 34px; text-align: center; font-weight: 900; font-size: 16px; }
+        #mao-busca, #su-dia { width: 100%; border: 1px solid #E4DCCF; border-radius: 12px; padding: 11px 13px; font-size: 16px; margin-top: 10px; }
+    </style>
+
+    <script>
+        let salesFontes = [], salesEditando = null, maoQt = {}, suVendasOk = null;
+        const salesDiaTxt = d => d ? d.split('-').reverse().join('/') : '';
+        const salesEur = v => (Math.round((Number(v) || 0) * 100) / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+        const SALES_FONTE = { foto: 'Foto', texto: 'Escrito', saft: 'SAF-T', sumup: 'SumUp', mao: 'À mão', editar: 'Dia já aplicado' };
+
+        // --- textos e botões novos
+        (function () {
+            const tab = document.getElementById('tab-sales'); if (!tab) return;
+            const sub = tab.querySelector('h2 + p'); if (sub) sub.textContent = 'Junte as vendas do dia — foto do relatório, SumUp, SAF-T ou contadas à mão — e o stock é descontado pelas fichas.';
+            const grid = tab.querySelector('.grid'); if (!grid || document.getElementById('sales-mais')) return;
+            grid.insertAdjacentHTML('afterend', `<div id="sales-mais">
+                <button type="button" id="su-vendas-bt" class="hidden" onclick="suVendasAbrir()"><i class="fas fa-credit-card"></i>Importar da SumUp</button>
+                <button type="button" onclick="maoAbrir()"><i class="fas fa-hand-pointer"></i>Contar à mão (ex.: dinheiro)</button>
+            </div>`);
+            const rv = document.getElementById('sales-review');
+            const head = rv && rv.firstElementChild;
+            if (head) head.insertAdjacentHTML('afterend', '<div id="sales-editando" class="hidden"></div><div id="sales-fontes" class="hidden"></div>');
+        })();
+
+        function salesFontesPintar() {
+            const el = document.getElementById('sales-fontes'); if (!el) return;
+            const ed = document.getElementById('sales-editando');
+            if (ed) {
+                const h = salesEditando && (appState.salesHistory || []).find(x => x.id === salesEditando);
+                ed.classList.toggle('hidden', !h);
+                if (h) ed.innerHTML = `<i class="fas fa-pen mr-1"></i>A corrigir o dia ${salesDiaTxt(h.reportDate) || '—'}. Ao carregar em Atualizar estoque, o que foi descontado antes é substituído por esta lista.`;
+            }
+            if (!salesFontes.length) { el.classList.add('hidden'); return; }
+            el.classList.remove('hidden');
+            el.innerHTML = salesFontes.map(f => `<span class="ch ${f.aviso ? 'av' : ''}">${escapeHtml(f.txt)}</span>`).join('') +
+                '<span class="dica">Pode juntar mais: tire outra foto, importe da SumUp ou conte à mão. Tudo soma nesta lista, e pode mudar qualquer linha.</span>';
+        }
+
+        // --- juntar em vez de substituir
+        (function () {
+            const oSR = startReview;
+            startReview = function (parsed) {
+                const rv = document.getElementById('sales-review');
+                const juntar = salesRows.length && rv && !rv.classList.contains('hidden');
+                const antes = juntar ? salesRows.slice() : null, dataAntes = juntar ? document.getElementById('sales-date').value : '';
+                const r = oSR.apply(this, arguments);
+                // linhas que já trazem a ficha escolhida (contagem à mão)
+                (parsed.items || []).forEach((it, i) => { if (it.target && salesRows[i]) { salesRows[i].target = it.target; salesRows[i].state = 'auto'; salesRows[i].suggestion = null; } });
+                if (juntar) {
+                    const novas = salesRows; salesRows = antes;
+                    novas.forEach(n => {
+                        const k = normTxt(n.name);
+                        const m = salesRows.find(o => normTxt(o.name) === k) || (n.target && n.target !== '__ignore__' ? salesRows.find(o => o.target === n.target && (o.perSale || 1) === (n.perSale || 1)) : null);
+                        if (m) { m.qty = (Number(m.qty) || 0) + (Number(n.qty) || 0); if (!m.target && n.target) { m.target = n.target; m.state = n.state; } }
+                        else salesRows.push(n);
+                    });
+                    if (dataAntes) document.getElementById('sales-date').value = dataAntes;
+                    renderSalesRows();
+                    dsToast('Juntado às vendas que já estavam na lista');
+                }
+                if (salesSource !== 'sumup' && !salesFontes.some(f => f.src === salesSource && !f.info)) salesFontes.push({ src: salesSource, txt: SALES_FONTE[salesSource] || salesSource });
+                salesFontesPintar();
+                return r;
+            };
+            const oC = salesCancel;
+            salesCancel = function () { salesFontes = []; salesEditando = null; const r = oC.apply(this, arguments); salesFontesPintar(); return r; };
+        })();
+
+        // --- desfazer sem perguntar (usado ao corrigir um dia)
+        function salesDevolver(h) {
+            (h.moves || []).forEach(m => { const inv = appState.inventory.find(i => i.id === m.invId); if (inv) inv.stock = Math.round(((Number(inv.stock) || 0) + m.amount) * 100) / 100; });
+            (h.prepMoves || []).forEach(m => { const p = appState.prepStock && appState.prepStock[m.recipeId]; if (p) p.tenho = (Number(p.tenho) || 0) + m.amount; });
+            appState.salesHistory = (appState.salesHistory || []).filter(x => x.id !== h.id);
+        }
+
+        (function () {
+            const oA = salesApply;
+            salesApply = function () {
+                if (!salesRows.length) return;
+                const ed = salesEditando && (appState.salesHistory || []).find(x => x.id === salesEditando);
+                if (ed) {
+                    const c = computeConsumption();
+                    if (c.unlinked && !confirm(c.unlinked + ' produto(s) ainda não estão ligados a uma ficha e não serão descontados. Continuar?')) return;
+                    salesDevolver(ed);
+                }
+                const fontes = salesFontes.slice(), antes = (appState.salesHistory || [])[0];
+                const fontesSrc = [...new Set(fontes.map(f => f.src).filter(s => s !== 'editar'))];
+                if (fontesSrc.length > 1) salesSource = 'misto'; else if (fontesSrc.length === 1) salesSource = fontesSrc[0];
+                const r = oA.apply(this, arguments);
+                const novo = (appState.salesHistory || [])[0];
+                if (novo && novo !== antes) {
+                    novo.fontes = fontes.filter(f => f.info).map(f => f.txt);
+                    if (ed) novo.corrigido = new Date().toISOString();
+                    salesEditando = null; salesFontes = []; salesFontesPintar();
+                    saveStorage(); renderSalesHistory();
+                }
+                return r;
+            };
+        })();
+
+        async function salesEditar(id) {
+            const h = (appState.salesHistory || []).find(x => x.id === id); if (!h) return;
+            const rv = document.getElementById('sales-review');
+            if (salesRows.length && !rv.classList.contains('hidden') && !(await dsConfirmar('Tem vendas por confirmar na lista. Substituir pela lista do dia ' + (salesDiaTxt(h.reportDate) || '—') + '?'))) return;
+            const al = appState.salesAliases || {};
+            salesFontes = []; salesEditando = id; salesSource = h.source || 'texto';
+            salesRows = (h.items || []).map(it => {
+                const t = it.target && targetExists(it.target) ? it.target : '';
+                const a = al[normTxt(it.name)];
+                return { name: it.name, qty: it.qty, target: t, perSale: it.perSale || (a && a.perSale) || 1, state: t ? 'memo' : 'new', suggestion: null };
+            });
+            salesFontes.push({ src: 'editar', txt: 'Dia já aplicado' });
+            (h.fontes || []).forEach(t => salesFontes.push({ src: 'editar', txt: t, info: true }));
+            document.getElementById('sales-date').value = h.reportDate || '';
+            rv.classList.remove('hidden');
+            renderSalesRows(); salesFontesPintar();
+            rv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // --- SumUp
+        async function suVendasVer() {
+            if (suVendasOk !== null) return;
+            suVendasOk = false;
+            const st = (typeof suState !== 'undefined' && suState) || await suCall('estado');
+            suVendasOk = !!(st && !st.erro);
+            const b = document.getElementById('su-vendas-bt'); if (b) b.classList.toggle('hidden', !suVendasOk);
+        }
+        setTimeout(suVendasVer, 4000);
+        function suVendasAbrir() {
+            const d = new Date(); if (d.getHours() < 12) d.setDate(d.getDate() - 1);
+            const dia = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            dsModal('su-vendas-modal', `<div class="flex items-start justify-between gap-3"><div><h3>Importar da SumUp</h3><p class="text-sm text-slate-500">Vamos buscar os artigos de todos os pagamentos feitos na SumUp nesse dia.</p></div><button type="button" class="x" onclick="dsModalFechar('su-vendas-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+                <label class="block text-sm font-bold text-slate-700 mt-3">Dia<input id="su-dia" type="date" value="${dia}" max="${new Date().toISOString().slice(0, 10)}"></label>
+                <p id="su-vendas-msg" class="text-sm text-slate-500 mt-2"></p>
+                <button type="button" id="su-vendas-ir" class="bp" onclick="suVendasLer()"><i class="fas fa-download mr-1.5"></i>Importar vendas</button>`);
+        }
+        async function suVendasLer() {
+            const dia = document.getElementById('su-dia').value, bt = document.getElementById('su-vendas-ir'), msg = document.getElementById('su-vendas-msg');
+            if (!dia) return dsToast('Escolha o dia.', true);
+            bt.disabled = true; bt.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>A ler a SumUp…'; msg.textContent = 'Pode demorar uns segundos se houve muitas vendas.';
+            const r = await suCall('vendas', { dia });
+            bt.disabled = false; bt.innerHTML = '<i class="fas fa-download mr-1.5"></i>Importar vendas';
+            if (!r || r.erro) { msg.textContent = (r && (r.mensagem || r.erro)) || 'Não foi possível ler a SumUp.'; return; }
+            if (!r.n) { msg.textContent = 'Não há pagamentos na SumUp em ' + salesDiaTxt(dia) + '.'; return; }
+            dsModalFechar('su-vendas-modal');
+            salesSource = 'sumup';
+            salesFontes.push({ src: 'sumup', info: true, txt: `SumUp ${salesDiaTxt(dia)}: ${r.n} pagamento${r.n === 1 ? '' : 's'} · ${salesEur(r.total)}` });
+            if (r.semArtigosN) salesFontes.push({ src: 'sumup', info: true, aviso: true, txt: `${salesEur(r.semArtigos)} em ${r.semArtigosN} pagamento${r.semArtigosN === 1 ? '' : 's'} sem artigos (valor livre) — conte-os à mão` });
+            if (!r.itens.length) { salesFontesPintar(); return dsToast('Os pagamentos desse dia não têm artigos. Conte as vendas à mão.', true); }
+            startReview({ date: dia, items: r.itens.map(i => ({ name: i.nome, qty: i.qty })) });
+            const rv = document.getElementById('sales-review'); if (rv) rv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // --- contar à mão
+        function maoFichas() {
+            const usos = {};
+            (appState.salesHistory || []).slice(0, 30).forEach(h => (h.items || []).forEach(it => { if (it.target) usos[it.target] = (usos[it.target] || 0) + (Number(it.qty) || 0); }));
+            return appState.recipes.filter(r => (r.type || 'BAR') === 'BAR' || (r.type === 'KITCHEN' && isPro()))
+                .map(r => ({ id: r.id, nome: r.name, tipo: r.type === 'KITCHEN' ? 'Cozinha' : 'Bar', u: usos['rec:' + r.id] || 0 }))
+                .sort((a, b) => b.u - a.u || a.nome.localeCompare(b.nome));
+        }
+        function maoAbrir() {
+            maoQt = {};
+            dsModal('mao-modal', `<div class="flex items-start justify-between gap-3"><div><h3>Contar à mão</h3><p class="text-sm text-slate-500">Para as vendas que não estão no relatório, como as pagas em dinheiro. Toque em + por cada venda.</p></div><button type="button" class="x" onclick="dsModalFechar('mao-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+                <input id="mao-busca" type="search" placeholder="Procurar ficha…" oninput="maoPintar()">
+                <div id="mao-lista"></div>
+                <button type="button" id="mao-ok" class="bp" onclick="maoJuntar()">Juntar à lista</button>`);
+            maoPintar();
+        }
+        function maoPintar() {
+            const q = normTxt((document.getElementById('mao-busca') || {}).value || '');
+            const l = maoFichas().filter(f => !q || normTxt(f.nome).includes(q));
+            const el = document.getElementById('mao-lista'); if (!el) return;
+            el.innerHTML = l.map(f => `<div class="lin ${maoQt[f.id] ? 'tem' : ''}" data-id="${f.id}"><span class="nm">${escapeHtml(f.nome)}<small>${f.tipo}</small></span><button type="button" class="bt" onclick="maoMudar('${f.id}',-1)" aria-label="Menos">−</button><span class="n">${maoQt[f.id] || 0}</span><button type="button" class="bt mais" onclick="maoMudar('${f.id}',1)" aria-label="Mais">+</button></div>`).join('')
+                || '<p class="text-sm text-slate-500 p-4 text-center">Nenhuma ficha com esse nome.</p>';
+            maoTotal();
+        }
+        function maoMudar(id, d) {
+            maoQt[id] = Math.max(0, (maoQt[id] || 0) + d); if (!maoQt[id]) delete maoQt[id];
+            const lin = document.querySelector('#mao-lista .lin[data-id="' + id + '"]');
+            if (lin) { lin.querySelector('.n').textContent = maoQt[id] || 0; lin.classList.toggle('tem', !!maoQt[id]); }
+            maoTotal();
+        }
+        function maoTotal() {
+            const n = Object.values(maoQt).reduce((s, v) => s + v, 0), b = document.getElementById('mao-ok');
+            if (b) b.textContent = n ? `Juntar à lista (${n} venda${n === 1 ? '' : 's'})` : 'Juntar à lista';
+        }
+        function maoJuntar() {
+            const items = Object.entries(maoQt).map(([id, qty]) => { const r = appState.recipes.find(x => x.id === id); return r ? { name: r.name, qty, target: 'rec:' + id } : null; }).filter(Boolean);
+            if (!items.length) return dsToast('Toque em + nas fichas que vendeu.', true);
+            dsModalFechar('mao-modal');
+            salesSource = 'mao';
+            startReview({ date: '', items });
+            const rv = document.getElementById('sales-review'); if (rv) rv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     </script>
 </body>
 </html>
