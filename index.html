@@ -17693,5 +17693,196 @@ var qrcode = function() {
             };
         })();
     </script>
+
+    <style>
+        #sim-modo { margin: 4px 0 14px; }
+        #sim-tipo-wrap { margin-bottom: 4px; }
+        .sim-rende { grid-column: 1 / -1; background: #FBEDE6; color: #5B2A12; border-radius: 12px; padding: 10px 12px; font-size: 13.5px; font-weight: 700; }
+        .sim-off { display: none !important; }
+        #sc-lin .lin { display: grid; grid-template-columns: 1fr 110px 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+        #sc-lin input { width: 100%; }
+        #sc-lin .x { width: 36px; height: 40px; border-radius: 10px; background: #F3EFE8; color: #5B4A40; }
+        .sc-add { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+        .sc-add button, .sc-add select { padding: 9px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; background: #fff; border: 1px solid #E4DCCF; color: #24150E; }
+        .sc-add select { max-width: 100%; }
+    </style>
+
+    <script>
+        (function () {
+            const params = document.querySelector('#home-sim .ds-params'); if (!params) return;
+            const grupo = t => [...params.querySelectorAll('.ds-group')].find(g => g.textContent.trim().startsWith(t));
+            const gMat = grupo('Matéria-prima'), gLei = grupo('Laticínios'), gRet = grupo('Retenção');
+            const blocoDe = g => g ? [g, g.nextElementSibling] : [];
+            // abas
+            params.querySelector('h4').insertAdjacentHTML('beforebegin', '<div id="sim-modo" class="ds-seg2" role="tablist"><button type="button" data-m="bebida" class="on" onclick="simModo(\'bebida\')"><i class="fas fa-mug-hot"></i>Bebidas</button><button type="button" data-m="comida" onclick="simModo(\'comida\')"><i class="fas fa-utensils"></i>Comida</button></div>');
+            // bebida: tipo e café de filtro
+            gMat.insertAdjacentHTML('beforebegin', `<div class="ds-fields" id="sim-tipo-wrap"><div class="ds-field"><label>Que bebida</label><select id="m-tipo" oninput="simTipo()"><option value="esp">Expresso, com ou sem leite</option><option value="filtro">Café de filtro (feito em lote)</option></select></div></div>`);
+            const fDose = document.getElementById('m-dose').closest('.ds-field');
+            fDose.insertAdjacentHTML('afterend', `<div class="ds-field sim-f"><label>Café por lote (g)</label><input id="m-lote" type="number" step="1" min="0" value="60" oninput="dsMargin(true)"><small>Ex.: 60 g para 1 litro.</small></div>
+                <div class="ds-field sim-f"><label>Água do lote (ml)</label><input id="m-agua" type="number" step="50" min="0" value="1000" oninput="dsMargin(true)"></div>
+                <div class="ds-field sim-f"><label>Copo servido (ml)</label><input id="m-servido" type="number" step="10" min="0" value="250" oninput="dsMargin(true)"></div>
+                <p class="sim-rende sim-f" id="m-rende"></p>`);
+            // comida
+            const gNeg = grupo('Custos do negócio');
+            gNeg.insertAdjacentHTML('beforebegin', `<div id="sim-comida" class="sim-off"><div class="ds-group">Ingredientes</div>
+                <div class="sc-add"><select id="sc-ficha" onchange="simFicha(this)"><option value="">Usar o custo de uma ficha…</option></select><button type="button" onclick="simLinha()"><i class="fas fa-plus mr-1"></i>Ingrediente</button></div>
+                <div id="sc-lin"></div>
+                <div class="ds-fields"><div class="ds-field"><label>Embalagem (€)</label><input id="sc-emb" type="number" step="0.01" min="0" value="0" oninput="dsMargin(true)"><small>Caixa, guardanapo, talheres. 0 se for servido na mesa.</small></div></div></div>`);
+            window._simBlocos = { bebida: [document.getElementById('sim-tipo-wrap'), ...blocoDe(gMat), ...blocoDe(gLei)], ret: gRet };
+        })();
+
+        let simModoAtual = 'bebida', simComida = null;
+        const SIM_PARTILHA = ['m-iva', 'm-pvp', 'm-ret', 'm-alvo', 'm-taxa', 'm-fixos', 'm-unid'];
+        function simVal(id) { const el = document.getElementById(id); const v = el ? parseFloat(String(el.value).replace(',', '.')) : 0; return isFinite(v) && v > 0 ? v : 0; }
+        function simComidaPadrao() { return { 'm-iva': '13', 'm-pvp': '9.5', 'm-ret': '5', 'm-alvo': '70', 'm-taxa': '1.5', 'm-fixos': '0', 'm-unid': '100', emb: '0', lin: [{ n: 'Pão', c: '0.45' }, { n: 'Ovos', c: '0.40' }, { n: 'Abacate', c: '0.90' }] }; }
+        function simGuardarComida() {
+            const c = simComida || simComidaPadrao();
+            SIM_PARTILHA.forEach(id => c[id] = document.getElementById(id).value);
+            c.emb = document.getElementById('sc-emb').value;
+            c.lin = [...document.querySelectorAll('#sc-lin .lin')].map(l => ({ n: l.querySelector('.n').value, c: l.querySelector('.c').value }));
+            simComida = c;
+        }
+        function simLinhasPintar(lin) {
+            document.getElementById('sc-lin').innerHTML = (lin || []).map(l => `<div class="lin"><input class="n" type="text" value="${escapeHtml(l.n || '')}" placeholder="Ingrediente" oninput="dsMargin(true)"><input class="c" type="number" step="0.01" min="0" value="${escapeHtml(String(l.c ?? ''))}" placeholder="€" oninput="dsMargin(true)"><button type="button" class="x" onclick="this.parentElement.remove();dsMargin(true)" aria-label="Tirar"><i class="fas fa-xmark"></i></button></div>`).join('');
+        }
+        function simLinha() { simGuardarComida(); simComida.lin.push({ n: '', c: '' }); simLinhasPintar(simComida.lin); const l = document.querySelectorAll('#sc-lin .lin .n'); if (l.length) l[l.length - 1].focus(); dsMargin(true); }
+        function simFicha(sel) {
+            const r = (appState.recipes || []).find(x => x.id === sel.value); sel.value = ''; if (!r) return;
+            const c = recipeCost(r);
+            simGuardarComida(); if (JSON.stringify(simComida.lin) === JSON.stringify(simComidaPadrao().lin)) simComida.lin = []; simComida.lin.push({ n: 'Ficha: ' + r.name, c: (Math.round(c.total * 100) / 100).toFixed(2) });
+            if (Number(r.pvp) > 0) document.getElementById('m-pvp').value = r.pvp;
+            simLinhasPintar(simComida.lin); dsMargin(true);
+            if (c.missing) dsToast(c.missing + ' ingrediente(s) desta ficha ainda não têm preço no stock.', true);
+        }
+        function simFichasOpcoes() {
+            const s = document.getElementById('sc-ficha'); if (!s) return;
+            const rs = (appState && appState.recipes || []).filter(r => r.type === 'KITCHEN' || simModoAtual === 'comida').sort((a, b) => (a.type === 'KITCHEN' ? 0 : 1) - (b.type === 'KITCHEN' ? 0 : 1) || a.name.localeCompare(b.name));
+            s.innerHTML = '<option value="">Usar o custo de uma ficha…</option>' + rs.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+            s.classList.toggle('sim-off', !rs.length);
+        }
+        function simModo(m) {
+            if (m === simModoAtual) return;
+            if (simModoAtual === 'comida') { simGuardarComida(); simSalvar(); }
+            else if (appState) {
+                // fecha já o que estava por guardar das bebidas, antes de os campos mudarem
+                try { clearTimeout(dsSaveTimer); } catch (_) {}
+                const snap = {}; ['m-iva', 'm-pvp', 'm-cafe', 'm-dose', 'm-leite', 'm-ml', 'm-copo', 'm-acess', 'm-ret', 'm-alvo', 'm-taxa', 'm-fixos', 'm-unid'].forEach(id => snap[id] = document.getElementById(id).value);
+                appState.simulador = Object.assign(appState.simulador || {}, snap);
+                setTimeout(() => { if (appState) { appState.simulador = Object.assign(appState.simulador || {}, snap); saveStorage(); } }, 1100);
+            }
+            simModoAtual = m;
+            document.querySelectorAll('#sim-modo button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+            const com = m === 'comida';
+            (window._simBlocos.bebida || []).forEach(e => e && e.classList.toggle('sim-off', com));
+            document.getElementById('sim-comida').classList.toggle('sim-off', !com);
+            if (window._simBlocos.ret) window._simBlocos.ret.textContent = com ? 'Desperdício e margem' : 'Retenção e purga do moinho';
+            const lr = document.getElementById('m-ret').closest('.ds-field').querySelector('label'), sr = document.getElementById('m-ret').closest('.ds-field').querySelector('small');
+            lr.textContent = com ? 'Desperdício (%)' : 'Retenção e purga na extração (%)';
+            if (sr) sr.textContent = com ? 'Sobras, aparas e o que se estraga, aplicado ao custo.' : 'Café perdido no moinho e na purga, aplicado ao custo de produção.';
+            const o13 = document.querySelector('#m-iva option[value="13"]'); if (o13) o13.textContent = com ? 'Refeição / comida servida (IVA 13%)' : 'Cafetaria / bebida servida (IVA 13%)';
+            const o6 = document.querySelector('#m-iva option[value="6"]'); if (o6) o6.textContent = com ? 'Pão e produtos de pastelaria simples (IVA 6%)' : 'Café em grão / lote para revenda (IVA 6%)';
+            if (com) {
+                const c = simComida || simComidaPadrao();
+                SIM_PARTILHA.forEach(id => { if (c[id] != null) document.getElementById(id).value = c[id]; });
+                document.getElementById('sc-emb').value = c.emb || 0; simLinhasPintar(c.lin); simFichasOpcoes();
+            } else {
+                const s = (appState && appState.simulador) || {};
+                SIM_PARTILHA.forEach(id => { if (s[id] != null) document.getElementById(id).value = s[id]; });
+            }
+            const lab = (id, t) => { const el = document.getElementById(id); if (el && el.previousElementSibling) el.previousElementSibling.textContent = t; };
+            lab('r-cafe', com ? 'Custo dos ingredientes' : 'Custo da dose de café');
+            lab('r-leite', com ? '—' : 'Custo de laticínios');
+            document.getElementById('r-leite').parentElement.classList.toggle('sim-off', com);
+            lab('r-ret', com ? 'Desperdício' : 'Retenção e purga do moinho');
+            const rule = document.querySelector('#home-sim .ds-rule');
+            if (rule) rule.innerHTML = com ? '<b>Regra de negócio:</b> na cozinha, a margem bruta costuma ficar entre 65% e 75%. Abaixo disso, reveja as doses ou o preço.' : '<b>Regra de negócio:</b> uma cafetaria de especialidade saudável deve visar uma margem bruta acima de 65% para cobrir custos fixos elevados (renda, staff especializado) e garantir rentabilidade líquida.';
+            dsMargin(false);
+        }
+        function simTipo() {
+            const f = document.getElementById('m-tipo').value === 'filtro';
+            document.querySelectorAll('#home-sim .sim-f').forEach(e => e.classList.toggle('sim-off', !f));
+            document.getElementById('m-dose').closest('.ds-field').classList.toggle('sim-off', f);
+            dsMargin(true);
+        }
+        let simSalvarT = null;
+        function simSalvar() {
+            if (!appState) return;
+            clearTimeout(simSalvarT);
+            simSalvarT = setTimeout(() => {
+                appState.simExtra = { tipo: document.getElementById('m-tipo').value, lote: document.getElementById('m-lote').value, agua: document.getElementById('m-agua').value, servido: document.getElementById('m-servido').value, comida: simComida };
+                saveStorage();
+            }, 900);
+        }
+        (function () {
+            const oM = dsMargin;
+            dsMargin = function (save) {
+                if (simModoAtual === 'comida') return simComidaCalc(save);
+                if (document.getElementById('m-tipo') && document.getElementById('m-tipo').value === 'filtro') {
+                    const lote = simVal('m-lote'), agua = simVal('m-agua'), serv = simVal('m-servido');
+                    // o café retém cerca do dobro do seu peso em água
+                    const util = Math.max(0, agua - 2 * lote), copos = serv ? util / serv : 0;
+                    const dose = copos ? lote / copos : 0;
+                    document.getElementById('m-dose').value = dose ? (Math.round(dose * 10) / 10) : 0;
+                    const r = document.getElementById('m-rende');
+                    if (r) r.innerHTML = copos ? `Este lote rende <b>${copos.toLocaleString('pt-PT', { maximumFractionDigits: 1 })} copos</b> de ${serv} ml, com <b>${dose.toLocaleString('pt-PT', { maximumFractionDigits: 1 })} g</b> de café em cada um. O café retém cerca do dobro do seu peso em água.` : 'Escreva o café e a água do lote e o tamanho do copo.';
+                }
+                const res = oM.apply(this, arguments);
+                if (save) simSalvar();
+                return res;
+            };
+        })();
+        function simComidaCalc(save) {
+            const eur = v => v.toLocaleString('pt-PT', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + '€';
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+            const ing = [...document.querySelectorAll('#sc-lin .lin .c')].reduce((a, i) => { const v = parseFloat(String(i.value).replace(',', '.')); return a + (isFinite(v) && v > 0 ? v : 0); }, 0);
+            const emb = simVal('sc-emb'), ret = (ing + emb) * simVal('m-ret') / 100, total = ing + emb + ret;
+            const iva = simVal('m-iva') / 100, pvp = simVal('m-pvp'), liq = pvp / (1 + iva), lucro = liq - total;
+            const m = liq > 0 ? lucro / liq * 100 : 0, alvo = simVal('m-alvo') || 65;
+            set('r-cafe', eur(ing)); set('r-emb', eur(emb)); set('r-ret', eur(ret)); set('r-total', eur(total));
+            set('r-liq', eur(liq)); set('r-iva', eur(pvp - liq)); set('r-lucro', eur(lucro));
+            set('r-margem', m.toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%');
+            const v = document.getElementById('r-verdict');
+            if (m >= alvo) { v.className = 'ds-verdict ok'; v.textContent = 'Excelente viabilidade'; }
+            else if (m >= alvo - 10) { v.className = 'ds-verdict mid'; v.textContent = 'Margem apertada'; }
+            else { v.className = 'ds-verdict bad'; v.textContent = 'Abaixo do recomendado'; }
+            const pvpMin = alvo < 100 ? total / (1 - alvo / 100) * (1 + iva) : 0;
+            document.getElementById('r-hint').innerHTML = pvpMin ? `Para ${alvo}% de margem, o PVP mínimo é <b>${pvpMin.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</b>.` : '';
+            const taxa = pvp * simVal('m-taxa') / 100, un = simVal('m-unid'), fixo = un ? simVal('m-fixos') / un : 0, lq = lucro - taxa - fixo, mq = liq > 0 ? lq / liq * 100 : 0;
+            set('r-taxa', '−' + eur(taxa)); set('r-fixo', '−' + eur(fixo)); set('r-lucroliq', eur(lq));
+            set('r-liqm', 'margem líquida ' + mq.toLocaleString('pt-PT', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%');
+            const box = document.getElementById('r-liq-box'); if (box) box.style.background = lq < 0 ? '#b91c1c' : '#0f172a';
+            const p = document.getElementById('r-periodo');
+            if (p) p.innerHTML = un ? `Com <b>${un}</b> pratos no período: lucro líquido de <b>${(lq * un).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}€</b>. Antes do IRS.` : '';
+            if (save) { simGuardarComida(); simSalvar(); }
+        }
+        // repor o que estava guardado
+        (function () {
+            const oH = renderHome;
+            renderHome = function () {
+                const r = oH.apply(this, arguments);
+                try {
+                    const x = appState && appState.simExtra;
+                    if (x) {
+                        if (x.tipo) document.getElementById('m-tipo').value = x.tipo;
+                        ['lote', 'agua', 'servido'].forEach(k => { if (x[k] != null && x[k] !== '') document.getElementById('m-' + k).value = x[k]; });
+                        if (x.comida && !simComida) simComida = x.comida;
+                    }
+                    if (simModoAtual === 'bebida') {
+                        const f = document.getElementById('m-tipo').value === 'filtro';
+                        document.querySelectorAll('#home-sim .sim-f').forEach(e => e.classList.toggle('sim-off', !f));
+                        document.getElementById('m-dose').closest('.ds-field').classList.toggle('sim-off', f);
+                        dsMargin(false);
+                    }
+                    simFichasOpcoes();
+                } catch (_) {}
+                return r;
+            };
+            document.querySelectorAll('#home-sim .sim-f').forEach(e => e.classList.add('sim-off'));
+        })();
+        (function () {
+            const h = document.querySelector('#home-sim .ds-sim-head p'); if (h) h.textContent = 'Calcule a margem de uma bebida ou de um prato, já sem o IVA. Para o café de filtro, escreva o lote e a app calcula a dose por copo.';
+            const sub = document.querySelector('#home-sim summary .text-xs'); if (sub) sub.textContent = 'Quanto lucra numa bebida ou num prato? Descubra em segundos.';
+        })();
+    </script>
 </body>
 </html>
