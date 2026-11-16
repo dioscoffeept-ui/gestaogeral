@@ -17982,6 +17982,7 @@ var qrcode = function() {
             const premio = (document.getElementById('fid-premio').value || 'Um café grátis').trim().slice(0, 60);
             const rv = id => { const el = document.getElementById(id); return el ? (el.value || '').trim().slice(0, 200) || null : undefined; };
             const extra = {}; [['instagram', 'fid-ig'], ['tiktok', 'fid-tt'], ['youtube', 'fid-yt']].forEach(([k, id]) => { const v = rv(id); if (v !== undefined) extra[k] = v; });
+            const ci = document.getElementById('fid-cor'); if (ci && /^#[0-9a-fA-F]{6}$/.test(ci.value)) extra.cor = ci.value;
             const { data, error } = await sb.from('fidelidade_cfg').upsert({ dono_id: fidDono(), ligado, alvo, premio, ...extra, atualizado_em: new Date().toISOString() }).select('*').single();
             if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
             fidCfg = data; dsToast(ligado ? 'Cartão de fidelidade ligado' : 'Cartão em pausa. Os carimbos ficam guardados.'); fidPintar(); try { renderDashboard(); } catch (_) {}
@@ -18184,6 +18185,119 @@ var qrcode = function() {
         }
         // preparar a imagem ao abrir, para o envio sair logo ao toque
         (function () { const o = fidPintar; fidPintar = function () { const r = o.apply(this, arguments); try { if (fidCfg && fidCfg.ligado) fidSeloCarregar(fidCor()).catch(() => {}); } catch (_) {} return r; }; })();
+    </script>
+
+    <style>
+        #inv-val { border: 1px solid #F3D2C4; background: #FFF8F4; border-radius: 16px; padding: 12px; }
+        #inv-val .lin { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid #F3E4DA; font-size: 14px; }
+        #inv-val .lin:first-of-type { border-top: 0; }
+        #inv-val .lin .tx { flex: 1; min-width: 0; color: #24150E; font-weight: 700; }
+        #inv-val .lin .tx small { display: block; font-weight: 500; color: #7A6A60; font-size: 12.5px; }
+        #inv-val .lin button { font-size: 12.5px; font-weight: 800; padding: 6px 9px; border-radius: 9px; background: #F3EFE8; color: #3A2A22; }
+        #inv-val .lin button.fora { color: #B91C1C; background: #FEE2E2; }
+        #inv-val .add { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-top: 8px; align-items: end; }
+        #inv-val .add input { width: 100%; border: 1px solid #E4DCCF; border-radius: 10px; padding: 9px 10px; font-size: 15px; background: #fff; }
+        #inv-val .add { grid-template-columns: 1fr 1fr; }
+        #inv-val .add button { grid-column: 1 / -1; }
+        #inv-val .add input { min-width: 0; }
+        #inv-val .add button, #inv-val .desp { padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; }
+        #inv-val .add button { background: var(--brand); color: #fff; }
+        #inv-val .desp { margin-top: 8px; width: 100%; background: #fff; border: 1px solid #E4DCCF; color: #B91C1C; }
+        #val-alerta { display: flex; align-items: center; gap: 10px; background: #FEF3C7; color: #92400E; border-radius: 14px; padding: 10px 14px; font-size: 14px; font-weight: 700; margin-bottom: 14px; }
+        .val-mini { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: #FEF3C7; color: #92400E; vertical-align: middle; }
+        .val-mini.r { background: #FEE2E2; color: #B91C1C; }
+        .fid-cores { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+        .fid-cores button { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px #E4DCCF; }
+        .fid-cores button.on { box-shadow: 0 0 0 2px #24150E; }
+        .fid-cores input[type=color] { width: 40px; height: 36px; border: 0; padding: 0; background: none; }
+    </style>
+
+    <script>
+        // ---------- validades dentro do produto
+        const valDoProduto = id => valLista().filter(v => v.invId === id).sort((a, b) => a.data.localeCompare(b.data));
+        function invValPintar() {
+            const id = document.getElementById('inv-id').value, box = document.getElementById('inv-val');
+            if (!box) return;
+            if (!id) { box.innerHTML = '<p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-calendar-xmark mr-1" style="color:var(--brand)"></i> Validades e desperdício</p><p class="text-xs text-slate-500 mt-1">Guarde o produto primeiro. Depois pode registar as validades e o desperdício aqui.</p>'; return; }
+            const it = appState.inventory.find(i => i.id === id), L = valDoProduto(id), u = escapeHtml((it && it.unit) || '');
+            box.innerHTML = `<p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-calendar-xmark mr-1" style="color:var(--brand)"></i> Validades e desperdício</p>
+                <p class="text-xs text-slate-500 mt-0.5 mb-1">Avisamos 3 dias antes. O que deitar fora sai do estoque.</p>
+                ${L.map(v => `<div class="lin"><span class="tx">${new Date(v.data + 'T12:00:00').toLocaleDateString('pt-PT')}<small>${v.qtd ? escapeHtml(String(v.qtd).replace('.', ',')) + ' ' + u : 'sem quantidade'}${v.nota ? ' · ' + escapeHtml(v.nota) : ''}</small></span>${valTag(v.data)}<button type="button" onclick="valUsado('${v.id}');invValPintar()">Gasto</button><button type="button" class="fora" onclick="despForm('${v.id}')">Deitar fora</button></div>`).join('') || '<p class="text-sm text-slate-500 py-1">Sem validades registadas.</p>'}
+                <div class="add"><label class="text-[11px] font-bold text-slate-600">Válido até<input id="iv-d" type="date" value="${new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10)}"></label><label class="text-[11px] font-bold text-slate-600">Qtd. (${u})<input id="iv-q" type="number" min="0" step="any" placeholder="opcional"></label><button type="button" onclick="invValAdd()"><i class="fas fa-plus"></i> Validade</button></div>
+                <button type="button" class="desp" onclick="despForm('', '${id}')"><i class="fas fa-trash-can mr-1"></i>Registar desperdício deste produto</button>`;
+        }
+        function invValAdd() {
+            const id = document.getElementById('inv-id').value, d = document.getElementById('iv-d').value;
+            if (!id) return; if (!d) return dsToast('Escolha a data.', true);
+            valLista().push({ id: 'vl_' + Date.now(), invId: id, data: d, qtd: parseFloat(document.getElementById('iv-q').value) || null, nota: '' });
+            saveStorage(); invValPintar(); try { valHome(); valPintar(); } catch (_) {}
+            dsToast('Validade guardada');
+        }
+        (function () {
+            const form = document.getElementById('inventory-form'); if (!form) return;
+            const bt = form.querySelector('button[type=submit]'), fim = bt && bt.closest('div');
+            if (fim && !document.getElementById('inv-val')) fim.insertAdjacentHTML('beforebegin', '<div id="inv-val"></div>');
+            const oO = openInventoryModal; openInventoryModal = function () { const r = oO.apply(this, arguments); setTimeout(invValPintar, 0); return r; };
+            const oE = editInventoryItem; editInventoryItem = function () { const r = oE.apply(this, arguments); setTimeout(invValPintar, 0); return r; };
+            // desperdício já com o produto escolhido
+            const oD = despForm;
+            despForm = function (vid, invId) {
+                const r = oD.apply(this, arguments);
+                if (invId && !vid) { const s = document.getElementById('dp-i'); if (s) s.value = invId; }
+                return r;
+            };
+            const oG = despGuardar;
+            despGuardar = function () { const r = oG.apply(this, arguments); setTimeout(() => { try { invValPintar(); const st = document.getElementById('inv-stock'), id = document.getElementById('inv-id').value, it = appState.inventory.find(i => i.id === id); if (st && it && !document.getElementById('inventory-modal').classList.contains('hidden')) st.value = it.stock; } catch (_) {} }, 0); return r; };
+        })();
+        // ---------- no estoque: em vez do quadro solto, só um aviso quando há validades a acabar
+        valPintar = function () {
+            const old = document.getElementById('val-card'); if (old) old.remove();
+            const tab = document.getElementById('tab-inventory'); if (!tab) return;
+            const L = valLista().filter(v => diasAte(v.data) <= 3).sort((a, b) => a.data.localeCompare(b.data));
+            let a = document.getElementById('val-alerta');
+            if (!L.length) { if (a) a.remove(); return; }
+            const ref = document.getElementById('inventory-grouped-container');
+            if (!a) { a = document.createElement('button'); a.type = 'button'; a.id = 'val-alerta'; if (ref) ref.insertAdjacentElement('beforebegin', a); else tab.appendChild(a); }
+            const nomes = L.slice(0, 3).map(v => { const i = appState.inventory.find(x => x.id === v.invId); return i ? escapeHtml(i.name) : ''; }).filter(Boolean);
+            a.innerHTML = `<i class="fas fa-hourglass-half"></i><span class="flex-1 text-left">${L.length} validade${L.length === 1 ? '' : 's'} a acabar: ${nomes.join(', ')}${L.length > 3 ? '…' : ''}</span><i class="fas fa-chevron-right"></i>`;
+            a.onclick = () => editInventoryItem(L[0].invId);
+        };
+        // etiqueta da validade junto ao nome do produto
+        (function () {
+            const o = renderInventory;
+            renderInventory = function () {
+                const r = o.apply(this, arguments);
+                try {
+                    const prox = {}; valLista().forEach(v => { if (!prox[v.invId] || v.data < prox[v.invId]) prox[v.invId] = v.data; });
+                    document.querySelectorAll('#inventory-grouped-container tbody tr').forEach(tr => {
+                        const btn = tr.querySelector('button[onclick^="editInventoryItem"]'); if (!btn || tr.querySelector('.val-mini')) return;
+                        const id = (btn.getAttribute('onclick').match(/'([^']+)'/) || [])[1], d = id && prox[id]; if (!d) return;
+                        const n = diasAte(d); if (n > 7) return;
+                        const cel = tr.children[0]; const alvo = cel && (cel.querySelector('p, b, span') || cel);
+                        if (alvo) alvo.insertAdjacentHTML('beforeend', `<span class="val-mini ${n <= 1 ? 'r' : ''}">${n < 0 ? 'expirou' : n === 0 ? 'vence hoje' : 'vence em ' + n + 'd'}</span>`);
+                    });
+                    valPintar();
+                } catch (_) {}
+                return r;
+            };
+        })();
+
+        // ---------- cor do cartão de fidelidade
+        fidCor = function () { return (fidCfg && /^#[0-9a-fA-F]{6}$/.test(fidCfg.cor || '') && fidCfg.cor) || '#983808'; };
+        const FID_CORES = ['#983808', '#BC4700', '#231F20', '#1F5135', '#1E3A5F', '#7C2D55'];
+        function fidCorEscolher(c) { const i = document.getElementById('fid-cor'); if (i) i.value = c; document.querySelectorAll('.fid-cores button').forEach(b => b.classList.toggle('on', b.dataset.c === c)); }
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    const pr = document.getElementById('fid-premio'); if (!pr || document.getElementById('fid-cor')) return r;
+                    const atual = fidCor();
+                    pr.closest('.fid-cfg').insertAdjacentHTML('afterend', `<div class="mt-2"><p class="text-[13px] font-bold" style="color:#3A2A22">Cor do cartão</p><div class="fid-cores">${FID_CORES.map(c => `<button type="button" data-c="${c}" style="background:${c}" class="${c.toLowerCase() === atual.toLowerCase() ? 'on' : ''}" onclick="fidCorEscolher('${c}')" aria-label="Cor ${c}"></button>`).join('')}<input id="fid-cor" type="color" value="${atual}" oninput="fidCorEscolher(this.value)" aria-label="Outra cor"></div></div>`);
+                } catch (_) {}
+                return r;
+            };
+        })();
     </script>
 </body>
 </html>
