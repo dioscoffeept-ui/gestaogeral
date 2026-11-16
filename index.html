@@ -17945,7 +17945,7 @@ var qrcode = function() {
         function fidPintar() {
             const c = fidCfg;
             const cab = `<div class="flex items-start justify-between gap-3"><div><h3>Cartão de fidelidade</h3><p class="text-sm text-slate-500">Um carimbo por cada compra. Ao completar o cartão, o cliente ganha o prémio.</p></div><button type="button" class="x" onclick="dsModalFechar('fid-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>`;
-            const cfgHtml = `<div class="fid-cfg mt-3"><label>Carimbos para o prémio<input id="fid-alvo" type="number" min="2" max="30" value="${c ? c.alvo : 9}"></label><label>Prémio<input id="fid-premio" type="text" maxlength="60" value="${escapeHtml(c ? c.premio : 'Um café grátis')}"></label></div>`;
+            const cfgHtml = `<div class="fid-cfg mt-3"><label>Carimbos para o prémio<input id="fid-alvo" type="number" min="2" max="30" value="${c ? c.alvo : 9}"></label><label>Prémio<input id="fid-premio" type="text" maxlength="60" value="${escapeHtml(c ? c.premio : 'Um café grátis')}"></label><label>Instagram<input id="fid-ig" type="text" maxlength="200" placeholder="@nome" value="${escapeHtml((c && c.instagram) || '')}"></label><label>TikTok<input id="fid-tt" type="text" maxlength="200" placeholder="@nome" value="${escapeHtml((c && c.tiktok) || '')}"></label><label>YouTube<input id="fid-yt" type="text" maxlength="200" placeholder="@canal" value="${escapeHtml((c && c.youtube) || '')}"></label></div><p class="text-xs text-slate-500 mt-1">As redes aparecem no cartão do cliente.</p>`;
             if (!c || !c.ligado) {
                 dsModal('fid-modal', cab + `<div class="mt-3 rounded-2xl p-4" style="background:#FBEDE6;color:#5B2A12"><b>Como funciona</b><ol class="text-sm mt-1 space-y-1 list-decimal pl-5"><li>O cliente lê o QR no balcão e cria o cartão no telemóvel, com o nome e o número.</li><li>A cada compra, procura-o aqui pelo nome, número ou código de 4 dígitos e toca em <b>+1</b>.</li><li>O cartão no telemóvel do cliente atualiza sozinho. Ao completar, toque em <b>Usar prémio</b>.</li></ol></div>` + cfgHtml +
                     `<button type="button" class="bp" onclick="fidGuardarCfg(true)"><i class="fas fa-stamp mr-1.5"></i>Ligar o cartão de fidelidade</button>`);
@@ -17980,7 +17980,9 @@ var qrcode = function() {
         async function fidGuardarCfg(ligado) {
             const alvo = Math.max(2, Math.min(30, parseInt(document.getElementById('fid-alvo').value) || 9));
             const premio = (document.getElementById('fid-premio').value || 'Um café grátis').trim().slice(0, 60);
-            const { data, error } = await sb.from('fidelidade_cfg').upsert({ dono_id: fidDono(), ligado, alvo, premio, atualizado_em: new Date().toISOString() }).select('*').single();
+            const rv = id => { const el = document.getElementById(id); return el ? (el.value || '').trim().slice(0, 200) || null : undefined; };
+            const extra = {}; [['instagram', 'fid-ig'], ['tiktok', 'fid-tt'], ['youtube', 'fid-yt']].forEach(([k, id]) => { const v = rv(id); if (v !== undefined) extra[k] = v; });
+            const { data, error } = await sb.from('fidelidade_cfg').upsert({ dono_id: fidDono(), ligado, alvo, premio, ...extra, atualizado_em: new Date().toISOString() }).select('*').single();
             if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
             fidCfg = data; dsToast(ligado ? 'Cartão de fidelidade ligado' : 'Cartão em pausa. Os carimbos ficam guardados.'); fidPintar(); try { renderDashboard(); } catch (_) {}
         }
@@ -18021,12 +18023,12 @@ var qrcode = function() {
         function fidCopiar(t) { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => dsToast('Link copiado')); else dsPerguntar('Copie o link:', t); }
         function fidCartaz() {
             const url = fidLinkLoja(), qr = payQrSvg(url), loja = escapeHtml(currentEmpresa || '');
-            const w = window.open('', '_blank'); if (!w) return dsToast('O navegador bloqueou a janela. Permita janelas deste site.', true);
-            w.document.write(`<!doctype html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cartão de fidelidade · ${loja}</title>
+            const html = (`<!doctype html><html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cartão de fidelidade · ${loja}</title>
                 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Schibsted+Grotesk:wght@500;700&display=swap" rel="stylesheet">
                 <style>@page{size:A5;margin:12mm}body{margin:0;font-family:'Schibsted Grotesk',sans-serif;color:#231F20;display:flex;justify-content:center}.c{max-width:420px;text-align:center;padding:28px 20px}.t{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:40px;line-height:1.05;letter-spacing:-.02em;margin:6px 0 10px;color:${(appState.perfil && appState.perfil.cor && appState.perfil.cor.brand) || '#983808'}}.l{font-weight:700;font-size:18px}.q{width:260px;margin:22px auto}.q svg{width:100%;height:auto}p{font-size:16px;line-height:1.45;margin:6px 0}.s{font-size:13px;color:#7A6A60;margin-top:18px}button{margin-top:18px;padding:12px 18px;border-radius:12px;border:0;background:#231F20;color:#fff;font-weight:700;font-size:15px}@media print{button{display:none}}</style></head>
-                <body><div class="c"><div class="l">${loja}</div><div class="t">${escapeHtml(fidCfg.premio)} a cada ${fidCfg.alvo} carimbos</div><p>Leia o QR com a câmara do telemóvel e crie o seu cartão. É grátis e não precisa de palavra-passe.</p><div class="q">${qr}</div><p><b>Depois, diga o seu código ao balcão sempre que pedir.</b></p><p class="s">${escapeHtml(url)}</p><button onclick="print()">Imprimir</button></div></body></html>`);
-            w.document.close();
+                <body><div class="c"><div class="l">${loja}</div><div class="t">${escapeHtml(fidCfg.premio)} a cada ${fidCfg.alvo} carimbos</div><p>Leia o QR com a câmara do telemóvel e crie o seu cartão. É grátis e não precisa de palavra-passe.</p><div class="q">${qr}</div><p><b>Depois, diga o seu código ao balcão sempre que pedir.</b></p><p class="s">${escapeHtml(url)}</p></div></body></html>`);
+            dsModal('fid-qr', `<div class="flex items-start justify-between gap-3"><div><h3>QR para o balcão</h3><p class="text-sm text-slate-500">Os clientes leem com a câmara e criam o cartão.</p></div><button type="button" class="x" onclick="dsModalFechar('fid-qr')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div><div id="fid-qr-box">${qr}</div><p class="text-xs text-slate-500 text-center break-all">${escapeHtml(url)}</p><button type="button" class="bp" onclick="fidImprimir()"><i class="fas fa-print mr-1.5"></i>Imprimir cartaz</button><button type="button" class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" onclick="dsModalFechar('fid-qr')">Voltar</button>`);
+            window._fidCartazHtml = html;
         }
         // entradas: ferramentas do topo, ferramentas do Balcão e Início
         (function () {
@@ -18048,6 +18050,61 @@ var qrcode = function() {
             };
             setTimeout(async () => { try { await fidCarregar(); renderDashboard(); } catch (_) {} }, 3000);
         })();
+    </script>
+
+    <style>
+        /* pesquisa com lupa: o texto não passa por baixo do ícone */
+        .relative > i.absolute.left-3 ~ input, .relative > i.absolute.left-3 + input { padding-left: 2.3rem !important; }
+        /* subtítulos colados ao título (margem negativa) passam a ficar por baixo */
+        p.text-xs.-mt-2, p.text-\[11px\].-mt-2 { margin-top: 2px !important; }
+        #fid-qr-box { display: flex; justify-content: center; margin: 14px auto 6px; max-width: 260px; }
+        #fid-qr-box svg { width: 100%; height: auto; }
+    </style>
+
+    <script>
+        // ---- nada de balões nativos do navegador: avisar dentro da app qual o campo em falta
+        document.addEventListener('invalid', e => {
+            const el = e.target; e.preventDefault();
+            if (window._dsInvT && Date.now() - window._dsInvT < 400) return;
+            window._dsInvT = Date.now();
+            const box = el.closest('div'), lab = box && box.querySelector('label');
+            const nome = (lab ? lab.textContent : el.placeholder || 'um campo').replace(/\*/g, '').trim();
+            dsToast('Preencha: ' + nome, true);
+            try { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+        }, true);
+
+        // ---- estoque: fornecedor e stock mínimo deixam de ser obrigatórios; contagem grava sempre
+        (function () {
+            const sel = document.getElementById('inv-supplier'), cat = document.getElementById('inv-category'), mn = document.getElementById('inv-min-stock');
+            if (sel) sel.removeAttribute('required');
+            if (mn) mn.removeAttribute('required');
+            const lab = sel && sel.closest('div') && sel.closest('div').querySelector('label'); if (lab) lab.textContent = 'Fornecedor';
+            const oO = openInventoryModal;
+            openInventoryModal = function () {
+                const r = oO.apply(this, arguments);
+                if (sel && !sel.querySelector('option[value=""]')) sel.insertAdjacentHTML('afterbegin', '<option value="">Sem fornecedor</option>');
+                return r;
+            };
+            const oE = editInventoryItem;
+            editInventoryItem = function (id) {
+                const r = oE.apply(this, arguments);
+                const it = appState.inventory.find(i => i.id === id); if (!it) return r;
+                if (sel && sel.value !== (it.supplierId || '')) sel.value = '';
+                if (cat && it.category && cat.value !== it.category) { cat.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(it.category)}">${escapeHtml(it.category)}</option>`); cat.value = it.category; }
+                return r;
+            };
+        })();
+    </script>
+
+    <script>
+        function fidImprimir() {
+            const html = window._fidCartazHtml; if (!html) return;
+            let f = document.getElementById('fid-print'); if (f) f.remove();
+            f = document.createElement('iframe'); f.id = 'fid-print'; f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+            document.body.appendChild(f);
+            f.contentDocument.open(); f.contentDocument.write(html); f.contentDocument.close();
+            setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (_) { dsToast('Não foi possível abrir a impressão neste aparelho.', true); } }, 700);
+        }
     </script>
 </body>
 </html>
