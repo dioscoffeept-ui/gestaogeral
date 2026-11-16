@@ -18188,21 +18188,24 @@ var qrcode = function() {
     </script>
 
     <style>
-        #inv-val { border: 1px solid #F3D2C4; background: #FFF8F4; border-radius: 16px; padding: 12px; }
-        #inv-val .lin { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid #F3E4DA; font-size: 14px; }
-        #inv-val .lin:first-of-type { border-top: 0; }
-        #inv-val .lin .tx { flex: 1; min-width: 0; color: #24150E; font-weight: 700; }
-        #inv-val .lin .tx small { display: block; font-weight: 500; color: #7A6A60; font-size: 12.5px; }
-        #inv-val .lin button { font-size: 12.5px; font-weight: 800; padding: 6px 9px; border-radius: 9px; background: #F3EFE8; color: #3A2A22; }
-        #inv-val .lin button.fora { color: #B91C1C; background: #FEE2E2; }
-        #inv-val .add { display: grid; grid-template-columns: 1fr 90px auto; gap: 8px; margin-top: 8px; align-items: end; }
-        #inv-val .add input { width: 100%; border: 1px solid #E4DCCF; border-radius: 10px; padding: 9px 10px; font-size: 15px; background: #fff; }
-        #inv-val .add { grid-template-columns: 1fr 1fr; }
-        #inv-val .add button { grid-column: 1 / -1; }
-        #inv-val .add input { min-width: 0; }
-        #inv-val .add button, #inv-val .desp { padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; }
-        #inv-val .add button { background: var(--brand); color: #fff; }
-        #inv-val .desp { margin-top: 8px; width: 100%; background: #fff; border: 1px solid #E4DCCF; color: #B91C1C; }
+        #inv-val { border: 1px solid #F3D2C4; background: #FFF8F4; border-radius: 16px; padding: 14px; }
+        #inv-val .val-it { background: #fff; border: 1px solid #EEE6DA; border-radius: 14px; padding: 10px 12px; margin-top: 8px; }
+        #inv-val .val-it .top { display: flex; align-items: center; gap: 10px; }
+        #inv-val .val-it .top i { color: var(--brand); }
+        #inv-val .val-it .tx { flex: 1; min-width: 0; color: #24150E; font-weight: 800; font-size: 15px; }
+        #inv-val .val-it .tx small { display: block; font-weight: 500; color: #7A6A60; font-size: 12.5px; }
+        #inv-val .val-it .bts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        #inv-val .val-it .bts button { padding: 9px 10px; border-radius: 10px; font-size: 13px; font-weight: 800; background: #F3EFE8; color: #3A2A22; }
+        #inv-val .val-it .bts button.fora { color: #B91C1C; background: #FEE2E2; }
+        #inv-val .novo { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #EBCFC0; }
+        #inv-val .novo .row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 8px; }
+        #inv-val .novo label { display: block; font-size: 12px; font-weight: 700; color: #5B4A40; }
+        #inv-val .novo input { display: block; width: 100%; min-width: 0; height: 44px; margin-top: 4px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 0 10px; font-size: 15px; background: #fff; color: #24150E; -webkit-appearance: none; appearance: none; }
+        #inv-val .novo input[type=date]::-webkit-date-and-time-value { text-align: left; }
+        #inv-val .novo .add-bt, #inv-val .desp { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 44px; margin-top: 8px; border-radius: 12px; font-size: 14px; font-weight: 800; }
+        #inv-val .novo .add-bt { background: var(--brand); color: #fff; }
+        #inv-val .desp { background: #fff; border: 1px solid #E4DCCF; color: #B91C1C; }
+        @media (max-width: 340px) { #inv-val .novo .row { grid-template-columns: 1fr; } }
         #val-alerta { display: flex; align-items: center; gap: 10px; background: #FEF3C7; color: #92400E; border-radius: 14px; padding: 10px 14px; font-size: 14px; font-weight: 700; margin-bottom: 14px; }
         .val-mini { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: #FEF3C7; color: #92400E; vertical-align: middle; }
         .val-mini.r { background: #FEE2E2; color: #B91C1C; }
@@ -18222,8 +18225,8 @@ var qrcode = function() {
             const it = appState.inventory.find(i => i.id === id), L = valDoProduto(id), u = escapeHtml((it && it.unit) || '');
             box.innerHTML = `<p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-calendar-xmark mr-1" style="color:var(--brand)"></i> Validades e desperdício</p>
                 <p class="text-xs text-slate-500 mt-0.5 mb-1">Avisamos 3 dias antes. O que deitar fora sai do estoque.</p>
-                ${L.map(v => `<div class="lin"><span class="tx">${new Date(v.data + 'T12:00:00').toLocaleDateString('pt-PT')}<small>${v.qtd ? escapeHtml(String(v.qtd).replace('.', ',')) + ' ' + u : 'sem quantidade'}${v.nota ? ' · ' + escapeHtml(v.nota) : ''}</small></span>${valTag(v.data)}<button type="button" onclick="valUsado('${v.id}');invValPintar()">Gasto</button><button type="button" class="fora" onclick="despForm('${v.id}')">Deitar fora</button></div>`).join('') || '<p class="text-sm text-slate-500 py-1">Sem validades registadas.</p>'}
-                <div class="add"><label class="text-[11px] font-bold text-slate-600">Válido até<input id="iv-d" type="date" value="${new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10)}"></label><label class="text-[11px] font-bold text-slate-600">Qtd. (${u})<input id="iv-q" type="number" min="0" step="any" placeholder="opcional"></label><button type="button" onclick="invValAdd()"><i class="fas fa-plus"></i> Validade</button></div>
+                ${L.map(v => `<div class="val-it"><div class="top"><i class="fas fa-calendar-day"></i><span class="tx">${new Date(v.data + 'T12:00:00').toLocaleDateString('pt-PT')}<small>${v.qtd ? escapeHtml(String(v.qtd).replace('.', ',')) + ' ' + u : 'sem quantidade'}${v.nota ? ' · ' + escapeHtml(v.nota) : ''}</small></span>${valTag(v.data)}</div><div class="bts"><button type="button" onclick="valUsado('${v.id}');invValPintar()"><i class="fas fa-check mr-1"></i>Gasto</button><button type="button" class="fora" onclick="despForm('${v.id}')"><i class="fas fa-trash-can mr-1"></i>Deitar fora</button></div></div>`).join('') || '<p class="text-sm text-slate-500 py-1">Sem validades registadas.</p>'}
+                <div class="novo"><div class="row"><label>Nova validade<input id="iv-d" type="date" value="${new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10)}"></label><label>Quantidade (${u})<input id="iv-q" type="number" inputmode="decimal" min="0" step="any" placeholder="opcional"></label></div><button type="button" class="add-bt" onclick="invValAdd()"><i class="fas fa-plus"></i>Juntar validade</button></div>
                 <button type="button" class="desp" onclick="despForm('', '${id}')"><i class="fas fa-trash-can mr-1"></i>Registar desperdício deste produto</button>`;
         }
         function invValAdd() {
@@ -18295,6 +18298,145 @@ var qrcode = function() {
                     const atual = fidCor();
                     pr.closest('.fid-cfg').insertAdjacentHTML('afterend', `<div class="mt-2"><p class="text-[13px] font-bold" style="color:#3A2A22">Cor do cartão</p><div class="fid-cores">${FID_CORES.map(c => `<button type="button" data-c="${c}" style="background:${c}" class="${c.toLowerCase() === atual.toLowerCase() ? 'on' : ''}" onclick="fidCorEscolher('${c}')" aria-label="Cor ${c}"></button>`).join('')}<input id="fid-cor" type="color" value="${atual}" oninput="fidCorEscolher(this.value)" aria-label="Outra cor"></div></div>`);
                 } catch (_) {}
+                return r;
+            };
+        })();
+    </script>
+
+    <style>
+        .cli-fid { border: 1px solid #F3D2C4; background: #FFF8F4; border-radius: 14px; padding: 12px; }
+        .cli-fid .t { display: flex; align-items: center; gap: 10px; }
+        .cli-fid .t .ic { width: 34px; height: 34px; border-radius: 11px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+        .cli-fid .t b { display: block; font-size: 14.5px; color: #24150E; }
+        .cli-fid .t small { font-size: 12.5px; color: #7A6A60; }
+        .cli-fid .bts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+        .cli-fid .bts button { padding: 8px 11px; border-radius: 10px; font-size: 13px; font-weight: 800; background: #fff; border: 1px solid #E4DCCF; color: #24150E; }
+        .cli-fid .bts button.p { background: var(--brand); color: #fff; border-color: var(--brand); }
+        .cli-fid select { width: 100%; margin-top: 8px; border: 1px solid #E4DCCF; border-radius: 10px; padding: 9px 10px; font-size: 15px; }
+        .cli-selo { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: #FBEDE6; color: var(--brand); margin-top: 3px; }
+        .fid-cli { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: #15803D; margin-top: 2px; }
+        .pos-fid { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 7px 10px; border-radius: 12px; background: #FBEDE6; color: #5B2A12; font-size: 13px; font-weight: 800; }
+        .pos-fid button { margin-left: auto; padding: 5px 10px; border-radius: 9px; background: var(--brand); color: #fff; font-weight: 900; }
+    </style>
+
+    <script>
+        const fidTel9 = t => String(t || '').replace(/\D/g, '').slice(-9);
+        function fidDoCliente(c) {
+            if (!c || !fidCarregado) return null;
+            if (c.fidId) { const k = fidCartoes.find(x => x.id === c.fidId); if (k) return k; }
+            if (c.fidDesligado) return null;
+            const t = fidTel9(c.tel); if (t.length === 9) return fidCartoes.find(x => fidTel9(x.telefone) === t) || null;
+            return null;
+        }
+        function cliDoCartao(k) {
+            if (!k) return null;
+            const l = cliList();
+            return l.find(c => c.fidId === k.id) || (fidTel9(k.telefone).length === 9 && l.find(c => !c.fidDesligado && fidTel9(c.tel) === fidTel9(k.telefone))) || null;
+        }
+        const fidOn = () => fidCfg && fidCfg.ligado;
+
+        // ---- ficha do cliente: secção do cartão
+        function cliFidHtml(id) {
+            const c = cliList().find(x => x.id === id); if (!c || !fidOn()) return '';
+            const k = fidDoCliente(c), alvo = fidCfg.alvo;
+            if (k) return `<div class="cli-fid"><div class="t"><span class="ic"><i class="fas fa-stamp"></i></span><span class="flex-1 min-w-0"><b>Cartão de fidelidade · ${Math.min(k.carimbos, alvo)}/${alvo}</b><small>Código ${k.codigo}${k.carimbos >= alvo ? ' · prémio por usar' : ' · faltam ' + (alvo - k.carimbos)}</small></span></div>
+                <div class="bts"><button type="button" class="p" onclick="cliFidMais('${id}')">+1 carimbo</button>${k.carimbos >= alvo ? `<button type="button" onclick="fidUsar('${k.id}').then(()=>cliForm('${id}'))"><i class="fas fa-gift mr-1"></i>Usar prémio</button>` : ''}<button type="button" onclick="fidWhats('${k.id}')"><i class="fab fa-whatsapp mr-1"></i>Enviar</button><button type="button" onclick="cliFidDesligar('${id}')">Desligar</button></div></div>`;
+            const livres = fidCartoes.filter(x => !cliDoCartao(x));
+            return `<div class="cli-fid"><div class="t"><span class="ic"><i class="fas fa-stamp"></i></span><span class="flex-1 min-w-0"><b>Sem cartão de fidelidade</b><small>Crie um com o nome e o telemóvel desta ficha, ou ligue a um que já exista.</small></span></div>
+                <div class="bts"><button type="button" class="p" onclick="cliFidCriar('${id}')"><i class="fas fa-plus mr-1"></i>Criar cartão</button></div>
+                ${livres.length ? `<select onchange="if(this.value)cliFidLigar('${id}',this.value)"><option value="">Ligar a um cartão existente…</option>${livres.map(x => `<option value="${x.id}">${escapeHtml(x.nome)} · ${x.codigo}${x.telefone ? ' · …' + escapeHtml(String(x.telefone).slice(-3)) : ''}</option>`).join('')}</select>` : ''}</div>`;
+        }
+        async function cliFidMais(id) { const k = fidDoCliente(cliList().find(x => x.id === id)); if (!k) return; await fidMudar(k.id, 1); cliForm(id); }
+        function cliFidLigar(id, kid) {
+            const c = cliList().find(x => x.id === id), k = fidCartoes.find(x => x.id === kid); if (!c || !k) return;
+            c.fidId = k.id; c.fidDesligado = false; if (!c.tel && k.telefone) c.tel = k.telefone; saveStorage(); dsToast('Cartão ligado a ' + (c.nome || 'este cliente')); cliForm(id);
+        }
+        function cliFidDesligar(id) { const c = cliList().find(x => x.id === id); if (!c) return; c.fidId = null; c.fidDesligado = true; saveStorage(); cliForm(id); }
+        async function cliFidCriar(id) {
+            const c = cliList().find(x => x.id === id); if (!c) return;
+            const g = k => { const e = document.getElementById(k); return e ? e.value.trim() : ''; };
+            const nome = (g('cf-nome') || c.nome || '').slice(0, 40), tel = (g('cf-tel') || c.tel || '').replace(/[^\d+]/g, '').slice(0, 20);
+            if (nome.length < 2) return dsToast('Escreva o nome do cliente primeiro.', true);
+            if (tel && !/^\+?\d{9,15}$/.test(tel)) return dsToast('O telemóvel não parece certo.', true);
+            if (tel && fidCartoes.some(k => fidTel9(k.telefone) === fidTel9(tel))) return dsToast('Este telemóvel já tem cartão. Use "Ligar a um cartão existente".', true);
+            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').single();
+            if (error) return dsToast('Não foi possível criar o cartão. Tente de novo.', true);
+            fidCartoes.unshift(data); c.fidId = data.id; c.fidDesligado = false; if (!c.tel && tel) c.tel = tel; if (!c.nome) c.nome = nome; saveStorage();
+            dsToast('Cartão criado: código ' + data.codigo); cliForm(id);
+        }
+        (function () {
+            const oF = cliForm;
+            cliForm = function (id) {
+                const r = oF.apply(this, arguments);
+                try {
+                    if (!id) return r;
+                    const h = cliFidHtml(id); if (!h) return r;
+                    const bt = document.querySelector('#cli-body button[onclick^="cliGuardar"]'), alvo = bt && bt.parentElement;
+                    if (alvo) alvo.insertAdjacentHTML('beforebegin', h);
+                } catch (_) {}
+                return r;
+            };
+            // na lista de clientes: carimbos ao lado do nome
+            const oR = cliRender;
+            cliRender = function () {
+                const r = oR.apply(this, arguments);
+                try {
+                    if (!fidOn()) return r;
+                    document.querySelectorAll('#cli-body .cli-row').forEach(b => {
+                        const id = ((b.getAttribute('onclick') || '').match(/'([^']+)'/) || [])[1]; const c = id && cliList().find(x => x.id === id);
+                        const k = c && fidDoCliente(c); if (!k || b.querySelector('.cli-selo')) return;
+                        const nm = b.querySelector('span.flex-1'); if (nm) nm.insertAdjacentHTML('beforeend', `<span class="cli-selo"><i class="fas fa-stamp"></i>${Math.min(k.carimbos, fidCfg.alvo)}/${fidCfg.alvo}${k.carimbos >= fidCfg.alvo ? ' · prémio' : ''}</span>`);
+                    });
+                } catch (_) {}
+                return r;
+            };
+            // no Balcão: cliente escolhido com cartão → +1 carimbo à mão
+            const oC = posRenderCart;
+            posRenderCart = function () {
+                const r = oC.apply(this, arguments);
+                try {
+                    const row = document.getElementById('pos-cli-row'); if (!row || !fidOn()) return r;
+                    const c = posClienteSel && posClienteSel.id && cliList().find(x => x.id === posClienteSel.id), k = c && fidDoCliente(c);
+                    const old = document.getElementById('pos-fid'); if (old) old.remove();
+                    if (k) row.insertAdjacentHTML('afterend', `<div id="pos-fid" class="pos-fid"><i class="fas fa-stamp"></i><span>Cartão ${Math.min(k.carimbos, fidCfg.alvo)}/${fidCfg.alvo}${k.carimbos >= fidCfg.alvo ? ' · tem prémio' : ''}</span><button type="button" onclick="fidMudar('${k.id}',1).then(()=>posRenderCart())">+1</button></div>`);
+                } catch (_) {}
+                return r;
+            };
+        })();
+
+        // ---- no Fidelidade: mostrar a ficha (NIF) e criar a ficha a partir do cartão
+        (function () {
+            const oL = fidLista;
+            fidLista = function () {
+                const r = oL.apply(this, arguments);
+                try {
+                    document.querySelectorAll('#fid-lista .fid-c').forEach(el => {
+                        const id = ((el.querySelector('.fid-mais') || {}).getAttribute ? el.querySelector('.fid-mais').getAttribute('onclick').match(/'([^']+)'/) || [] : [])[1];
+                        const k = id && fidCartoes.find(x => x.id === id); if (!k) return;
+                        const c = cliDoCartao(k), nm = el.querySelector('.nm');
+                        if (nm && !nm.querySelector('.fid-cli')) nm.insertAdjacentHTML('beforeend', c ? `<span class="fid-cli"><i class="fas fa-address-card"></i>${c.nif ? 'NIF ' + escapeHtml(c.nif) : 'Ficha de cliente'}</span>` : '');
+                        const ac = el.querySelector('.fid-acoes');
+                        if (ac && !ac.querySelector('.fid-ficha')) ac.insertAdjacentHTML('beforeend', `<button type="button" class="fid-ficha" onclick="fidFicha('${k.id}')"><i class="fas fa-address-card mr-1"></i>${c ? 'Ficha' : 'Criar ficha (NIF)'}</button>`);
+                    });
+                } catch (_) {}
+                return r;
+            };
+        })();
+        function fidFicha(kid) {
+            const k = fidCartoes.find(x => x.id === kid); if (!k) return;
+            let c = cliDoCartao(k);
+            if (!c) { c = { id: 'cli_' + Date.now(), criado: new Date().toISOString(), compras: 0, total: 0, nome: k.nome, nif: '', tel: k.telefone || '', email: '', fidId: k.id }; cliList().unshift(c); saveStorage(); }
+            else if (!c.fidId) { c.fidId = k.id; saveStorage(); }
+            dsModalFechar('fid-modal');
+            cliOpen('gerir'); cliForm(c.id);
+            setTimeout(() => { const n = document.getElementById('cf-nif'); if (n && !n.value) n.focus(); }, 80);
+        }
+        // a ficha de cliente também abre a partir da app sem Balcão: Clientes no menu do Fidelidade
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try { const l = document.querySelector('#fid-modal .fid-link'); if (l && !l.querySelector('.fid-clis')) l.insertAdjacentHTML('beforeend', '<button type="button" class="fid-clis" onclick="dsModalFechar(\'fid-modal\');cliOpen(\'gerir\')"><i class="fas fa-user-group"></i>Clientes</button>'); } catch (_) {}
                 return r;
             };
         })();
