@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#983808">
+<title>Cartão de fidelidade</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --brand: #983808; --ink: #231F20; --mut: #6B5A50; --line: #E9E1D6; --bg: #F6F3F0; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; background: var(--bg); color: var(--ink); font-family: 'Schibsted Grotesk', -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input { font-family: inherit; }
+  button { cursor: pointer; border: 0; }
+  .wrap { max-width: 460px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+  .topo { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .topo .logo { width: 44px; height: 44px; border-radius: 14px; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; overflow: hidden; flex: 0 0 auto; }
+  .logo img { width: 100%; height: 100%; object-fit: cover; }
+  .topo b { display: block; font-size: 17px; font-weight: 800; }
+  .topo span { font-size: 13px; color: var(--mut); }
+
+  .cartao { position: relative; overflow: hidden; border-radius: 26px; padding: 22px 20px 20px; color: #fff; background: var(--brand); box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--brand) 80%, #000); }
+  .cartao::before { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; right: -70px; top: -90px; background: rgba(255,255,255,.12); }
+  .cartao::after { content: ''; position: absolute; width: 120px; height: 120px; left: -40px; bottom: -60px; background: rgba(255,255,255,.08); transform: rotate(18deg); border-radius: 18px; }
+  .cartao > * { position: relative; z-index: 1; }
+  .c-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .c-top small { display: block; font-size: 12.5px; font-weight: 700; opacity: .8; }
+  .c-top h1 { margin: 2px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 26px; letter-spacing: -0.02em; line-height: 1.1; }
+  .codigo { text-align: right; font-size: 12px; font-weight: 700; opacity: .85; white-space: nowrap; }
+  .codigo b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; letter-spacing: .06em; opacity: 1; }
+  .selos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0 16px; }
+  .selo { aspect-ratio: 1; border-radius: 50%; border: 2px dashed rgba(255,255,255,.45); display: flex; align-items: center; justify-content: center; }
+  .selo svg { width: 56%; height: 56%; }
+  .selo.on { background: #fff; border: 0; color: var(--brand); }
+  .selo.on svg { animation: pop .35s ease-out both; }
+  .selo.premio { border-style: solid; border-color: #fff; background: rgba(255,255,255,.14); }
+  .selo.premio.on { background: #FCD34D; color: #5B2A12; }
+  @keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+  .c-pe { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; }
+  .c-pe .falta { font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; font-weight: 800; line-height: 1.2; }
+  .c-pe small { display: block; font-size: 12.5px; opacity: .8; font-weight: 600; }
+
+  .aviso { margin-top: 14px; border-radius: 18px; padding: 14px 16px; background: #FEF3C7; color: #5B2A12; font-weight: 700; font-size: 15px; display: flex; gap: 12px; align-items: center; }
+  .aviso i { font-style: normal; font-size: 24px; }
+  .bloco { margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+  .bloco h2 { margin: 0 0 10px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 800; }
+  .hist { list-style: none; margin: 0; padding: 0; }
+  .hist li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid #F3EFE8; font-size: 14px; }
+  .hist li:first-child { border-top: 0; }
+  .hist span { color: var(--mut); white-space: nowrap; }
+  .dica { font-size: 13.5px; color: var(--mut); line-height: 1.5; margin: 0; }
+  label { display: block; font-size: 14px; font-weight: 700; margin-top: 12px; }
+  input { width: 100%; margin-top: 6px; border: 1px solid #DCD2C4; border-radius: 14px; padding: 13px 14px; font-size: 16px; background: #fff; color: var(--ink); }
+  input:focus { outline: 2px solid var(--brand); outline-offset: 1px; border-color: transparent; }
+  .bp { width: 100%; margin-top: 16px; padding: 15px; border-radius: 16px; background: var(--brand); color: #fff; font-size: 16px; font-weight: 800; }
+  .bp:disabled { opacity: .6; }
+  .erro { color: #B91C1C; font-size: 14px; font-weight: 700; margin: 10px 0 0; min-height: 1em; }
+  .vazio { text-align: center; padding: 60px 10px; color: var(--mut); }
+  .assina { text-align: center; font-size: 12px; color: #9A8A80; margin-top: 22px; }
+  .assina a { color: inherit; }
+  .esq { height: 210px; border-radius: 26px; background: linear-gradient(90deg, #EDE6DD, #F6F1EB, #EDE6DD); background-size: 200% 100%; animation: sh 1.2s infinite linear; }
+  @keyframes sh { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .selo.on svg, .esq { animation: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topo"><span class="logo" id="logo">☕</span><div><b id="loja">&nbsp;</b><span>Cartão de fidelidade</span></div></div>
+  <div id="app"><div class="esq"></div></div>
+  <p class="assina">Feito com <a href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/" target="_blank" rel="noopener">Dio’Stock</a></p>
+</div>
+<script>
+  const FN = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/cartao-publico';
+  const P = new URLSearchParams(location.search), C = P.get('c') || '', N = P.get('n') || '';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const CHAVENA = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 8h13v6a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8Zm13 1h1.5a3 3 0 0 1 0 6H16v-2h1.5a1 1 0 0 0 0-2H16V9ZM6 2.5c.6.7.6 1.5 0 2.2-.6.7-.6 1.5 0 2.3M9.5 2.5c.6.7.6 1.5 0 2.2-.6.7-.6 1.5 0 2.3M13 2.5c.6.7.6 1.5 0 2.2-.6.7-.6 1.5 0 2.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  const PRESENTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
+  let ultimo = '';
+
+  async function post(body) {
+    const r = await fetch(FN, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.erro || 'Não foi possível ligar. Verifique a internet.'); e.status = r.status; throw e; }
+    return j;
+  }
+  function marca(d) {
+    if (d.marca && d.marca.brand) { document.documentElement.style.setProperty('--brand', d.marca.brand); document.querySelector('meta[name=theme-color]').content = d.marca.brand; }
+    document.getElementById('loja').textContent = d.loja || '';
+    document.title = 'Cartão de fidelidade · ' + (d.loja || '');
+    const l = document.getElementById('logo');
+    if (d.marca && d.marca.logo) l.innerHTML = '<img src="' + esc(d.marca.logo) + '" alt="">';
+    else l.textContent = (d.loja || '☕').trim().charAt(0).toUpperCase();
+  }
+  function selos(alvo, n) {
+    let h = '';
+    for (let i = 1; i <= alvo; i++) h += `<span class="selo ${i <= n ? 'on' : ''}" aria-label="${i <= n ? 'carimbo' : 'vazio'}">${i <= n ? CHAVENA : ''}</span>`;
+    h += `<span class="selo premio ${n >= alvo ? 'on' : ''}" aria-label="prémio">${PRESENTE}</span>`;
+    return h;
+  }
+  const dt = s => { const d = new Date(s); return isNaN(d) ? '' : d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' }) + ' · ' + d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }); };
+  const HT = { carimbo: n => n === 1 ? '+1 carimbo' : '+' + n + ' carimbos', tirar: n => '−' + n + (n === 1 ? ' carimbo' : ' carimbos'), premio: () => 'Prémio usado', criado: () => 'Cartão criado' };
+
+  function cartao(d) {
+    marca(d);
+    const n = Math.min(d.carimbos, d.alvo), falta = Math.max(0, d.alvo - d.carimbos), tem = d.carimbos >= d.alvo;
+    const app = document.getElementById('app');
+    app.innerHTML = `<section class="cartao" aria-label="Cartão de ${esc(d.nome)}">
+        <div class="c-top"><div><small>Olá,</small><h1>${esc(d.nome)}</h1></div><div class="codigo">o seu código<b>${esc(d.codigo)}</b></div></div>
+        <div class="selos">${selos(d.alvo, n)}</div>
+        <div class="c-pe"><div><span class="falta">${tem ? 'Prémio desbloqueado' : 'Faltam ' + falta + (falta === 1 ? ' carimbo' : ' carimbos')}</span><small>${esc(d.premio)} a cada ${d.alvo} carimbos</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'prémio usado' : 'prémios usados'}</small></div>` : ''}</div>
+      </section>
+      ${tem ? `<div class="aviso"><i>🎁</i><span>Tem ${esc(d.premio.toLowerCase())} à espera. Mostre este ecrã ao balcão.</span></div>` : ''}
+      ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
+      <div class="bloco"><h2>Como funciona</h2><p class="dica">Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.</p></div>
+      ${d.historico && d.historico.length ? `<div class="bloco"><h2>Últimos movimentos</h2><ul class="hist">${d.historico.map(h => `<li><b>${esc((HT[h.t] || (() => h.t))(h.n))}</b><span>${dt(h.em)}</span></li>`).join('')}</ul></div>` : ''}
+      <div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">No iPhone: toque em <b>Partilhar</b> e depois em <b>Adicionar ao ecrã principal</b>. No Android: menu <b>⋮</b> e <b>Adicionar ao ecrã principal</b>.</p></div>`;
+  }
+
+  async function ver(silencioso) {
+    try {
+      const d = await post({ acao: 'ver', c: C });
+      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio]);
+      if (k !== ultimo) { ultimo = k; cartao(d); }
+      if (d.n) try { localStorage.setItem('ds_cartao_' + d.n, C); } catch (_) {}
+    } catch (e) {
+      if (!silencioso) document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`;
+    }
+  }
+
+  async function pedir() {
+    let d;
+    try { d = await post({ acao: 'info', n: N }); } catch (e) { document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; return; }
+    marca(d);
+    if (!d.ligado) { document.getElementById('app').innerHTML = '<div class="vazio">O cartão de fidelidade não está ativo neste momento.</div>'; return; }
+    document.getElementById('app').innerHTML = `<section class="cartao"><div class="c-top"><div><small>O seu cartão</small><h1>${esc(d.premio)}</h1></div></div>
+        <div class="selos">${selos(d.alvo, 0)}</div>
+        <div class="c-pe"><div><span class="falta">A cada ${d.alvo} carimbos</span><small>Um carimbo por cada compra</small></div></div></section>
+      <form class="bloco" id="f" novalidate><h2>Criar o meu cartão</h2>
+        <p class="dica">É grátis e fica guardado neste telemóvel. Não precisa de palavra-passe.</p>
+        <label>Nome<input id="nome" autocomplete="given-name" maxlength="40" placeholder="Como o chamamos"></label>
+        <label>Telemóvel<input id="tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9xx xxx xxx"></label>
+        <p class="erro" id="erro" role="alert"></p>
+        <button type="submit" class="bp" id="ok">Criar o meu cartão</button>
+        <p class="dica" style="margin-top:12px;font-size:12.5px">Usamos o seu número só para encontrar o seu cartão ao balcão. Não enviamos mensagens.</p></form>`;
+    document.getElementById('f').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const b = document.getElementById('ok'), er = document.getElementById('erro');
+      er.textContent = ''; b.disabled = true; b.textContent = 'A criar…';
+      try {
+        const r = await post({ acao: 'criar', n: N, nome: document.getElementById('nome').value, tel: document.getElementById('tel').value });
+        try { localStorage.setItem('ds_cartao_' + N, r.c); } catch (_) {}
+        location.replace('cartao.html?c=' + r.c);
+      } catch (e) { er.textContent = e.message; b.disabled = false; b.textContent = 'Criar o meu cartão'; }
+    });
+  }
+
+  if (C) { ver(); setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
+  else if (N) {
+    let guardado = ''; try { guardado = localStorage.getItem('ds_cartao_' + N) || ''; } catch (_) {}
+    if (guardado) location.replace('cartao.html?c=' + guardado); else pedir();
+  } else document.getElementById('app').innerHTML = '<div class="vazio">Link incompleto. Peça ao balcão o link do cartão.</div>';
+</script>
+</body>
+</html>
