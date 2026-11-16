@@ -5379,17 +5379,19 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             box.innerHTML = list.map(h => {
                 const d = h.reportDate ? h.reportDate.split('-').reverse().join('/') : '—';
                 const units = h.items.reduce((s, it) => s + (Number(it.qty) || 0), 0);
+                const valor = h.items.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0);
+                const fmtE = v => (Math.round(v * 100) / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
                 return `<details class="group">
                     <summary class="px-5 py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50 list-none">
                         <div class="flex items-center gap-3 text-xs">
                             <i class="fas ${icon[h.source] || 'fa-receipt'} text-slate-400"></i>
                             <span class="font-extrabold text-slate-800">${d}</span>
-                            <span class="text-slate-500">${h.items.length} produtos · ${units} vendas · ${h.moves.length} insumos descontados${h.corrigido ? ' · corrigido' : ''}</span>
+                            <span class="text-slate-500">${h.items.length} produtos · ${units} vendas${valor > 0 ? ' · <b class="text-slate-800">' + fmtE(valor) + '</b>' : ''} · ${h.moves.length} insumos descontados${h.corrigido ? ' · corrigido' : ''}</span>
                         </div>
                         <span class="flex items-center gap-3 whitespace-nowrap"><button type="button" onclick="event.preventDefault(); salesEditar('${h.id}')" class="text-[11px] font-bold text-slate-500 hover:text-slate-900"><i class="fas fa-pen mr-1"></i>Corrigir</button><button type="button" onclick="event.preventDefault(); salesUndo('${h.id}')" class="text-[11px] font-bold text-slate-400 hover:text-red-600"><i class="fas fa-rotate-left mr-1"></i>Desfazer</button></span>
                     </summary>
                     ${(h.fontes || []).length ? `<p class="px-5 pb-2 text-xs text-slate-500">${h.fontes.map(escapeHtml).join('<br>')}</p>` : ''}<div class="px-5 pb-4 grid sm:grid-cols-2 gap-4 text-xs">
-                        <div><p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Vendas</p>${h.items.map(it => `<div class="flex justify-between border-b border-slate-50 py-0.5"><span>${escapeHtml(it.name)}</span><b>${it.qty}</b></div>`).join('')}</div>
+                        <div><p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Vendas</p>${h.items.map(it => `<div class="flex justify-between border-b border-slate-50 py-0.5"><span>${escapeHtml(it.name)}</span><span><b>${it.qty}</b>${Number(it.price) > 0 ? ' <span class="text-slate-400">· ' + fmtE(it.qty * it.price) + '</span>' : ''}</span></div>`).join('')}${valor > 0 ? `<div class="flex justify-between pt-1 font-black text-slate-800"><span>Total</span><span>${fmtE(valor)}</span></div>` : ''}</div>
                         <div><p class="font-bold text-slate-500 uppercase text-[10px] mb-1">Descontado</p>${h.moves.map(m => `<div class="flex justify-between border-b border-slate-50 py-0.5"><span>${escapeHtml(m.name)}</span><b>− ${fmtNum(m.amount)} ${escapeHtml(m.unit)}</b></div>`).join('') || '<span class="text-slate-400">Nada</span>'}</div>
                     </div>
                 </details>`;
@@ -14165,7 +14167,9 @@ var qrcode = function() {
             if (!itens.length) { o.fiscal = { semValor: true }; return; }
             o.fiscal = Object.assign({}, o.fiscal || {}, { pendente: true });
             const cli = o.cliente || {};
-            const r = await vdCall('emitir', { ref: o.id, itens, total: o.total, pagamento: vdPayMap[o.pay] || o.pay, isento: !!(typeof dsAcesso !== 'undefined' && dsAcesso.iva_isento), nif: cli.nif || '', nome: cli.nome || '', email: cli.email || '' });
+            const hojeL = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+            const notas = (o.date && o.date !== hojeL) ? 'Data da venda: ' + o.date.split('-').reverse().join('/') : '';
+            const r = await vdCall('emitir', { ref: o.id, notas, itens, total: o.total, pagamento: vdPayMap[o.pay] || o.pay, isento: !!(typeof dsAcesso !== 'undefined' && dsAcesso.iva_isento), nif: cli.nif || '', nome: cli.nome || '', email: cli.email || '' });
             if (r && r.numero) {
                 o.fiscal = { id: r.id, numero: r.numero, tipo: r.tipo, atcud: r.atcud, modo: r.modo, em: r.em };
                 saveStorage();
@@ -14177,12 +14181,14 @@ var qrcode = function() {
             }
             try { if (!document.getElementById('pos-today').classList.contains('hidden')) { posTodayToggle(); posTodayToggle(); } } catch (_) {}
         }
+        // fatura no dia seguinte à venda (00:00 locais): dá tempo para corrigir/anular o pedido antes de ir às Finanças
+        function vdAmanha(at) { const d = new Date(at || Date.now()); d.setHours(24, 0, 0, 0); return d.toISOString(); }
         async function vdPendentes() {
             if (vdBusy || !vdOn() || !navigator.onLine) return;
             vdBusy = true;
             try {
-                const lim = Date.now() - 4 * 864e5;
-                const pend = (appState.orders || []).filter(o => o.fiscal && o.fiscal.pendente && !o.anulado && new Date(o.at).getTime() > lim).slice(0, 10);
+                const lim = Date.now() - 6 * 864e5, agora = Date.now();
+                const pend = (appState.orders || []).filter(o => o.fiscal && o.fiscal.pendente && !o.anulado && new Date(o.at).getTime() > lim && (!o.fiscal.apos || new Date(o.fiscal.apos).getTime() <= agora)).slice(0, 10);
                 for (const o of pend) await vdEmitir(o, true);
             } finally { vdBusy = false; }
         }
@@ -14204,6 +14210,7 @@ var qrcode = function() {
                 h += `<div class="flex items-center gap-3 p-3 rounded-xl" style="background:var(--brand-soft)"><span class="w-3 h-3 rounded-full" style="background:${f.auto !== false ? '#16a34a' : '#94a3b8'}"></span><div class="min-w-0"><p class="text-sm font-black text-slate-900">${f.auto !== false ? 'Ligado: cada pedido gera a fatura' : 'Ligado, mas desativado'}</p><p class="text-[11px] text-slate-600">Caixa “${escapeHtml(st.caixa || '')}” · IVA isento (art. 53.º)${st.modo === 'tests' ? ' · <b style="color:#b45309">MODO TESTES — as faturas não contam nas Finanças</b>' : ' · modo normal (faturas reais)'}</p></div></div>
                 <label class="flex items-start justify-between gap-3 p-3 rounded-xl" style="background:#fef3c7"><span><b class="block text-sm text-amber-900"><i class="fas fa-graduation-cap mr-1"></i>Modo treino</b><span class="block text-[11px] text-amber-800">Para praticar ou testar: os pedidos descontam o estoque mas <b>não emitem fatura</b> e ficam marcados como treino. Depois pode anulá-los em <b>Hoje → Anular</b>, ou todos de uma vez aqui.</span></span><input type="checkbox" ${f.treino ? 'checked' : ''} onchange="posFin().treino=this.checked;saveStorage();vdBadge();vdPintar();dsToast(this.checked?'Modo treino ligado — nada vai às Finanças':'Modo treino desligado')" class="w-5 h-5 rounded mt-1 shrink-0"></label>
                 ${(appState.orders || []).some(o => o.treino) ? `<button type="button" onclick="vdApagarTreino()" class="w-full py-2.5 rounded-xl text-xs font-bold border border-amber-300 text-amber-900">Anular todos os pedidos de treino (${(appState.orders || []).filter(o => o.treino).length})</button>` : ''}
+                <label class="flex items-start justify-between gap-3 text-sm font-bold text-slate-800"><span>Emitir a fatura só no dia seguinte<span class="block text-[11px] font-normal text-slate-500">Dá tempo para corrigir ou anular um pedido antes de ir às Finanças (prazo legal: 5 dias úteis).</span></span><input type="checkbox" ${f.adiar !== false ? 'checked' : ''} onchange="posFin().adiar=this.checked;saveStorage()" class="w-5 h-5 rounded"></label>
                 <label class="flex items-center justify-between gap-3 text-sm font-bold text-slate-800"><span>Emitir fatura ao fechar cada pedido</span><input type="checkbox" ${f.auto !== false ? 'checked' : ''} onchange="posFin().auto=this.checked;posFin().on=this.checked;saveStorage();vdBadge();vdPintar()" class="w-5 h-5 rounded"></label>
                 ${st.modo === 'tests' ? '<p class="text-[11px] text-slate-500">Para passar a faturas reais: no Vendus, edite a caixa e mude o <b>Modo</b> para <b>Normal</b>.</p>' : ''}
                 <button type="button" onclick="vdTeste(this)" class="w-full py-2.5 rounded-xl text-xs font-bold border border-slate-200 text-slate-700">${st.modo === 'tests' ? 'Emitir fatura de teste (1 expresso)' : 'Verificar ligação'}</button>`;
@@ -14241,7 +14248,7 @@ var qrcode = function() {
             posCheckout = function () {
                 const before = (appState.orders || []).length;
                 const r = oCheckout.apply(this, arguments);
-                if ((appState.orders || []).length > before) { const o = appState.orders[0]; if (posFin().treino) { o.treino = true; saveStorage(); } else if (vdOn()) { o.fiscal = { pendente: true }; saveStorage(); vdEmitir(o); } }
+                if ((appState.orders || []).length > before) { const o = appState.orders[0]; if (posFin().treino) { o.treino = true; saveStorage(); } else if (vdOn()) { if (posFin().adiar !== false) { o.fiscal = { pendente: true, apos: vdAmanha(o.at) }; saveStorage(); } else { o.fiscal = { pendente: true }; saveStorage(); vdEmitir(o); } } }
                 return r;
             };
             // na lista "Pedidos de hoje": número da fatura (abre o PDF) ou "por emitir"
@@ -14252,7 +14259,7 @@ var qrcode = function() {
                     const id = (b.getAttribute('onclick').match(/'([^']+)'/) || [])[1]; const o = (appState.orders || []).find(x => x.id === id); if (!o || (!o.fiscal && !o.treino)) return; o.fiscal = o.fiscal || {};
                     let tag = o.treino ? '<span class="text-[10px] font-black px-1.5 py-0.5 rounded" style="background:#fef3c7;color:#92400e">TREINO</span>' : '';
                     if (o.fiscal.numero) tag += `<button type="button" onclick="vdPdf('${o.id}',this)" class="text-[11px] font-bold hover:underline" style="color:var(--brand)" title="Abrir a fatura"><i class="fas fa-file-pdf mr-1"></i>${escapeHtml(o.fiscal.numero)}${o.fiscal.modo === 'tests' ? ' (teste)' : ''}</button>`;
-                    else if (o.fiscal.pendente) tag += `<span class="text-[11px] font-bold" style="color:#b45309" title="${escapeHtml(o.fiscal.erro || '')}"><i class="fas fa-clock mr-1"></i>fatura por emitir</span>`;
+                    else if (o.fiscal.pendente) tag += `<span class="text-[11px] font-bold" style="color:#b45309" title="${escapeHtml(o.fiscal.erro || '')}"><i class="fas fa-clock mr-1"></i>${o.fiscal.apos && new Date(o.fiscal.apos).getTime() > Date.now() && !o.fiscal.erro ? 'fatura amanhã' : 'fatura por emitir'}</span>`;
                     if (tag) b.insertAdjacentHTML('beforebegin', tag);
                 });
                 return r;
