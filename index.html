@@ -17928,12 +17928,12 @@ var qrcode = function() {
         const fidDono = () => (typeof dataOwnerId !== 'undefined' && dataOwnerId) || (currentUser && currentUser.id);
         const fidBase = () => location.origin + location.pathname.replace(/[^/]*$/, '');
         const fidLinkLoja = () => fidCfg ? fidBase() + 'cartao.html?n=' + fidCfg.token : '';
-        const fidLinkCartao = c => fidBase() + 'cartao.html?c=' + c.id;
+        const fidLinkCartao = c => { const k = c.curto || (fidCartoes.find(x => x.id === c.id) || {}).curto; return k ? fidBase() + 'c/?' + k : fidBase() + 'cartao.html?c=' + c.id; };
         async function fidCarregar() {
             if (!sb || !currentUser || !fidDono()) return;
             const [{ data: cfg }, { data: cs }] = await Promise.all([
                 sb.from('fidelidade_cfg').select('*').eq('dono_id', fidDono()).maybeSingle(),
-                sb.from('fidelidade_cartoes').select('id, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
+                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
             ]);
             fidCfg = cfg || null; fidCartoes = cs || []; fidCarregado = true;
         }
@@ -17974,7 +17974,7 @@ var qrcode = function() {
                 const tel = String(k.telefone || '');
                 return `<div class="fid-c ${pr ? 'premio' : ''}"><div class="t"><div class="nm"><b>${escapeHtml(k.nome)}</b><small>Código ${k.codigo}${tel ? ' · ' + escapeHtml(tel.slice(0, -3).replace(/\d/g, '•') + tel.slice(-3)) : ''} · ${k.carimbos}/${c.alvo}${k.premios ? ' · ' + k.premios + ' prémio' + (k.premios === 1 ? '' : 's') + ' usado' + (k.premios === 1 ? '' : 's') : ''}</small></div><button type="button" class="fid-mais" onclick="fidMudar('${k.id}',1)" aria-label="Dar 1 carimbo">+1</button></div>
                     <div class="fid-selos">${s}</div>
-                    <div class="fid-acoes">${pr ? `<button type="button" class="usar" onclick="fidUsar('${k.id}')"><i class="fas fa-gift mr-1"></i>Usar prémio</button>` : ''}<button type="button" onclick="fidMudar('${k.id}',2)">+2</button><button type="button" onclick="fidMudar('${k.id}',-1)">−1</button>${tel ? `<button type="button" onclick="fidWhats('${k.id}')"><i class="fab fa-whatsapp mr-1"></i>Enviar o cartão</button>` : ''}<button type="button" onclick="fidCopiar(fidLinkCartao({id:'${k.id}'}))"><i class="fas fa-link mr-1"></i>Link</button></div></div>`;
+                    <div class="fid-acoes">${pr ? `<button type="button" class="usar" onclick="fidUsar('${k.id}')"><i class="fas fa-gift mr-1"></i>Usar prémio</button>` : ''}<button type="button" onclick="fidMudar('${k.id}',2)">+2</button><button type="button" onclick="fidMudar('${k.id}',-1)">−1</button><button type="button" onclick="fidWhats('${k.id}')"><i class="fab fa-whatsapp mr-1"></i>Enviar o cartão</button><button type="button" onclick="fidVerImagem('${k.id}')"><i class="fas fa-image mr-1"></i>Ver imagem</button><button type="button" onclick="fidCopiar(fidLinkCartao({id:'${k.id}'}))"><i class="fas fa-link mr-1"></i>Link</button></div></div>`;
             }).join('') || `<p class="text-sm text-slate-500 text-center py-6">${fidCartoes.length ? 'Nenhum cliente encontrado.' : 'Ainda sem clientes. Ponha o QR no balcão ou crie o primeiro cartão abaixo.'}</p>`;
         }
         async function fidGuardarCfg(ligado) {
@@ -18009,7 +18009,7 @@ var qrcode = function() {
             if (nome.length < 2) return dsToast('Escreva o nome do cliente.', true);
             if (tel && !/^\+?\d{9,15}$/.test(tel)) return dsToast('O número de telemóvel não parece certo.', true);
             if (tel && fidCartoes.some(k => k.telefone === tel)) return dsToast('Este número já tem cartão.', true);
-            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').single();
+            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').single();
             if (error) return dsToast('Não foi possível criar o cartão. Tente de novo.', true);
             fidCartoes.unshift(data); fidQ = data.codigo; fidPintar();
             dsToast('Cartão criado: código ' + data.codigo + (tel ? '. Envie-o por WhatsApp.' : ''));
@@ -18105,6 +18105,85 @@ var qrcode = function() {
             f.contentDocument.open(); f.contentDocument.write(html); f.contentDocument.close();
             setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (_) { dsToast('Não foi possível abrir a impressão neste aparelho.', true); } }, 700);
         }
+    </script>
+
+    <script>
+        let fidSeloImg = null, fidSeloCor = '';
+        async function fidSeloCarregar(cor) {
+            if (fidSeloImg && fidSeloCor === cor) return fidSeloImg;
+            const t = await (await fetch('selo-latte.svg', { cache: 'force-cache' })).text();
+            const img = new Image();
+            await new Promise((ok, ko) => { img.onload = ok; img.onerror = ko; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(t.replace(/currentColor/g, cor)); });
+            fidSeloImg = img; fidSeloCor = cor; return img;
+        }
+        function fidCor() { return (appState.perfil && appState.perfil.cor && /^#[0-9a-fA-F]{6}$/.test(appState.perfil.cor.brand || '') && appState.perfil.cor.brand) || '#983808'; }
+        async function fidImagem(k) {
+            const cor = fidCor(), alvo = fidCfg.alvo, n = Math.min(k.carimbos, alvo), falta = Math.max(0, alvo - k.carimbos);
+            const selo = await fidSeloCarregar(cor);
+            try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
+            const W = 1080, H = 1160, P = 84, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            const x = cv.getContext('2d');
+            const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
+            x.fillStyle = cor; x.fillRect(0, 0, W, H);
+            x.fillStyle = 'rgba(255,255,255,.12)'; x.beginPath(); x.arc(W - 90, 150, 330, 0, 7); x.fill();
+            x.fillStyle = 'rgba(255,255,255,.08)'; x.save(); x.translate(120, H - 40); x.rotate(.32); x.fillRect(-150, -150, 300, 300); x.restore();
+            x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
+            x.font = `700 40px ${B}`; x.globalAlpha = .85; x.fillText((currentEmpresa || '').slice(0, 34), P, P + 40); x.globalAlpha = 1;
+            x.font = `700 34px ${B}`; x.globalAlpha = .85; x.fillText('Cartão de fidelidade', P, P + 92); x.globalAlpha = 1;
+            x.font = `800 112px ${T}`; x.fillText(k.nome.split(' ')[0].slice(0, 14), P, P + 250);
+            x.textAlign = 'right'; x.font = `700 32px ${B}`; x.globalAlpha = .85; x.fillText('código', W - P, P + 170); x.globalAlpha = 1;
+            x.font = `800 64px ${T}`; x.fillText(k.codigo, W - P, P + 240); x.textAlign = 'left';
+            // carimbos: 5 por linha, o último é o prémio
+            const tot = alvo + 1, cols = 5, gap = 30, d = (W - 2 * P - gap * (cols - 1)) / cols, top = P + 330;
+            for (let i = 0; i < tot; i++) {
+                const cx = P + (i % cols) * (d + gap) + d / 2, cy = top + Math.floor(i / cols) * (d + gap) + d / 2, r = d / 2;
+                const premio = i === tot - 1, on = premio ? k.carimbos >= alvo : i < n;
+                x.beginPath(); x.arc(cx, cy, r - 2, 0, 7);
+                if (on) { x.fillStyle = premio ? '#FCD34D' : '#fff'; x.fill(); }
+                else if (premio) { x.fillStyle = 'rgba(255,255,255,.14)'; x.fill(); x.lineWidth = 5; x.strokeStyle = '#fff'; x.setLineDash([]); x.stroke(); }
+                else { x.lineWidth = 4; x.strokeStyle = 'rgba(255,255,255,.5)'; x.setLineDash([14, 12]); x.stroke(); x.setLineDash([]); }
+                if (!premio && on) { const s = d * .74; x.drawImage(selo, cx - s / 2, cy - s / 2 * 1018 / 1036, s, s * 1018 / 1036); }
+                if (premio) { const g = new Path2D('M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'); const sc = d * .5 / 24; x.save(); x.translate(cx - 12 * sc, cy - 12 * sc); x.scale(sc, sc); x.lineWidth = 2; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = on ? '#5B2A12' : '#fff'; x.stroke(g); x.restore(); }
+            }
+            const rows = Math.ceil(tot / cols), y = top + rows * (d + gap) + 70;
+            x.fillStyle = '#fff'; x.font = `800 76px ${T}`;
+            x.fillText(falta ? 'Faltam ' + falta + (falta === 1 ? ' carimbo' : ' carimbos') : 'Prémio desbloqueado', P, y);
+            x.font = `700 40px ${B}`; x.globalAlpha = .9;
+            x.fillText((falta ? fidCfg.premio + ' a cada ' + alvo + ' carimbos' : fidCfg.premio + ' à sua espera').slice(0, 44), P, y + 64); x.globalAlpha = 1;
+            x.font = `700 32px ${B}`; x.globalAlpha = .75; x.fillText('Toque no link para ver o cartão sempre atualizado', P, H - P + 10); x.globalAlpha = 1;
+            return await new Promise(r => cv.toBlob(r, 'image/png'));
+        }
+        function fidMensagem(k) {
+            const alvo = fidCfg.alvo, n = Math.min(k.carimbos, alvo), falta = Math.max(0, alvo - k.carimbos);
+            return `Olá ${k.nome.split(' ')[0]}! ☕ O seu cartão de fidelidade${currentEmpresa ? ' da ' + currentEmpresa : ''}: ${n} de ${alvo} carimbos.` +
+                (falta ? ` Faltam ${falta} para ${fidCfg.premio.charAt(0).toLowerCase() + fidCfg.premio.slice(1)}.` : ` ${fidCfg.premio} à sua espera!`) +
+                `\nO seu código: ${k.codigo}\n${fidLinkCartao(k)}`;
+        }
+        let fidImgCache = {};
+        async function fidPreparar(k) {
+            const chave = k.id + ':' + k.carimbos + ':' + fidCfg.alvo;
+            if (!fidImgCache[chave]) fidImgCache[chave] = await fidImagem(k);
+            return fidImgCache[chave];
+        }
+        async function fidWhats(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const txt = fidMensagem(k);
+            try {
+                const blob = await fidPreparar(k);
+                const file = new File([blob], 'cartao-' + k.codigo + '.png', { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: txt }); return; }
+            } catch (e) { if (e && e.name === 'AbortError') return; console.warn(e); }
+            if (!k.telefone) { fidCopiar(txt); return; }
+            let t = k.telefone.replace(/\D/g, ''); if (t.length === 9) t = '351' + t;
+            window.open('https://wa.me/' + t + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+        }
+        async function fidVerImagem(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const url = URL.createObjectURL(await fidPreparar(k));
+            dsModal('fid-img', `<div class="flex items-start justify-between gap-3"><div><h3>Cartão de ${escapeHtml(k.nome.split(' ')[0])}</h3><p class="text-sm text-slate-500">É esta imagem que segue com o link.</p></div><button type="button" class="x" onclick="dsModalFechar('fid-img')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div><img src="${url}" alt="" style="width:100%;border-radius:18px;margin-top:12px"><button type="button" class="bp" onclick="dsModalFechar('fid-img');fidWhats('${k.id}')"><i class="fab fa-whatsapp mr-1.5"></i>Enviar</button><button type="button" class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" onclick="dsModalFechar('fid-img')">Voltar</button>`);
+        }
+        // preparar a imagem ao abrir, para o envio sair logo ao toque
+        (function () { const o = fidPintar; fidPintar = function () { const r = o.apply(this, arguments); try { if (fidCfg && fidCfg.ligado) fidSeloCarregar(fidCor()).catch(() => {}); } catch (_) {} return r; }; })();
     </script>
 </body>
 </html>

@@ -6,6 +6,11 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#983808">
 <title>Cartão de fidelidade</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="O seu cartão de fidelidade ☕">
+<meta property="og:description" content="Toque para ver os seus carimbos e quanto falta para o prémio.">
+<meta property="og:image" content="https://dioscoffeept-ui.github.io/gestaogeral/cartao-og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -80,7 +85,7 @@
 </div>
 <script>
   const FN = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/cartao-publico';
-  const P = new URLSearchParams(location.search), C = P.get('c') || '', N = P.get('n') || '';
+  const P = new URLSearchParams(location.search), C = P.get('c') || '', K = (P.get('k') || '').replace(/[^A-Za-z0-9]/g, ''), N = P.get('n') || '';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const PRESENTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
   const SELO = '<svg viewBox="0 0 1036 1018" aria-hidden="true"><use href="#selo"/></svg>';
@@ -137,10 +142,10 @@
 
   async function ver(silencioso) {
     try {
-      const d = await post({ acao: 'ver', c: C });
+      const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
       const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes]);
       if (k !== ultimo) { ultimo = k; cartao(d); }
-      if (d.n) try { localStorage.setItem('ds_cartao_' + d.n, C); } catch (_) {}
+      if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); } catch (_) {}
     } catch (e) {
       if (!silencioso) document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`;
     }
@@ -167,16 +172,16 @@
       er.textContent = ''; b.disabled = true; b.textContent = 'A criar…';
       try {
         const r = await post({ acao: 'criar', n: N, nome: document.getElementById('nome').value, tel: document.getElementById('tel').value });
-        try { localStorage.setItem('ds_cartao_' + N, r.c); } catch (_) {}
-        location.replace('cartao.html?c=' + r.c);
+        try { localStorage.setItem('ds_cartao_' + N, r.k || r.c); } catch (_) {}
+        location.replace('cartao.html?' + (r.k ? 'k=' + r.k : 'c=' + r.c));
       } catch (e) { er.textContent = e.message; b.disabled = false; b.textContent = 'Criar o meu cartão'; }
     });
   }
 
-  if (C) { ver(); setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
+  if (C || K) { ver(); setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
   else if (N) {
     let guardado = ''; try { guardado = localStorage.getItem('ds_cartao_' + N) || ''; } catch (_) {}
-    if (guardado) location.replace('cartao.html?c=' + guardado); else pedir();
+    if (guardado) location.replace('cartao.html?' + (guardado.length === 7 ? 'k=' : 'c=') + guardado); else pedir();
   } else document.getElementById('app').innerHTML = '<div class="vazio">Link incompleto. Peça ao balcão o link do cartão.</div>';
 </script>
 </body>
