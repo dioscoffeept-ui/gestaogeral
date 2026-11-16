@@ -61,6 +61,16 @@
   .redes { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
   .redes a { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 10px; border-radius: 14px; background: var(--brand); color: #fff; text-decoration: none; font-weight: 800; font-size: 14.5px; }
   .redes a svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  .chk { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; font-size: 14px; line-height: 1.45; color: var(--ink); font-weight: 500; }
+  .chk input { width: 22px; height: 22px; margin: 1px 0 0; flex: 0 0 auto; accent-color: var(--brand); padding: 0; }
+  .priv summary { cursor: pointer; font-weight: 800; font-size: 14px; color: var(--brand); list-style: none; }
+  .priv summary::-webkit-details-marker { display: none; }
+  .priv-tx { font-size: 13.5px; line-height: 1.55; color: var(--mut); margin-top: 8px; }
+  .priv-tx p { margin: 0 0 8px; }
+  .priv-tx b { color: var(--ink); }
+  .bs { width: 100%; margin-top: 10px; padding: 13px; border-radius: 14px; background: #fff; border: 1px solid #DCD2C4; color: var(--ink); font-size: 15px; font-weight: 800; }
+  .bs.perigo { color: #B91C1C; border-color: #F3C4C4; }
+  .consent { margin-bottom: 14px; }
   .dica { font-size: 13.5px; color: var(--mut); line-height: 1.5; margin: 0; }
   label { display: block; font-size: 14px; font-weight: 700; margin-top: 12px; }
   input { width: 100%; margin-top: 6px; border: 1px solid #DCD2C4; border-radius: 14px; padding: 13px 14px; font-size: 16px; background: #fff; color: var(--ink); }
@@ -112,10 +122,49 @@
     return h;
   }
 
+  function privTexto(d) {
+    const lg = d.legal || {}, resp = lg.nome || d.loja || 'a loja';
+    return `<div class="priv-tx">
+      <p><b>Quem trata os dados:</b> ${esc(resp)}${lg.nif ? ', NIF ' + esc(lg.nif) : ''}${lg.morada ? ', ' + esc(lg.morada) : ''}${lg.contacto ? '. Contacto: ' + esc(lg.contacto) : ''}.</p>
+      <p><b>Que dados:</b> o seu primeiro nome, o telemóvel e os carimbos do cartão.</p>
+      <p><b>Para quê:</b> gerir o seu cartão de fidelidade e encontrá-lo ao balcão. Só lhe enviamos novidades e ofertas se marcar essa opção, e pode retirá-la quando quiser.</p>
+      <p><b>Por quanto tempo:</b> enquanto tiver o cartão. Pode apagá-lo a qualquer momento, nesta página ou ao balcão.</p>
+      <p><b>Onde ficam:</b> em servidores na União Europeia (Irlanda), através do Dio’Stock, que presta o serviço à loja. Não vendemos nem partilhamos os seus dados.</p>
+      <p><b>Os seus direitos:</b> pode ver, corrigir ou apagar os seus dados e retirar a autorização das novidades. Pode também apresentar queixa à CNPD (cnpd.pt).</p>
+    </div>`;
+  }
+  async function consentir() {
+    const b = document.getElementById('cs-ok'); b.disabled = true; b.textContent = 'A guardar…';
+    try { await post(K ? { acao: 'consentir', k: K, marketing: document.getElementById('cs-mk').checked } : { acao: 'consentir', c: C, marketing: document.getElementById('cs-mk').checked }); ultimo = ''; ver(); }
+    catch (e) { b.disabled = false; b.textContent = 'Aceito e continuo'; alertar(e.message); }
+  }
+  async function novidades(v) {
+    try { await post(K ? { acao: 'marketing', k: K, valor: v } : { acao: 'marketing', c: C, valor: v }); ultimo = ''; ver(); } catch (e) { alertar(e.message); }
+  }
+  function alertar(m) { const el = document.getElementById('msg'); if (el) { el.textContent = m; el.scrollIntoView({ block: 'center' }); } }
+  function apagarPedir() {
+    document.getElementById('apagar-box').innerHTML = `<p class="dica" style="color:#B91C1C;font-weight:700">Vai apagar o cartão, os carimbos e os seus dados. Não dá para desfazer.</p><button type="button" class="bs perigo" onclick="apagar()">Sim, apagar o meu cartão</button><button type="button" class="bs" onclick="document.getElementById('apagar-box').innerHTML=''">Cancelar</button>`;
+  }
+  async function apagar() {
+    try { await post(K ? { acao: 'apagar', k: K } : { acao: 'apagar', c: C }); } catch (e) { return alertar(e.message); }
+    try { Object.keys(localStorage).filter(k => k.startsWith('ds_cartao_')).forEach(k => localStorage.removeItem(k)); } catch (_) {}
+    clearInterval(window._poll);
+    document.getElementById('app').innerHTML = '<div class="vazio">O seu cartão e os seus dados foram apagados.</div>';
+  }
+
   function cartao(d) {
     marca(d);
     const n = Math.min(d.carimbos, d.alvo), falta = Math.max(0, d.alvo - d.carimbos), tem = d.carimbos >= d.alvo;
     const app = document.getElementById('app');
+    if (!d.consentimento) {
+      app.innerHTML = `<div class="bloco consent"><h2>Antes de continuar</h2><p class="dica">Para usar o cartão de fidelidade${d.loja ? ' da ' + esc(d.loja) : ''}, precisamos da sua autorização para guardar o seu nome e o telemóvel.</p>
+        <details class="priv" style="margin-top:10px"><summary>Ler a informação de privacidade</summary>${privTexto(d)}</details>
+        <label class="chk"><input type="checkbox" id="cs-mk"><span>Quero receber novidades e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS. (Opcional)</span></label>
+        <p class="erro" id="msg" role="alert"></p>
+        <button type="button" class="bp" id="cs-ok" onclick="consentir()">Aceito e continuo</button>
+        <div id="apagar-box"></div><button type="button" class="bs" onclick="apagarPedir()">Não aceito: apagar o cartão</button></div>`;
+      return;
+    }
     app.innerHTML = `<section class="cartao" aria-label="Cartão de ${esc(d.nome)}">
         <div class="c-top"><div><small>Olá,</small><h1>${esc(d.nome)}</h1></div><div class="codigo">o seu código<b>${esc(d.codigo)}</b></div></div>
         <div class="selos">${selos(d.alvo, n)}</div>
@@ -125,7 +174,12 @@
       ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
       <div class="bloco"><h2>Como funciona</h2><p class="dica">Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.</p></div>
       ${redesHtml(d.redes)}
-      <div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">No iPhone: toque em <b>Partilhar</b> e depois em <b>Adicionar ao ecrã principal</b>. No Android: menu <b>⋮</b> e <b>Adicionar ao ecrã principal</b>.</p></div>`;
+      <div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">No iPhone: toque em <b>Partilhar</b> e depois em <b>Adicionar ao ecrã principal</b>. No Android: menu <b>⋮</b> e <b>Adicionar ao ecrã principal</b>.</p></div>
+      <div class="bloco"><h2>Os seus dados</h2>
+        <label class="chk"><input type="checkbox" ${d.marketing ? 'checked' : ''} onchange="novidades(this.checked)"><span>Receber novidades e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS</span></label>
+        <details class="priv" style="margin-top:12px"><summary>Informação de privacidade</summary>${privTexto(d)}</details>
+        <p class="erro" id="msg" role="alert"></p>
+        <div id="apagar-box"></div><button type="button" class="bs perigo" onclick="apagarPedir()">Apagar o meu cartão e os meus dados</button></div>`;
   }
 
   const ICO = {
@@ -143,7 +197,7 @@
   async function ver(silencioso) {
     try {
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
-      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes]);
+      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing]);
       if (k !== ultimo) { ultimo = k; cartao(d); }
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); } catch (_) {}
     } catch (e) {
@@ -163,22 +217,26 @@
         <p class="dica">É grátis e fica guardado neste telemóvel. Não precisa de palavra-passe.</p>
         <label>Nome<input id="nome" autocomplete="given-name" maxlength="40" placeholder="Como o chamamos"></label>
         <label>Telemóvel<input id="tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9xx xxx xxx"></label>
+        <label class="chk"><input type="checkbox" id="aceito"><span>Aceito que${d.loja ? ' a ' + esc(d.loja) : ' a loja'} guarde o meu nome e o telemóvel para o cartão de fidelidade.</span></label>
+        <label class="chk"><input type="checkbox" id="mk"><span>Quero receber novidades e ofertas por WhatsApp ou SMS. (Opcional)</span></label>
+        <details class="priv" style="margin-top:12px"><summary>Ler a informação de privacidade</summary>${privTexto(d)}</details>
         <p class="erro" id="erro" role="alert"></p>
-        <button type="submit" class="bp" id="ok">Criar o meu cartão</button>
-        <p class="dica" style="margin-top:12px;font-size:12.5px">Usamos o seu número só para encontrar o seu cartão ao balcão. Não enviamos mensagens.</p></form>${redesHtml(d.redes)}`;
+        <button type="submit" class="bp" id="ok">Criar o meu cartão</button></form>${redesHtml(d.redes)}`;
     document.getElementById('f').addEventListener('submit', async ev => {
       ev.preventDefault();
       const b = document.getElementById('ok'), er = document.getElementById('erro');
-      er.textContent = ''; b.disabled = true; b.textContent = 'A criar…';
+      er.textContent = '';
+      if (!document.getElementById('aceito').checked) { er.textContent = 'Para criar o cartão, marque que aceita guardar o nome e o telemóvel.'; return; }
+      b.disabled = true; b.textContent = 'A criar…';
       try {
-        const r = await post({ acao: 'criar', n: N, nome: document.getElementById('nome').value, tel: document.getElementById('tel').value });
+        const r = await post({ acao: 'criar', n: N, nome: document.getElementById('nome').value, tel: document.getElementById('tel').value, aceito: true, marketing: document.getElementById('mk').checked });
         try { localStorage.setItem('ds_cartao_' + N, r.k || r.c); } catch (_) {}
         location.replace('cartao.html?' + (r.k ? 'k=' + r.k : 'c=' + r.c));
       } catch (e) { er.textContent = e.message; b.disabled = false; b.textContent = 'Criar o meu cartão'; }
     });
   }
 
-  if (C || K) { ver(); setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
+  if (C || K) { ver(); window._poll = setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
   else if (N) {
     let guardado = ''; try { guardado = localStorage.getItem('ds_cartao_' + N) || ''; } catch (_) {}
     if (guardado) location.replace('cartao.html?' + (guardado.length === 7 ? 'k=' : 'c=') + guardado); else pedir();

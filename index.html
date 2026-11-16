@@ -17933,7 +17933,7 @@ var qrcode = function() {
             if (!sb || !currentUser || !fidDono()) return;
             const [{ data: cfg }, { data: cs }] = await Promise.all([
                 sb.from('fidelidade_cfg').select('*').eq('dono_id', fidDono()).maybeSingle(),
-                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
+                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
             ]);
             fidCfg = cfg || null; fidCartoes = cs || []; fidCarregado = true;
         }
@@ -17972,7 +17972,7 @@ var qrcode = function() {
                 const n = Math.min(k.carimbos, c.alvo), pr = k.carimbos >= c.alvo;
                 let s = ''; for (let i = 1; i <= c.alvo; i++) s += `<span class="${i <= n ? 'on' : ''}"></span>`; s += `<span class="pr ${pr ? 'on' : ''}"></span>`;
                 const tel = String(k.telefone || '');
-                return `<div class="fid-c ${pr ? 'premio' : ''}"><div class="t"><div class="nm"><b>${escapeHtml(k.nome)}</b><small>Código ${k.codigo}${tel ? ' · ' + escapeHtml(tel.slice(0, -3).replace(/\d/g, '•') + tel.slice(-3)) : ''} · ${k.carimbos}/${c.alvo}${k.premios ? ' · ' + k.premios + ' prémio' + (k.premios === 1 ? '' : 's') + ' usado' + (k.premios === 1 ? '' : 's') : ''}</small></div><button type="button" class="fid-mais" onclick="fidMudar('${k.id}',1)" aria-label="Dar 1 carimbo">+1</button></div>
+                return `<div class="fid-c ${pr ? 'premio' : ''}"><div class="t"><div class="nm"><b>${escapeHtml(k.nome)}</b><small>Código ${k.codigo} · ${k.carimbos}/${c.alvo}${k.premios ? ' · ' + k.premios + ' prémio' + (k.premios === 1 ? '' : 's') + ' usado' + (k.premios === 1 ? '' : 's') : ''}</small></div><button type="button" class="fid-mais" onclick="fidMudar('${k.id}',1)" aria-label="Dar 1 carimbo">+1</button></div>
                     <div class="fid-selos">${s}</div>
                     <div class="fid-acoes">${pr ? `<button type="button" class="usar" onclick="fidUsar('${k.id}')"><i class="fas fa-gift mr-1"></i>Usar prémio</button>` : ''}<button type="button" onclick="fidMudar('${k.id}',2)">+2</button><button type="button" onclick="fidMudar('${k.id}',-1)">−1</button><button type="button" onclick="fidWhats('${k.id}')"><i class="fab fa-whatsapp mr-1"></i>Enviar o cartão</button><button type="button" onclick="fidVerImagem('${k.id}')"><i class="fas fa-image mr-1"></i>Ver imagem</button><button type="button" onclick="fidCopiar(fidLinkCartao({id:'${k.id}'}))"><i class="fas fa-link mr-1"></i>Link</button></div></div>`;
             }).join('') || `<p class="text-sm text-slate-500 text-center py-6">${fidCartoes.length ? 'Nenhum cliente encontrado.' : 'Ainda sem clientes. Ponha o QR no balcão ou crie o primeiro cartão abaixo.'}</p>`;
@@ -18010,7 +18010,7 @@ var qrcode = function() {
             if (nome.length < 2) return dsToast('Escreva o nome do cliente.', true);
             if (tel && !/^\+?\d{9,15}$/.test(tel)) return dsToast('O número de telemóvel não parece certo.', true);
             if (tel && fidCartoes.some(k => k.telefone === tel)) return dsToast('Este número já tem cartão.', true);
-            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').single();
+            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', consentimento_em: new Date().toISOString(), consentimento_por: ('equipa ' + ((currentUser && currentUser.email) || '')).slice(0, 120), marketing: !!window._fidMk, marketing_em: new Date().toISOString(), historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing').single();
             if (error) return dsToast('Não foi possível criar o cartão. Tente de novo.', true);
             fidCartoes.unshift(data); fidQ = data.codigo; fidPintar();
             dsToast('Cartão criado: código ' + data.codigo + (tel ? '. Envie-o por WhatsApp.' : ''));
@@ -18359,7 +18359,7 @@ var qrcode = function() {
             if (nome.length < 2) return dsToast('Escreva o nome do cliente primeiro.', true);
             if (tel && !/^\+?\d{9,15}$/.test(tel)) return dsToast('O telemóvel não parece certo.', true);
             if (tel && fidCartoes.some(k => fidTel9(k.telefone) === fidTel9(tel))) return dsToast('Este telemóvel já tem cartão. Use "Ligar a um cartão existente".', true);
-            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em').single();
+            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', consentimento_em: new Date().toISOString(), consentimento_por: ('equipa ' + ((currentUser && currentUser.email) || '')).slice(0, 120), marketing: !!window._fidMk, marketing_em: new Date().toISOString(), historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing').single();
             if (error) return dsToast('Não foi possível criar o cartão. Tente de novo.', true);
             fidCartoes.unshift(data); c.fidId = data.id; c.fidDesligado = false; if (!c.tel && tel) c.tel = tel; if (!c.nome) c.nome = nome; saveStorage();
             dsToast('Cartão criado: código ' + data.codigo); cliForm(id);
@@ -18437,6 +18437,136 @@ var qrcode = function() {
             fidPintar = function () {
                 const r = oP.apply(this, arguments);
                 try { const l = document.querySelector('#fid-modal .fid-link'); if (l && !l.querySelector('.fid-clis')) l.insertAdjacentHTML('beforeend', '<button type="button" class="fid-clis" onclick="dsModalFechar(\'fid-modal\');cliOpen(\'gerir\')"><i class="fas fa-user-group"></i>Clientes</button>'); } catch (_) {}
+                return r;
+            };
+        })();
+    </script>
+
+    <style>
+        #tab-fidelidade .fid-wrap { max-width: 720px; margin: 0 auto; background: #fff; border: 1px solid #EEE6DA; border-radius: 22px; padding: 18px 18px 22px; }
+        #tab-fidelidade .fid-wrap h3 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 800; color: #231F20; letter-spacing: -0.01em; }
+        .fid-cli { margin-left: 6px; }
+        .fid-tel { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: #24150E; margin-top: 3px; text-decoration: none; }
+        .fid-tel i { color: var(--brand); }
+        .fid-rgpd { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .fid-rgpd span { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+        .fid-rgpd .ok { background: #DCFCE7; color: #15803D; }
+        .fid-rgpd .no { background: #FEF3C7; color: #92400E; }
+        .fid-rgpd .mk { background: #E0F2FE; color: #0C4A6E; }
+        #fid-novo .chk { grid-column: 1 / -1; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; font-weight: 600; color: #3A2A22; }
+        #fid-novo .chk input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--brand); flex: 0 0 auto; padding: 0; }
+        .bal-seg-on [data-grupo="balcao"] { display: flex; }
+        [data-grupo="balcao"] { display: none; }
+        .bal-seg-on [data-grupo="balcao"] { display: flex !important; }
+    </style>
+
+    <script>
+        // ---------- contacto e autorização
+        function fidTelFmt(t) { t = String(t || ''); const d = t.replace(/\D/g, ''); if (d.length === 9) return d.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3'); if (d.length === 12 && d.startsWith('351')) return '+351 ' + d.slice(3).replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3'); return t; }
+        (function () {
+            const oL = fidLista;
+            fidLista = function () {
+                const r = oL.apply(this, arguments);
+                try {
+                    document.querySelectorAll('#fid-lista .fid-c').forEach(el => {
+                        const b = el.querySelector('.fid-mais'); const id = b && (b.getAttribute('onclick').match(/'([^']+)'/) || [])[1];
+                        const k = id && fidCartoes.find(x => x.id === id), nm = el.querySelector('.nm'); if (!k || !nm || nm.querySelector('.fid-rgpd')) return;
+                        nm.insertAdjacentHTML('beforeend', (k.telefone ? `<a class="fid-tel" href="tel:${escapeHtml(String(k.telefone).replace(/[^\d+]/g, ''))}"><i class="fas fa-phone"></i>${escapeHtml(fidTelFmt(k.telefone))}</a>` : '') +
+                            `<span class="fid-rgpd">${k.consentimento_em ? `<span class="ok" title="Autorizou em ${new Date(k.consentimento_em).toLocaleDateString('pt-PT')}">✓ Dados autorizados</span>` : '<span class="no">Falta autorização · envie o cartão</span>'}${k.marketing ? '<span class="mk">Aceita novidades</span>' : ''}</span>`);
+                    });
+                } catch (_) {}
+                return r;
+            };
+            // criar na app: a equipa confirma que o cliente autorizou
+            const oPint = fidPintar;
+            fidPintar = function () {
+                const r = oPint.apply(this, arguments);
+                try {
+                    const nv = document.getElementById('fid-novo');
+                    if (nv && !document.getElementById('fid-n-ok')) nv.querySelector('button').insertAdjacentHTML('beforebegin', '<label class="chk"><input type="checkbox" id="fid-n-ok"><span>O cliente autorizou guardar o nome e o telemóvel para o cartão.</span></label><label class="chk"><input type="checkbox" id="fid-n-mk"><span>O cliente quer receber novidades e ofertas (opcional).</span></label>');
+                } catch (_) {}
+                return r;
+            };
+            const oC = fidCriar;
+            fidCriar = function () {
+                const ok = document.getElementById('fid-n-ok');
+                if (ok && !ok.checked) return dsToast('Confirme que o cliente autorizou guardar os dados.', true);
+                window._fidMk = !!(document.getElementById('fid-n-mk') || {}).checked;
+                return oC.apply(this, arguments);
+            };
+            const oCC = cliFidCriar;
+            cliFidCriar = async function (id) {
+                if (!(await dsConfirmar('O cliente autoriza que guardemos o nome e o telemóvel para o cartão de fidelidade? Ele pode apagar os dados quando quiser, no próprio cartão.'))) return;
+                window._fidMk = false;
+                return oCC.apply(this, arguments);
+            };
+        })();
+
+        // ---------- Fidelidade com aba própria
+        (function () {
+            const sales = document.getElementById('tab-sales');
+            if (sales && !document.getElementById('tab-fidelidade')) sales.insertAdjacentHTML('afterend', '<div id="tab-fidelidade" class="tab-content hidden space-y-4"><div class="fid-wrap" id="fid-page"></div></div>');
+            const navS = document.getElementById('nav-sales');
+            if (navS && !document.getElementById('nav-fidelidade')) navS.insertAdjacentHTML('afterend', '<button onclick="switchTab(\'fidelidade\')" id="nav-fidelidade" class="tab-btn ds-tab shrink-0 text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition"><i class="fas fa-stamp"></i> Fidelidade</button>');
+            const bn = document.querySelector('#ds-bottom-nav button[data-tab=sales]');
+            if (bn && !document.querySelector('#ds-bottom-nav button[data-tab=fidelidade]')) bn.insertAdjacentHTML('afterend', '<button type="button" data-tab="fidelidade" onclick="switchTab(\'fidelidade\')"><i class="fas fa-stamp"></i><span>Fidelidade</span></button>');
+            if (typeof TAB_PLAN !== 'undefined') TAB_PLAN.fidelidade = 'cafe';
+            // a ferramenta do topo passa a ser a própria aba
+            document.querySelectorAll('#ds-ferr .fid').forEach(b => b.remove());
+        })();
+        const fidNaPagina = () => { const t = document.getElementById('tab-fidelidade'); return !!t && !t.classList.contains('hidden'); };
+        (function () {
+            const oM = dsModal;
+            dsModal = function (id, html) {
+                if (id === 'fid-modal' && fidNaPagina()) {
+                    const p = document.getElementById('fid-page'); p.innerHTML = html;
+                    p.querySelectorAll('button.x').forEach(b => b.remove());
+                    return p;
+                }
+                return oM.apply(this, arguments);
+            };
+            const oF = dsModalFechar;
+            dsModalFechar = function (id) { if (id === 'fid-modal' && fidNaPagina()) return; return oF.apply(this, arguments); };
+        })();
+        fidAbrir = function () { if (!hasPlan('cafe')) return openUpgrade('cafe'); switchTab('fidelidade'); };
+
+        // ---------- Vendas do dia junto ao Balcão (quando o Balcão está ativo)
+        (function () {
+            const seg = '<div class="ds-seg2" data-grupo="balcao"><button type="button" data-t="balcao" onclick="switchTab(\'balcao\')"><i class="fas fa-cash-register"></i> Balcão</button><button type="button" data-t="sales" onclick="switchTab(\'sales\')"><i class="fas fa-receipt"></i> Vendas do dia</button></div>';
+            const el = document.getElementById('tab-sales'); if (el && !el.querySelector('[data-grupo=balcao]')) el.insertAdjacentHTML('afterbegin', seg);
+            // no Balcão: 'Vendas' ao lado de Balcão / Mesas / Reservas
+            const rv = document.querySelector('.bal-view[data-v="reservas"]') || [...document.querySelectorAll('.bal-view')].pop();
+            if (rv && !document.querySelector('.bal-view[data-v="vendas"]')) rv.insertAdjacentHTML('afterend', '<button type="button" data-v="vendas" onclick="switchTab(\'sales\')" class="bal-view flex-1 sm:flex-none px-4 py-2 rounded-lg text-sm font-black"><i class="fas fa-receipt mr-1"></i>Vendas</button>');
+        })();
+        function navArrumar() {
+            const bal = typeof dhBalcaoOn === 'function' && dhBalcaoOn();
+            document.body.classList.toggle('bal-seg-on', bal);
+            const vis = (sel, on) => document.querySelectorAll(sel).forEach(b => b.style.display = on ? '' : 'none');
+            vis('#ds-bottom-nav button[data-tab=sales], #nav-sales', !bal);
+        }
+        (function () {
+            const oA = balcaoAplicar;
+            balcaoAplicar = function () { const r = oA.apply(this, arguments); try { navArrumar(); } catch (_) {} return r; };
+            try { navArrumar(); } catch (_) {}
+            const oT = switchTab;
+            switchTab = function (t) {
+                const r = oT.apply(this, arguments);
+                try {
+                    const vis = document.getElementById('tab-' + t) && !document.getElementById('tab-' + t).classList.contains('hidden');
+                    if (!vis) return r;
+                    const bal = typeof dhBalcaoOn === 'function' && dhBalcaoOn();
+                    const g = (t === 'sales' && bal) ? 'balcao' : t;
+                    if (g !== t || t === 'fidelidade') {
+                        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('is-active', b.id === 'nav-' + g));
+                        document.querySelectorAll('#ds-bottom-nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === g));
+                    }
+                    document.querySelectorAll('[data-grupo=balcao] button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+                    if (t === 'fidelidade') {
+                        const p = document.getElementById('fid-page');
+                        if (!fidCarregado) p.innerHTML = '<p class="text-sm text-slate-500 py-8 text-center"><i class="fas fa-spinner fa-spin mr-1"></i>A abrir…</p>';
+                        (fidCarregado ? Promise.resolve() : fidCarregar()).then(() => { if (fidNaPagina()) fidPintar(); });
+                    }
+                } catch (_) {}
                 return r;
             };
         })();
