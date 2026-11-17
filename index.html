@@ -17718,7 +17718,7 @@ var qrcode = function() {
     <script>
         (function () {
             const params = document.querySelector('#home-sim .ds-params'); if (!params) return;
-            const grupo = t => [...params.querySelectorAll('.ds-group')].find(g => g.textContent.trim().startsWith(t));
+            const G = [...params.querySelectorAll('.ds-group')], grupo = t => G[{ 'Matéria-prima': 0, 'Laticínios': 1, 'Custos do negócio': 2, 'Retenção': 3 }[t]];
             const gMat = grupo('Matéria-prima'), gLei = grupo('Laticínios'), gRet = grupo('Retenção');
             const blocoDe = g => g ? [g, g.nextElementSibling] : [];
             // abas
@@ -17976,7 +17976,7 @@ var qrcode = function() {
                 return `<div class="fid-c ${pr ? 'premio' : ''}"><div class="t"><div class="nm"><b>${escapeHtml(k.nome)}</b><small>Código ${k.codigo} · ${k.carimbos}/${c.alvo}${k.premios ? ' · ' + k.premios + ' prémio' + (k.premios === 1 ? '' : 's') + ' usado' + (k.premios === 1 ? '' : 's') : ''}</small></div><button type="button" class="fid-mais" onclick="fidMudar('${k.id}',1)" aria-label="Dar 1 carimbo">+1</button></div>
                     <div class="fid-selos">${s}</div>
                     <div class="fid-acoes">${pr ? `<button type="button" class="usar" onclick="fidUsar('${k.id}')"><i class="fas fa-gift mr-1"></i>Usar prémio</button>` : ''}<button type="button" onclick="fidMudar('${k.id}',2)">+2</button><button type="button" onclick="fidMudar('${k.id}',-1)">−1</button><button type="button" onclick="fidWhats('${k.id}')"><i class="fab fa-whatsapp mr-1"></i>Enviar o cartão</button><button type="button" onclick="fidVerImagem('${k.id}')"><i class="fas fa-image mr-1"></i>Ver imagem</button><button type="button" onclick="fidCopiar(fidLinkCartao({id:'${k.id}'}))"><i class="fas fa-link mr-1"></i>Link</button></div></div>`;
-            }).join('') || `<p class="text-sm text-slate-500 text-center py-6">${fidCartoes.length ? 'Nenhum cliente encontrado.' : 'Ainda sem clientes. Ponha o QR no balcão ou crie o primeiro cartão abaixo.'}</p>`;
+            }).join('') || `<p class="text-sm text-slate-500 text-center py-6">${fidCartoes.length ? 'Nenhum cliente encontrado.' : 'Ainda sem clientes. Ponha o QR no balcão ou toque em Novo cartão.'}</p>`;
         }
         async function fidGuardarCfg(ligado) {
             const alvo = Math.max(2, Math.min(30, parseInt(document.getElementById('fid-alvo').value) || 9));
@@ -18730,6 +18730,114 @@ var qrcode = function() {
             fidFundoImg = await new Promise(ok => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ok(null); i.src = u; });
             fidFundoUrl = u; return fidFundoImg;
         }
+    </script>
+
+    <style>
+        .rc-box { position: relative; overflow: hidden; margin: 14px auto 8px; border-radius: 18px; border: 1.5px solid var(--tinta, #24150E); touch-action: none; cursor: grab;
+            background: #fff; background-image: linear-gradient(45deg, #F1EBE3 25%, transparent 25%), linear-gradient(-45deg, #F1EBE3 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #F1EBE3 75%), linear-gradient(-45deg, transparent 75%, #F1EBE3 75%);
+            background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+        .rc-box.solido { background: #fff; }
+        .rc-box:active { cursor: grabbing; }
+        .rc-box img { position: absolute; left: 0; top: 0; transform-origin: 0 0; user-select: none; -webkit-user-drag: none; pointer-events: none; max-width: none; }
+        .rc-box .grelha { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 33.33% 0 / 1px 100% no-repeat, linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 66.66% 0 / 1px 100% no-repeat, linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 0 33.33% / 100% 1px no-repeat, linear-gradient(rgba(255,255,255,.35), rgba(255,255,255,.35)) 0 66.66% / 100% 1px no-repeat; }
+        .rc-zoom { display: flex; align-items: center; gap: 10px; margin: 6px 0 4px; color: #5B4A40; }
+        .rc-zoom input { flex: 1; accent-color: var(--brand); }
+        .rc-bts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+        .rc-bts button { padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 800; background: #fff; border: 1.5px solid #24150E; color: #24150E; }
+        #fid-novo-box { margin-top: 12px; border: 1.5px dashed rgba(36,21,14,.3); border-radius: 16px; padding: 12px; background: #FFFCF8; }
+        #fid-novo-box .tt { font-weight: 800; font-size: 15px; color: #24150E; }
+    </style>
+
+    <script>
+        // ---------- recortar: arrastar para posicionar, deslizar para aproximar
+        function dsRecortar(file, o) {
+            o = Object.assign({ aspeto: 1, saida: 400, png: false, inicio: 'caber', titulo: 'Ajustar a imagem', fundo: '#ffffff' }, o || {});
+            return new Promise(async res => {
+                let img;
+                try { img = await loadImageFile(file); } catch (e) { dsToast('Não foi possível abrir a imagem.', true); return res(null); }
+                const W0 = img.naturalWidth || img.width, H0 = img.naturalHeight || img.height;
+                const vw = Math.min(300, window.innerWidth - 90), vh = Math.round(vw / o.aspeto);
+                const sCaber = Math.min(vw / W0, vh / H0), sCobrir = Math.max(vw / W0, vh / H0);
+                const sMin = Math.min(sCaber, sCobrir) * 0.5, sMax = sCobrir * 4;
+                let s = o.inicio === 'cobrir' ? sCobrir : sCaber, x = (vw - W0 * s) / 2, y = (vh - H0 * s) / 2;
+                const url = URL.createObjectURL(file);
+                dsModal('recorte', `<div class="flex items-start justify-between gap-3"><div><h3>${o.titulo}</h3><p class="text-sm text-slate-500">Arraste a imagem para a pôr no sítio. Use a barra para aproximar ou afastar.</p></div></div>
+                    <div class="rc-box ${o.png ? '' : 'solido'}" id="rc-box" style="width:${vw}px;height:${vh}px"><img id="rc-img" src="${url}" alt="" style="width:${W0}px;height:${H0}px"><span class="grelha"></span></div>
+                    <div class="rc-zoom"><i class="fas fa-magnifying-glass-minus"></i><input id="rc-z" type="range" min="0" max="1000" step="1"><i class="fas fa-magnifying-glass-plus"></i></div>
+                    <div class="rc-bts"><button type="button" id="rc-caber">Caber inteira</button><button type="button" id="rc-cobrir">Preencher</button></div>
+                    <button type="button" class="bp" id="rc-ok"><i class="fas fa-check mr-1.5"></i>Usar esta imagem</button>
+                    <button type="button" class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" id="rc-no">Cancelar</button>`);
+                const box = document.getElementById('rc-box'), im = document.getElementById('rc-img'), z = document.getElementById('rc-z');
+                const lg = v => Math.log(v), sDe = t => Math.exp(lg(sMin) + (lg(sMax) - lg(sMin)) * t / 1000), tDe = v => Math.round((lg(v) - lg(sMin)) / (lg(sMax) - lg(sMin)) * 1000);
+                const pintar = () => { im.style.transform = `translate(${x}px, ${y}px) scale(${s})`; z.value = tDe(s); };
+                const escala = (ns, cx = vw / 2, cy = vh / 2) => { ns = Math.max(sMin, Math.min(sMax, ns)); x = cx - (cx - x) * ns / s; y = cy - (cy - y) * ns / s; s = ns; pintar(); };
+                pintar();
+                z.addEventListener('input', () => escala(sDe(+z.value)));
+                const pts = new Map(); let dist0 = 0, s0 = 1;
+                box.addEventListener('pointerdown', e => { box.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pts.size === 2) { const [a, b] = [...pts.values()]; dist0 = Math.hypot(a.x - b.x, a.y - b.y); s0 = s; } });
+                box.addEventListener('pointermove', e => {
+                    const p = pts.get(e.pointerId); if (!p) return;
+                    if (pts.size === 1) { x += e.clientX - p.x; y += e.clientY - p.y; pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); pintar(); return; }
+                    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                    const [a, b] = [...pts.values()], r = box.getBoundingClientRect();
+                    escala(s0 * Math.hypot(a.x - b.x, a.y - b.y) / (dist0 || 1), (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+                });
+                const fim = e => { pts.delete(e.pointerId); };
+                box.addEventListener('pointerup', fim); box.addEventListener('pointercancel', fim);
+                box.addEventListener('wheel', e => { e.preventDefault(); const r = box.getBoundingClientRect(); escala(s * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+                document.getElementById('rc-caber').onclick = () => { s = sCaber; x = (vw - W0 * s) / 2; y = (vh - H0 * s) / 2; pintar(); };
+                document.getElementById('rc-cobrir').onclick = () => { s = sCobrir; x = (vw - W0 * s) / 2; y = (vh - H0 * s) / 2; pintar(); };
+                const fechar = v => { URL.revokeObjectURL(url); dsModalFechar('recorte'); res(v); };
+                document.getElementById('rc-no').onclick = () => fechar(null);
+                document.getElementById('rc-ok').onclick = () => {
+                    const OW = o.saida, OH = Math.round(o.saida / o.aspeto), k = OW / vw, c = document.createElement('canvas');
+                    c.width = OW; c.height = OH; const ctx = c.getContext('2d');
+                    if (!o.png) { ctx.fillStyle = o.fundo; ctx.fillRect(0, 0, OW, OH); }
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, x * k, y * k, W0 * s * k, H0 * s * k);
+                    fechar(c.toDataURL(o.png ? 'image/png' : 'image/jpeg', .88));
+                };
+            });
+        }
+
+        // logótipo da conta (Configurações)
+        settingsLogoChosen = async function (input) {
+            const file = input.files && input.files[0]; input.value = ''; if (!file) return;
+            const d = await dsRecortar(file, { titulo: 'Ajustar o logótipo', aspeto: 1, saida: 400, inicio: 'caber' });
+            if (!d) return;
+            settingsLogoData = d; renderSettingsLogo();
+        };
+        // imagens do cartão de fidelidade
+        fidCarregarFoto = async function (inp, campo) {
+            const f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
+            if (!/^image\//.test(f.type)) return dsToast('Escolha uma imagem.', true);
+            const op = campo === 'fundo' ? { titulo: 'Ajustar a foto de fundo', aspeto: 1.6, saida: 1400, inicio: 'cobrir' }
+                : campo === 'carimbo' ? { titulo: 'Ajustar o carimbo', aspeto: 1, saida: 300, png: true, inicio: 'caber' }
+                : { titulo: 'Ajustar o logótipo', aspeto: 1, saida: 400, png: true, inicio: 'caber' };
+            const d = await dsRecortar(f, op); if (!d) return;
+            dsToast('A enviar a imagem…');
+            try { fidVis[campo] = await uploadPhoto(d, 'fid-' + campo); fidVisPintar(); dsToast('Imagem pronta. Carregue em Guardar.'); }
+            catch (e) { console.warn(e); dsToast('Não foi possível enviar a imagem. Tente de novo.', true); }
+        };
+
+        // ---------- Fidelidade: "Novo cartão" no topo, junto às Definições
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    const links = document.querySelector('#fid-page .fid-link, #fid-modal .fid-link'), nv = document.getElementById('fid-novo');
+                    if (links && nv && !document.getElementById('fid-novo-box')) {
+                        const det = nv.closest('details');
+                        links.insertAdjacentHTML('afterbegin', '<button type="button" class="fid-novo-bt" onclick="const b=document.getElementById(\'fid-novo-box\');b.classList.toggle(\'hidden\');if(!b.classList.contains(\'hidden\')){const i=document.getElementById(\'fid-n-nome\');if(i)i.focus();}"><i class="fas fa-plus"></i>Novo cartão</button>');
+                        links.insertAdjacentHTML('afterend', '<div id="fid-novo-box" class="hidden"><p class="tt">Criar cartão para um cliente</p></div>');
+                        document.getElementById('fid-novo-box').appendChild(nv);
+                        if (det) det.remove();
+                    }
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
     </script>
 </body>
 </html>
