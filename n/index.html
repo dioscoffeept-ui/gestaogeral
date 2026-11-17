@@ -17,7 +17,7 @@
 <style>body{margin:0;background:#F6F3F0}</style>
 <script>
   // link curto da loja: /n/?<token>
-  var k = (location.search.replace(/^\?/, '').split('&')[0] || location.hash.slice(1) || '').replace(/[^a-f0-9]/g, '');
+  var k = (location.search.replace(/^\?/, '').split('&')[0] || location.hash.slice(1) || '').replace(/[^A-Za-z0-9]/g, '');
   location.replace('../cartao.html' + (k ? '?n=' + k : ''));
 </script>
 </head>

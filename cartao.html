@@ -57,6 +57,10 @@
   .aviso { margin-top: 14px; border-radius: 18px; padding: 14px 16px; background: #FEF3C7; color: #5B2A12; font-weight: 700; font-size: 15px; display: flex; gap: 12px; align-items: center; }
   .aviso i { font-style: normal; font-size: 24px; }
   .aviso.desc { background: #DCFCE7; color: #14532D; }
+  .cartao .vant { margin: 26px 0 30px; }
+  .cartao .vant small { display: block; opacity: .8; font-weight: 700; font-size: 14px; }
+  .cartao .vant b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: clamp(34px, 11vw, 52px); line-height: 1.02; letter-spacing: -.02em; margin-top: 4px; }
+  .cartao.simples .c-top h1 { overflow-wrap: anywhere; }
   .bloco { margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
   .bloco h2 { margin: 0 0 10px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 800; }
   .hist { list-style: none; margin: 0; padding: 0; }
@@ -144,6 +148,13 @@
     if (d.marca && d.marca.logo) { let f = document.querySelector('link[rel=icon]'); if (!f) { f = document.createElement('link'); f.rel = 'icon'; document.head.appendChild(f); } f.href = d.marca.logo; }
   }
   new MutationObserver(() => document.querySelectorAll('.cartao').forEach(c => c.classList.toggle('foto', !!window._fundo))).observe(document.getElementById('app'), { childList: true });
+  // cartões que não são de carimbos: desconto ou outro benefício
+  const simples = d => d.programa && d.programa.tipo && d.programa.tipo !== 'carimbos';
+  function vantagem(pr) {
+    if (!pr) return '';
+    if (pr.tipo === 'desconto' && pr.desconto) return String(pr.desconto.valor).replace('.', ',') + (pr.desconto.tipo === 'pct' ? '%' : ' €') + ' de desconto';
+    return pr.beneficio || pr.premio || pr.nome || '';
+  }
   function selos(alvo, n) {
     let h = '';
     for (let i = 1; i <= alvo; i++) h += `<span class="selo ${i <= n ? 'on' : ''}" aria-label="${i <= n ? 'carimbo' : 'vazio'}">${i <= n ? SELO : ''}</span>`;
@@ -233,15 +244,16 @@
         <div id="apagar-box"></div><button type="button" class="bs" onclick="apagarPedir()">Não aceito: apagar o cartão</button></div>`;
       return;
     }
-    app.innerHTML = `<section class="cartao" aria-label="Cartão de ${esc(d.nome)}">
+    const S = simples(d), V = vantagem(d.programa);
+    app.innerHTML = `<section class="cartao${S ? ' simples' : ''}" aria-label="Cartão de ${esc(d.nome)}">
         <div class="c-top"><div><small>Olá,</small><h1>${esc(d.nome)}</h1></div><div class="codigo">o seu código<b>${esc(d.codigo)}</b></div></div>
-        <div class="selos">${selos(d.alvo, n)}</div>
-        <div class="c-pe"><div><span class="falta">${tem ? 'Prémio desbloqueado' : 'Faltam ' + falta + (falta === 1 ? ' carimbo' : ' carimbos')}</span><small>${esc(d.premio)} a cada ${d.alvo} carimbos</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'prémio usado' : 'prémios usados'}</small></div>` : ''}</div>
+        ${S ? `<div class="vant"><small>${esc(d.titulo || '')}</small><b>${esc(V)}</b></div>` : `<div class="selos">${selos(d.alvo, n)}</div>`}
+        ${S ? `<div class="c-pe"><div><span class="falta">Mostre ao balcão</span><small>${d.condicoes ? esc(d.condicoes) : 'Diga o seu código ao pagar.'}</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'vez usado' : 'vezes usado'}</small></div>` : ''}</div>` : `<div class="c-pe"><div><span class="falta">${tem ? 'Prémio desbloqueado' : 'Faltam ' + falta + (falta === 1 ? ' carimbo' : ' carimbos')}</span><small>${esc(d.premio)} a cada ${d.alvo} carimbos</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'prémio usado' : 'prémios usados'}</small></div>` : ''}</div>`}
       </section>
       ${d.desconto ? `<div class="aviso desc"><i>🏷️</i><span>Tem ${esc(String(d.desconto.valor).replace('.', ','))}${d.desconto.tipo === 'pct' ? '%' : ' €'} de desconto de cliente fixo${d.desconto.nota ? ' ' + esc(d.desconto.nota) : ''}. Diga o código <b>${esc(d.codigo)}</b> ao balcão.</span></div>` : ''}
-      ${tem ? `<div class="aviso"><i>🎁</i><span>Tem ${esc(d.premio.toLowerCase())} à espera. Mostre este ecrã ao balcão.</span></div>` : ''}
+      ${tem && !S ? `<div class="aviso"><i>🎁</i><span>Tem ${esc(d.premio.toLowerCase())} à espera. Mostre este ecrã ao balcão.</span></div>` : ''}
       ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
-      <div class="bloco"><h2>Como funciona</h2><p class="dica">Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.</p>${d.condicoes ? `<p class="dica" style="margin-top:8px"><b>Condições:</b> ${esc(d.condicoes)}</p>` : ''}</div>
+      <div class="bloco"><h2>Como funciona</h2><p class="dica">${S ? `Diga o código <b>${esc(d.codigo)}</b> ao balcão quando pagar e recebe ${esc(V.charAt(0).toLowerCase() + V.slice(1))}.` : `Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.`}</p>${d.condicoes ? `<p class="dica" style="margin-top:8px"><b>Condições:</b> ${esc(d.condicoes)}</p>` : ''}</div>
       ${redesHtml(d.redes)}
       ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link.</p><button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
       <div class="bloco"><h2>Os seus dados</h2>
@@ -266,7 +278,7 @@
   async function ver(silencioso) {
     try {
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
-      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca, d.titulo, d.condicoes, d.desconto]);
+      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca, d.titulo, d.condicoes, d.desconto, d.programa]);
       if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); if (d.consentimento) convidar(); }
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
       if (d.marca && d.marca.logo) { const a = document.querySelector('link[rel=apple-touch-icon]'); if (a) a.href = d.marca.logo; }
@@ -280,9 +292,12 @@
     try { d = await post({ acao: 'info', n: N }); } catch (e) { document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; return; }
     await seloPreparar(d); marca(d);
     if (!d.ligado) { document.getElementById('app').innerHTML = '<div class="vazio">O cartão de fidelidade não está ativo neste momento.</div>'; return; }
-    document.getElementById('app').innerHTML = `<section class="cartao"><div class="c-top"><div><small>Junte ${d.alvo} carimbos e ganhe</small><h1>${esc(d.premio)}</h1></div></div>
+    const S = simples(d);
+    document.getElementById('app').innerHTML = (S ? `<section class="cartao simples"><div class="c-top"><div><small>${esc(d.titulo || 'O seu cartão')}</small><h1>${esc(vantagem(d.programa))}</h1></div></div>
+        <div class="c-pe"><div><span class="falta">Basta dizer o seu código ao balcão</span><small>${d.condicoes ? esc(d.condicoes) : 'O cartão fica no seu telemóvel.'}</small></div></div></section>`
+      : `<section class="cartao"><div class="c-top"><div><small>Junte ${d.alvo} carimbos e ganhe</small><h1>${esc(d.premio)}</h1></div></div>
         <div class="selos">${selos(d.alvo, 0)}</div>
-        <div class="c-pe"><div><span class="falta">1 carimbo em cada compra</span><small>${d.condicoes ? esc(d.condicoes) : "Ao completar o cartão, recebe o prémio e começa de novo."}</small></div></div></section>
+        <div class="c-pe"><div><span class="falta">1 carimbo em cada compra</span><small>${d.condicoes ? esc(d.condicoes) : "Ao completar o cartão, recebe o prémio e começa de novo."}</small></div></div></section>`) + `
       <form class="bloco" id="f" novalidate><h2>Criar o meu cartão</h2>
         <p class="dica">É grátis e fica guardado neste telemóvel. Não precisa de palavra-passe.</p>
         <label>Nome<input id="nome" autocomplete="given-name" maxlength="40" placeholder="Como o chamamos"></label>
