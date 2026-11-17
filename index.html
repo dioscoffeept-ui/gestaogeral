@@ -4402,7 +4402,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         async function logout() {
             if (!confirm('Terminar sessão neste aparelho?')) return;
             if (cloudDirty) await pushCloud();
-            try { await sb.auth.signOut(); } catch (_) {}
+            try { localStorage.setItem('diostock-saiu', '1'); } catch (_) {}
+            // o "sair" do servidor pode falhar sem internet: a sessão deste aparelho apaga-se sempre
+            try { await Promise.race([sb.auth.signOut({ scope: 'local' }), new Promise(r => setTimeout(r, 2500))]); } catch (_) {}
+            dsLimparSessao();
             window.location.reload();
         }
 
@@ -4721,6 +4724,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             } catch (_) {}
             if (!sb) { authMsg('Não foi possível ligar ao servidor. Verifique a internet e recarregue a página.'); return; }
             try {
+                // depois de "Sair" neste aparelho, não entra sozinho: mostra a escolha de conta
+                let saiu = false; try { saiu = localStorage.getItem('diostock-saiu') === '1'; } catch (_) {}
+                if (saiu && /access_token|[?&]code=|token_hash/.test(location.href)) { saiu = false; try { localStorage.removeItem('diostock-saiu'); } catch (_) {} }
+                if (saiu) { try { await sb.auth.signOut({ scope: 'local' }); } catch (_) {} try { [localStorage, sessionStorage].forEach(st => Object.keys(st).filter(k => /^sb-.*-auth-token/.test(k)).forEach(k => st.removeItem(k))); } catch (_) {} return; }
                 const { data } = await sb.auth.getSession();
                 if (data && data.session && data.session.user) await enterApp(data.session.user);
             } catch (e) { console.error(e); }
@@ -19979,6 +19986,51 @@ var qrcode = function() {
                     return r;
                 };
             }
+        })();
+    </script>
+
+    <style>
+        #contas-rec { margin-bottom: 12px; }
+        #contas-rec p { font-size: 12px; font-weight: 800; color: #7A6A60; margin: 0 0 6px; }
+        #contas-rec .l { display: grid; gap: 6px; }
+        #contas-rec button.c { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 10px; border-radius: 12px; border: 1.5px solid #E4DCCF; background: #fff; }
+        #contas-rec button.c.on { border-color: var(--brand); background: var(--brand-soft, #FBEDE6); }
+        #contas-rec .av { width: 32px; height: 32px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 900; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+        #contas-rec .n { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 700; color: #24150E; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #contas-rec .x { color: #9A8A80; padding: 4px 6px; }
+        #contas-rec .outra { margin-top: 6px; font-size: 12.5px; font-weight: 800; color: var(--brand); text-decoration: underline; text-underline-offset: 3px; }
+    </style>
+
+    <script>
+        function dsLimparSessao() {
+            try { [localStorage, sessionStorage].forEach(st => Object.keys(st).filter(k => /^sb-.*-auth-token/.test(k) || k === 'supabase.auth.token').forEach(k => st.removeItem(k))); } catch (_) {}
+        }
+        // contas usadas neste aparelho (só o e-mail ou o nome da empresa, nunca a palavra-passe)
+        const dsContas = () => { try { return JSON.parse(localStorage.getItem('diostock-contas') || '[]').filter(x => typeof x === 'string').slice(0, 6); } catch (_) { return []; } };
+        function dsContaGuardar(id) { if (!id) return; try { const l = dsContas().filter(x => x.toLowerCase() !== id.toLowerCase()); l.unshift(id); localStorage.setItem('diostock-contas', JSON.stringify(l.slice(0, 6))); } catch (_) {} }
+        function dsContasPintar() {
+            const f = document.getElementById('auth-form-login'); if (!f) return;
+            let box = document.getElementById('contas-rec');
+            const l = dsContas(), atual = (document.getElementById('login-id').value || '').toLowerCase();
+            if (l.length < 1) { if (box) box.remove(); return; }
+            if (!box) { box = document.createElement('div'); box.id = 'contas-rec'; f.insertAdjacentElement('afterbegin', box); }
+            box.innerHTML = `<p>Escolha a conta</p><div class="l">${l.map(id => `<button type="button" class="c ${id.toLowerCase() === atual ? 'on' : ''}" data-id="${escapeHtml(id)}"><span class="av">${escapeHtml(id.charAt(0).toUpperCase())}</span><span class="n">${escapeHtml(id)}</span><span class="x" data-tirar="${escapeHtml(id)}" title="Tirar desta lista" aria-label="Tirar desta lista"><i class="fas fa-xmark"></i></span></button>`).join('')}</div><button type="button" class="outra" id="contas-outra">Entrar noutra conta</button>`;
+            box.querySelectorAll('button.c').forEach(b => b.onclick = e => {
+                const t = e.target.closest('[data-tirar]');
+                if (t) { try { localStorage.setItem('diostock-contas', JSON.stringify(dsContas().filter(x => x !== t.dataset.tirar))); } catch (_) {} return dsContasPintar(); }
+                document.getElementById('login-id').value = b.dataset.id; document.getElementById('login-password').value = '';
+                dsContasPintar(); document.getElementById('login-password').focus();
+            });
+            document.getElementById('contas-outra').onclick = () => { document.getElementById('login-id').value = ''; document.getElementById('login-password').value = ''; dsContasPintar(); document.getElementById('login-id').focus(); };
+        }
+        (function () {
+            const oR = rememberLogin;
+            rememberLogin = async function (id) { dsContaGuardar(id); try { localStorage.removeItem('diostock-saiu'); } catch (_) {} return oR.apply(this, arguments); };
+            setTimeout(() => { try { const last = JSON.parse(localStorage.getItem('diostock-last-login') || 'null'); if (last && last.id) dsContaGuardar(last.id); } catch (_) {} dsContasPintar(); }, 0);
+            const oP = authSetPassword;
+            authSetPassword = async function () { try { localStorage.removeItem('diostock-saiu'); } catch (_) {} return oP.apply(this, arguments); };
+            const oV = authVerifyCode;
+            authVerifyCode = async function () { try { localStorage.removeItem('diostock-saiu'); } catch (_) {} return oV.apply(this, arguments); };
         })();
     </script>
 </body>
