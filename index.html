@@ -1234,7 +1234,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         @keyframes gerAbana { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-8px) } 75% { transform: translateX(8px) } }
         #ger-modal .abana { animation: gerAbana .25s 2; }
     </style>
-<script src="carimbos.js"></script>
+<script src="carimbos.js?v=2"></script>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -17908,7 +17908,7 @@ var qrcode = function() {
             if (!sb || !currentUser || !fidDono()) return;
             const [{ data: cfg }, { data: cs }] = await Promise.all([
                 sb.from('fidelidade_cfg').select('*').eq('dono_id', fidDono()).maybeSingle(),
-                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
+                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
             ]);
             fidCfg = cfg || null; fidCartoes = cs || []; fidCarregado = true;
         }
@@ -17986,7 +17986,7 @@ var qrcode = function() {
             if (nome.length < 2) return dsToast('Escreva o nome do cliente.', true);
             if (tel && !/^\+?\d{9,15}$/.test(tel)) return dsToast('O número de telemóvel não parece certo.', true);
             if (tel && fidCartoes.some(k => k.telefone === tel && (fidProgDe(k) || {}).id === fidProgNovo())) return dsToast('Este número já tem este cartão.', true);
-            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), programa_id: fidProgNovo(), nome, telefone: tel || null, codigo: '', consentimento_em: new Date().toISOString(), consentimento_por: ('equipa ' + ((currentUser && currentUser.email) || '')).slice(0, 120), marketing: !!window._fidMk, marketing_em: new Date().toISOString(), historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id').single();
+            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), programa_id: fidProgNovo(), nome, telefone: tel || null, codigo: '', consentimento_em: new Date().toISOString(), consentimento_por: ('equipa ' + ((currentUser && currentUser.email) || '')).slice(0, 120), marketing: !!window._fidMk, marketing_em: new Date().toISOString(), historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate').single();
             if (error) return dsToast('Não foi possível criar o cartão. Tente de novo.', true);
             fidCartoes.unshift(data); fidQ = data.codigo; fidPintar();
             dsToast('Cartão criado: código ' + data.codigo + (tel ? '. Envie-o por WhatsApp.' : ''));
@@ -18336,7 +18336,7 @@ var qrcode = function() {
             if (nome.length < 2) return dsToast('Escreva o nome do cliente primeiro.', true);
             if (tel && !/^\+?\d{9,15}$/.test(tel)) return dsToast('O telemóvel não parece certo.', true);
             if (tel && fidCartoes.some(k => fidTel9(k.telefone) === fidTel9(tel))) return dsToast('Este telemóvel já tem cartão. Use "Ligar a um cartão existente".', true);
-            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', consentimento_em: new Date().toISOString(), consentimento_por: ('equipa ' + ((currentUser && currentUser.email) || '')).slice(0, 120), marketing: !!window._fidMk, marketing_em: new Date().toISOString(), historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id').single();
+            const { data, error } = await sb.from('fidelidade_cartoes').insert({ dono_id: fidDono(), nome, telefone: tel || null, codigo: '', consentimento_em: new Date().toISOString(), consentimento_por: ('equipa ' + ((currentUser && currentUser.email) || '')).slice(0, 120), marketing: !!window._fidMk, marketing_em: new Date().toISOString(), historico: [{ t: 'criado', n: 0, em: new Date().toISOString() }] }).select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate').single();
             if (error) return dsToast('Não foi possível criar o cartão. Tente de novo.', true);
             fidCartoes.unshift(data); c.fidId = data.id; c.fidDesligado = false; if (!c.tel && tel) c.tel = tel; if (!c.nome) c.nome = nome; saveStorage();
             dsToast('Cartão criado: código ' + data.codigo); cliForm(id);
@@ -18666,7 +18666,7 @@ var qrcode = function() {
                 <div><span class="tt">Carimbo</span><div class="fid-car">${Object.keys(L).map(k => `<button type="button" data-c="${k}" class="${car === k ? 'on' : ''}" title="${L[k].nome}" onclick="fidVis.carimbo='${k}';fidVisPintar()"></button>`).join('')}
                     ${/^https:/.test(car) ? `<button type="button" class="on" title="A sua imagem"><img loading="lazy" decoding="async" src="${escapeHtml(car)}" alt=""></button>` : ''}
                     <label class="fid-car-up"><button type="button" class="up" onclick="this.nextElementSibling.click()"><i class="fas fa-upload"></i>Sua</button><input type="file" accept="image/*" style="display:none" onchange="fidCarregarFoto(this,'carimbo')"></label></div>
-                    <p class="text-xs text-slate-500 mt-1">Para o seu próprio carimbo, use uma imagem PNG com fundo transparente.</p></div>
+                    <p class="text-xs text-slate-500 mt-1">Pode usar a sua própria imagem: fica recortada num círculo, como os outros carimbos.</p></div>
                 <div><span class="tt">Foto de fundo</span><div class="fid-img"><span class="pv larga" style="${fidVis.fundo ? `background-image:url('${escapeHtml(fidVis.fundo)}')` : `background:${cor}`}"></span>
                     <label class="fid-bt"><i class="fas fa-upload"></i>${fidVis.fundo ? 'Trocar foto' : 'Pôr uma foto'}<input type="file" accept="image/*" onchange="fidCarregarFoto(this,'fundo')"></label>${fidVis.fundo ? '<button type="button" class="fid-bt" onclick="fidVis.fundo=null;fidVisPintar()">Só cor</button>' : ''}</div></div>
                 <div><span class="tt">Assim fica</span><div class="fid-prev ${fidVis.fundo ? 'foto' : ''}" style="--brand:${cor};--fp:url('${escapeHtml(fidVis.fundo || '')}')"><b style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px">${escapeHtml(currentEmpresa || 'O seu café')}</b><div class="g">${[0, 1, 2, 3, 4].map(i => `<span class="${i < 3 ? 'on' : ''}" data-s="${i < 3 ? 1 : 0}"></span>`).join('')}</div></div></div>`;
@@ -18786,8 +18786,8 @@ var qrcode = function() {
             const f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
             if (!/^image\//.test(f.type)) return dsToast('Escolha uma imagem.', true);
             const op = campo === 'fundo' ? { titulo: 'Ajustar a foto de fundo', aspeto: 1.6, saida: 1400, inicio: 'cobrir' }
-                : campo === 'carimbo' ? { titulo: 'Ajustar o carimbo', aspeto: 1, saida: 300, png: true, inicio: 'caber' }
-                : { titulo: 'Ajustar o logótipo', aspeto: 1, saida: 400, png: true, inicio: 'caber' };
+                : campo === 'carimbo' ? { titulo: 'Ajustar o carimbo', aspeto: 1, saida: 600, png: true, inicio: 'cobrir' }
+                : { titulo: 'Ajustar o logótipo', aspeto: 1, saida: 800, png: true, inicio: 'caber' };
             const d = await dsRecortar(f, op); if (!d) return;
             dsToast('A enviar a imagem…');
             try { fidVis[campo] = await uploadPhoto(d, 'fid-' + campo); fidVisPintar(); dsToast('Imagem pronta. Carregue em Guardar.'); }
@@ -19404,7 +19404,7 @@ var qrcode = function() {
             vista();
             const del = document.getElementById('pe-del');
             if (del) del.onclick = async () => {
-                if (!(await dsConfirmar('Apagar o cartão "' + p0.nome + '"? O link deixa de funcionar.'))) return;
+                if (!(await dsConfirm('Apagar o cartão "' + p0.nome + '"?', 'O link deste cartão deixa de funcionar.', { danger: true, ok: 'Apagar' }))) return;
                 const { error } = await sb.from('fidelidade_programas').delete().eq('id', p0.id);
                 if (error) return dsToast('Não foi possível apagar. Tente de novo.', true);
                 fidProgs = fidProgs.filter(x => x.id !== p0.id); if (fidProgSel === p0.id) fidProgSel = ''; dsModalFechar('fid-pe'); fidPintar(); dsToast('Cartão apagado.');
@@ -19564,6 +19564,143 @@ var qrcode = function() {
             const oC = fidCarregar;
             fidCarregar = async function () { if (!fidDono()) return; return oC.apply(this, arguments); };
         })();
+    </script>
+
+    <style>
+        .fid-val { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: #F6F3F0; color: #5B4A40; }
+        .fid-val.exp { background: #FEE2E2; color: #991B1B; }
+        .fid-c.expirado { opacity: .7; }
+        #fid-vd .rap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
+        #fid-vd .rap button { padding: 10px 4px; border-radius: 12px; border: 1.5px solid #E4DCCF; background: #fff; font-weight: 800; font-size: 13px; color: #3A2A22; }
+        #fid-vd input { width: 100%; margin-top: 10px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; }
+        .fid-igf { margin-top: 14px; }
+        .fid-igf .gr { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+        .fid-igf .gr span { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #F6F3F0; border: 1px solid #E4DCCF; }
+        .fid-igf .gr img { width: 100%; height: 100%; object-fit: cover; }
+        .fid-igf .gr button { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+        .fid-igf .gr label { aspect-ratio: 1; border-radius: 10px; border: 2px dashed #D9CBBE; display: flex; align-items: center; justify-content: center; color: var(--brand); cursor: pointer; }
+        @media (max-width: 480px) { .fid-igf .gr { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    </style>
+
+    <script>
+        const fidHoje = () => new Date().toISOString().slice(0, 10);
+        const fidData = v => v ? v.split('-').reverse().join('/') : '';
+        const fidExpirado = k => !!(k && k.valido_ate && k.valido_ate < fidHoje());
+
+        // ---------- apagar um cliente
+        async function fidApagarCliente(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const ok = await dsConfirm('Apagar o cartão de ' + k.nome + '?', 'Os carimbos e o histórico deste cartão são apagados e o link deixa de funcionar. Não dá para desfazer.', { danger: true, ok: 'Apagar' });
+            if (!ok) return;
+            const { error } = await sb.from('fidelidade_cartoes').delete().eq('id', id);
+            if (error) return dsToast('Não foi possível apagar. Tente de novo.', true);
+            fidCartoes = fidCartoes.filter(x => x.id !== id); fidPintar();
+            dsToast('Cartão de ' + k.nome.split(' ')[0] + ' apagado.');
+        }
+
+        // ---------- validade de um cliente
+        function fidValidade(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const mais = m => { const d = new Date(); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };
+            dsModal('fid-vd', `<div class="flex items-start justify-between gap-3"><div><h3>Validade do cartão</h3><p class="text-sm text-slate-500 mt-1">${escapeHtml(k.nome)}${k.valido_ate ? ' · ' + (fidExpirado(k) ? 'expirou a ' : 'válido até ') + fidData(k.valido_ate) : ' · sem validade'}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-vd')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <div class="rap">${[1, 3, 6, 12].map(m => `<button type="button" data-d="${mais(m)}">+${m} ${m === 1 ? 'mês' : 'meses'}</button>`).join('')}</div>
+                <label class="block mt-3 text-sm font-bold">Ou escolha a data<input id="vd-d" type="date" min="${fidHoje()}" value="${k.valido_ate || ''}"></label>
+                <button type="button" class="bp" id="vd-ok"><i class="fas fa-check mr-1.5"></i>Guardar</button>
+                <button type="button" class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" id="vd-sem">Sem validade</button>`);
+            document.querySelectorAll('#fid-vd .rap button').forEach(b => b.onclick = () => { document.getElementById('vd-d').value = b.dataset.d; });
+            const guardar = async v => {
+                const { error } = await sb.from('fidelidade_cartoes').update({ valido_ate: v || null }).eq('id', id);
+                if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
+                k.valido_ate = v || null; dsModalFechar('fid-vd'); fidLista();
+                dsToast(v ? 'Válido até ' + fidData(v) + '.' : 'O cartão já não tem validade.');
+            };
+            document.getElementById('vd-ok').onclick = () => { const v = document.getElementById('vd-d').value; if (!v) return dsToast('Escolha uma data.', true); guardar(v); };
+            document.getElementById('vd-sem').onclick = () => guardar(null);
+        }
+
+        (function () {
+            // um cartão expirado não recebe carimbos nem descontos
+            const oM = fidMudar;
+            fidMudar = function (id, d) { const k = fidCartoes.find(x => x.id === id); if (k && d > 0 && fidExpirado(k)) return dsToast('O cartão de ' + k.nome.split(' ')[0] + ' expirou a ' + fidData(k.valido_ate) + '. Renove a validade primeiro.', true); return oM.apply(this, arguments); };
+            const oU = fidUso;
+            fidUso = function (id) { const k = fidCartoes.find(x => x.id === id); if (k && fidExpirado(k)) return dsToast('O cartão de ' + k.nome.split(' ')[0] + ' expirou. Renove a validade primeiro.', true); return oU.apply(this, arguments); };
+
+            // lista: validade e botões Validade / Apagar em cada cliente
+            const oL = fidLista;
+            fidLista = function () {
+                const r = oL.apply(this, arguments);
+                try {
+                    document.querySelectorAll('#fid-lista .fid-c').forEach(el => {
+                        const b = el.querySelector('.fid-mais'); const id = b && (b.getAttribute('onclick').match(/'([^']+)'/) || [])[1];
+                        const k = id && fidCartoes.find(x => x.id === id); if (!k) return;
+                        const nm = el.querySelector('.nm'), sm = nm && nm.querySelector('small');
+                        if (k.valido_ate && sm && !nm.querySelector('.fid-val')) sm.insertAdjacentHTML('afterend', `<span class="fid-val ${fidExpirado(k) ? 'exp' : ''}"><i class="fas fa-hourglass-half"></i>${fidExpirado(k) ? 'Expirou a ' : 'Válido até '}${fidData(k.valido_ate)}</span>`);
+                        el.classList.toggle('expirado', fidExpirado(k));
+                        const ac = el.querySelector('.fid-acoes');
+                        if (ac && !ac.querySelector('.fid-apg')) ac.insertAdjacentHTML('beforeend', `<button type="button" onclick="fidValidade('${k.id}')"><i class="fas fa-hourglass-half mr-1"></i>Validade</button><button type="button" class="fid-apg" style="color:#B91C1C" onclick="fidApagarCliente('${k.id}')"><i class="fas fa-trash mr-1"></i>Apagar</button>`);
+                    });
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+
+            // tipo de cartão: validade a contar da criação do cartão de cada cliente
+            const oE = fidProgEditar;
+            fidProgEditar = function (id) {
+                const r = oE.apply(this, arguments);
+                try {
+                    const p = fidProgPorId(id) || {}, at = document.getElementById('pe-cond');
+                    if (at && !document.getElementById('pe-val')) {
+                        at.closest('label').insertAdjacentHTML('beforebegin', `<label>Validade de cada cartão<select id="pe-val">${[['', 'Sem validade'], [1, '1 mês'], [3, '3 meses'], [6, '6 meses'], [12, '1 ano'], [24, '2 anos']].map(([v, t]) => `<option value="${v}" ${String(p.validade_meses || '') === String(v) ? 'selected' : ''}>${t}</option>`).join('')}</select></label><p class="text-xs text-slate-500 mt-1">Conta a partir do dia em que o cliente cria o cartão. Pode mudar a de cada cliente na lista.</p>`);
+                        const ok = document.getElementById('pe-ok'), oOk = ok.onclick;
+                        ok.onclick = async () => {
+                            const v = document.getElementById('pe-val').value, antes = fidProgs.length;
+                            await oOk();
+                            const alvo = id ? fidProgPorId(id) : (fidProgs.length > antes ? fidProgs[fidProgs.length - 1] : null);
+                            if (alvo && String(alvo.validade_meses || '') !== v) {
+                                const { error } = await sb.from('fidelidade_programas').update({ validade_meses: v ? +v : null }).eq('id', alvo.id);
+                                if (!error) { alvo.validade_meses = v ? +v : null; fidPintar(); }
+                            }
+                        };
+                    }
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+
+            // Definições: fotos para o cartão do Instagram
+            const oV = fidVisPintar;
+            fidVisPintar = function () {
+                const r = oV.apply(this, arguments);
+                try {
+                    const box = document.getElementById('fid-vis'); if (!box) return r;
+                    let s = document.getElementById('fid-igf');
+                    if (!s) { s = document.createElement('div'); s.id = 'fid-igf'; s.className = 'fid-igf'; box.appendChild(s); }
+                    const f = (fidCfg && fidCfg.ig_fotos) || [];
+                    s.innerHTML = `<b class="text-sm">Fotos do Instagram</b><p class="text-xs text-slate-500 mt-1">Até 6 fotos que mostrem o seu Instagram. Aparecem no cartão do cliente, em "Siga-nos". Sem fotos, usamos as fotos das fichas.</p>
+                        <div class="gr">${f.map((u, i) => `<span><img src="${escapeHtml(u)}" alt=""><button type="button" onclick="fidIgTirar(${i})" aria-label="Tirar foto"><i class="fas fa-xmark"></i></button></span>`).join('')}${f.length < 6 ? `<label aria-label="Juntar fotos"><i class="fas fa-plus"></i><input type="file" accept="image/*" multiple class="hidden" onchange="fidIgJuntar(this)"></label>` : ''}</div>`;
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
+        async function fidIgGuardar(l) {
+            const { error } = await sb.from('fidelidade_cfg').update({ ig_fotos: l.length ? l : null }).eq('dono_id', fidDono());
+            if (error) { dsToast('Não foi possível guardar as fotos. Tente de novo.', true); return false; }
+            fidCfg.ig_fotos = l; fidVisPintar(); return true;
+        }
+        async function fidIgJuntar(inp) {
+            const fs = [...(inp.files || [])].filter(f => /^image\//.test(f.type)); inp.value = '';
+            const l = ((fidCfg && fidCfg.ig_fotos) || []).slice();
+            if (!fs.length) return;
+            dsToast('A enviar as fotos…');
+            for (const f of fs.slice(0, 6 - l.length)) {
+                try {
+                    const img = await loadImageFile(f), W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, n = 720, s = Math.max(n / W, n / H);
+                    const c = document.createElement('canvas'); c.width = n; c.height = n; c.getContext('2d').drawImage(img, (n - W * s) / 2, (n - H * s) / 2, W * s, H * s);
+                    l.push(await uploadPhoto(c.toDataURL('image/jpeg', .86), 'fid-ig'));
+                } catch (e) { console.warn(e); }
+            }
+            if (await fidIgGuardar(l)) dsToast('Fotos guardadas.');
+        }
+        function fidIgTirar(i) { const l = ((fidCfg && fidCfg.ig_fotos) || []).slice(); l.splice(i, 1); fidIgGuardar(l); }
     </script>
 </body>
 </html>

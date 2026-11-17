@@ -18,15 +18,26 @@
   }
   // HTML para mostrar o carimbo dentro de um elemento
   function html(id, cor) {
-    if (/^https:\/\//.test(id || '')) return Promise.resolve('<img src="' + String(id).replace(/"/g, '&quot;') + '" alt="" style="width:100%;height:100%;object-fit:contain">');
+    if (/^https:\/\//.test(id || '')) return Promise.resolve('<img class="selo-img" src="' + String(id).replace(/"/g, '&quot;') + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">');
     return svgTexto(id, cor);
   }
   // imagem para desenhar num canvas
   function imagem(id, cor) {
     return new Promise(function (ok, ko) {
       var img = new Image();
-      img.onload = function () { ok(img); }; img.onerror = ko;
-      if (/^https:\/\//.test(id || '')) { img.crossOrigin = 'anonymous'; img.src = id; return; }
+      img.onerror = ko;
+      // imagem própria: recortada em círculo, para ficar igual aos outros carimbos
+      if (/^https:\/\//.test(id || '')) {
+        img.onload = function () {
+          var n = 512, c = document.createElement('canvas'); c.width = n; c.height = n;
+          var x = c.getContext('2d'), w = img.naturalWidth || img.width, h = img.naturalHeight || img.height, s = Math.max(n / w, n / h);
+          x.beginPath(); x.arc(n / 2, n / 2, n / 2, 0, Math.PI * 2); x.clip();
+          x.drawImage(img, (n - w * s) / 2, (n - h * s) / 2, w * s, h * s);
+          ok(c);
+        };
+        img.crossOrigin = 'anonymous'; img.src = id; return;
+      }
+      img.onload = function () { ok(img); };
       svgTexto(id, cor).then(function (t) { img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(t); }, ko);
     });
   }
