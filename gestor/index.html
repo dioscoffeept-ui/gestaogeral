@@ -285,11 +285,37 @@ function abrir(uid) {
       <label class="f"><span>Mensagem de bloqueio (o cliente vê)</span><input id="g-bm" value="${esc(e.bloqueio_msg || '')}" placeholder="Ex.: pagamento em atraso"></label>
       <label class="f"><span>Notas internas (só o gestor vê)</span><textarea id="g-no" rows="3">${esc(e.nota_admin || '')}</textarea></label>
       <button class="btn p w" style="margin-top:14px" id="g-sv">Guardar</button></div>
+    <div class="card" style="margin-top:14px"><h2>Palavra-passe</h2>
+      <p style="margin:0 0 10px;color:var(--ink3);font-size:14px">Defina uma palavra-passe nova quando o cliente pedir. A antiga deixa de funcionar e o cliente sai de todos os aparelhos. Envie-lhe a nova por um canal seguro e peça-lhe para a mudar depois em Configurações.</p>
+      <label class="f"><span>Nova palavra-passe (8 ou mais caracteres)</span><div style="display:flex;gap:8px"><input id="g-pw" type="password" autocomplete="new-password" style="flex:1;min-width:0"><button type="button" class="btn" id="g-pwv" aria-label="Mostrar">Mostrar</button></div></label>
+      <div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn" id="g-pwg" style="flex:1">Gerar uma</button><button type="button" class="btn" id="g-pwc" style="flex:1">Copiar</button></div><button type="button" class="btn p w" id="g-pws" style="margin-top:8px">Alterar palavra-passe</button>
+      <div id="g-pwok" style="display:none;margin-top:10px"></div></div>
     <div class="card" style="margin-top:14px"><h2>Mensagens</h2>${msgs.length ? msgs.map(m => `<p style="margin:0 0 10px"><span class="pl ${m.estado === 'nova' ? 'br' : 'n'}">${m.estado === 'nova' ? 'Nova' : 'Respondida'}</span> <b>${esc(m.assunto || '')}</b> · ${dia(m.criado_em)}<br>${esc(m.texto)}</p>`).join('') : '<p style="color:var(--ink3);margin:0">Sem mensagens.</p>'}</div>
     <div class="card" style="margin-top:14px"><h2>Cancelamentos</h2>${canc.length ? canc.map(c => `<p style="margin:0 0 8px"><b>${esc(c.motivo)}</b> · ${dia(c.criado_em)}${c.detalhe ? '<br>' + esc(c.detalhe) : ''}</p>`).join('') : '<p style="color:var(--ink3);margin:0">Nunca cancelou.</p>'}</div>
     <div class="card" style="margin-top:14px"><h2>Pagamentos</h2>${pags.length ? pags.map(p => `<div class="row"><div style="flex:1">${PNOME[p.plano] || esc(p.plano || '')} · ${esc(p.periodo || '')}<span style="display:block;font-size:13px;color:var(--ink3)">${dia(p.criado_em)} · válido até ${dia(p.valido_ate)}</span></div><b>${eur(p.valor_cent / 100)}</b></div>`).join('') : '<p style="color:var(--ink3);margin:0">Sem pagamentos registados.</p>'}</div>`;
   $('#gv').classList.add('on');
   $('#gx').onclick = fechar;
+  const pw = $('#g-pw');
+  $('#g-pwv').onclick = () => { const v = pw.type === 'password'; pw.type = v ? 'text' : 'password'; $('#g-pwv').textContent = v ? 'Esconder' : 'Mostrar'; };
+  $('#g-pwg').onclick = () => { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789', r = crypto.getRandomValues(new Uint32Array(12)); pw.value = [...r].map(x => A[x % A.length]).join('').replace(/(.{4})(?!$)/g, '$1-'); pw.type = 'text'; $('#g-pwv').textContent = 'Esconder'; };
+  $('#g-pwc').onclick = async () => { if (!pw.value) return toast('Escreva ou gere uma palavra-passe primeiro.'); try { await navigator.clipboard.writeText(pw.value); toast('Copiada'); } catch (_) { pw.type = 'text'; pw.select(); toast('Selecione e copie à mão.'); } };
+  $('#g-pws').onclick = () => {
+    const v = pw.value; if (v.length < 8) return toast('A palavra-passe tem de ter 8 ou mais caracteres.');
+    const box = $('#g-pwok'); box.style.display = 'block';
+    box.innerHTML = `<div style="border:1.5px solid #F59E0B;background:#FEF3C7;color:#78350F;border-radius:12px;padding:12px;font-size:14px"><b>Alterar a palavra-passe de ${esc(e.nome)}?</b><br>O cliente sai de todos os aparelhos e passa a entrar com a nova.<div style="display:flex;gap:8px;margin-top:10px"><button type="button" class="btn" id="g-pwn">Cancelar</button><button type="button" class="btn p" id="g-pwy" style="flex:1">Sim, alterar</button></div></div>`;
+    $('#g-pwn').onclick = () => { box.style.display = 'none'; };
+    $('#g-pwy').onclick = async () => {
+      $('#g-pwy').disabled = true; $('#g-pwy').textContent = 'A alterar…';
+      try {
+        const { data: ss } = await sb.auth.getSession();
+        const r = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/gestor-senha', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ss.session.access_token, apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs' }, body: JSON.stringify({ user_id: uid, password: v }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status);
+        box.innerHTML = `<div style="border:1.5px solid #15803D;background:#DCFCE7;color:#14532D;border-radius:12px;padding:12px;font-size:14px"><b>Palavra-passe alterada.</b> Envie a nova ao cliente${e.email ? ' (' + esc(e.email) + ')' : ''}.</div>`;
+        toast('Palavra-passe alterada');
+      } catch (er) { box.innerHTML = `<div style="border:1.5px solid #B91C1C;background:#FEE2E2;color:#7F1D1D;border-radius:12px;padding:12px;font-size:14px">Não alterou: ${esc(er.message)}</div>`; }
+    };
+  };
   $('#g-sv').onclick = async () => {
     const { error } = await sb.rpc('admin_atualizar', { p_user: uid, p_plano: $('#g-pl').value, p_validade: $('#g-va').value || null, p_bloqueado: $('#g-bl').checked, p_msg: $('#g-bm').value || null, p_balcao: $('#g-bc').value || null, p_nota: $('#g-no').value || null });
     if (error) return toast('Não guardou: ' + error.message);

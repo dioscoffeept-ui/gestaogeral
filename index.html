@@ -18953,5 +18953,201 @@ var qrcode = function() {
             if (com && !(n > 0) && v) v.focus();
         }
     </script>
+
+    <style>
+        #imp-rec > div { max-width: 640px; }
+        .imp-zona { display: block; margin-top: 14px; border: 2px dashed #D9CBBE; border-radius: 18px; padding: 22px 16px; text-align: center; background: #FFFCF8; cursor: pointer; }
+        .imp-zona:hover, .imp-zona.sobre { border-color: var(--brand); background: var(--brand-soft, #FBEDE6); }
+        .imp-zona i { font-size: 26px; color: var(--brand); }
+        .imp-zona b { display: block; margin-top: 8px; font-size: 15px; color: #24150E; }
+        .imp-zona small { display: block; margin-top: 4px; color: #7A6A60; font-size: 12.5px; }
+        .imp-fich { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .imp-fich span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #F6F3F0; border: 1px solid #E4DCCF; font-size: 12.5px; font-weight: 700; color: #3A2A22; max-width: 100%; }
+        .imp-fich span em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+        .imp-fich button { color: #7A6A60; }
+        .imp-r { border: 1px solid #E4DCCF; border-radius: 16px; padding: 12px; margin-top: 10px; background: #fff; }
+        .imp-r.off { opacity: .55; }
+        .imp-r .cab { display: flex; gap: 10px; align-items: center; }
+        .imp-r .cab input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--brand); flex: none; }
+        .imp-r .cab input[type=text] { flex: 1; min-width: 0; font-weight: 800; font-size: 15px; border: 1px solid transparent; border-radius: 10px; padding: 6px 8px; }
+        .imp-r .cab input[type=text]:focus { border-color: #E4DCCF; }
+        .imp-r .meta { display: grid; grid-template-columns: 1fr 1.3fr .8fr; gap: 6px; margin-top: 8px; }
+        .imp-r .meta select, .imp-r .meta input { width: 100%; font-size: 13px; border: 1px solid #E4DCCF; border-radius: 10px; padding: 7px 8px; min-width: 0; }
+        .imp-r .ings { margin-top: 8px; display: grid; gap: 5px; }
+        .imp-r .ing { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 6px; align-items: center; font-size: 13px; }
+        .imp-r .ing > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #3A2A22; }
+        .imp-r .ing > span b { font-weight: 800; }
+        .imp-r .ing select { width: 100%; font-size: 12.5px; border: 1px solid #E4DCCF; border-radius: 10px; padding: 6px 8px; min-width: 0; }
+        .imp-r .ing select.lig { border-color: #15803D; background: #F0FDF4; }
+        .imp-r .nota { font-size: 12px; color: #7A6A60; margin-top: 6px; }
+        .imp-r .ja { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #FEF3C7; color: #92400E; }
+        .imp-topo { position: sticky; top: -20px; z-index: 2; background: #fff; padding: 6px 0 10px; border-bottom: 1px solid #F1EBE3; }
+        .imp-bt { display: inline-flex; align-items: center; gap: 8px; }
+        @media (max-width: 520px) { .imp-r .meta { grid-template-columns: 1fr 1fr; } .imp-r .meta .pvp { grid-column: 1 / -1; } .imp-r .ing { grid-template-columns: 1fr; gap: 3px; margin-bottom: 4px; } }
+    </style>
+
+    <script>
+        let impFich = [], impRes = [];
+        const IMP_MAX = 8;
+        function impAbrir(tipo) {
+            if (!sb || !currentUser) return dsToast('Entre na sua conta para importar receitas.', true);
+            impFich = []; window._impTipo = tipo || 'BAR';
+            dsModal('imp-rec', `<div class="flex items-start justify-between gap-3"><div><h3>Importar receitas</h3><p class="text-sm text-slate-500 mt-1">Envie as receitas escritas ou o menu inteiro. A IA cria as fichas e depois você confirma e liga os ingredientes ao estoque.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('imp-rec')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <label class="imp-zona" id="imp-zona"><input type="file" id="imp-in" class="hidden" multiple accept="image/*,application/pdf,.pdf,.docx,.txt,.md,.csv" onchange="impJuntar(this.files); this.value=''">
+                    <i class="fas fa-file-arrow-up"></i><b>Escolher fotos, PDF ou documento</b><small>Fotos (até ${IMP_MAX}), PDF, Word (.docx) ou texto. No telemóvel pode tirar a foto na hora.</small></label>
+                <div class="imp-fich" id="imp-fich"></div>
+                <details class="mt-3"><summary class="text-sm font-bold text-slate-600 cursor-pointer">Ou cole o texto das receitas</summary><textarea id="imp-txt" rows="6" class="w-full mt-2 text-sm rounded-xl border-slate-300" placeholder="Ex.:&#10;Galão — 250 ml — 1,80 €&#10;Café 1 dose, leite meio-gordo 200 ml&#10;&#10;Tosta mista — 3,50 €&#10;Pão de forma 2 fatias, fiambre 40 g, queijo 40 g"></textarea></details>
+                <p class="text-xs text-slate-500 mt-3"><i class="fas fa-circle-info mr-1"></i>Fotos nítidas e com boa luz dão melhores resultados. Nada é guardado antes de confirmar.</p>
+                <p id="imp-erro" class="text-sm font-bold text-red-700 mt-2 hidden" role="alert"></p>
+                <button type="button" class="bp" id="imp-ler" onclick="impLer()"><i class="fas fa-wand-magic-sparkles mr-1.5"></i>Ler as receitas</button>`);
+            const z = document.getElementById('imp-zona');
+            ['dragenter', 'dragover'].forEach(ev => z.addEventListener(ev, e => { e.preventDefault(); z.classList.add('sobre'); }));
+            ['dragleave', 'drop'].forEach(ev => z.addEventListener(ev, e => { e.preventDefault(); z.classList.remove('sobre'); }));
+            z.addEventListener('drop', e => impJuntar(e.dataTransfer.files));
+        }
+        function impJuntar(files) {
+            for (const f of [...(files || [])]) {
+                if (impFich.length >= IMP_MAX) { dsToast('No máximo ' + IMP_MAX + ' ficheiros de cada vez.', true); break; }
+                if (/\.doc$/i.test(f.name)) { dsToast('Ficheiros .doc antigos não abrem aqui. Guarde como .docx ou PDF.', true); continue; }
+                if (!/^image\//.test(f.type) && !/pdf|text|officedocument\.wordprocessing/.test(f.type) && !/\.(pdf|docx|txt|md|csv)$/i.test(f.name)) { dsToast('Formato não suportado: ' + f.name, true); continue; }
+                if (f.size > 15 * 1024 * 1024) { dsToast(f.name + ' é demasiado grande (máx. 15 MB).', true); continue; }
+                impFich.push(f);
+            }
+            impFichPintar();
+        }
+        function impFichPintar() {
+            const el = document.getElementById('imp-fich'); if (!el) return;
+            const ic = f => /^image\//.test(f.type) ? 'fa-image' : /pdf/.test(f.type) || /\.pdf$/i.test(f.name) ? 'fa-file-pdf' : 'fa-file-lines';
+            el.innerHTML = impFich.map((f, i) => `<span><i class="fas ${ic(f)}"></i><em>${escapeHtml(f.name)}</em><button type="button" onclick="impFich.splice(${i},1);impFichPintar()" aria-label="Tirar"><i class="fas fa-xmark"></i></button></span>`).join('');
+        }
+        async function impCarregarScript(src, glob) {
+            if (window[glob]) return window[glob];
+            await new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+            return window[glob];
+        }
+        async function impImagem(f) {
+            const img = await loadImageFile(f);
+            const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, k = Math.min(1, 2000 / Math.max(W, H));
+            const c = document.createElement('canvas'); c.width = Math.round(W * k); c.height = Math.round(H * k);
+            const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+            return c.toDataURL('image/jpeg', .85).split(',')[1];
+        }
+        async function impLer() {
+            const bt = document.getElementById('imp-ler'), er = document.getElementById('imp-erro');
+            const txt0 = (document.getElementById('imp-txt').value || '').trim();
+            if (!impFich.length && !txt0) { er.textContent = 'Escolha um ficheiro ou cole o texto das receitas.'; er.classList.remove('hidden'); return; }
+            er.classList.add('hidden'); bt.disabled = true;
+            const passo = t => { bt.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>' + t; };
+            try {
+                const ficheiros = []; let texto = txt0;
+                for (const f of impFich) {
+                    passo('A preparar ' + f.name + '…');
+                    if (/^image\//.test(f.type)) ficheiros.push({ media_type: 'image/jpeg', data: await impImagem(f) });
+                    else if (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)) { if (f.size > 10 * 1024 * 1024) throw new Error(f.name + ' é demasiado grande para ler (máx. 10 MB).'); ficheiros.push({ media_type: 'application/pdf', data: await blobToB64(f) }); }
+                    else if (/\.docx$/i.test(f.name) || /wordprocessing/.test(f.type)) {
+                        const m = await impCarregarScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js', 'mammoth');
+                        const r = await m.extractRawText({ arrayBuffer: await f.arrayBuffer() });
+                        texto += '\n\n' + (r.value || '');
+                    } else texto += '\n\n' + await f.text();
+                }
+                passo('A ler as receitas… (pode levar 1 minuto)');
+                const { data: ss } = await sb.auth.getSession();
+                const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 160000);
+                const r = await fetch(SUPABASE_URL + '/functions/v1/ler-receitas', { method: 'POST', signal: ctl.signal,
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ss.session.access_token, apikey: SUPABASE_KEY },
+                    body: JSON.stringify({ ficheiros, texto: texto.trim(), inventario: appState.inventory.map(i => ({ id: i.id, name: i.name, unit: i.unit })), cat_bar: appState.barCategories, cat_cozinha: appState.kitchenCategories }) });
+                clearTimeout(tm);
+                const j = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(j.mensagem || j.erro || 'Não foi possível ler. Tente de novo.');
+                if (!j.receitas || !j.receitas.length) throw new Error('Não encontrei receitas neste documento. Tente uma foto mais nítida.');
+                impRes = j.receitas.map(x => {
+                    const ja = appState.recipes.some(r0 => normTxt(r0.name) === normTxt(x.nome));
+                    const cats = x.tipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories;
+                    const cat = cats.find(c => normTxt(c) === normTxt(x.categoria)) || x.categoria || '';
+                    return Object.assign(x, { usar: !ja && (x.tipo !== 'KITCHEN' || isPro()), ja, categoria: cat,
+                        ingredientes: x.ingredientes.map(g => Object.assign(g, { item_id: appState.inventory.some(i => i.id === g.item_id) ? g.item_id : ((appState.inventory.find(i => normTxt(i.name) === normTxt(g.nome)) || {}).id || '') })) });
+                });
+                impRever(j.notas);
+            } catch (e) {
+                er.textContent = e.name === 'AbortError' ? 'A leitura demorou demasiado. Tente com menos páginas de cada vez.' : (e.message || 'Não foi possível ler.');
+                er.classList.remove('hidden');
+            } finally { if (document.getElementById('imp-ler')) { bt.disabled = false; bt.innerHTML = '<i class="fas fa-wand-magic-sparkles mr-1.5"></i>Ler as receitas'; } }
+        }
+        function impOpcoesStock(sel) {
+            const inv = appState.inventory.slice().sort((a, b) => a.name.localeCompare(b.name));
+            return `<option value="">Ligar ao estoque depois</option>` + inv.map(i => `<option value="${escapeHtml(i.id)}" ${i.id === sel ? 'selected' : ''}>${escapeHtml(i.name)} (${escapeHtml(i.unit)})</option>`).join('');
+        }
+        function impRever(notas) {
+            const opsInv = {}; // cache simples por item
+            const catOpts = (tipo, sel) => { const l = (tipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories).slice(); if (sel && !l.includes(sel)) l.push(sel); return l.map(c => `<option ${c === sel ? 'selected' : ''}>${escapeHtml(c)}</option>`).join(''); };
+            const html = impRes.map((x, i) => {
+                const bloqueada = x.tipo === 'KITCHEN' && !isPro();
+                return `<div class="imp-r ${x.usar ? '' : 'off'}" id="imp-r${i}">
+                    <div class="cab"><input type="checkbox" ${x.usar ? 'checked' : ''} ${bloqueada ? 'disabled' : ''} onchange="impRes[${i}].usar=this.checked;this.closest('.imp-r').classList.toggle('off',!this.checked);impConta()" aria-label="Importar esta ficha"><input type="text" value="${escapeHtml(x.nome)}" maxlength="80" oninput="impRes[${i}].nome=this.value">${x.ja ? '<span class="ja">já existe</span>' : ''}</div>
+                    <div class="meta"><select onchange="impRes[${i}].tipo=this.value;impRes[${i}].categoria='';impRever()"><option value="BAR" ${x.tipo === 'BAR' ? 'selected' : ''}>Bar</option><option value="KITCHEN" ${x.tipo === 'KITCHEN' ? 'selected' : ''}>Cozinha</option></select>
+                        <select onchange="impRes[${i}].categoria=this.value"><option value="">Sem categoria</option>${catOpts(x.tipo, x.categoria)}</select>
+                        <label class="pvp" style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#5B4A40;white-space:nowrap">PVP €<input type="number" step="0.05" min="0" placeholder="0,00" value="${x.pvp ?? ''}" oninput="impRes[${i}].pvp=this.value===''?null:+this.value"></label></div>
+                    ${x.ingredientes.length ? `<div class="ings">${x.ingredientes.map((g, k) => `<div class="ing"><span title="${escapeHtml(g.nome)}"><b>${g.quantidade != null ? String(g.quantidade).replace('.', ',') + ' ' + escapeHtml(g.unidade || '') : ''}</b> ${escapeHtml(g.nome)}</span><select class="${g.item_id ? 'lig' : ''}" onchange="impRes[${i}].ingredientes[${k}].item_id=this.value;this.classList.toggle('lig',!!this.value)">${impOpcoesStock(g.item_id)}</select></div>`).join('')}</div>`
+                        : '<p class="nota">Sem ingredientes no documento. Pode juntá-los depois na ficha.</p>'}
+                    ${x.passos.length ? `<p class="nota">${x.passos.length} ${x.passos.length === 1 ? 'passo' : 'passos'} de preparação</p>` : ''}
+                    ${bloqueada ? '<p class="nota">As fichas da Cozinha fazem parte do plano PRO.</p>' : ''}
+                </div>`;
+            }).join('');
+            dsModal('imp-rec', `<div class="imp-topo"><div class="flex items-start justify-between gap-3"><div><h3>Confirme as fichas</h3><p class="text-sm text-slate-500 mt-1">Encontrei ${impRes.length} ${impRes.length === 1 ? 'receita' : 'receitas'}. Corrija o que for preciso e ligue os ingredientes ao estoque (pode fazer depois).</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('imp-rec')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                ${notas ? `<p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2 mt-2"><i class="fas fa-triangle-exclamation mr-1"></i>${escapeHtml(notas)}</p>` : ''}
+                <div class="flex gap-2 mt-2 text-xs font-bold"><button type="button" class="text-slate-600 underline" onclick="impRes.forEach(x=>x.usar=!(x.tipo==='KITCHEN'&&!isPro()));impRever()">Marcar todas</button><button type="button" class="text-slate-600 underline" onclick="impRes.forEach(x=>x.usar=false);impRever()">Desmarcar todas</button></div></div>
+                ${html}
+                <button type="button" class="bp" id="imp-criar" onclick="impCriar()"></button>
+                <button type="button" class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" onclick="impAbrir(window._impTipo)">Voltar e enviar outro ficheiro</button>`);
+            impConta();
+        }
+        function impConta() {
+            const n = impRes.filter(x => x.usar).length, b = document.getElementById('imp-criar'); if (!b) return;
+            b.disabled = !n; b.style.opacity = n ? '' : '.5';
+            b.innerHTML = '<i class="fas fa-check mr-1.5"></i>' + (n ? `Criar ${n} ${n === 1 ? 'ficha' : 'fichas'}` : 'Escolha pelo menos uma ficha');
+        }
+        function impCriar() {
+            let lista = impRes.filter(x => x.usar && x.nome.trim());
+            if (currentPlan === 'gratis') {
+                const livres = Math.max(0, FREE_BAR_LIMIT - barCount()), bar = lista.filter(x => x.tipo !== 'KITCHEN');
+                if (bar.length > livres) { lista = lista.filter(x => x.tipo === 'KITCHEN').concat(bar.slice(0, livres)); dsToast(`O plano Fichas tem ${FREE_BAR_LIMIT} fichas: criei só ${livres}.`, true); }
+            }
+            lista = lista.filter(x => x.tipo !== 'KITCHEN' || isPro());
+            if (!lista.length) return currentPlan === 'gratis' ? openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Fichas') : dsToast('Nada para criar.', true);
+            const base = Date.now();
+            lista.forEach((x, n) => {
+                const tipo = x.tipo === 'KITCHEN' ? 'KITCHEN' : 'BAR';
+                const cats = tipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories;
+                if (x.categoria && !cats.includes(x.categoria)) cats.push(x.categoria);
+                const rec = { id: 'rec_' + (base + n), type: tipo, name: x.nome.trim(), category: x.categoria || cats[0] || '', icon: tipo === 'KITCHEN' ? '🍳' : '🍹', size: x.tamanho || 'Porção Padrão',
+                    ingredients: x.ingredientes.map(g => { const it = g.item_id && appState.inventory.find(i => i.id === g.item_id); return { name: it ? it.name : g.nome, quantity: g.quantidade, unit: g.quantidade == null ? '' : (g.unidade || (it ? it.unit : '')) }; }),
+                    steps: x.passos || [] };
+                if (x.pvp > 0) rec.pvp = Math.round(x.pvp * 100) / 100;
+                appState.recipes.push(rec);
+            });
+            saveStorage(); try { renderBarRecipes(); renderKitchenRecipes(); } catch (_) {}
+            dsModalFechar('imp-rec');
+            const semLig = lista.reduce((a, x) => a + x.ingredientes.filter(g => !g.item_id).length, 0);
+            dsToast(`${lista.length} ${lista.length === 1 ? 'ficha criada' : 'fichas criadas'}${semLig ? `. Faltam ligar ${semLig} ${semLig === 1 ? 'ingrediente' : 'ingredientes'} ao estoque.` : '.'}`);
+            const temCoz = lista.some(x => x.tipo === 'KITCHEN'), temBar = lista.some(x => x.tipo !== 'KITCHEN');
+            try { switchTab(temBar || !temCoz ? 'bar' : 'kitchen'); } catch (_) {}
+        }
+        // botões "Importar" ao lado de "Nova receita" e no formulário da ficha
+        (function () {
+            const por = () => {
+                [['BAR', "newRecipe('BAR')"], ['KITCHEN', "newRecipe('KITCHEN')"]].forEach(([t, oc]) => {
+                    const b = document.querySelector(`button[onclick="${oc}"]`);
+                    if (b && !b.parentElement.querySelector('.imp-bt')) b.insertAdjacentHTML('beforebegin', `<button type="button" onclick="impAbrir('${t}')" class="imp-bt px-4 py-2.5 text-xs bg-white border-2 font-bold rounded-xl transition shadow-sm" style="border-color:var(--brand);color:var(--brand)" title="Importar de foto, PDF ou documento"><i class="fas fa-file-import"></i> Importar receitas</button>`);
+                });
+                const t = document.getElementById('recipe-modal-title');
+                if (t && !document.getElementById('imp-modal-lk')) t.insertAdjacentHTML('afterend', `<button type="button" id="imp-modal-lk" class="block mt-1 text-xs font-bold underline" style="color:var(--brand)" onclick="closeRecipeModal();impAbrir(document.getElementById('recipe-type').value)"><i class="fas fa-file-import mr-1"></i>Tem a receita escrita? Importe de foto, PDF ou documento</button>`);
+            };
+            por();
+            const oO = openRecipeModal;
+            const lk = v => { const l = document.getElementById('imp-modal-lk'); if (l) l.classList.toggle('hidden', !v); };
+            openRecipeModal = function () { const r = oO.apply(this, arguments); lk(true); return r; };
+            const oE = editRecipe; editRecipe = function () { const r = oE.apply(this, arguments); lk(false); return r; };
+        })();
+    </script>
 </body>
 </html>
