@@ -12,7 +12,6 @@
 <meta property="og:image" content="https://dioscoffeept-ui.github.io/gestaogeral/cartao-og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="apple-touch-icon" href="cartao-icon-512.png">
-<link rel="manifest" href="cartao.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cartão">
@@ -38,7 +37,7 @@
   .topo b { display: block; font-size: 17px; font-weight: 800; }
   .topo span { font-size: 13px; color: var(--mut); }
 
-  .cartao { position: relative; overflow: hidden; border-radius: 26px; padding: 22px 20px 20px; color: #fff; background: var(--brand); box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--brand) 80%, #000); }
+  .cartao { position: relative; overflow: hidden; border-radius: 26px; padding: 22px 20px 20px; color: #fff; background: var(--brand); box-shadow: 0 14px 26px -20px color-mix(in srgb, var(--brand) 40%, rgba(0,0,0,.35)); }
   .cartao::before { content: ''; position: absolute; width: 220px; height: 220px; border-radius: 50%; right: -70px; top: -90px; background: rgba(255,255,255,.12); }
   .cartao::after { content: ''; position: absolute; width: 120px; height: 120px; left: -40px; bottom: -60px; background: rgba(255,255,255,.08); transform: rotate(18deg); border-radius: 18px; }
   .cartao > * { position: relative; z-index: 1; }
@@ -77,17 +76,20 @@
   .redes { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
   .redes a { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 10px; border-radius: 14px; background: var(--brand); color: #fff; text-decoration: none; font-weight: 800; font-size: 14.5px; }
   .redes a svg { width: 20px; height: 20px; flex: 0 0 auto; }
-  .ig { display: block; border-radius: 18px; overflow: hidden; background: #111; color: #fff; text-decoration: none; }
-  .ig-top { display: flex; align-items: center; gap: 8px; padding: 12px 14px 0; font-size: 14px; }
-  .ig-top svg { width: 20px; height: 20px; }
+  .ig { display: block; border-radius: 18px; overflow: hidden; color: var(--ink); text-decoration: none; border: 1px solid var(--line);
+    background-color: color-mix(in srgb, var(--brand) 6%, #fff);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .ig + .ig { margin-top: 10px; }
+  .ig-top { display: flex; align-items: center; gap: 8px; padding: 12px 14px 0; font-size: 14px; font-weight: 800; color: var(--mut); }
+  .ig-top svg { width: 20px; height: 20px; color: var(--ink); }
   .ig-perfil { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
-  .ig-av { width: 48px; height: 48px; border-radius: 50%; flex: 0 0 auto; overflow: hidden; background: #fff; color: #111; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; box-shadow: 0 0 0 2px #111, 0 0 0 4px #E1306C; }
+  .ig-av { width: 48px; height: 48px; border-radius: 50%; flex: 0 0 auto; overflow: hidden; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--anel, #E1306C); }
   .ig-av img { width: 100%; height: 100%; object-fit: cover; }
   .ig-perfil b { display: block; font-size: 15px; }
-  .ig-perfil small { display: block; font-size: 12.5px; color: #B8B8B8; }
-  .ig-grelha { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
-  .ig-grelha img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #222; }
-  .ig-bt { display: block; margin: 12px 14px 14px; padding: 11px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 14.5px; background: linear-gradient(90deg, #F58529, #DD2A7B, #8134AF); color: #fff; }
+  .ig-perfil small { display: block; font-size: 12.5px; color: var(--mut); }
+  .ig-grelha { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 0 14px; }
+  .ig-grelha img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #EEE7DF; border-radius: 6px; }
+  .ig-bt { display: block; margin: 12px 14px 14px; padding: 11px; border-radius: 12px; text-align: center; font-weight: 800; font-size: 14.5px; background: var(--rede, #DD2A7B); color: #fff; }
   .chk { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; font-size: 14px; line-height: 1.45; color: var(--ink); font-weight: 500; }
   .chk input { width: 22px; height: 22px; margin: 1px 0 0; flex: 0 0 auto; accent-color: var(--brand); padding: 0; }
   .priv summary { cursor: pointer; font-weight: 800; font-size: 14px; color: var(--brand); list-style: none; }
@@ -164,7 +166,7 @@
     else l.textContent = (d.loja || '·').trim().charAt(0).toUpperCase();
     window._fundo = (d.marca && d.marca.fundo) || '';
     if (window._fundo) document.documentElement.style.setProperty('--fundo', 'url("' + window._fundo.replace(/"/g, '') + '")');
-    if (d.marca && d.marca.logo) { let f = document.querySelector('link[rel=icon]'); if (!f) { f = document.createElement('link'); f.rel = 'icon'; document.head.appendChild(f); } f.href = d.marca.logo; }
+    iconeRedondo(d);
   }
   new MutationObserver(() => document.querySelectorAll('.cartao').forEach(c => c.classList.toggle('foto', !!window._fundo))).observe(document.getElementById('app'), { childList: true });
   // cartões que não são de carimbos: desconto ou outro benefício
@@ -202,6 +204,25 @@
   }
   // Ao guardar no ecrã principal, o atalho tem de abrir ESTE cartão. No iPhone a app do ecrã principal não vê o que o Safari guardou,
   // por isso o endereço do atalho leva o código do cartão.
+  // ícone com cantos redondos (como o do Dio'Stock), feito a partir do logótipo ou da inicial da loja
+  function iconeRedondo(d) {
+    const pintar = (src, n, quadrado) => {
+      const c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d'), rr = quadrado ? 0.01 : n * .22;
+      x.beginPath(); x.moveTo(rr, 0); x.arcTo(n, 0, n, n, rr); x.arcTo(n, n, 0, n, rr); x.arcTo(0, n, 0, 0, rr); x.arcTo(0, 0, n, 0, rr); x.closePath(); x.clip();
+      x.fillStyle = src ? '#fff' : ((d.marca && d.marca.brand) || '#983808'); x.fillRect(0, 0, n, n);
+      if (src) { const w = src.naturalWidth, h = src.naturalHeight, s = Math.max(n / w, n / h); x.drawImage(src, (n - w * s) / 2, (n - h * s) / 2, w * s, h * s); }
+      else { x.fillStyle = '#fff'; x.font = `800 ${n * .55}px 'Bricolage Grotesque', sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText((d.loja || '·').trim().charAt(0).toUpperCase(), n / 2, n * .54); }
+      return c.toDataURL('image/png');
+    };
+    const por = src => {
+      try {
+        let f = document.querySelector('link[rel=icon]'); if (!f) { f = document.createElement('link'); f.rel = 'icon'; document.head.appendChild(f); }
+        f.type = 'image/png'; f.href = pintar(src, 64);
+        const a = document.querySelector('link[rel=apple-touch-icon]'); if (a) a.href = pintar(src, 180, true);
+      } catch (_) {}
+    };
+    if (d.marca && d.marca.logo) { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => por(im); im.onerror = () => por(null); im.src = d.marca.logo; } else por(null);
+  }
   function topoNeutro() { const l = document.getElementById('logo'); if (l.classList.contains('carrega')) { l.classList.remove('carrega'); document.getElementById('loja').textContent = 'Cartão de fidelidade'; document.getElementById('sub').textContent = ''; } }
   function manifestar(d) {
     if (!d || !d.k) return;
@@ -215,7 +236,7 @@
       if (d.marca && d.marca.logo) icons.unshift({ src: d.marca.logo, sizes: '400x400', type: 'image/png', purpose: 'any' });
       const m = { name: (d.loja ? d.loja + ' · ' : '') + (d.titulo || 'Cartão'), short_name: (d.loja || 'Cartão').slice(0, 12).trim(), id: url, start_url: url, scope: dir,
         display: 'standalone', background_color: '#F6F3F0', theme_color: (d.marca && d.marca.brand) || '#983808', icons };
-      const href = URL.createObjectURL(new Blob([JSON.stringify(m)], { type: 'application/manifest+json' }));
+      const href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m));
       if (l) l.href = href; else { const n = document.createElement('link'); n.rel = 'manifest'; n.href = href; document.head.appendChild(n); }
     }
     const t = document.querySelector('meta[name=apple-mobile-web-app-title]'); if (t) t.content = (d.loja || 'Cartão').slice(0, 14);
@@ -314,16 +335,16 @@
   function redesHtml(r, d) {
     const l = Object.keys(RN).filter(k => r && r[k]);
     if (!l.length) return '';
-    d = d || window._d || {};
-    const ig = r.instagram, fotos = (d.fotos || []).slice(0, 6), logo = d.marca && d.marca.logo;
-    const card = ig ? `<a class="ig" href="${esc(ig)}" target="_blank" rel="noopener">
-        <span class="ig-top">${ICO.instagram}<b>Instagram</b></span>
-        <span class="ig-perfil"><span class="ig-av">${logo ? `<img src="${esc(logo)}" alt="">` : esc((d.loja || '·').charAt(0))}</span><span><b>${esc(arroba(ig) || d.loja || '')}</b><small>${esc(d.loja || '')}</small></span></span>
-        ${fotos.length >= 3 ? `<span class="ig-grelha">${fotos.slice(0, fotos.length >= 6 ? 6 : 3).map(f => `<img src="${esc(f)}" alt="" loading="lazy">`).join('')}</span>` : ''}
-        <span class="ig-bt">Seguir no Instagram</span></a>` : '';
-    const outras = l.filter(k => k !== 'instagram');
-    return `<div class="bloco"><h2>Siga-nos</h2>${card}${outras.length ? `<div class="redes" style="${ig ? 'margin-top:10px' : ''}">${outras.map(k => `<a href="${esc(r[k])}" target="_blank" rel="noopener">${ICO[k]}<span>${RN[k]}</span></a>`).join('')}</div>` : ''}</div>`;
+    d = d || {};
+    const fotos = (d.fotos || []).slice(0, 6), logo = d.marca && d.marca.logo;
+    const COR = { instagram: '#DD2A7B', youtube: '#E62117', tiktok: '#111111' }, BT = { instagram: 'Seguir no Instagram', youtube: 'Ver no YouTube', tiktok: 'Seguir no TikTok' };
+    return `<div class="bloco"><h2>Siga-nos</h2>${l.map(k => `<a class="ig" href="${esc(r[k])}" target="_blank" rel="noopener" style="--rede:${COR[k]};--anel:${COR[k]}">
+        <span class="ig-top">${ICO[k]}<span>${RN[k]}</span></span>
+        <span class="ig-perfil"><span class="ig-av">${logo ? `<img src="${esc(logo)}" alt="">` : esc((d.loja || '·').charAt(0))}</span><span><b>${esc((k === 'instagram' || k === 'tiktok' ? '@' : '') + (arroba(r[k]) || d.loja || ''))}</b><small>${esc(d.loja || '')}</small></span></span>
+        ${k === 'instagram' && fotos.length >= 3 ? `<span class="ig-grelha">${fotos.slice(0, fotos.length >= 6 ? 6 : 3).map(f => `<img src="${esc(f)}" alt="" loading="lazy">`).join('')}</span>` : ''}
+        <span class="ig-bt">${BT[k]}</span></a>`).join('')}</div>`;
   }
+
 
   // fogos de artifício quando o cartão fica completo (uma vez por prémio)
   function festejar(d) {
@@ -359,12 +380,30 @@
       if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); if (d.consentimento) convidar(); festejar(d); }
       manifestar(d);
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
-      if (d.marca && d.marca.logo) { const a = document.querySelector('link[rel=apple-touch-icon]'); if (a) a.href = d.marca.logo; }
     } catch (e) {
       if (!silencioso) { topoNeutro(); document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; }
     }
   }
 
+  // sem o link: o cliente encontra o cartão com o telemóvel e o código de 4 algarismos
+  function encontrarPintar() {
+    document.getElementById('app').innerHTML = `<form class="bloco" id="fe" novalidate><h2>Abrir o meu cartão</h2>
+      <p class="dica">Escreva o telemóvel com que criou o cartão e o código de 4 algarismos que aparece no cartão.</p>
+      <label>Telemóvel<input id="fe-tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9xx xxx xxx"></label>
+      <label>Código do cartão<input id="fe-cod" inputmode="numeric" maxlength="4" placeholder="0000"></label>
+      <p class="erro" id="fe-erro" role="alert"></p>
+      <button type="submit" class="bp" id="fe-ok">Abrir o meu cartão</button>
+      <p class="dica" style="margin-top:12px">Não sabe o código? Peça ao balcão o link do seu cartão.</p></form>`;
+    document.getElementById('fe').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const b = document.getElementById('fe-ok'), er = document.getElementById('fe-erro'); er.textContent = ''; b.disabled = true;
+      try {
+        const r = await post({ acao: 'encontrar', tel: document.getElementById('fe-tel').value, codigo: document.getElementById('fe-cod').value });
+        try { localStorage.setItem('ds_cartao_ultimo', r.k); } catch (_) {}
+        location.replace('cartao.html?k=' + r.k);
+      } catch (e) { er.textContent = e.message; b.disabled = false; }
+    });
+  }
   async function pedir() {
     let d;
     try { d = await post({ acao: 'info', n: N }); } catch (e) { topoNeutro(); document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; return; }
@@ -406,7 +445,7 @@
   } else {
     let u = ''; try { u = localStorage.getItem('ds_cartao_ultimo') || ''; } catch (_) {}
     if (/^[A-Za-z0-9]{7}$/.test(u)) location.replace('cartao.html?k=' + u);
-    else { topoNeutro(); document.getElementById('app').innerHTML = '<div class="vazio">Não encontrámos o seu cartão neste telemóvel.<br>Abra o link do cartão que recebeu da loja e volte a guardá-lo no ecrã principal.</div>'; }
+    else { topoNeutro(); encontrarPintar(); }
   }
 </script>
 </body>

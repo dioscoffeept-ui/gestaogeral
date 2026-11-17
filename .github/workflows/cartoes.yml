@@ -1,0 +1,29 @@
+name: Páginas dos cartões de fidelidade
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cartoes
+  cancel-in-progress: false
+jobs:
+  paginas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/cartoes.mjs
+      - name: Guardar
+        run: |
+          if [ -n "$(git status --porcelain n)" ]; then
+            git config user.name "Dio'Stock"
+            git config user.email "diostockpt@users.noreply.github.com"
+            git add n
+            git commit -m "Cartões: páginas de pré-visualização"
+            git pull --rebase -q
+            git push
+          fi

@@ -19702,5 +19702,284 @@ var qrcode = function() {
         }
         function fidIgTirar(i) { const l = ((fidCfg && fidCfg.ig_fotos) || []).slice(); l.splice(i, 1); fidIgGuardar(l); }
     </script>
+
+    <script>
+        const fidHash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); };
+        const fidOgChave = p => [p.nome, p.tipo, p.alvo, p.premio, p.desconto_tipo, p.desconto_valor, p.beneficio, p.condicoes, fidCor(), fidCfg && fidCfg.carimbo, fidCfg && fidCfg.fundo, currentEmpresa].join('|');
+        const fidOgEmCurso = {};
+        async function fidOgAtualizar(p) {
+            if (!p || !p.curto || !p.ativo) return;
+            const h = fidHash(fidOgChave(p)), nome = 'fid-og-' + p.curto + '-' + h;
+            if (p.og_img && p.og_img.indexOf(nome) >= 0) return;
+            if (fidOgEmCurso[p.id] === h) return; fidOgEmCurso[p.id] = h;
+            try {
+                const png = await fidProgPreparar(p), img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = URL.createObjectURL(png); });
+                // pré-visualização do WhatsApp: 1200 x 630, até ~300 KB
+                const W = 1200, H = 630, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+                x.fillStyle = fidCor(); x.fillRect(0, 0, W, H);
+                const s = Math.min(W / img.width, H / img.height); x.drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
+                const url = await uploadPhoto(c.toDataURL('image/jpeg', .82), nome);
+                const { error } = await sb.from('fidelidade_programas').update({ og_img: url }).eq('id', p.id);
+                if (!error) p.og_img = url;
+            } catch (e) { console.warn('pré-visualização', e); delete fidOgEmCurso[p.id]; }
+        }
+        // a página própria do cartão já tem a imagem atual? então basta o link (uma só mensagem)
+        async function fidPaginaPronta(p) {
+            if (!p.og_img) return false;
+            try { const r = await fetch(fidBase() + 'n/' + p.curto + '/', { cache: 'no-store' }); if (!r.ok) return false; return (await r.text()).indexOf(p.og_img) >= 0; } catch (_) { return false; }
+        }
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try { if (fidCfg && fidCfg.ligado && navigator.onLine !== false) setTimeout(() => fidProgs.filter(p => p.ativo).forEach(p => fidOgAtualizar(p)), 1500); } catch (_) {}
+                return r;
+            };
+            const oPart = fidPartilhar;
+            fidPartilhar = async function (pid) {
+                const ativos = fidProgs.filter(p => p.ativo);
+                if (!pid && ativos.length > 1) return oPart.apply(this, arguments);
+                const p = fidProgPorId(pid) || fidProgPadrao();
+                if (!p || !fidCfg || !fidCfg.ligado) return oPart.apply(this, arguments);
+                if (await fidPaginaPronta(p)) {
+                    const txt = (p.mensagem || fidMsgPadrao(p)).trim() + '\n' + fidBase() + 'n/' + p.curto + '/';
+                    if (navigator.share) { try { await navigator.share({ text: txt }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+                    dsModal('fid-pl', `<div class="flex items-start justify-between gap-3"><div><h3>Partilhar ${escapeHtml(p.nome)}</h3><p class="text-sm text-slate-500">A mensagem foi copiada. No WhatsApp, o link mostra a imagem do cartão.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-pl')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                        <img src="${escapeHtml(p.og_img)}" alt="" style="width:100%;border-radius:16px;margin-top:12px"><div style="margin-top:10px;background:#F6F3F0;border-radius:12px;padding:10px 12px;font-size:13px;white-space:pre-wrap">${escapeHtml(txt)}</div>
+                        <a class="bp" style="display:block;text-align:center" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1.5"></i>Abrir o WhatsApp</a>`);
+                    try { await navigator.clipboard.writeText(txt); } catch (_) {}
+                    return;
+                }
+                // a página ainda não está pronta (cartão novo ou alterado há poucos minutos): imagem + mensagem
+                fidOgAtualizar(p);
+                return oPart.apply(this, arguments);
+            };
+        })();
+    </script>
+
+    <style>
+        #pos-fid2 { margin-top: 6px; display: grid; gap: 6px; }
+        #pos-fid2 .ln { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: #FBEDE6; color: #5B2A12; font-size: 13px; font-weight: 800; flex-wrap: wrap; }
+        #pos-fid2 .ln.exp { background: #FEE2E2; color: #7F1D1D; }
+        #pos-fid2 .ln span { flex: 1 1 auto; min-width: 0; }
+        #pos-fid2 .ln small { display: block; font-weight: 600; opacity: .8; }
+        #pos-fid2 button { padding: 6px 10px; border-radius: 9px; background: var(--brand); color: #fff; font-weight: 900; font-size: 12.5px; }
+        #pos-fid2 button.on { background: #15803D; }
+        #pos-fid2 label { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: #3A2A22; padding: 2px 4px; }
+        #pos-fid2 label input { width: 18px; height: 18px; accent-color: var(--brand); }
+        #pos-fid2 .ass { background: #fff; border: 1.5px dashed #D9CBBE; color: #3A2A22; width: 100%; padding: 9px; }
+        #pfc-l button { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid #E4DCCF; border-radius: 12px; margin-top: 6px; background: #fff; }
+        #pfc-l button b { display: block; } #pfc-l button small { color: #7A6A60; }
+    </style>
+
+    <script>
+        let posSemNif = false, posFidDesc = '';
+        // todos os cartões de fidelidade de um cliente da ficha (um por tipo de cartão)
+        function fidCartoesDoCliente(c) {
+            if (!c || !fidCarregado) return [];
+            const t = fidTel9(c.tel);
+            return fidCartoes.filter(k => k.id === c.fidId || (!c.fidDesligado && t.length === 9 && fidTel9(k.telefone) === t));
+        }
+        const posCliAtual = () => posClienteSel && posClienteSel.id && cliList().find(x => x.id === posClienteSel.id);
+
+        // escolher um cartão de fidelidade ao balcão (por nome, telemóvel ou código) e associá-lo à conta
+        function posFidEscolher() {
+            const pintar = q => {
+                q = normTxt(q || ''); const d = q.replace(/\D/g, '');
+                const l = fidCartoes.filter(k => !q || normTxt(k.nome).includes(q) || (d && (String(k.codigo) === d || fidTel9(k.telefone).includes(d)))).slice(0, 30);
+                document.getElementById('pfc-l').innerHTML = l.length ? l.map(k => { const p = fidProgDe(k); return `<button type="button" onclick="posFidAssociar('${k.id}')"><i class="fas ${p && p.tipo !== 'carimbos' ? 'fa-percent' : 'fa-stamp'}" style="color:var(--brand)"></i><span><b>${escapeHtml(k.nome)} · ${k.codigo}</b><small>${escapeHtml(p ? p.nome : 'Cartão')}${k.telefone ? ' · ' + escapeHtml(k.telefone) : ''}</small></span></button>`; }).join('') : '<p class="text-sm text-slate-500 mt-3">Nenhum cartão encontrado.</p>';
+            };
+            dsModal('pos-fc', `<div class="flex items-start justify-between gap-3"><div><h3>Cartão de fidelidade</h3><p class="text-sm text-slate-500 mt-1">Procure pelo nome, telemóvel ou código do cartão.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('pos-fc')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <input id="pfc-q" class="w-full mt-3 rounded-xl border-slate-300" style="font-size:16px;padding:10px 12px;border:1px solid #E4DCCF" placeholder="Nome, telemóvel ou código" autocomplete="off"><div id="pfc-l"></div>`);
+            const i = document.getElementById('pfc-q'); i.addEventListener('input', () => pintar(i.value)); pintar(''); setTimeout(() => i.focus(), 50);
+        }
+        function posFidAssociar(kid) {
+            const k = fidCartoes.find(x => x.id === kid); if (!k) return;
+            const l = cliList(), t = fidTel9(k.telefone);
+            let c = l.find(x => x.fidId === k.id) || (t.length === 9 && l.find(x => fidTel9(x.tel) === t));
+            if (!c) { c = { id: 'cli_' + Date.now(), criado: new Date().toISOString(), compras: 0, total: 0, nome: k.nome, nif: '', email: '', tel: k.telefone || '', fidId: k.id }; l.unshift(c); saveStorage(); }
+            else if (!c.fidId) { c.fidId = k.id; saveStorage(); }
+            posClienteSel = { id: c.id, nome: c.nome, nif: c.nif || '' }; posSemNif = !c.nif;
+            dsModalFechar('pos-fc'); posRenderCart(); dsToast('Cartão de ' + k.nome.split(' ')[0] + ' associado à conta.');
+        }
+        function posFidDescontar(kid) {
+            const k = fidCartoes.find(x => x.id === kid), p = k && fidProgDe(k); if (!p || p.tipo !== 'desconto') return;
+            if (posFidDesc === kid) { posFidDesc = ''; posDesc = null; }
+            else { posFidDesc = kid; posDesc = { tipo: p.desconto_tipo === 'eur' ? '€' : '%', v: +p.desconto_valor, motivo: p.nome }; }
+            posRenderCart();
+        }
+
+        (function () {
+            // a linha do cartão por baixo do cliente, no Balcão
+            const oR = posRenderCart;
+            posRenderCart = function () {
+                const r = oR.apply(this, arguments);
+                try {
+                    const velho = document.getElementById('pos-fid'); if (velho) velho.remove();
+                    const old = document.getElementById('pos-fid2'); if (old) old.remove();
+                    const row = document.getElementById('pos-cli-row'); if (!row || !fidOn() || !posCart.length) return r;
+                    const c = posCliAtual(), ks = fidCartoesDoCliente(c);
+                    let h = '';
+                    if (!c || !ks.length) h = fidCartoes.length ? `<button type="button" class="ass" onclick="posFidEscolher()"><i class="fas fa-stamp mr-1"></i>${c ? 'Associar um cartão de fidelidade a ' + escapeHtml(c.nome.split(' ')[0]) : 'Cliente com cartão de fidelidade?'}</button>` : '';
+                    else {
+                        h = ks.map(k => {
+                            const p = fidProgDe(k), exp = fidExpirado(k);
+                            if (exp) return `<div class="ln exp"><i class="fas fa-hourglass-end"></i><span>${escapeHtml(p ? p.nome : 'Cartão')}<small>Expirou a ${fidData(k.valido_ate)}</small></span></div>`;
+                            if (!p || p.tipo === 'carimbos') { const a = fidCfgDe(k).alvo, n = Math.min(k.carimbos, a);
+                                return `<div class="ln"><i class="fas fa-stamp"></i><span>${escapeHtml(p ? p.nome : 'Cartão')} · ${n}/${a}<small>${k.carimbos >= a ? 'Tem prémio: ' + escapeHtml(fidCfgDe(k).premio) : '+1 carimbo sozinho ao fechar a conta'}</small></span>${k.carimbos >= a ? `<button type="button" onclick="fidUsar('${k.id}');setTimeout(posRenderCart,600)">Entregar prémio</button>` : ''}</div>`; }
+                            if (p.tipo === 'desconto') return `<div class="ln"><i class="fas fa-percent"></i><span>${escapeHtml(p.nome)}<small>${escapeHtml(fidVantagem(p))}</small></span><button type="button" class="${posFidDesc === k.id ? 'on' : ''}" onclick="posFidDescontar('${k.id}')">${posFidDesc === k.id ? '✓ Aplicado' : 'Aplicar'}</button></div>`;
+                            return `<div class="ln"><i class="fas fa-star"></i><span>${escapeHtml(p.nome)}<small>${escapeHtml(fidVantagem(p))}</small></span></div>`;
+                        }).join('');
+                        if (c && c.nif) h += `<label><input type="checkbox" ${posSemNif ? 'checked' : ''} onchange="posSemNif=this.checked"> Fatura sem NIF (o cartão continua associado)</label>`;
+                    }
+                    if (h) row.insertAdjacentHTML('afterend', `<div id="pos-fid2">${h}</div>`);
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+            // ao fechar a conta: +1 carimbo em cada cartão de carimbos do cliente e registo do uso do desconto
+            const oC = posCheckout;
+            posCheckout = function () {
+                const before = (appState.orders || []).length, c = posCliAtual(), ks = fidOn() ? fidCartoesDoCliente(c).filter(k => !fidExpirado(k)) : [], desc = posFidDesc;
+                const sel = posClienteSel;
+                if (sel && sel.id && posSemNif) posClienteSel = Object.assign({}, sel, { nif: '' });
+                let r;
+                try { r = oC.apply(this, arguments); } finally { if (posClienteSel && sel && posClienteSel.id === sel.id) posClienteSel = sel; }
+                if ((appState.orders || []).length > before) {
+                    const o = appState.orders[0];
+                    if (sel && sel.id && posSemNif && o.cliente) o.cliente.nif = '';
+                    const carimbos = ks.filter(k => { const p = fidProgDe(k); return !p || p.tipo === 'carimbos'; });
+                    carimbos.forEach(k => { try { fidMudar(k.id, 1, 'compra'); } catch (_) {} });
+                    if (desc && ks.some(k => k.id === desc)) { try { fidUso(desc); } catch (_) {} }
+                    if (carimbos.length) o.fidelidade = carimbos.map(k => k.id);
+                    posSemNif = false; posFidDesc = '';
+                }
+                return r;
+            };
+        })();
+    </script>
+
+    <style>
+        .vx-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #EEE6DA; background: #FFFCF8; }
+        .vx-bar b { font-size: 13px; color: #24150E; }
+        .vx-bar .bts { display: flex; gap: 6px; flex-wrap: wrap; }
+        .vx-bar button, #vx .fmt button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; font-weight: 800; background: #fff; border: 1.5px solid #E4DCCF; color: #24150E; }
+        #vx .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+        #vx .chips button { padding: 7px 12px; border-radius: 999px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 13px; font-weight: 800; color: #5B4A40; }
+        #vx .chips button.on { border-color: var(--brand); color: var(--brand); background: var(--brand-soft, #FBEDE6); }
+        #vx .datas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        #vx .datas input, #vx select { width: 100%; border: 1px solid #E4DCCF; border-radius: 12px; padding: 9px 10px; font-size: 15px; background: #fff; }
+        #vx .fmt { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
+        #vx .fmt button { flex-direction: column; justify-content: center; padding: 14px 6px; font-size: 13.5px; }
+        #vx .fmt button i { font-size: 20px; color: var(--brand); }
+        #vx .fmt button small { font-weight: 600; color: #7A6A60; font-size: 11px; }
+        #vx .resumo { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #F6F3F0; font-size: 13px; color: #3A2A22; }
+    </style>
+
+    <script>
+        let vxDe = '', vxAte = '', vxPer = 'mes';
+        const vxISO = d => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 6e4); return z.toISOString().slice(0, 10); };
+        function vxIntervalo() {
+            const h = new Date(), t = vxISO(h);
+            if (vxPer === 'hoje') return [t, t];
+            if (vxPer === '7d') return [vxISO(new Date(h.getTime() - 6 * 864e5)), t];
+            if (vxPer === 'mes') return [t.slice(0, 8) + '01', t];
+            if (vxPer === 'mesant') return [vxISO(new Date(h.getFullYear(), h.getMonth() - 1, 1)), vxISO(new Date(h.getFullYear(), h.getMonth(), 0))];
+            const a = vxDe || t, b = vxAte || t; return a <= b ? [a, b] : [b, a];
+        }
+        // todas as vendas do período: relatórios aplicados (foto, SumUp, SAF-T, à mão) e pedidos do balcão
+        function vxLinhas() {
+            const [a, b] = vxIntervalo();
+            const dias = (appState.salesHistory || []).filter(h => h.reportDate && h.reportDate >= a && h.reportDate <= b);
+            const L = [];
+            dias.forEach(h => (h.items || []).forEach(it => { const q = Number(it.qty) || 0; if (!q) return; L.push({ data: h.reportDate, nome: it.name, qty: q, preco: Number(it.price) || 0, origem: h.source || '' }); }));
+            return L.sort((x, y) => x.data.localeCompare(y.data) || x.nome.localeCompare(y.nome));
+        }
+        const vxNum = v => String(Math.round((Number(v) || 0) * 100) / 100).replace('.', ',');
+        const vxOrig = { foto: 'Foto do relatório', texto: 'Escrito à mão', saft: 'SAF-T', sumup: 'SumUp', mao: 'Contado à mão', misto: 'Várias', pedidos: 'Balcão' };
+        function vxNomeFich(ext) { const [a, b] = vxIntervalo(); return 'vendas_' + a + (a === b ? '' : '_a_' + b) + '.' + ext; }
+        function vxBaixar(nome, blob) { const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = nome; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+
+        function vxExcel() {
+            const L = vxLinhas(); if (!L.length) return dsToast('Não há vendas neste período.', true);
+            const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+            const rows = [['Data', 'Produto', 'Quantidade', 'Preço unitário (€)', 'Total (€)', 'Origem']];
+            L.forEach(l => rows.push([l.data.split('-').reverse().join('/'), l.nome, vxNum(l.qty), l.preco ? vxNum(l.preco) : '', l.preco ? vxNum(l.qty * l.preco) : '', vxOrig[l.origem] || l.origem]));
+            const por = {}; L.forEach(l => { const p = por[l.nome] || (por[l.nome] = { q: 0, t: 0 }); p.q += l.qty; p.t += l.qty * l.preco; });
+            rows.push([]); rows.push(['Resumo por produto']); rows.push(['Produto', 'Quantidade', '', '', 'Total (€)']);
+            Object.entries(por).sort((x, y) => y[1].t - x[1].t || y[1].q - x[1].q).forEach(([n, p]) => rows.push([n, vxNum(p.q), '', '', p.t ? vxNum(p.t) : '']));
+            rows.push([]); rows.push(['Documento interno de apoio (Dio’Stock). Não é fatura nem substitui o SAF-T.']);
+            vxBaixar(vxNomeFich('csv'), new Blob(['﻿' + rows.map(r => r.map(q).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+            dsToast('Excel baixado.');
+        }
+        function vxPdf() {
+            const L = vxLinhas(); if (!L.length) return dsToast('Não há vendas neste período.', true);
+            const [a, b] = vxIntervalo(), dmy2 = s => s.split('-').reverse().join('/'), e2 = v => (Math.round(v * 100) / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+            const por = {}, dia = {}; let tq = 0, tv = 0;
+            L.forEach(l => { const p = por[l.nome] || (por[l.nome] = { q: 0, t: 0 }); p.q += l.qty; p.t += l.qty * l.preco; const d = dia[l.data] || (dia[l.data] = { q: 0, t: 0 }); d.q += l.qty; d.t += l.qty * l.preco; tq += l.qty; tv += l.qty * l.preco; });
+            const html = `<!doctype html><html lang="pt"><head><meta charset="utf-8"><title>Vendas ${dmy2(a)}${a === b ? '' : ' a ' + dmy2(b)}</title>
+                <style>body{font-family:'Schibsted Grotesk',Arial,sans-serif;color:#231F20;margin:28px;font-size:12px}h1{font-family:'Bricolage Grotesque',Arial,sans-serif;font-size:22px;margin:0}p.s{color:#7A6A60;margin:4px 0 18px}
+                .k{display:flex;gap:14px;margin-bottom:18px}.k div{border:1px solid #E4DCCF;border-radius:10px;padding:10px 14px}.k b{display:block;font-size:18px}
+                table{width:100%;border-collapse:collapse;margin-bottom:18px}th,td{padding:6px 8px;border-bottom:1px solid #EEE6DA;text-align:left}th{font-size:11px;color:#7A6A60}td.r,th.r{text-align:right}
+                h2{font-size:14px;margin:18px 0 6px}.n{color:#7A6A60;font-size:10.5px;margin-top:20px}</style></head><body>
+                <h1>${escapeHtml(currentEmpresa || 'Vendas')}</h1><p class="s">Vendas de ${dmy2(a)}${a === b ? '' : ' a ' + dmy2(b)}</p>
+                <div class="k"><div>Total vendido<b>${tv ? e2(tv) : '—'}</b></div><div>Produtos vendidos<b>${vxNum(tq)}</b></div><div>Dias com vendas<b>${Object.keys(dia).length}</b></div></div>
+                <h2>Por produto</h2><table><tr><th>Produto</th><th class="r">Quantidade</th><th class="r">Total</th></tr>${Object.entries(por).sort((x, y) => y[1].t - x[1].t || y[1].q - x[1].q).map(([n, p]) => `<tr><td>${escapeHtml(n)}</td><td class="r">${vxNum(p.q)}</td><td class="r">${p.t ? e2(p.t) : '—'}</td></tr>`).join('')}</table>
+                <h2>Por dia</h2><table><tr><th>Dia</th><th class="r">Quantidade</th><th class="r">Total</th></tr>${Object.entries(dia).map(([d, p]) => `<tr><td>${dmy2(d)}</td><td class="r">${vxNum(p.q)}</td><td class="r">${p.t ? e2(p.t) : '—'}</td></tr>`).join('')}</table>
+                <p class="n">Documento interno de apoio, gerado pelo Dio’Stock. Não é fatura nem substitui o SAF-T.</p></body></html>`;
+            let f = document.getElementById('vx-print'); if (f) f.remove();
+            f = document.createElement('iframe'); f.id = 'vx-print'; f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden'; document.body.appendChild(f);
+            const d = f.contentWindow.document; d.open(); d.write(html); d.close();
+            setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (_) { vxBaixar(vxNomeFich('html'), new Blob([html], { type: 'text/html' })); } }, 250);
+            dsToast('Escolha "Guardar como PDF" para baixar.');
+        }
+        function vxSaft() {
+            const ligado = typeof vdState !== 'undefined' && vdState && vdState.ligado;
+            const h = new Date(), meses = []; for (let i = 0; i < 13; i++) { const d = new Date(h.getFullYear(), h.getMonth() - i, 1); meses.push([d.getFullYear(), d.getMonth() + 1, d.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })]); }
+            dsModal('vx-saft', `<div class="flex items-start justify-between gap-3"><div><h3>SAF-T de faturação</h3><p class="text-sm text-slate-500 mt-1">${ligado ? 'O ficheiro oficial do mês, gerado pelo Vendus (programa certificado), pronto a enviar ao contabilista ou à AT.' : 'O SAF-T oficial é gerado pelo programa de faturação certificado. O Dio’Stock não é programa certificado.'}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('vx-saft')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                ${ligado ? `<label class="block mt-3 text-sm font-bold">Mês<select id="vx-mes" style="width:100%;margin-top:4px;border:1px solid #E4DCCF;border-radius:12px;padding:10px 12px;font-size:16px;background:#fff">${meses.map(([a, m, t], i) => `<option value="${a}-${m}" ${i === 1 ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+                    <button type="button" class="bp" id="vx-sf"><i class="fas fa-file-code mr-1.5"></i>Baixar SAF-T (.xml)</button>`
+                : `<div class="mt-3 text-sm text-slate-700 leading-relaxed"><p><b>Se fatura noutro programa</b> (Vendus, Moloni, InvoiceXpress, SumUp…): baixe o SAF-T nesse programa, normalmente em Relatórios → SAF-T.</p><p class="mt-2"><b>Se quer faturar a partir do Balcão do Dio’Stock</b>, ligue o Vendus em Configurações → Faturação. A partir daí, o SAF-T de cada mês baixa-se aqui num toque.</p></div>
+                    <button type="button" class="w-full mt-4 py-3 rounded-xl font-black bg-slate-100 text-slate-700" onclick="dsModalFechar('vx-saft')">Entendi</button>`}`);
+            const b = document.getElementById('vx-sf');
+            if (b) b.onclick = async () => {
+                const [ano, mes] = document.getElementById('vx-mes').value.split('-').map(Number);
+                b.disabled = true; b.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>A pedir ao Vendus…';
+                const r = await vdCall('saft', { ano, mes });
+                b.disabled = false; b.innerHTML = '<i class="fas fa-file-code mr-1.5"></i>Baixar SAF-T (.xml)';
+                if (r.erro || !r.xml) return dsToast(r.erro || 'Não foi possível obter o SAF-T.', true);
+                const bin = atob(r.xml), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+                vxBaixar(`SAFT_${ano}-${String(mes).padStart(2, '0')}.xml`, new Blob([u8], { type: 'application/xml' }));
+                dsModalFechar('vx-saft'); dsToast('SAF-T baixado.');
+            };
+        }
+        function vxAbrir() {
+            const pintar = () => {
+                const [a, b] = vxIntervalo(), L = vxLinhas(), tv = L.reduce((s, l) => s + l.qty * l.preco, 0), tq = L.reduce((s, l) => s + l.qty, 0);
+                document.getElementById('vx-corpo').innerHTML = `<div class="chips">${[['hoje', 'Hoje'], ['7d', '7 dias'], ['mes', 'Este mês'], ['mesant', 'Mês anterior'], ['custom', 'Escolher datas']].map(([k, t]) => `<button type="button" data-p="${k}" class="${vxPer === k ? 'on' : ''}">${t}</button>`).join('')}</div>
+                    ${vxPer === 'custom' ? `<div class="datas"><label class="text-xs font-bold">De<input type="date" id="vx-de" value="${a}"></label><label class="text-xs font-bold">Até<input type="date" id="vx-ate" value="${b}"></label></div>` : ''}
+                    <div class="resumo">${L.length ? `<b>${vxNum(tq)}</b> produtos vendidos${tv ? ' · <b>' + eur2(tv) + '</b>' : ''} · de ${a.split('-').reverse().join('/')} a ${b.split('-').reverse().join('/')}` : 'Não há vendas registadas neste período.'}</div>
+                    <div class="fmt"><button type="button" onclick="vxExcel()"><i class="fas fa-file-excel"></i>Excel<small>.csv</small></button><button type="button" onclick="vxPdf()"><i class="fas fa-file-pdf"></i>PDF<small>resumo</small></button><button type="button" onclick="vxSaft()"><i class="fas fa-file-code"></i>SAF-T<small>.xml oficial</small></button></div>`;
+                document.querySelectorAll('#vx .chips button').forEach(x => x.onclick = () => { vxPer = x.dataset.p; pintar(); });
+                const de = document.getElementById('vx-de'), ate = document.getElementById('vx-ate');
+                if (de) de.onchange = () => { vxDe = de.value; pintar(); }; if (ate) ate.onchange = () => { vxAte = ate.value; pintar(); };
+            };
+            dsModal('vx', `<div class="flex items-start justify-between gap-3"><div><h3>Baixar as vendas</h3><p class="text-sm text-slate-500 mt-1">Escolha o período e o formato.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('vx')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div><div id="vx-corpo"></div>`);
+            pintar();
+        }
+        (function () {
+            // barra "Baixar as vendas" por cima dos relatórios aplicados
+            const h = document.getElementById('sales-history'), card = h && h.parentElement;
+            if (card && !document.getElementById('vx-bar')) card.insertAdjacentHTML('afterbegin', `<div class="vx-bar" id="vx-bar"><b>Baixar as vendas</b><div class="bts"><button type="button" onclick="vxPer='mes';vxAbrir()"><i class="fas fa-file-excel" style="color:#15803D"></i>Excel</button><button type="button" onclick="vxPer='mes';vxAbrir()"><i class="fas fa-file-pdf" style="color:#B91C1C"></i>PDF</button><button type="button" onclick="vxSaft()"><i class="fas fa-file-code" style="color:var(--brand)"></i>SAF-T</button></div></div>`);
+            // no Balcão (vista Vendas): o SAF-T ao lado do Excel e do PDF
+            if (typeof balRender === 'function') {
+                const oB = balRender;
+                balRender = function () {
+                    const r = oB.apply(this, arguments);
+                    try { document.querySelectorAll('button[onclick="balPrint()"]').forEach(b => { if (!b.parentElement.querySelector('.vx-saft-bt')) b.insertAdjacentHTML('afterend', '<button type="button" class="vx-saft-bt px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50" onclick="vxSaft()"><i class="fas fa-file-code mr-1"></i>SAF-T</button>'); }); } catch (_) {}
+                    return r;
+                };
+            }
+        })();
+    </script>
 </body>
 </html>
