@@ -19457,5 +19457,78 @@ var qrcode = function() {
             };
         })();
     </script>
+
+    <script>
+        async function fidImagemProg(p) {
+            const cor = fidCor(); const fundo = await fidFundoCarregar(); const selo = p.tipo === 'carimbos' ? await fidSeloCarregar(cor) : null;
+            try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
+            const W = 1080, P = 84, rows0 = Math.ceil((p.alvo + 1) / 5), d0 = (W - 2 * P - 26 * 4) / 5, H = p.tipo === 'carimbos' ? Math.round(P + 360 + rows0 * (d0 + 26) + (p.condicoes ? 220 : 170)) : 720, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+            const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
+            x.fillStyle = cor; x.fillRect(0, 0, W, H);
+            if (fundo) { const s = Math.max(W / fundo.width, H / fundo.height); x.drawImage(fundo, (W - fundo.width * s) / 2, (H - fundo.height * s) / 2, fundo.width * s, fundo.height * s); x.fillStyle = 'rgba(20,10,5,.5)'; x.fillRect(0, 0, W, H); }
+            x.fillStyle = 'rgba(255,255,255,.12)'; x.beginPath(); x.arc(W - 90, 150, 330, 0, 7); x.fill();
+            x.fillStyle = 'rgba(255,255,255,.08)'; x.save(); x.translate(120, H - 40); x.rotate(.32); x.fillRect(-150, -150, 300, 300); x.restore();
+            x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
+            x.font = `700 40px ${B}`; x.globalAlpha = .85; x.fillText((currentEmpresa || '').slice(0, 34), P, P + 40); x.globalAlpha = 1;
+            x.font = `800 64px ${T}`; x.fillText(p.nome.slice(0, 26), P, P + 120);
+            const caber = (t, max, min) => { let fs = max; x.font = `800 ${fs}px ${T}`; while (x.measureText(t).width > W - 2 * P && fs > min) { fs -= 4; x.font = `800 ${fs}px ${T}`; } };
+            let y;
+            if (p.tipo === 'carimbos') {
+                x.font = `700 38px ${B}`; x.globalAlpha = .9; x.fillText(`Junte ${p.alvo} carimbos e ganhe`, P, P + 210); x.globalAlpha = 1;
+                caber(p.premio || 'Prémio', 92, 48); x.fillText(p.premio || 'Prémio', P, P + 300);
+                const tot = p.alvo + 1, cols = Math.min(5, tot), gap = 26, d = (W - 2 * P - gap * (cols - 1)) / cols, top = P + 360;
+                for (let i = 0; i < tot; i++) {
+                    const cx = P + (i % cols) * (d + gap) + d / 2, cy = top + Math.floor(i / cols) * (d + gap) + d / 2, r = d / 2, premio = i === tot - 1, on = i === 0;
+                    x.beginPath(); x.arc(cx, cy, r - 2, 0, 7);
+                    if (premio) { x.fillStyle = 'rgba(255,255,255,.14)'; x.fill(); x.lineWidth = 5; x.strokeStyle = '#fff'; x.stroke(); }
+                    else if (on) { x.fillStyle = '#fff'; x.fill(); if (selo) { const s = d * .74; x.drawImage(selo, cx - s / 2, cy - s / 2 * 1018 / 1036, s, s * 1018 / 1036); } }
+                    else { x.lineWidth = 4; x.strokeStyle = 'rgba(255,255,255,.5)'; x.setLineDash([14, 12]); x.stroke(); x.setLineDash([]); }
+                    if (premio) { const g = new Path2D('M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z'); const sc = d * .5 / 24; x.save(); x.translate(cx - 12 * sc, cy - 12 * sc); x.scale(sc, sc); x.lineWidth = 2; x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = '#fff'; x.stroke(g); x.restore(); }
+                }
+                y = top + Math.ceil(tot / cols) * (d + gap) + 40;
+            } else {
+                const v = fidVantagem(p); caber(v, 128, 56); x.fillText(v, P, P + 330);
+                y = P + 400;
+            }
+            x.fillStyle = '#fff'; x.font = `700 34px ${B}`; x.globalAlpha = .9; if (p.condicoes) x.fillText(p.condicoes.slice(0, 56), P, y); x.globalAlpha = 1;
+            x.font = `800 40px ${T}`; x.fillText('Toque no link e crie o seu cartão', P, H - P + 6);
+            return await new Promise(r => cv.toBlob(r, 'image/png'));
+        }
+        const fidProgImgCache = {};
+        function fidProgPreparar(p) {
+            const chave = [p.id, p.nome, p.tipo, p.alvo, p.premio, p.desconto_tipo, p.desconto_valor, p.beneficio, p.condicoes, fidCor(), fidCfg && fidCfg.carimbo, fidCfg && fidCfg.fundo, currentEmpresa].join('|');
+            if (!fidProgImgCache[chave]) fidProgImgCache[chave] = fidImagemProg(p).catch(e => { delete fidProgImgCache[chave]; throw e; });
+            return fidProgImgCache[chave];
+        }
+        // partilhar: imagem do cartão + a mensagem da empresa + o link
+        (function () {
+            const oPart = fidPartilhar;
+            fidPartilhar = async function (pid) {
+                const ativos = fidProgs.filter(p => p.ativo);
+                if (!pid && ativos.length > 1) return oPart.apply(this, arguments);
+                const p = fidProgPorId(pid) || fidProgPadrao();
+                if (!p || !fidCfg || !fidCfg.ligado) return oPart.apply(this, arguments);
+                const url = fidBase() + 'n/?' + p.curto, txt = (p.mensagem || fidMsgPadrao(p)).trim() + '\n' + url;
+                try {
+                    const blob = await fidProgPreparar(p);
+                    const file = new File([blob], (p.nome || 'cartao').replace(/[^\w-]+/g, '-').toLowerCase() + '.png', { type: 'image/png' });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: txt }); return; }
+                    // computador: mostra a imagem para guardar e copia a mensagem
+                    const u = URL.createObjectURL(blob);
+                    dsModal('fid-pimg', `<div class="flex items-start justify-between gap-3"><div><h3>Partilhar ${escapeHtml(p.nome)}</h3><p class="text-sm text-slate-500">A mensagem já foi copiada. Guarde a imagem e envie as duas juntas.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-pimg')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                        <img src="${u}" alt="Imagem do cartão" style="width:100%;border-radius:16px;margin-top:12px">
+                        <div style="margin-top:10px;background:#F6F3F0;border-radius:12px;padding:10px 12px;font-size:13px;white-space:pre-wrap">${escapeHtml(txt)}</div>
+                        <a class="bp" style="display:block;text-align:center" href="${u}" download="${escapeHtml(file.name)}"><i class="fas fa-download mr-1.5"></i>Guardar a imagem</a>
+                        <a class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" style="display:block;text-align:center" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1.5"></i>Abrir o WhatsApp com a mensagem</a>`);
+                    try { await navigator.clipboard.writeText(txt); } catch (_) {}
+                    return;
+                } catch (e) { if (e && e.name === 'AbortError') return; console.warn(e); }
+                return oPart.apply(this, arguments);
+            };
+            // preparar as imagens ao abrir o Fidelidade, para a partilha sair logo ao toque
+            const oP = fidPintar;
+            fidPintar = function () { const r = oP.apply(this, arguments); try { if (fidCfg && fidCfg.ligado) setTimeout(() => fidProgs.filter(p => p.ativo).forEach(p => fidProgPreparar(p).catch(() => {})), 400); } catch (_) {} return r; };
+        })();
+    </script>
 </body>
 </html>
