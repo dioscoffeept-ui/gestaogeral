@@ -172,6 +172,7 @@
     return j;
   }
   function marca(d) {
+    try { if (d && d.loja) localStorage.setItem('ds_cartao_loja', JSON.stringify({ loja: d.loja, titulo: d.titulo, marca: d.marca, whatsapp: d.whatsapp || '', n: d.n || N || '' })); } catch (_) {}
     if (d.marca && d.marca.brand) { document.documentElement.style.setProperty('--brand', d.marca.brand); document.querySelector('meta[name=theme-color]').content = d.marca.brand; }
     document.getElementById('loja').textContent = d.loja || '';
     const tit = d.titulo || 'Cartão de fidelidade';
@@ -410,7 +411,7 @@
     return `<details class="bloco ajuda" id="ajuda"><summary><h2>Dúvidas e ajuda</h2><span class="mais">+</span></summary>
       <div class="faq">
         <p><b>Como ganho carimbos?</b> Diga o seu código ao balcão sempre que pagar. A equipa dá o carimbo e o cartão atualiza sozinho.</p>
-        <p><b>Perdi o link do cartão.</b> No link da loja, toque em "Já tem cartão?" e escreva o telemóvel e o código de 4 algarismos.</p>
+        <p><b>Perdi o link do cartão.</b> No link da loja, toque em "Já tem cartão?" e escreva o seu nome e o telemóvel.</p>
         <p><b>Quero apagar os meus dados.</b> No fim do cartão, em "Os seus dados", toque em "Apagar o meu cartão".</p>
       </div>
       <form id="aj-f" novalidate><p class="dica" style="margin:14px 0 8px;font-weight:700;color:var(--ink)">Não encontrou a resposta? Escreva à ${esc(d.loja || 'loja')}.</p>
@@ -444,12 +445,12 @@
   function encontrarPintar() {
     const d = window._loja || {};
     document.getElementById('app').innerHTML = `<form class="bloco" id="fe" novalidate><h2>Abrir o meu cartão</h2>
-      <p class="dica">Escreva o telemóvel com que criou o cartão e o código de 4 algarismos que aparece no cartão.</p>
+      <p class="dica">Escreva o nome e o telemóvel com que criou o cartão${d.loja ? ' da ' + esc(d.loja) : ''}.</p>
+      <label>Nome<input id="fe-cod" autocomplete="given-name" maxlength="40" placeholder="O seu primeiro nome"></label>
       <label>Telemóvel<input id="fe-tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9xx xxx xxx"></label>
-      <label>Código do cartão<input id="fe-cod" inputmode="numeric" maxlength="4" placeholder="0000"></label>
       <p class="erro" id="fe-erro" role="alert"></p>
       <button type="submit" class="bp" id="fe-ok">Abrir o meu cartão</button>
-      <p class="dica" style="margin-top:12px">Não sabe o código? ${d.whatsapp ? 'Peça o link à loja pelo WhatsApp.' : 'Peça ao balcão o link do seu cartão.'}</p>
+      <p class="dica" style="margin-top:12px">Não consegue entrar? ${d.whatsapp ? 'Peça o link à loja pelo WhatsApp.' : 'Peça ao balcão o link do seu cartão.'}</p>
       ${d.whatsapp ? `<a class="bs wa" href="${esc(waLoja(d))}" target="_blank" rel="noopener">Pedir o link no WhatsApp</a>` : ''}
       ${N ? '<button type="button" class="apagar-lnk" onclick="pedir()">Voltar a criar um cartão</button>' : ''}</form>`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -457,7 +458,7 @@
       ev.preventDefault();
       const b = document.getElementById('fe-ok'), er = document.getElementById('fe-erro'); er.textContent = ''; b.disabled = true;
       try {
-        const r = await post({ acao: 'encontrar', n: N, tel: document.getElementById('fe-tel').value, codigo: document.getElementById('fe-cod').value });
+        const r = await post({ acao: 'encontrar', n: N || d.n || '', tel: document.getElementById('fe-tel').value, codigo: document.getElementById('fe-cod').value });
         try { localStorage.setItem('ds_cartao_ultimo', r.k); } catch (_) {}
         location.replace('cartao.html?k=' + r.k);
       } catch (e) { er.textContent = e.message; b.disabled = false; }
@@ -483,7 +484,7 @@
         <details class="priv" style="margin-top:12px"><summary>Ler a informação de privacidade</summary>${privTexto(d)}</details>
         <p class="erro" id="erro" role="alert"></p>
         <button type="submit" class="bp" id="ok">Criar o meu cartão</button></form>
-      <div class="bloco"><h2>Já tem cartão?</h2><p class="dica">Abra-o com o telemóvel e o código do cartão${d.whatsapp ? ', ou peça o link à loja pelo WhatsApp' : ''}.</p>
+      <div class="bloco"><h2>Já tem cartão?</h2><p class="dica">Abra-o com o seu nome e o telemóvel${d.whatsapp ? ', ou peça o link à loja pelo WhatsApp' : ''}.</p>
         <button type="button" class="bs" onclick="encontrarPintar()">Abrir o meu cartão</button>
         ${d.whatsapp ? `<a class="bs wa" href="${esc(waLoja(d))}" target="_blank" rel="noopener">Pedir o link à loja no WhatsApp</a>` : ''}</div>${ajudaHtml(d, false)}${redesHtml(d.redes, d)}`;
     document.getElementById('f').addEventListener('submit', async ev => {
@@ -507,7 +508,7 @@
   } else {
     let u = ''; try { u = localStorage.getItem('ds_cartao_ultimo') || ''; } catch (_) {}
     if (/^[A-Za-z0-9]{7}$/.test(u)) location.replace('cartao.html?k=' + u);
-    else { topoNeutro(); encontrarPintar(); }
+    else { let lj = null; try { lj = JSON.parse(localStorage.getItem('ds_cartao_loja') || 'null'); } catch (_) {} if (lj && lj.loja) { window._loja = lj; marca(lj); } else topoNeutro(); encontrarPintar(); }
   }
 </script>
 </body>
