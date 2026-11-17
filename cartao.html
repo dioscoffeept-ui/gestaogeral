@@ -56,6 +56,7 @@
 
   .aviso { margin-top: 14px; border-radius: 18px; padding: 14px 16px; background: #FEF3C7; color: #5B2A12; font-weight: 700; font-size: 15px; display: flex; gap: 12px; align-items: center; }
   .aviso i { font-style: normal; font-size: 24px; }
+  .aviso.desc { background: #DCFCE7; color: #14532D; }
   .bloco { margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
   .bloco h2 { margin: 0 0 10px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 18px; font-weight: 800; }
   .hist { list-style: none; margin: 0; padding: 0; }
@@ -237,6 +238,7 @@
         <div class="selos">${selos(d.alvo, n)}</div>
         <div class="c-pe"><div><span class="falta">${tem ? 'Prémio desbloqueado' : 'Faltam ' + falta + (falta === 1 ? ' carimbo' : ' carimbos')}</span><small>${esc(d.premio)} a cada ${d.alvo} carimbos</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'prémio usado' : 'prémios usados'}</small></div>` : ''}</div>
       </section>
+      ${d.desconto ? `<div class="aviso desc"><i>🏷️</i><span>Tem ${esc(String(d.desconto.valor).replace('.', ','))}${d.desconto.tipo === 'pct' ? '%' : ' €'} de desconto de cliente fixo${d.desconto.nota ? ' ' + esc(d.desconto.nota) : ''}. Diga o código <b>${esc(d.codigo)}</b> ao balcão.</span></div>` : ''}
       ${tem ? `<div class="aviso"><i>🎁</i><span>Tem ${esc(d.premio.toLowerCase())} à espera. Mostre este ecrã ao balcão.</span></div>` : ''}
       ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
       <div class="bloco"><h2>Como funciona</h2><p class="dica">Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.</p>${d.condicoes ? `<p class="dica" style="margin-top:8px"><b>Condições:</b> ${esc(d.condicoes)}</p>` : ''}</div>
@@ -264,7 +266,7 @@
   async function ver(silencioso) {
     try {
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
-      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca, d.titulo, d.condicoes]);
+      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca, d.titulo, d.condicoes, d.desconto]);
       if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); if (d.consentimento) convidar(); }
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
       if (d.marca && d.marca.logo) { const a = document.querySelector('link[rel=apple-touch-icon]'); if (a) a.href = d.marca.logo; }
@@ -278,9 +280,9 @@
     try { d = await post({ acao: 'info', n: N }); } catch (e) { document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; return; }
     await seloPreparar(d); marca(d);
     if (!d.ligado) { document.getElementById('app').innerHTML = '<div class="vazio">O cartão de fidelidade não está ativo neste momento.</div>'; return; }
-    document.getElementById('app').innerHTML = `<section class="cartao"><div class="c-top"><div><small>O seu cartão</small><h1>${esc(d.premio)}</h1></div></div>
+    document.getElementById('app').innerHTML = `<section class="cartao"><div class="c-top"><div><small>Junte ${d.alvo} carimbos e ganhe</small><h1>${esc(d.premio)}</h1></div></div>
         <div class="selos">${selos(d.alvo, 0)}</div>
-        <div class="c-pe"><div><span class="falta">A cada ${d.alvo} carimbos</span><small>Um carimbo por cada compra</small></div></div></section>
+        <div class="c-pe"><div><span class="falta">1 carimbo em cada compra</span><small>${d.condicoes ? esc(d.condicoes) : "Ao completar o cartão, recebe o prémio e começa de novo."}</small></div></div></section>
       <form class="bloco" id="f" novalidate><h2>Criar o meu cartão</h2>
         <p class="dica">É grátis e fica guardado neste telemóvel. Não precisa de palavra-passe.</p>
         <label>Nome<input id="nome" autocomplete="given-name" maxlength="40" placeholder="Como o chamamos"></label>
