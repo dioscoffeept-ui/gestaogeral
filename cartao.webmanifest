@@ -1,0 +1,16 @@
+{
+  "id": "./cartao.html",
+  "name": "Cartão de fidelidade",
+  "short_name": "Cartão",
+  "description": "O seu cartão de fidelidade: carimbos e prémios.",
+  "lang": "pt-PT",
+  "start_url": "./cartao.html",
+  "scope": "./cartao",
+  "display": "standalone",
+  "background_color": "#F6F3F0",
+  "theme_color": "#983808",
+  "icons": [
+    { "src": "cartao-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "cartao-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

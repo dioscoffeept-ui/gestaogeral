@@ -11,7 +11,11 @@
 <meta property="og:description" content="Toque para ver os seus carimbos e quanto falta para o prémio.">
 <meta property="og:image" content="https://dioscoffeept-ui.github.io/gestaogeral/cartao-og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" href="cartao-icon-512.png">
+<link rel="manifest" href="cartao.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cartão">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -69,6 +73,13 @@
   .priv-tx p { margin: 0 0 8px; }
   .priv-tx b { color: var(--ink); }
   .bs { width: 100%; margin-top: 10px; padding: 13px; border-radius: 14px; background: #fff; border: 1px solid #DCD2C4; color: var(--ink); font-size: 15px; font-weight: 800; }
+  .apagar-lnk { display: block; margin: 14px auto 0; background: none; padding: 4px; font-size: 12.5px; font-weight: 600; color: #9A8A80; text-decoration: underline; text-underline-offset: 3px; }
+  .folha { position: fixed; inset: 0; z-index: 50; background: rgba(36,21,14,.45); display: flex; align-items: flex-end; justify-content: center; }
+  .folha > div { width: 100%; max-width: 460px; background: #fff; border-radius: 24px 24px 0 0; padding: 22px 20px calc(22px + env(safe-area-inset-bottom)); animation: sobe .2s ease-out; }
+  .folha h2 { margin: 0 0 8px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 21px; }
+  .folha ol { margin: 10px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.7; color: var(--ink); }
+  .folha .ic { display: inline-flex; vertical-align: -4px; width: 22px; height: 22px; color: #0A84FF; }
+  @keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
   .bs.perigo { color: #B91C1C; border-color: #F3C4C4; }
   .consent { margin-bottom: 14px; }
   .dica { font-size: 13.5px; color: var(--mut); line-height: 1.5; margin: 0; }
@@ -156,6 +167,24 @@
   async function novidades(v) {
     try { await post(K ? { acao: 'marketing', k: K, valor: v } : { acao: 'marketing', c: C, valor: v }); ultimo = ''; ver(); } catch (e) { alertar(e.message); }
   }
+  let pedidoInstalar = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); pedidoInstalar = e; });
+  window.addEventListener('appinstalled', () => { pedidoInstalar = null; ultimo = ''; ver(true); });
+  function instalado() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
+  async function instalar() {
+    if (pedidoInstalar) { pedidoInstalar.prompt(); try { await pedidoInstalar.userChoice; } catch (_) {} pedidoInstalar = null; return; }
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const partilhar = '<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>';
+    const f = document.createElement('div'); f.className = 'folha';
+    f.innerHTML = `<div role="dialog" aria-modal="true"><h2>Adicionar ao ecrã principal</h2>${ios
+      ? `<ol><li>Toque em ${partilhar} <b>Partilhar</b>, na barra do Safari.</li><li>Escolha <b>Adicionar ao ecrã principal</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol>`
+      : `<ol><li>Abra o menu <b>⋮</b> do navegador.</li><li>Escolha <b>Instalar app</b> ou <b>Adicionar ao ecrã principal</b>.</li><li>Confirme.</li></ol>`}
+      <button type="button" class="bp" onclick="this.closest('.folha').remove()">Entendi</button></div>`;
+    f.addEventListener('click', e => { if (e.target === f) f.remove(); });
+    document.body.appendChild(f);
+  }
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('cartao-sw.js', { scope: './cartao' }).catch(() => {});
+
   function alertar(m) { const el = document.getElementById('msg'); if (el) { el.textContent = m; el.scrollIntoView({ block: 'center' }); } }
   function apagarPedir() {
     document.getElementById('apagar-box').innerHTML = `<p class="dica" style="color:#B91C1C;font-weight:700">Vai apagar o cartão, os carimbos e os seus dados. Não dá para desfazer.</p><button type="button" class="bs perigo" onclick="apagar()">Sim, apagar o meu cartão</button><button type="button" class="bs" onclick="document.getElementById('apagar-box').innerHTML=''">Cancelar</button>`;
@@ -189,12 +218,12 @@
       ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
       <div class="bloco"><h2>Como funciona</h2><p class="dica">Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.</p></div>
       ${redesHtml(d.redes)}
-      <div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">No iPhone: toque em <b>Partilhar</b> e depois em <b>Adicionar ao ecrã principal</b>. No Android: menu <b>⋮</b> e <b>Adicionar ao ecrã principal</b>.</p></div>
+      ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link.</p><button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
       <div class="bloco"><h2>Os seus dados</h2>
         <label class="chk"><input type="checkbox" ${d.marketing ? 'checked' : ''} onchange="novidades(this.checked)"><span>Receber novidades e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS</span></label>
         <details class="priv" style="margin-top:12px"><summary>Informação de privacidade</summary>${privTexto(d)}</details>
         <p class="erro" id="msg" role="alert"></p>
-        <div id="apagar-box"></div><button type="button" class="bs perigo" onclick="apagarPedir()">Apagar o meu cartão e os meus dados</button></div>`;
+        <div id="apagar-box"></div><button type="button" class="apagar-lnk" onclick="apagarPedir()">Apagar o meu cartão</button></div>`;
   }
 
   const ICO = {
@@ -214,7 +243,8 @@
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
       const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca]);
       if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); }
-      if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); } catch (_) {}
+      if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
+      if (d.marca && d.marca.logo) { const a = document.querySelector('link[rel=apple-touch-icon]'); if (a) a.href = d.marca.logo; }
     } catch (e) {
       if (!silencioso) document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`;
     }
@@ -255,7 +285,11 @@
   else if (N) {
     let guardado = ''; try { guardado = localStorage.getItem('ds_cartao_' + N) || ''; } catch (_) {}
     if (guardado) location.replace('cartao.html?' + (guardado.length === 7 ? 'k=' : 'c=') + guardado); else pedir();
-  } else document.getElementById('app').innerHTML = '<div class="vazio">Link incompleto. Peça ao balcão o link do cartão.</div>';
+  } else {
+    let u = ''; try { u = localStorage.getItem('ds_cartao_ultimo') || ''; } catch (_) {}
+    if (/^[A-Za-z0-9]{7}$/.test(u)) location.replace('cartao.html?k=' + u);
+    else document.getElementById('app').innerHTML = '<div class="vazio">Link incompleto. Peça ao balcão o link do cartão.</div>';
+  }
 </script>
 </body>
 </html>
