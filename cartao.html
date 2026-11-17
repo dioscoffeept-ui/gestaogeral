@@ -107,8 +107,8 @@
   let SELO = SELO_LATTE;
   async function seloPreparar(d) {
     const c = d.marca && d.marca.carimbo;
-    if (!c || c === 'latte' || !window.DS_CARIMBOS) { SELO = SELO_LATTE; return; }
-    try { SELO = await DS_CARIMBOS.html(c, (d.marca && d.marca.brand) || '#983808'); } catch (_) { SELO = SELO_LATTE; }
+    if (c === 'latte') { SELO = SELO_LATTE; return; }
+    try { SELO = await DS_CARIMBOS.html(c || 'chavena', (d.marca && d.marca.brand) || '#983808'); } catch (_) { SELO = ''; }
   }
   let ultimo = '';
 

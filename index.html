@@ -18839,5 +18839,81 @@ var qrcode = function() {
             };
         })();
     </script>
+
+    <style>
+        #tab-fidelidade .fid-link { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        #tab-fidelidade .fid-link button { justify-content: center; width: 100%; min-height: 44px; }
+        @media (min-width: 640px) { #tab-fidelidade .fid-link { display: flex; flex-wrap: wrap; } #tab-fidelidade .fid-link button { width: auto; } }
+        @media (max-width: 639px) {
+            #tab-fidelidade .fid-wrap { padding: 16px 14px 18px; border-radius: 18px; }
+            #tab-fidelidade .fid-wrap h3 { font-size: 22px; }
+            #tab-fidelidade .fid-acoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+            #tab-fidelidade .fid-acoes button { justify-content: center; padding: 8px 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            #tab-fidelidade .fid-acoes button.usar { grid-column: 1 / -1; }
+            #tab-fidelidade .fid-c .t { align-items: flex-start; }
+            #tab-fidelidade .fid-mais { width: 48px; height: 48px; }
+            #fid-novo { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 380px) { #tab-fidelidade .fid-acoes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        #tab-fidelidade .fid-selos { flex-wrap: nowrap; gap: 5px; }
+        #tab-fidelidade .fid-selos span { width: auto; height: auto; flex: 0 1 20px; min-width: 10px; aspect-ratio: 1; }
+        .fid-off { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: #FEF3C7; color: #78350F; border: 1.5px solid #F59E0B; font-size: 14px; font-weight: 700; }
+        .fid-off span { flex: 1 1 220px; }
+        .fid-off button { padding: 10px 14px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 900; border: 1.5px solid var(--tinta, #24150E); box-shadow: 0 3px 0 var(--tinta, #24150E); }
+    </style>
+
+    <script>
+        try { DS_ONDE.fidelidade = 'Fidelidade'; } catch (_) {}
+        const FID_DIOS = '964ced76-3422-4089-8ea1-4b4011f10613';
+        const fidLatteOk = () => (typeof dataOwnerId !== 'undefined' && dataOwnerId === FID_DIOS);
+        const fidCarimboPadrao = () => fidLatteOk() ? 'latte' : 'chavena';
+        // o carimbo usado na imagem do WhatsApp
+        fidSeloCarregar = function (cor) { let c = (fidCfg && fidCfg.carimbo) || fidCarimboPadrao(); if (c === 'latte' && !fidLatteOk()) c = 'chavena'; return DS_CARIMBOS.imagem(c, cor); };
+        (function () {
+            const oV = fidVisPintar;
+            fidVisPintar = function () {
+                if (fidVis.carimbo === 'latte' && !fidLatteOk()) fidVis.carimbo = 'chavena';
+                const r = oV.apply(this, arguments);
+                if (!fidLatteOk()) document.querySelectorAll('#fid-vis .fid-car button[data-c="latte"]').forEach(b => b.remove());
+                return r;
+            };
+        })();
+
+        // ---------- partilhar o link
+        async function fidPartilhar() {
+            const url = fidLinkLoja(); if (!url) return dsToast('Ligue o cartão primeiro.', true);
+            const txt = `Crie o seu cartão de fidelidade${currentEmpresa ? ' da ' + currentEmpresa : ''}: ${fidCfg.premio} a cada ${fidCfg.alvo} carimbos.`;
+            if (navigator.share) { try { await navigator.share({ title: 'Cartão de fidelidade', text: txt, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+            fidCopiar(txt + ' ' + url);
+        }
+        (function () {
+            const oC = fidCopiar; fidCopiar = function (t) { if (!t) return dsToast('Ligue o cartão primeiro.', true); return oC.apply(this, arguments); };
+            const oQ = fidCartaz; fidCartaz = function () { if (!fidCfg || !fidCfg.token) return dsToast('Ligue o cartão primeiro.', true); return oQ.apply(this, arguments); };
+        })();
+
+        // ---------- mesma página desde o primeiro uso
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const real = fidCfg, off = !(real && real.ligado);
+                if (off) fidCfg = Object.assign({ alvo: 9, premio: 'Um café grátis', cor: '#983808', carimbo: fidCarimboPadrao() }, real || {}, { ligado: true });
+                let r;
+                try { r = oP.apply(this, arguments); } finally { if (off) fidCfg = real; }
+                try {
+                    const links = document.querySelector('#fid-page .fid-link, #fid-modal .fid-link');
+                    if (links) {
+                        const cp = [...links.querySelectorAll('button')].find(b => /fidCopiar\(fidLinkLoja/.test(b.getAttribute('onclick') || ''));
+                        if (cp && !links.querySelector('.fid-share')) cp.insertAdjacentHTML('afterend', '<button type="button" class="fid-share" onclick="fidPartilhar()"><i class="fas fa-share-nodes"></i>Partilhar link</button>');
+                        if (off && !document.querySelector('.fid-off')) {
+                            links.insertAdjacentHTML('beforebegin', `<div class="fid-off"><span>${real ? 'O cartão está em pausa: os clientes não conseguem criar cartões novos. Os carimbos ficam guardados.' : 'O cartão ainda não está ligado. Escolha o prémio e o carimbo nas Definições e ligue-o.'}</span><button type="button" onclick="fidGuardarCfg(true)">${real ? 'Voltar a ligar' : 'Ligar o cartão'}</button></div>`);
+                            const def = document.getElementById('fid-def'); if (def) def.classList.remove('hidden');
+                            document.querySelectorAll('#fid-def .fid-bt').forEach(b => { if (/Pôr em pausa/.test(b.textContent)) b.remove(); });
+                        }
+                    }
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
+    </script>
 </body>
 </html>
