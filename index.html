@@ -19263,7 +19263,7 @@ var qrcode = function() {
                 try {
                     const { data } = await sb.from('fidelidade_programas').select('*').eq('dono_id', fidDono()).order('ordem').order('criado_em');
                     fidProgs = data || [];
-                    if (!fidProgs.length && fidCfg) {
+                    if (false) {
                         const { data: p } = await sb.from('fidelidade_programas').insert({ dono_id: fidDono(), nome: fidCfg.titulo || 'Cartão de fidelidade', tipo: 'carimbos', alvo: fidCfg.alvo || 9, premio: fidCfg.premio || 'Um café grátis', condicoes: fidCfg.condicoes || null }).select('*').single();
                         if (p) fidProgs = [p];
                     }
@@ -19528,6 +19528,41 @@ var qrcode = function() {
             // preparar as imagens ao abrir o Fidelidade, para a partilha sair logo ao toque
             const oP = fidPintar;
             fidPintar = function () { const r = oP.apply(this, arguments); try { if (fidCfg && fidCfg.ligado) setTimeout(() => fidProgs.filter(p => p.ativo).forEach(p => fidProgPreparar(p).catch(() => {})), 400); } catch (_) {} return r; };
+        })();
+    </script>
+
+    <style>
+        #fid-progs .vazio { margin-top: 8px; border: 2px dashed #D9CBBE; border-radius: 16px; padding: 18px 14px; text-align: center; background: #FFFCF8; }
+        #fid-progs .vazio p { font-size: 14px; color: #5B4A40; margin: 0 0 10px; }
+        #fid-progs .vazio button, .fid-criar-p { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 900; border: 1.5px solid var(--tinta, #24150E); box-shadow: 0 3px 0 var(--tinta, #24150E); }
+        html body .fid-link button.fid-criar-p, html body .fid-link button.fid-criar-p i { background: var(--brand) !important; color: #fff !important; }
+    </style>
+
+    <script>
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    const root = document.querySelector('#fid-page') || document.querySelector('#fid-modal');
+                    const links = root && root.querySelector('.fid-link'); if (!links) return r;
+                    // "Novo cartão" do topo é para um cliente: fica claro no nome
+                    links.querySelectorAll('button').forEach(b => { if (/Novo cartão/.test(b.textContent) && !b.classList.contains('fid-criar-p')) b.innerHTML = '<i class="fas fa-user-plus"></i>Novo cliente'; });
+                    if (!links.querySelector('.fid-criar-p')) links.insertAdjacentHTML('afterbegin', '<button type="button" class="fid-criar-p" onclick="fidProgEditar()"><i class="fas fa-plus"></i>Criar cartão</button>');
+                    root.querySelectorAll('#fid-lista p').forEach(pp => { pp.innerHTML = pp.innerHTML.replace('toque em Novo cartão', 'toque em Novo cliente'); });
+                    let box = root.querySelector('#fid-progs');
+                    if (!box) {
+                        box = document.createElement('div'); box.id = 'fid-progs';
+                        const nb = document.getElementById('fid-novo-box'), off = root.querySelector('.fid-off');
+                        (off || nb || links).insertAdjacentElement('afterend', box);
+                    }
+                    if (!fidProgs.length) box.innerHTML = `<div class="tt"><b>Os seus cartões</b></div><div class="vazio"><p>Ainda não criou nenhum cartão para oferecer aos clientes. Pode ser de carimbos, de desconto ou com outra vantagem.</p><button type="button" onclick="fidProgEditar()"><i class="fas fa-plus"></i>Criar o primeiro cartão</button></div>`;
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+            // não perguntar a base de dados antes de saber qual é a empresa
+            const oC = fidCarregar;
+            fidCarregar = async function () { if (!fidDono()) return; return oC.apply(this, arguments); };
         })();
     </script>
 </body>
