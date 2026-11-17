@@ -1234,6 +1234,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         @keyframes gerAbana { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-8px) } 75% { transform: translateX(8px) } }
         #ger-modal .abana { animation: gerAbana .25s 2; }
     </style>
+<script src="carimbos.js"></script>
 </head>
 <body class="h-full flex flex-col text-slate-800">
 
@@ -17983,6 +17984,7 @@ var qrcode = function() {
             const rv = id => { const el = document.getElementById(id); return el ? (el.value || '').trim().slice(0, 200) || null : undefined; };
             const extra = {}; [['instagram', 'fid-ig'], ['tiktok', 'fid-tt'], ['youtube', 'fid-yt']].forEach(([k, id]) => { const v = rv(id); if (v !== undefined) extra[k] = v; });
             const ci = document.getElementById('fid-cor'); if (ci && /^#[0-9a-fA-F]{6}$/.test(ci.value)) extra.cor = ci.value;
+            if (document.getElementById('fid-vis')) { extra.logo = fidVis.logo || null; extra.carimbo = fidVis.carimbo || 'latte'; extra.fundo = fidVis.fundo || null; }
             const { data, error } = await sb.from('fidelidade_cfg').upsert({ dono_id: fidDono(), ligado, alvo, premio, ...extra, atualizado_em: new Date().toISOString() }).select('*').single();
             if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
             fidCfg = data; dsToast(ligado ? 'Cartão de fidelidade ligado' : 'Cartão em pausa. Os carimbos ficam guardados.'); fidPintar(); try { renderDashboard(); } catch (_) {}
@@ -18120,12 +18122,13 @@ var qrcode = function() {
         function fidCor() { return (appState.perfil && appState.perfil.cor && /^#[0-9a-fA-F]{6}$/.test(appState.perfil.cor.brand || '') && appState.perfil.cor.brand) || '#983808'; }
         async function fidImagem(k) {
             const cor = fidCor(), alvo = fidCfg.alvo, n = Math.min(k.carimbos, alvo), falta = Math.max(0, alvo - k.carimbos);
-            const selo = await fidSeloCarregar(cor);
+            const selo = await fidSeloCarregar(cor); const fundo = await fidFundoCarregar();
             try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
             const W = 1080, H = 1160, P = 84, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
             const x = cv.getContext('2d');
             const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
             x.fillStyle = cor; x.fillRect(0, 0, W, H);
+            if (fundo) { const k = Math.max(W / fundo.width, H / fundo.height), fw = fundo.width * k, fh = fundo.height * k; x.drawImage(fundo, (W - fw) / 2, (H - fh) / 2, fw, fh); const gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(20,10,5,.35)'); gr.addColorStop(1, 'rgba(20,10,5,.7)'); x.fillStyle = gr; x.fillRect(0, 0, W, H); }
             x.fillStyle = 'rgba(255,255,255,.12)'; x.beginPath(); x.arc(W - 90, 150, 330, 0, 7); x.fill();
             x.fillStyle = 'rgba(255,255,255,.08)'; x.save(); x.translate(120, H - 40); x.rotate(.32); x.fillRect(-150, -150, 300, 300); x.restore();
             x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
@@ -18162,7 +18165,7 @@ var qrcode = function() {
         }
         let fidImgCache = {};
         async function fidPreparar(k) {
-            const chave = k.id + ':' + k.carimbos + ':' + fidCfg.alvo;
+            const chave = [k.id, k.carimbos, fidCfg.alvo, fidCfg.cor, fidCfg.carimbo, fidCfg.fundo, fidCfg.premio].join(':');
             if (!fidImgCache[chave]) fidImgCache[chave] = await fidImagem(k);
             return fidImgCache[chave];
         }
@@ -18570,6 +18573,163 @@ var qrcode = function() {
                 return r;
             };
         })();
+    </script>
+
+    <style>
+        :root { --tinta: #24150E; --papel: #F4EEE6; --cafe-esc: #6E2805; }
+        /* ---------- papel com grão (só tema claro) */
+        html:not(.dark) body {
+            background-color: var(--papel) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .14  0 0 0 0 .08  0 0 0 0 .05  0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") !important;
+        }
+        /* ---------- topo e barra de baixo: linha de tinta */
+        html:not(.dark) header.sticky { border-bottom: 1.5px solid var(--tinta) !important; box-shadow: none !important; }
+        html:not(.dark) #ds-bottom-nav { border-top: 1.5px solid var(--tinta) !important; box-shadow: none !important; }
+        html:not(.dark) #ds-bottom-nav button.on { background: var(--tinta) !important; color: #fff !important; }
+        html:not(.dark) .tab-btn.is-active { background: var(--tinta) !important; color: #fff !important; box-shadow: none !important; }
+
+        /* ---------- quadros de informação: contorno fino e nítido, sem sombra difusa */
+        html:not(.dark) :is(.bg-white.rounded-2xl, .bg-white.rounded-3xl, .dh-card, .dh-hero, .fid-wrap, .fid-c, .cli-fid, #inv-val) {
+            border: 1px solid rgba(36, 21, 14, .18) !important; box-shadow: 0 1px 0 rgba(36, 21, 14, .05) !important;
+        }
+
+        /* ---------- tudo o que se toca: contorno de tinta + relevo */
+        html:not(.dark) :is(
+            .dh-acts button, .dh-tile, .dh-fid, .fid-link button, .fid-bt, .fid-acoes button, #sales-mais button,
+            #bal-ferr button, #pos-head-tools button, .ds-short, .sc-add button, .cli-fid .bts button,
+            button.bg-white.border, button.rounded-xl.bg-white, button.rounded-lg.bg-white, button.bg-slate-100.rounded-xl, button.rounded-xl.bg-slate-100,
+            .recipe-card-bar, .recipe-card-kitchen, #val-alerta, .ds-gear, .ds-account, #ds-sino
+        ) {
+            border: 1.5px solid var(--tinta) !important; box-shadow: 0 3px 0 var(--tinta) !important;
+            transition: transform .08s ease, box-shadow .08s ease, background-color .15s ease;
+        }
+        html:not(.dark) :is(.dh-acts button, .dh-tile, .dh-fid, .fid-link button, .fid-bt, .fid-acoes button, #sales-mais button, #bal-ferr button, #pos-head-tools button, .ds-short, .sc-add button, .cli-fid .bts button, button.bg-white.border, button.rounded-xl.bg-white, button.rounded-lg.bg-white, button.bg-slate-100.rounded-xl, button.rounded-xl.bg-slate-100, #val-alerta):hover { background-color: #FFF6EE !important; }
+        html:not(.dark) :is(.recipe-card-bar, .recipe-card-kitchen):hover { transform: translateY(-1px); box-shadow: 0 4px 0 var(--tinta) !important; }
+        /* botões principais: café com relevo de tinta */
+        html:not(.dark) :is(button.text-white.rounded-xl, button.text-white.rounded-lg, .bp, .fid-mais, .dh-vazio button, .add-bt, .fid-bt.p, #home-teste button) {
+            border: 1.5px solid var(--tinta) !important; box-shadow: 0 3px 0 var(--tinta) !important;
+            transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+        }
+        html:not(.dark) :is(button.text-white.rounded-xl, button.text-white.rounded-lg, .bp, .fid-mais):hover { filter: brightness(1.08); }
+        /* carregar: o botão desce */
+        html:not(.dark) :is(
+            .dh-acts button, .dh-tile, .dh-fid, .fid-link button, .fid-bt, .fid-acoes button, #sales-mais button, #bal-ferr button, #pos-head-tools button, .ds-short, .sc-add button, .cli-fid .bts button,
+            button.bg-white.border, button.rounded-xl.bg-white, button.rounded-lg.bg-white, button.bg-slate-100.rounded-xl, button.rounded-xl.bg-slate-100,
+            button.text-white.rounded-xl, button.text-white.rounded-lg, .bp, .fid-mais, .dh-vazio button, .add-bt, .recipe-card-bar, .recipe-card-kitchen, #val-alerta
+        ):active { transform: translateY(2px) !important; box-shadow: 0 1px 0 var(--tinta) !important; }
+        html:not(.dark) :is(button:disabled, button[disabled]) { box-shadow: none !important; transform: none !important; }
+
+        /* ---------- títulos com mais carácter */
+        html:not(.dark) .dh-hero .v { font-size: 46px; letter-spacing: -0.035em; }
+        html:not(.dark) .dh-card > h4, html:not(.dark) #tab-fidelidade .fid-wrap h3 { letter-spacing: -0.02em; }
+        html:not(.dark) .dh-bars .b.on span { background: var(--tinta); }
+        html:not(.dark) .dh-bars .b:last-child.on span { background: var(--brand); }
+        html:not(.dark) .ds-seg2 { border: 1.5px solid var(--tinta) !important; background: #FFFDFA !important; }
+        html:not(.dark) .ds-seg2 button.on, html:not(.dark) .ds-seg2 > .on { background: var(--tinta) !important; color: #fff !important; box-shadow: none !important; }
+        html:not(.dark) .ds-seg2 button.on i { color: #fff !important; }
+        /* separador tracejado de talão por baixo dos títulos dos quadros */
+        html:not(.dark) .dh-card > h4 { border-bottom: 1.5px dashed rgba(36, 21, 14, .22); padding-bottom: 12px; margin-bottom: 4px; }
+
+        /* ---------- definições do cartão */
+        .fid-vis { margin-top: 14px; display: grid; gap: 14px; }
+        .fid-vis .tt { font-size: 13px; font-weight: 800; color: #3A2A22; margin-bottom: 6px; display: block; }
+        .fid-car { display: flex; gap: 8px; flex-wrap: wrap; }
+        .fid-car button { width: 56px; height: 56px; border-radius: 50%; background: #fff; border: 2px solid #E4DCCF; display: flex; align-items: center; justify-content: center; padding: 9px; color: var(--brand); }
+        .fid-car button svg, .fid-car button img { width: 100%; height: 100%; object-fit: contain; }
+        .fid-car button.on { border-color: var(--tinta); box-shadow: 0 0 0 3px #FBEDE6; }
+        .fid-car button.up { font-size: 11px; font-weight: 800; color: #3A2A22; border-style: dashed; flex-direction: column; gap: 2px; }
+        .fid-img { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .fid-img .pv { width: 64px; height: 64px; border-radius: 16px; background: #F3EFE8 center / cover no-repeat; border: 1.5px solid #E4DCCF; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; color: #9A8A80; }
+        .fid-img .pv.larga { width: 112px; }
+        .fid-img label.fid-bt { cursor: pointer; }
+        .fid-img input[type=file] { display: none; }
+        .fid-prev { border-radius: 20px; padding: 16px; color: #fff; background: var(--brand); position: relative; overflow: hidden; }
+        .fid-prev.foto { background: linear-gradient(180deg, rgba(20,10,5,.3), rgba(20,10,5,.62)), var(--fp) center / cover no-repeat; }
+        .fid-prev .g { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+        .fid-prev .g span { aspect-ratio: 1; border-radius: 50%; border: 2px dashed rgba(255,255,255,.5); display: flex; align-items: center; justify-content: center; }
+        .fid-prev .g span.on { background: #fff; border: 0; color: var(--brand); padding: 13%; }
+        .fid-prev .g span.on svg, .fid-prev .g span.on img { width: 100%; height: 100%; object-fit: contain; }
+        .fid-guardar { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+        .fid-guardar .fid-bt { padding: 12px 16px; font-size: 14px; }
+        .fid-bt.p { background: var(--brand) !important; color: #fff !important; }
+        .fid-bt.p i { color: #fff !important; }
+    </style>
+
+    <script>
+        // ---------- imagens do cartão (logótipo, carimbo, fundo)
+        function fidLerImagem(file, max, png) {
+            return new Promise((ok, ko) => {
+                const r = new FileReader();
+                r.onload = () => { const img = new Image(); img.onload = () => {
+                    const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
+                    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    ok(c.toDataURL(png ? 'image/png' : 'image/jpeg', .85));
+                }; img.onerror = ko; img.src = r.result; };
+                r.onerror = ko; r.readAsDataURL(file);
+            });
+        }
+        async function fidCarregarFoto(inp, campo) {
+            const f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
+            if (!/^image\//.test(f.type)) return dsToast('Escolha uma imagem.', true);
+            dsToast('A enviar a imagem…');
+            try {
+                const d = await fidLerImagem(f, campo === 'fundo' ? 1400 : 500, campo !== 'fundo');
+                const url = await uploadPhoto(d, 'fid-' + campo);
+                fidVis[campo] = url; fidVisPintar();
+                dsToast('Imagem pronta. Carregue em Guardar.');
+            } catch (e) { console.warn(e); dsToast('Não foi possível enviar a imagem. Tente de novo.', true); }
+        }
+        let fidVis = {};
+        function fidVisPintar() {
+            const box = document.getElementById('fid-vis'); if (!box) return;
+            const cor = (document.getElementById('fid-cor') || {}).value || fidCor(), car = fidVis.carimbo || 'latte';
+            const L = DS_CARIMBOS.lista;
+            box.innerHTML = `
+                <div><span class="tt">Logótipo no cartão</span><div class="fid-img"><span class="pv" style="${fidVis.logo ? `background-image:url('${escapeHtml(fidVis.logo)}')` : ''}">${fidVis.logo ? '' : '<i class="fas fa-image"></i>'}</span>
+                    <label class="fid-bt"><i class="fas fa-upload"></i>${fidVis.logo ? 'Trocar' : 'Carregar logótipo'}<input type="file" accept="image/*" onchange="fidCarregarFoto(this,'logo')"></label>${fidVis.logo ? '<button type="button" class="fid-bt" onclick="fidVis.logo=null;fidVisPintar()">Tirar</button>' : ''}</div>
+                    <p class="text-xs text-slate-500 mt-1">Aparece no topo do cartão do cliente. Sem logótipo, usamos o da conta.</p></div>
+                <div><span class="tt">Carimbo</span><div class="fid-car">${Object.keys(L).map(k => `<button type="button" data-c="${k}" class="${car === k ? 'on' : ''}" title="${L[k].nome}" onclick="fidVis.carimbo='${k}';fidVisPintar()"></button>`).join('')}
+                    ${/^https:/.test(car) ? `<button type="button" class="on" title="A sua imagem"><img src="${escapeHtml(car)}" alt=""></button>` : ''}
+                    <label class="fid-car-up"><button type="button" class="up" onclick="this.nextElementSibling.click()"><i class="fas fa-upload"></i>Sua</button><input type="file" accept="image/*" style="display:none" onchange="fidCarregarFoto(this,'carimbo')"></label></div>
+                    <p class="text-xs text-slate-500 mt-1">Para o seu próprio carimbo, use uma imagem PNG com fundo transparente.</p></div>
+                <div><span class="tt">Foto de fundo</span><div class="fid-img"><span class="pv larga" style="${fidVis.fundo ? `background-image:url('${escapeHtml(fidVis.fundo)}')` : `background:${cor}`}"></span>
+                    <label class="fid-bt"><i class="fas fa-upload"></i>${fidVis.fundo ? 'Trocar foto' : 'Pôr uma foto'}<input type="file" accept="image/*" onchange="fidCarregarFoto(this,'fundo')"></label>${fidVis.fundo ? '<button type="button" class="fid-bt" onclick="fidVis.fundo=null;fidVisPintar()">Só cor</button>' : ''}</div></div>
+                <div><span class="tt">Assim fica</span><div class="fid-prev ${fidVis.fundo ? 'foto' : ''}" style="--brand:${cor};--fp:url('${escapeHtml(fidVis.fundo || '')}')"><b style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px">${escapeHtml(currentEmpresa || 'O seu café')}</b><div class="g">${[0, 1, 2, 3, 4].map(i => `<span class="${i < 3 ? 'on' : ''}" data-s="${i < 3 ? 1 : 0}"></span>`).join('')}</div></div></div>`;
+            // desenhar os carimbos (pré-definidos e o do cliente)
+            box.querySelectorAll('.fid-car button[data-c]').forEach(b => DS_CARIMBOS.html(b.dataset.c, cor).then(h => { b.innerHTML = h; }));
+            DS_CARIMBOS.html(car, cor).then(h => box.querySelectorAll('.fid-prev .g span[data-s="1"]').forEach(s => s.innerHTML = h));
+        }
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    // Guardar bem visível
+                    document.querySelectorAll('#fid-def .fid-bt').forEach(b => { if (/Guardar/.test(b.textContent)) { b.classList.add('p'); b.parentElement.classList.add('fid-guardar'); } });
+                    const sw = document.querySelector('#fid-def .fid-cores') || document.querySelector('.fid-cores');
+                    const alvoEl = document.getElementById('fid-def') || (document.getElementById('fid-premio') && document.getElementById('fid-premio').closest('.fid-cfg').parentElement);
+                    if (alvoEl && !document.getElementById('fid-vis')) {
+                        fidVis = { logo: fidCfg && fidCfg.logo || null, carimbo: (fidCfg && fidCfg.carimbo) || 'latte', fundo: fidCfg && fidCfg.fundo || null };
+                        const ancora = sw ? sw.parentElement : document.getElementById('fid-premio').closest('.fid-cfg');
+                        ancora.insertAdjacentHTML('afterend', '<div id="fid-vis" class="fid-vis"></div>');
+                        fidVisPintar();
+                        const ci = document.getElementById('fid-cor'); if (ci) ci.addEventListener('input', () => setTimeout(fidVisPintar, 0));
+                        document.querySelectorAll('.fid-cores button').forEach(b => b.addEventListener('click', () => setTimeout(fidVisPintar, 0)));
+                    }
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
+        // a imagem enviada por WhatsApp usa o carimbo e a foto escolhidos
+        fidSeloCarregar = function (cor) { return DS_CARIMBOS.imagem((fidCfg && fidCfg.carimbo) || 'latte', cor); };
+        let fidFundoImg = null, fidFundoUrl = '';
+        async function fidFundoCarregar() {
+            const u = fidCfg && fidCfg.fundo; if (!u) { fidFundoImg = null; fidFundoUrl = ''; return null; }
+            if (u === fidFundoUrl && fidFundoImg) return fidFundoImg;
+            fidFundoImg = await new Promise(ok => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ok(null); i.src = u; });
+            fidFundoUrl = u; return fidFundoImg;
+        }
     </script>
 </body>
 </html>

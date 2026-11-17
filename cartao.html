@@ -79,6 +79,10 @@
   .bp:disabled { opacity: .6; }
   .erro { color: #B91C1C; font-size: 14px; font-weight: 700; margin: 10px 0 0; min-height: 1em; }
   .vazio { text-align: center; padding: 60px 10px; color: var(--mut); }
+  a.assina { display: flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; color: #8A7A70; font-size: 12.5px; margin-top: 26px; }
+  a.assina svg { width: 20px; height: 20px; }
+  a.assina b { color: #231F20; font-family: 'Bricolage Grotesque', sans-serif; font-size: 14px; }
+  .cartao.foto { background: linear-gradient(180deg, rgba(20,10,5,.30), rgba(20,10,5,.62)), var(--fundo) center / cover no-repeat, var(--brand); }
   .assina { text-align: center; font-size: 12px; color: #9A8A80; margin-top: 22px; }
   .assina a { color: inherit; }
   .esq { height: 210px; border-radius: 26px; background: linear-gradient(90deg, #EDE6DD, #F6F1EB, #EDE6DD); background-size: 200% 100%; animation: sh 1.2s infinite linear; }
@@ -91,14 +95,21 @@
 <div class="wrap">
   <div class="topo"><span class="logo" id="logo">☕</span><div><b id="loja">&nbsp;</b><span>Cartão de fidelidade</span></div></div>
   <div id="app"><div class="esq"></div></div>
-  <p class="assina">Feito com <a href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/" target="_blank" rel="noopener">Dio’Stock</a></p>
+  <a class="assina" href="https://dioscoffeept-ui.github.io/gestaogeral/conhecer/" target="_blank" rel="noopener"><span>Feito com</span><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="110" fill="#983808"/><path fill="#FFFFFF" fill-rule="evenodd" transform="translate(-310.56 -358.57) scale(2.0901)" d="M285.94,221.79h-71.81v144.01h104.27l9.08-55.02-41.54-89ZM275.92,336.73h-31.92v-51.88h31.92v51.88Z"/></svg><b>Dio’Stock</b></a>
 </div>
+<script src="carimbos.js"></script>
 <script>
   const FN = 'https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/cartao-publico';
   const P = new URLSearchParams(location.search), C = P.get('c') || '', K = (P.get('k') || '').replace(/[^A-Za-z0-9]/g, ''), N = P.get('n') || '';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const PRESENTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>';
-  const SELO = '<svg viewBox="0 0 1036 1018" aria-hidden="true"><use href="#selo"/></svg>';
+  const SELO_LATTE = '<svg viewBox="0 0 1036 1018" aria-hidden="true"><use href="#selo"/></svg>';
+  let SELO = SELO_LATTE;
+  async function seloPreparar(d) {
+    const c = d.marca && d.marca.carimbo;
+    if (!c || c === 'latte' || !window.DS_CARIMBOS) { SELO = SELO_LATTE; return; }
+    try { SELO = await DS_CARIMBOS.html(c, (d.marca && d.marca.brand) || '#983808'); } catch (_) { SELO = SELO_LATTE; }
+  }
   let ultimo = '';
 
   async function post(body) {
@@ -114,7 +125,11 @@
     const l = document.getElementById('logo');
     if (d.marca && d.marca.logo) l.innerHTML = '<img src="' + esc(d.marca.logo) + '" alt="">';
     else l.textContent = (d.loja || '☕').trim().charAt(0).toUpperCase();
+    window._fundo = (d.marca && d.marca.fundo) || '';
+    if (window._fundo) document.documentElement.style.setProperty('--fundo', 'url("' + window._fundo.replace(/"/g, '') + '")');
+    if (d.marca && d.marca.logo) { let f = document.querySelector('link[rel=icon]'); if (!f) { f = document.createElement('link'); f.rel = 'icon'; document.head.appendChild(f); } f.href = d.marca.logo; }
   }
+  new MutationObserver(() => document.querySelectorAll('.cartao').forEach(c => c.classList.toggle('foto', !!window._fundo))).observe(document.getElementById('app'), { childList: true });
   function selos(alvo, n) {
     let h = '';
     for (let i = 1; i <= alvo; i++) h += `<span class="selo ${i <= n ? 'on' : ''}" aria-label="${i <= n ? 'carimbo' : 'vazio'}">${i <= n ? SELO : ''}</span>`;
@@ -197,8 +212,8 @@
   async function ver(silencioso) {
     try {
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
-      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing]);
-      if (k !== ultimo) { ultimo = k; cartao(d); }
+      const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca]);
+      if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); }
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); } catch (_) {}
     } catch (e) {
       if (!silencioso) document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`;
@@ -208,7 +223,7 @@
   async function pedir() {
     let d;
     try { d = await post({ acao: 'info', n: N }); } catch (e) { document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; return; }
-    marca(d);
+    await seloPreparar(d); marca(d);
     if (!d.ligado) { document.getElementById('app').innerHTML = '<div class="vazio">O cartão de fidelidade não está ativo neste momento.</div>'; return; }
     document.getElementById('app').innerHTML = `<section class="cartao"><div class="c-top"><div><small>O seu cartão</small><h1>${esc(d.premio)}</h1></div></div>
         <div class="selos">${selos(d.alvo, 0)}</div>
