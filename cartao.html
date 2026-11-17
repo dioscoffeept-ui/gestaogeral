@@ -105,6 +105,21 @@
   .folha ol { margin: 10px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.7; color: var(--ink); }
   .folha .ic { display: inline-flex; vertical-align: -4px; width: 22px; height: 22px; color: #0A84FF; }
   @keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ajuda summary { list-style: none; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .ajuda summary::-webkit-details-marker { display: none; }
+  .ajuda summary h2 { margin: 0; }
+  .ajuda .mais { width: 30px; height: 30px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: var(--mut); transition: transform .2s; }
+  .ajuda[open] .mais { transform: rotate(45deg); }
+  .faq { margin-top: 12px; display: grid; gap: 10px; }
+  .faq p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--mut); }
+  .faq b { display: block; color: var(--ink); }
+  .assuntos { display: flex; flex-wrap: wrap; gap: 6px; }
+  .assuntos label { margin: 0; }
+  .assuntos input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .assuntos span { display: inline-block; padding: 7px 12px; border-radius: 999px; border: 1.5px solid var(--line); font-size: 13px; font-weight: 700; color: var(--mut); background: #fff; cursor: pointer; }
+  .assuntos input:checked + span { border-color: var(--brand); color: var(--brand); background: color-mix(in srgb, var(--brand) 8%, #fff); }
+  .assuntos input:focus-visible + span { outline: 2px solid var(--brand); outline-offset: 2px; }
+  textarea { width: 100%; margin-top: 6px; border: 1px solid #DCD2C4; border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 16px; resize: vertical; }
   a.bs { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
   .bs.wa { background: #25D366; border-color: #25D366; color: #fff; }
   .bs.perigo { color: #B91C1C; border-color: #F3C4C4; }
@@ -320,6 +335,7 @@
       <div class="bloco"><h2>Como funciona</h2><p class="dica">${S ? `Diga o código <b>${esc(d.codigo)}</b> ao balcão quando pagar e recebe ${esc(V.charAt(0).toLowerCase() + V.slice(1))}.` : `Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.`}</p>${d.condicoes ? `<p class="dica" style="margin-top:8px"><b>Condições:</b> ${esc(d.condicoes)}</p>` : ''}</div>
       ${redesHtml(d.redes, d)}
       ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link.</p><button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
+      ${ajudaHtml(d, true)}
       <div class="bloco"><h2>Os seus dados</h2>
         <label class="chk"><input type="checkbox" ${d.marketing ? 'checked' : ''} onchange="novidades(this.checked)"><span>Receber novidades e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS</span></label>
         <details class="priv" style="margin-top:12px"><summary>Informação de privacidade</summary>${privTexto(d)}</details>
@@ -388,6 +404,39 @@
   }
 
   // sem o link: o cliente encontra o cartão com o telemóvel e o código de 4 algarismos
+  // dúvidas e ajuda: a mensagem chega à loja, na app
+  const ASSUNTOS = [['link', 'Perdi o link'], ['carimbos', 'Carimbos'], ['premio', 'Prémio'], ['dados', 'Os meus dados'], ['outro', 'Outra dúvida']];
+  function ajudaHtml(d, temCartao) {
+    return `<details class="bloco ajuda" id="ajuda"><summary><h2>Dúvidas e ajuda</h2><span class="mais">+</span></summary>
+      <div class="faq">
+        <p><b>Como ganho carimbos?</b> Diga o seu código ao balcão sempre que pagar. A equipa dá o carimbo e o cartão atualiza sozinho.</p>
+        <p><b>Perdi o link do cartão.</b> No link da loja, toque em "Já tem cartão?" e escreva o telemóvel e o código de 4 algarismos.</p>
+        <p><b>Quero apagar os meus dados.</b> No fim do cartão, em "Os seus dados", toque em "Apagar o meu cartão".</p>
+      </div>
+      <form id="aj-f" novalidate><p class="dica" style="margin:14px 0 8px;font-weight:700;color:var(--ink)">Não encontrou a resposta? Escreva à ${esc(d.loja || 'loja')}.</p>
+        <div class="assuntos">${ASSUNTOS.map(([k, t], i) => `<label><input type="radio" name="aj-a" value="${k}" ${i === (temCartao ? 1 : 0) ? 'checked' : ''}><span>${t}</span></label>`).join('')}</div>
+        ${temCartao ? '' : '<label>Nome<input id="aj-n" maxlength="60" autocomplete="given-name"></label><label>Telemóvel, para lhe responderem<input id="aj-t" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="9xx xxx xxx"></label>'}
+        <label>Mensagem<textarea id="aj-m" rows="3" maxlength="1000" placeholder="Escreva aqui a sua dúvida"></textarea></label>
+        <p class="erro" id="aj-e" role="alert"></p>
+        <button type="submit" class="bp" id="aj-ok">Enviar à loja</button>
+        <p class="dica" style="margin-top:8px;font-size:12px">A mensagem chega à ${esc(d.loja || 'loja')}. A equipa do Dio’Stock também a pode ler, só para melhorar o serviço.</p></form></details>`;
+  }
+  function ajudaLigar() {
+    const f = document.getElementById('aj-f'); if (!f || f._ok) return; f._ok = true;
+    f.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const b = document.getElementById('aj-ok'), e = document.getElementById('aj-e'); e.textContent = '';
+      const texto = document.getElementById('aj-m').value.trim(); if (texto.length < 2) { e.textContent = 'Escreva a sua mensagem.'; return; }
+      const assunto = (f.querySelector('input[name=aj-a]:checked') || {}).value || 'outro';
+      b.disabled = true; b.textContent = 'A enviar…';
+      try {
+        await post(K || C ? Object.assign({ acao: 'ajuda', texto, assunto }, K ? { k: K } : { c: C })
+          : { acao: 'ajuda', n: N, texto, assunto, nome: (document.getElementById('aj-n') || {}).value || '', tel: (document.getElementById('aj-t') || {}).value || '' });
+        f.innerHTML = '<div class="aviso desc" style="margin-top:12px"><i>✓</i><span>Mensagem enviada. A loja responde-lhe assim que puder.</span></div>';
+      } catch (er) { e.textContent = er.message; b.disabled = false; b.textContent = 'Enviar à loja'; }
+    });
+  }
+  new MutationObserver(ajudaLigar).observe(document.getElementById('app'), { childList: true, subtree: true });
   function waLoja(d) {
     const t = `Olá${d.loja ? ' ' + d.loja : ''}! Já tenho o cartão de fidelidade mas perdi o link. Podem enviar-me o link do meu cartão? Obrigado.`;
     return 'https://wa.me/' + d.whatsapp + '?text=' + encodeURIComponent(t);
@@ -408,7 +457,7 @@
       ev.preventDefault();
       const b = document.getElementById('fe-ok'), er = document.getElementById('fe-erro'); er.textContent = ''; b.disabled = true;
       try {
-        const r = await post({ acao: 'encontrar', tel: document.getElementById('fe-tel').value, codigo: document.getElementById('fe-cod').value });
+        const r = await post({ acao: 'encontrar', n: N, tel: document.getElementById('fe-tel').value, codigo: document.getElementById('fe-cod').value });
         try { localStorage.setItem('ds_cartao_ultimo', r.k); } catch (_) {}
         location.replace('cartao.html?k=' + r.k);
       } catch (e) { er.textContent = e.message; b.disabled = false; }
@@ -436,7 +485,7 @@
         <button type="submit" class="bp" id="ok">Criar o meu cartão</button></form>
       <div class="bloco"><h2>Já tem cartão?</h2><p class="dica">Abra-o com o telemóvel e o código do cartão${d.whatsapp ? ', ou peça o link à loja pelo WhatsApp' : ''}.</p>
         <button type="button" class="bs" onclick="encontrarPintar()">Abrir o meu cartão</button>
-        ${d.whatsapp ? `<a class="bs wa" href="${esc(waLoja(d))}" target="_blank" rel="noopener">Pedir o link à loja no WhatsApp</a>` : ''}</div>${redesHtml(d.redes, d)}`;
+        ${d.whatsapp ? `<a class="bs wa" href="${esc(waLoja(d))}" target="_blank" rel="noopener">Pedir o link à loja no WhatsApp</a>` : ''}</div>${ajudaHtml(d, false)}${redesHtml(d.redes, d)}`;
     document.getElementById('f').addEventListener('submit', async ev => {
       ev.preventDefault();
       const b = document.getElementById('ok'), er = document.getElementById('erro');

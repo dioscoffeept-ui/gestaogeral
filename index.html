@@ -20033,5 +20033,146 @@ var qrcode = function() {
             authVerifyCode = async function () { try { localStorage.removeItem('diostock-saiu'); } catch (_) {} return oV.apply(this, arguments); };
         })();
     </script>
+
+    <style>
+        #fid-msgs { margin-top: 14px; border: 1.5px solid #E4DCCF; border-radius: 16px; background: #fff; overflow: hidden; }
+        #fid-msgs > summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; font-weight: 800; color: #24150E; }
+        #fid-msgs > summary::-webkit-details-marker { display: none; }
+        #fid-msgs .bd { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+        #fid-msgs .m { padding: 12px 14px; border-top: 1px solid #F1EBE3; }
+        #fid-msgs .m.nova { background: #FFFCF8; }
+        #fid-msgs .m .h { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: #7A6A60; }
+        #fid-msgs .m .h b { color: #24150E; font-size: 14px; }
+        #fid-msgs .m .t { margin: 6px 0 8px; font-size: 14px; color: #24150E; white-space: pre-wrap; overflow-wrap: anywhere; }
+        #fid-msgs .m .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #F6F3F0; font-size: 11.5px; font-weight: 800; color: #5B4A40; margin-right: 6px; }
+        #fid-msgs .m .a { display: flex; gap: 6px; flex-wrap: wrap; }
+        #fid-msgs .m .a a, #fid-msgs .m .a button { padding: 6px 10px; border-radius: 10px; font-size: 12.5px; font-weight: 800; border: 1.5px solid #E4DCCF; background: #fff; color: #24150E; text-decoration: none; }
+        #fid-msgs .m .a a.wa { background: #25D366; border-color: #25D366; color: #fff; }
+        #fid-msgs .vz { padding: 14px; font-size: 13px; color: #7A6A60; border-top: 1px solid #F1EBE3; }
+    </style>
+
+    <script>
+        let fidMsgs = [], fidMsgsAberto = false;
+        const FID_ASSUNTO = { link: 'Perdeu o link', carimbos: 'Carimbos', premio: 'Prémio', dados: 'Dados', outro: 'Dúvida' };
+        async function fidMsgsCarregar() {
+            if (!sb || !fidDono()) return;
+            try { const { data } = await sb.from('fidelidade_mensagens').select('*').eq('dono_id', fidDono()).order('criado_em', { ascending: false }).limit(60); fidMsgs = data || []; } catch (_) {}
+        }
+        function fidMsgsHtml() {
+            const novas = fidMsgs.filter(m => !m.lida).length;
+            const quando = v => new Date(v).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            const wa = m => { const t = String(m.telefone || '').replace(/\D/g, ''); if (t.length < 9) return ''; const n = t.length === 9 ? '351' + t : t; const k = m.cartao_id && fidCartoes.find(x => x.id === m.cartao_id);
+                const txt = `Olá ${(m.nome || '').split(' ')[0]}! Aqui é ${currentEmpresa || 'a loja'}. Sobre a sua mensagem: ` + (m.assunto === 'link' && k ? `aqui está o link do seu cartão: ${fidLinkCartao(k)}` : '');
+                return `https://wa.me/${n}?text=${encodeURIComponent(txt)}`; };
+            return `<summary><i class="fas fa-comments" style="color:var(--brand)"></i><span style="flex:1">Mensagens dos clientes</span>${novas ? `<span class="bd">${novas}</span>` : `<span class="text-xs text-slate-400 font-bold">${fidMsgs.length || ''}</span>`}<i class="fas fa-chevron-down text-slate-400 text-xs"></i></summary>
+                ${fidMsgs.length ? fidMsgs.map(m => `<div class="m ${m.lida ? '' : 'nova'}"><div class="h"><span><b>${escapeHtml(m.nome || 'Cliente')}</b>${m.telefone ? ' · ' + escapeHtml(m.telefone) : ''}</span><span>${quando(m.criado_em)}</span></div>
+                    <p class="t"><span class="tag">${FID_ASSUNTO[m.assunto] || 'Dúvida'}</span>${escapeHtml(m.texto)}</p>
+                    <div class="a">${wa(m) ? `<a class="wa" href="${wa(m)}" target="_blank" rel="noopener" onclick="fidMsgLida('${m.id}',true)"><i class="fab fa-whatsapp mr-1"></i>Responder</a>` : ''}${m.lida ? `<button type="button" onclick="fidMsgLida('${m.id}',false)">Marcar como nova</button>` : `<button type="button" onclick="fidMsgLida('${m.id}',true)"><i class="fas fa-check mr-1"></i>Lida</button>`}<button type="button" onclick="fidMsgApagar('${m.id}')" style="color:#B91C1C">Apagar</button></div></div>`).join('')
+                : '<p class="vz">Ainda sem mensagens. Os clientes escrevem em "Dúvidas e ajuda", no cartão.</p>'}`;
+        }
+        async function fidMsgLida(id, v) {
+            const m = fidMsgs.find(x => x.id === id); if (!m) return;
+            m.lida = v; fidMsgsPintar();
+            try { await sb.from('fidelidade_mensagens').update({ lida: v }).eq('id', id); } catch (_) {}
+        }
+        async function fidMsgApagar(id) {
+            if (!(await dsConfirm('Apagar esta mensagem?', '', { danger: true, ok: 'Apagar' }))) return;
+            const { error } = await sb.from('fidelidade_mensagens').delete().eq('id', id);
+            if (error) return dsToast('Não foi possível apagar.', true);
+            fidMsgs = fidMsgs.filter(x => x.id !== id); fidMsgsPintar();
+        }
+        function fidMsgsPintar() {
+            const d = document.getElementById('fid-msgs'); if (!d) return;
+            fidMsgsAberto = d.open; d.innerHTML = fidMsgsHtml(); d.open = fidMsgsAberto;
+        }
+        (function () {
+            const oC = fidCarregar;
+            fidCarregar = async function () { const r = await oC.apply(this, arguments); await fidMsgsCarregar(); return r; };
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    const root = document.querySelector('#fid-page') || document.querySelector('#fid-modal');
+                    const ref = root && (root.querySelector('#fid-progs') || root.querySelector('.fid-link'));
+                    if (ref && !root.querySelector('#fid-msgs')) {
+                        const d = document.createElement('details'); d.id = 'fid-msgs'; d.open = fidMsgsAberto || fidMsgs.some(m => !m.lida);
+                        d.addEventListener('toggle', () => { fidMsgsAberto = d.open; });
+                        d.innerHTML = fidMsgsHtml(); ref.insertAdjacentElement('afterend', d);
+                    }
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
+    </script>
+
+    <script>
+        function fidCarregarImg(src) { return new Promise(ok => { if (!src) return ok(null); const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }); }
+        function fidLinhas(x, txt, max) { const ws = String(txt || '').split(/\s+/), L = []; let l = ''; ws.forEach(w => { const t = l ? l + ' ' + w : w; if (x.measureText(t).width > max && l) { L.push(l); l = w; } else l = t; }); if (l) L.push(l); return L; }
+        async function fidOgImagem(p) {
+            const cor = fidCor(), W = 1200, H = 630, P = 64;
+            const [fundo, cartaoBlob] = await Promise.all([fidFundoCarregar(), fidProgPreparar(p)]);
+            const cartao = await fidCarregarImg(URL.createObjectURL(cartaoBlob));
+            const logo = await fidCarregarImg((fidCfg && fidCfg.logo) || (appState.perfil && appState.perfil.logo) || '');
+            try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
+            const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
+            const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+            x.fillStyle = cor; x.fillRect(0, 0, W, H);
+            if (fundo) { const s = Math.max(W / fundo.width, H / fundo.height); x.drawImage(fundo, (W - fundo.width * s) / 2, (H - fundo.height * s) / 2, fundo.width * s, fundo.height * s); const g = x.createLinearGradient(0, 0, W, 0); g.addColorStop(0, 'rgba(20,10,5,.78)'); g.addColorStop(1, 'rgba(20,10,5,.35)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
+            else { x.fillStyle = 'rgba(255,255,255,.10)'; x.beginPath(); x.arc(W - 40, -40, 360, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,.10)'; x.beginPath(); x.arc(-60, H + 40, 260, 0, 7); x.fill(); }
+            // cartão à direita, ligeiramente rodado, com sombra
+            if (cartao) {
+                const cw = 470, ch = Math.min(500, cartao.height * cw / cartao.width), cx = W - P - cw / 2 + 10, cy = H / 2 + 6;
+                x.save(); x.translate(cx, cy); x.rotate(-0.06);
+                x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 40; x.shadowOffsetY = 18;
+                const rr = 28, w2 = cw / 2, h2 = ch / 2; x.beginPath(); x.moveTo(-w2 + rr, -h2); x.arcTo(w2, -h2, w2, h2, rr); x.arcTo(w2, h2, -w2, h2, rr); x.arcTo(-w2, h2, -w2, -h2, rr); x.arcTo(-w2, -h2, w2, -h2, rr); x.closePath();
+                x.fillStyle = cor; x.fill(); x.shadowColor = 'transparent'; x.clip();
+                x.drawImage(cartao, -w2, -h2, cw, cartao.height * cw / cartao.width);
+                x.lineWidth = 8; x.strokeStyle = 'rgba(255,255,255,.55)'; x.stroke();
+                x.restore();
+            }
+            // marca da loja
+            let tx = P;
+            if (logo) { const s = 84; x.save(); const rr = 22; x.beginPath(); x.moveTo(P + rr, P); x.arcTo(P + s, P, P + s, P + s, rr); x.arcTo(P + s, P + s, P, P + s, rr); x.arcTo(P, P + s, P, P, rr); x.arcTo(P, P, P + s, P, rr); x.closePath(); x.fillStyle = '#fff'; x.fill(); x.clip(); const k = Math.max(s / logo.width, s / logo.height); x.drawImage(logo, P + (s - logo.width * k) / 2, P + (s - logo.height * k) / 2, logo.width * k, logo.height * k); x.restore(); tx = P + 84 + 20; }
+            x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
+            x.font = `800 34px ${T}`; x.fillText((currentEmpresa || '').slice(0, 26), tx, P + 38);
+            x.font = `700 24px ${B}`; x.globalAlpha = .85; x.fillText(p.nome.slice(0, 32), tx, P + 74); x.globalAlpha = 1;
+            // a oferta, em grande
+            const maxW = 560; let y = 250;
+            if (p.tipo === 'carimbos') {
+                x.font = `700 30px ${B}`; x.globalAlpha = .9; x.fillText(`Junte ${p.alvo} carimbos e ganhe`, P, y); x.globalAlpha = 1; y += 18;
+                let fs = 76; x.font = `800 ${fs}px ${T}`; let L = fidLinhas(x, p.premio || 'Prémio', maxW);
+                while (L.length > 2 && fs > 50) { fs -= 6; x.font = `800 ${fs}px ${T}`; L = fidLinhas(x, p.premio || 'Prémio', maxW); }
+                L.slice(0, 2).forEach(l => { y += fs * 1.02; x.fillText(l, P, y); });
+            } else {
+                const v = fidVantagem(p); let fs = 92; x.font = `800 ${fs}px ${T}`; let L = fidLinhas(x, v, maxW);
+                while (L.length > 2 && fs > 52) { fs -= 6; x.font = `800 ${fs}px ${T}`; L = fidLinhas(x, v, maxW); }
+                y -= 30; L.slice(0, 2).forEach(l => { y += fs * 1.02; x.fillText(l, P, y); });
+            }
+            // botão
+            const bt = 'Toque e crie o seu cartão', by = H - P - 58; x.font = `800 26px ${B}`; const bw = x.measureText(bt).width + 56;
+            x.fillStyle = '#fff'; x.beginPath(); x.moveTo(P + 29, by); x.arcTo(P + bw, by, P + bw, by + 58, 29); x.arcTo(P + bw, by + 58, P, by + 58, 29); x.arcTo(P, by + 58, P, by, 29); x.arcTo(P, by, P + bw, by, 29); x.closePath(); x.fill();
+            x.fillStyle = cor; x.fillText(bt, P + 28, by + 38);
+            return await new Promise(r => c.toBlob(r, 'image/jpeg', .86));
+        }
+        // a imagem fica sempre no mesmo endereço; só é substituída quando o cartão muda
+        fidOgAtualizar = async function (p) {
+            if (!p || !p.curto || !p.ativo || !dataOwnerId) return;
+            const h = fidHash('og2|' + fidOgChave(p) + '|' + ((fidCfg && fidCfg.logo) || ''));
+            if (p.og_img && p.og_img.indexOf('v=' + h) >= 0) return;
+            if (fidOgEmCurso[p.id] === h) return; fidOgEmCurso[p.id] = h;
+            try {
+                const blob = await fidOgImagem(p), path = `${dataOwnerId}/fid-og-${p.curto}.jpg`;
+                const { error: e1 } = await sb.storage.from(PHOTO_BUCKET).upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '120' });
+                if (e1) throw e1;
+                const url = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl + '?v=' + h;
+                const { error } = await sb.from('fidelidade_programas').update({ og_img: url }).eq('id', p.id);
+                if (!error) p.og_img = url;
+            } catch (e) { console.warn('pré-visualização', e); delete fidOgEmCurso[p.id]; }
+        };
+        fidPaginaPronta = async function (p) {
+            if (!p.og_img) return false;
+            try { const r = await fetch(fidBase() + 'n/' + p.curto + '/', { cache: 'no-store' }); return r.ok && (await r.text()).indexOf('/fid-og-' + p.curto + '.jpg') >= 0; } catch (_) { return false; }
+        };
+    </script>
 </body>
 </html>

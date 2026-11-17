@@ -26,9 +26,16 @@ for (const p of lista) {
 <meta property="og:title" content="${esc(titulo)}">
 <meta property="og:description" content="${esc(p.descricao)}">
 <meta property="og:image" content="${esc(img)}">
+<meta property="og:image:secure_url" content="${esc(img)}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(titulo)}">
+<meta property="og:locale" content="pt_PT">
+<meta name="description" content="${esc(p.descricao)}">
+<link rel="canonical" href="${esc(url)}">
 <meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image">
-<meta http-equiv="refresh" content="0;url=../../cartao.html?n=${p.curto}">
 <script>location.replace('../../cartao.html?n=${p.curto}' + location.hash);</script>
 <style>body{font-family:system-ui,sans-serif;background:#F6F3F0;color:#231F20;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center}a{color:#231F20;font-weight:700}</style>
 </head><body><p><a href="../../cartao.html?n=${p.curto}">Abrir o cartão</a></p></body></html>

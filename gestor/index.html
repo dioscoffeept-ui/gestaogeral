@@ -199,7 +199,8 @@ async function arrancar() {
 }
 async function carregar() {
   $('#mn').innerHTML = '<p class="vazio">A carregar…</p>';
-  const [{ data, error }, cf] = await Promise.all([sb.rpc('admin_painel'), sb.rpc('admin_config_ler')]);
+  const [{ data, error }, cf, fm] = await Promise.all([sb.rpc('admin_painel'), sb.rpc('admin_config_ler'), sb.rpc('admin_fid_mensagens', { p_limite: 500 })]);
+  FM = (fm && fm.data) || [];
   CFG = {}; ((cf && cf.data) || []).forEach(r => CFG[r.chave] = r.valor);
   if (error) { $('#mn').innerHTML = '<p class="vazio">Não foi possível carregar: ' + esc(error.message) + '</p>'; return; }
   D = data; D.empresas.forEach(classificar); pintar();
@@ -220,11 +221,26 @@ function classificar(e) {
   e.estado = e.bloqueado ? ['Bloqueado', 'r'] : e.pagante ? ['A pagar', 'g'] : e.oferta ? ['Oferta / teste', 'b'] : e.expirado ? ['Expirou', 'a'] : ['Fichas', 'n'];
 }
 function pintar() {
-  const nm = D.mensagens.filter(m => m.estado === 'nova').length;
-  const T = [['geral', 'Visão geral'], ['clientes', 'Clientes'], ['mensagens', 'Mensagens' + (nm ? ` <span class="bd">${nm}</span>` : '')], ['cancel', 'Cancelamentos'], ['pag', 'Pagamentos'], ['def', 'Definições']];
+  const nm = D.mensagens.filter(m => m.estado === 'nova').length, nf = FM.filter(m => !m.lida).length;
+  const T = [['geral', 'Visão geral'], ['clientes', 'Clientes'], ['mensagens', 'Mensagens' + (nm ? ` <span class="bd">${nm}</span>` : '')], ['cartoes', 'Cartões' + (nf ? ` <span class="bd">${nf}</span>` : '')], ['cancel', 'Cancelamentos'], ['pag', 'Pagamentos'], ['def', 'Definições']];
   $('#tabs').innerHTML = T.map(([k, t]) => `<button class="${k === tab ? 'on' : ''}" data-t="${k}">${t}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b => b.onclick = () => { tab = b.dataset.t; pintar(); });
-  ({ geral: vGeral, clientes: vClientes, mensagens: vMensagens, cancel: vCancel, pag: vPag, def: vDef })[tab]();
+  ({ geral: vGeral, clientes: vClientes, mensagens: vMensagens, cartoes: vCartoes, cancel: vCancel, pag: vPag, def: vDef })[tab]();
+}
+// ---------- cartões de fidelidade: dúvidas que os clientes das empresas enviam
+let FM = [], fmFiltro = '';
+const FM_A = { link: 'Perdeu o link', carimbos: 'Carimbos', premio: 'Prémio', dados: 'Dados', outro: 'Outra dúvida' };
+function vCartoes() {
+  const L = FM.filter(m => !fmFiltro || m.assunto === fmFiltro || m.empresa === fmFiltro);
+  const porA = {}, porE = {}; FM.forEach(m => { porA[m.assunto || 'outro'] = (porA[m.assunto || 'outro'] || 0) + 1; porE[m.empresa] = (porE[m.empresa] || 0) + 1; });
+  const tot = FM.length || 1, ult30 = FM.filter(m => Date.now() - new Date(m.criado_em) < 30 * 864e5).length;
+  const barras = (o, lbl) => Object.entries(o).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<div class="row" data-fm="${esc(k)}" style="cursor:pointer"><div style="flex:1;min-width:0"><b>${esc(lbl ? (lbl[k] || k) : k)}</b><div class="bar"><i style="width:${n / tot * 100}%"></i></div></div><b>${n}</b></div>`).join('');
+  $('#mn').innerHTML = `<div class="grid k4">${kpi('Mensagens', FM.length, ult30 + ' nos últimos 30 dias')}${kpi('Por ler nas lojas', FM.filter(m => !m.lida).length, 'ainda sem resposta')}${kpi('Empresas', Object.keys(porE).length, 'com mensagens de clientes')}${kpi('Assunto n.º 1', FM.length ? esc(FM_A[Object.entries(porA).sort((a, b) => b[1] - a[1])[0][0]] || '') : '—', 'o problema mais repetido')}</div>
+  <div class="grid k2" style="margin-top:14px"><div class="card"><h2>Problemas mais repetidos</h2>${barras(porA, FM_A) || '<p class="vazio">Ainda sem mensagens.</p>'}</div><div class="card"><h2>Por empresa</h2>${barras(porE) || '<p class="vazio">Ainda sem mensagens.</p>'}</div></div>
+  <div class="card" style="margin-top:14px"><h2>${fmFiltro ? 'A mostrar: ' + esc(FM_A[fmFiltro] || fmFiltro) + ' <button class="btn" id="fm-x" style="margin-left:8px">Ver todas</button>' : 'Todas as mensagens'}</h2>
+  ${L.length ? L.map(m => `<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:0"><b>${esc(m.empresa)}</b> <span class="sub" style="display:inline">· ${esc(m.cartao || 'Cartão')} · ${esc(FM_A[m.assunto] || 'Dúvida')} · ${new Date(m.criado_em).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}${m.lida ? '' : ' · <b style="color:#B45309">por ler</b>'}</span><p style="margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere">${esc(m.texto)}</p></div></div>`).join('') : '<p class="vazio">Sem mensagens.</p>'}</div>`;
+  $('#mn').querySelectorAll('[data-fm]').forEach(r => r.onclick = () => { fmFiltro = r.dataset.fm; vCartoes(); });
+  const x = $('#fm-x'); if (x) x.onclick = () => { fmFiltro = ''; vCartoes(); };
 }
 // ---------- visão geral
 function vGeral() {
