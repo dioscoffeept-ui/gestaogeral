@@ -105,6 +105,8 @@
   .folha ol { margin: 10px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.7; color: var(--ink); }
   .folha .ic { display: inline-flex; vertical-align: -4px; width: 22px; height: 22px; color: #0A84FF; }
   @keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  a.bs { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
+  .bs.wa { background: #25D366; border-color: #25D366; color: #fff; }
   .bs.perigo { color: #B91C1C; border-color: #F3C4C4; }
   .consent { margin-bottom: 14px; }
   .dica { font-size: 13.5px; color: var(--mut); line-height: 1.5; margin: 0; }
@@ -386,14 +388,22 @@
   }
 
   // sem o link: o cliente encontra o cartão com o telemóvel e o código de 4 algarismos
+  function waLoja(d) {
+    const t = `Olá${d.loja ? ' ' + d.loja : ''}! Já tenho o cartão de fidelidade mas perdi o link. Podem enviar-me o link do meu cartão? Obrigado.`;
+    return 'https://wa.me/' + d.whatsapp + '?text=' + encodeURIComponent(t);
+  }
   function encontrarPintar() {
+    const d = window._loja || {};
     document.getElementById('app').innerHTML = `<form class="bloco" id="fe" novalidate><h2>Abrir o meu cartão</h2>
       <p class="dica">Escreva o telemóvel com que criou o cartão e o código de 4 algarismos que aparece no cartão.</p>
       <label>Telemóvel<input id="fe-tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9xx xxx xxx"></label>
       <label>Código do cartão<input id="fe-cod" inputmode="numeric" maxlength="4" placeholder="0000"></label>
       <p class="erro" id="fe-erro" role="alert"></p>
       <button type="submit" class="bp" id="fe-ok">Abrir o meu cartão</button>
-      <p class="dica" style="margin-top:12px">Não sabe o código? Peça ao balcão o link do seu cartão.</p></form>`;
+      <p class="dica" style="margin-top:12px">Não sabe o código? ${d.whatsapp ? 'Peça o link à loja pelo WhatsApp.' : 'Peça ao balcão o link do seu cartão.'}</p>
+      ${d.whatsapp ? `<a class="bs wa" href="${esc(waLoja(d))}" target="_blank" rel="noopener">Pedir o link no WhatsApp</a>` : ''}
+      ${N ? '<button type="button" class="apagar-lnk" onclick="pedir()">Voltar a criar um cartão</button>' : ''}</form>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     document.getElementById('fe').addEventListener('submit', async ev => {
       ev.preventDefault();
       const b = document.getElementById('fe-ok'), er = document.getElementById('fe-erro'); er.textContent = ''; b.disabled = true;
@@ -407,7 +417,7 @@
   async function pedir() {
     let d;
     try { d = await post({ acao: 'info', n: N }); } catch (e) { topoNeutro(); document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; return; }
-    await seloPreparar(d); marca(d);
+    window._loja = d; await seloPreparar(d); marca(d);
     if (!d.ligado) { document.getElementById('app').innerHTML = '<div class="vazio">O cartão de fidelidade não está ativo neste momento.</div>'; return; }
     const S = simples(d);
     document.getElementById('app').innerHTML = (S ? `<section class="cartao simples"><div class="c-top"><div><small>${esc(d.titulo || 'O seu cartão')}</small><h1>${esc(vantagem(d.programa))}</h1></div></div>
@@ -423,7 +433,10 @@
         <label class="chk"><input type="checkbox" id="mk"><span>Quero receber novidades e ofertas por WhatsApp ou SMS. (Opcional)</span></label>
         <details class="priv" style="margin-top:12px"><summary>Ler a informação de privacidade</summary>${privTexto(d)}</details>
         <p class="erro" id="erro" role="alert"></p>
-        <button type="submit" class="bp" id="ok">Criar o meu cartão</button></form>${redesHtml(d.redes, d)}`;
+        <button type="submit" class="bp" id="ok">Criar o meu cartão</button></form>
+      <div class="bloco"><h2>Já tem cartão?</h2><p class="dica">Abra-o com o telemóvel e o código do cartão${d.whatsapp ? ', ou peça o link à loja pelo WhatsApp' : ''}.</p>
+        <button type="button" class="bs" onclick="encontrarPintar()">Abrir o meu cartão</button>
+        ${d.whatsapp ? `<a class="bs wa" href="${esc(waLoja(d))}" target="_blank" rel="noopener">Pedir o link à loja no WhatsApp</a>` : ''}</div>${redesHtml(d.redes, d)}`;
     document.getElementById('f').addEventListener('submit', async ev => {
       ev.preventDefault();
       const b = document.getElementById('ok'), er = document.getElementById('erro');
