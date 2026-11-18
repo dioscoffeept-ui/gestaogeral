@@ -2,6 +2,8 @@
 // Corre no GitHub Actions; só lê dados públicos (os mesmos que aparecem no link do cartão).
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
+import { pngCartao } from './og.mjs';
 
 const URL_SB = 'https://brisrzuvvxkkzhmhsgro.supabase.co';
 const KEY = 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs';
@@ -35,8 +37,15 @@ const pasta = path.resolve('n');
 const feitos = new Set();
 for (const p of lista) {
   const dir = path.join(pasta, p.curto); fs.mkdirSync(dir, { recursive: true });
-  const local = await copiarImagem(p.imagem, dir);
-  const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : (p.imagem || BASE + 'cartao-og.png'), url = BASE + 'n/' + p.curto + '/';
+  // imagem desenhada aqui, no estilo da cartao-og.png, guardada no próprio site (grande e nítida no WhatsApp)
+  let local = '';
+  try {
+    const png = pngCartao(p), fo = path.join(dir, 'og.png');
+    if (!fs.existsSync(fo) || !fs.readFileSync(fo).equals(png)) { fs.writeFileSync(fo, png); console.log('imagem', p.curto); }
+    local = 'og.png?v=' + crypto.createHash('md5').update(png).digest('hex').slice(0, 8);
+    const velha = path.join(dir, 'og.jpg'); if (fs.existsSync(velha)) fs.rmSync(velha);
+  } catch (e) { console.error('imagem', p.curto, e.message); }
+  const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : BASE + 'cartao-og.png', url = BASE + 'n/' + p.curto + '/';
   const html = `<!doctype html>
 <html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(titulo)}</title>
@@ -47,7 +56,7 @@ for (const p of lista) {
 <meta property="og:description" content="${esc(p.descricao)}">
 <meta property="og:image" content="${esc(img)}">
 <meta property="og:image:secure_url" content="${esc(img)}">
-<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${esc(titulo)}">

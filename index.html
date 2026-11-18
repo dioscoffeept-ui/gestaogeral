@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 21:50</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 22:00</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20175,7 +20175,7 @@ var qrcode = function() {
         };
         fidPaginaPronta = async function (p) {
             if (!p.og_img) return false;
-            try { const r = await fetch(fidBase() + 'n/' + p.curto + '/?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false; const t = await r.text(), v = (p.og_img.match(/[?&]v=([\w-]+)/) || [])[1]; return v ? t.indexOf('og.jpg?v=' + v) >= 0 || t.indexOf(p.og_img) >= 0 : t.indexOf(p.og_img) >= 0; } catch (_) { return false; }
+            try { const r = await fetch(fidBase() + 'n/' + p.curto + '/?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return false; return (await r.text()).indexOf('og.png?v=') >= 0; } catch (_) { return false; }
         };
     </script>
 
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795036503';
+        const DS_BUILD = '1795037306';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20872,7 +20872,7 @@ var qrcode = function() {
 
     <script>
         // link do cartão com a versão da imagem: o WhatsApp vai buscar a imagem nova (não usa a antiga guardada)
-        function fidLinkProg(p) { const v = ((p && p.og_img) || '').match(/[?&]v=([\w-]+)/); return fidBase() + 'n/' + p.curto + '/' + (v ? '?v=' + v[1] : ''); }
+        function fidLinkProg(p) { return fidBase() + 'n/' + p.curto + '/?v=' + fidHash([p.nome, p.tipo, p.alvo, p.premio, p.desconto_tipo, p.desconto_valor, p.beneficio, currentEmpresa, fidCor()].join('|')).slice(0, 6); }
         // o link vai primeiro: assim o WhatsApp mostra a pré-visualização em grande, por cima do texto, numa só mensagem
         function fidTextoProg(p) { return fidLinkProg(p) + '\n\n' + (p.mensagem || fidMsgPadrao(p)).trim(); }
         async function fidShEsperar(p) {
