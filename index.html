@@ -6716,9 +6716,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         // Links de pagamento (Stripe Payment Links). Enquanto estiverem vazios, o botão envia um e-mail.
         const PAYMENT_LINKS = { gratis_mes: '', cafe_mes: '', cafe_ano: '', pro_mes: '', pro_ano: '', portal: '' };
         const PLANS = {
-            gratis: { nome: 'Fichas', mes: 5, desc: 'Para fazer as contas às suas bebidas', feats: ['Simulador de margem e lucro líquido', 'Até 10 fichas do bar, com foto', 'Custos e margem calculados sozinhos'] },
+            gratis: { nome: 'Expresso', mes: 5, desc: 'Para fazer as contas às suas bebidas', feats: ['Simulador de margem e lucro líquido', 'Até 10 fichas do bar, com foto', 'Custos e margem calculados sozinhos', '1 cartão de fidelidade (carimbos ou desconto)'] },
             cafe: { nome: 'Café', mes: 15, ano: 149, desc: 'Balcão, stock e vendas do dia',
-                    feats: ['Fichas do bar ilimitadas, com foto e custo', 'Stock e porções prontas', 'Balcão com mesas (10 + 10 esplanada + 5 eventos)', 'Ecrãs do bar e da cozinha, e sessões de caixa', 'Ligação ao POS: Vendus, ou SAF-T e foto de qualquer POS'] },
+                    feats: ['Fichas do bar ilimitadas, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock e porções prontas', 'Balcão com mesas (10 + 10 esplanada + 5 eventos)', 'Ecrãs do bar e da cozinha, e sessões de caixa', 'Ligação ao POS: Vendus, ou SAF-T e foto de qualquer POS'] },
             pro: { nome: 'PRO', mes: 32, ano: 320, desc: 'Gestão completa: pedidos, fornecedores, equipa e cozinha',
                    feats: ['Tudo o que o plano Café inclui', 'Mesas e eventos sem limite, na planta da sala', 'Fichas da cozinha e do brunch', 'Equipa, relatórios, reservas e pontos', 'Produção, encomendas e fornecedores'] }
         };
@@ -6794,12 +6794,12 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (currentPlan !== 'gratis') { el.classList.add('hidden'); return; }
             const n = barCount();
             el.classList.remove('hidden');
-            el.innerHTML = `<span><i class="fas fa-circle-info mr-1"></i>Plano Fichas: <b>${n} de ${FREE_BAR_LIMIT}</b> fichas do bar.</span> <button type="button" onclick="openUpgrade('cafe')" class="font-bold underline" style="color:var(--brand)">Fichas ilimitadas no plano Café</button>`;
+            el.innerHTML = `<span><i class="fas fa-circle-info mr-1"></i>Plano Expresso: <b>${n} de ${FREE_BAR_LIMIT}</b> fichas do bar.</span> <button type="button" onclick="openUpgrade('cafe')" class="font-bold underline" style="color:var(--brand)">Fichas ilimitadas no plano Café</button>`;
         }
 
         function newRecipe(type) {
             if (type === 'KITCHEN' && !isPro()) return openUpgrade('pro');
-            if (type !== 'KITCHEN' && currentPlan === 'gratis' && barCount() >= FREE_BAR_LIMIT) return openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Fichas');
+            if (type !== 'KITCHEN' && currentPlan === 'gratis' && barCount() >= FREE_BAR_LIMIT) return openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Expresso');
             openRecipeModal(type);
         }
 
@@ -17663,7 +17663,7 @@ var qrcode = function() {
         // ---- planos sem o Balcão
         try {
             PLANS.cafe.desc = 'Fichas, stock e vendas do dia';
-            PLANS.cafe.feats = ['Fichas do bar ilimitadas, com foto e custo', 'Stock, porções prontas e validades', 'Vendas do dia: SumUp, foto do relatório, SAF-T ou à mão', 'Alertas de stock e de margem'];
+            PLANS.cafe.feats = ['Fichas do bar ilimitadas, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock, porções prontas e validades', 'Vendas do dia: SumUp, foto do relatório, SAF-T ou à mão', 'Alertas de stock e de margem'];
             PLANS.pro.feats = ['Tudo o que o plano Café inclui', 'Fichas da cozinha e do brunch', 'Fornecedores, encomendas por WhatsApp e faturas de compra', 'Produção do dia e equipa', 'Validades e desperdício a descontar o stock'];
         } catch (_) {}
     </script>
@@ -18494,7 +18494,7 @@ var qrcode = function() {
             if (navS && !document.getElementById('nav-fidelidade')) navS.insertAdjacentHTML('afterend', '<button onclick="switchTab(\'fidelidade\')" id="nav-fidelidade" class="tab-btn ds-tab shrink-0 text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition"><i class="fas fa-stamp"></i> Fidelidade</button>');
             const bn = document.querySelector('#ds-bottom-nav button[data-tab=sales]');
             if (bn && !document.querySelector('#ds-bottom-nav button[data-tab=fidelidade]')) bn.insertAdjacentHTML('afterend', '<button type="button" data-tab="fidelidade" onclick="switchTab(\'fidelidade\')"><i class="fas fa-stamp"></i><span>Fidelidade</span></button>');
-            if (typeof TAB_PLAN !== 'undefined') TAB_PLAN.fidelidade = 'cafe';
+            if (typeof TAB_PLAN !== 'undefined') TAB_PLAN.fidelidade = 'gratis';
             // a ferramenta do topo passa a ser a própria aba
             document.querySelectorAll('#ds-ferr .fid').forEach(b => b.remove());
         })();
@@ -18512,7 +18512,7 @@ var qrcode = function() {
             const oF = dsModalFechar;
             dsModalFechar = function (id) { if (id === 'fid-modal' && fidNaPagina()) return; return oF.apply(this, arguments); };
         })();
-        fidAbrir = function () { if (!hasPlan('cafe')) return openUpgrade('cafe'); switchTab('fidelidade'); };
+        fidAbrir = function () { switchTab('fidelidade'); };
 
         // ---------- Vendas do dia junto ao Balcão (quando o Balcão está ativo)
         (function () {
@@ -19117,10 +19117,10 @@ var qrcode = function() {
             let lista = impRes.filter(x => x.usar && x.nome.trim());
             if (currentPlan === 'gratis') {
                 const livres = Math.max(0, FREE_BAR_LIMIT - barCount()), bar = lista.filter(x => x.tipo !== 'KITCHEN');
-                if (bar.length > livres) { lista = lista.filter(x => x.tipo === 'KITCHEN').concat(bar.slice(0, livres)); dsToast(`O plano Fichas tem ${FREE_BAR_LIMIT} fichas: criei só ${livres}.`, true); }
+                if (bar.length > livres) { lista = lista.filter(x => x.tipo === 'KITCHEN').concat(bar.slice(0, livres)); dsToast(`O plano Expresso tem ${FREE_BAR_LIMIT} fichas: criei só ${livres}.`, true); }
             }
             lista = lista.filter(x => x.tipo !== 'KITCHEN' || isPro());
-            if (!lista.length) return currentPlan === 'gratis' ? openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Fichas') : dsToast('Nada para criar.', true);
+            if (!lista.length) return currentPlan === 'gratis' ? openUpgrade('cafe', 'Chegou às ' + FREE_BAR_LIMIT + ' fichas do plano Expresso') : dsToast('Nada para criar.', true);
             const base = Date.now();
             lista.forEach((x, n) => {
                 const tipo = x.tipo === 'KITCHEN' ? 'KITCHEN' : 'BAR';
@@ -20207,6 +20207,19 @@ var qrcode = function() {
         (function () {
             const oP = fidPintar;
             fidPintar = function () { const r = oP.apply(this, arguments); try { setTimeout(fidIconeAtualizar, 1800); } catch (_) {} return r; };
+        })();
+    </script>
+
+    <script>
+        // Plano Expresso: um só cartão de fidelidade (de qualquer tipo). Criar outro pede o plano Café.
+        const FID_LIMITE_EXPRESSO = 1;
+        const fidLimiteAtingido = () => !hasPlan('cafe') && (fidProgs || []).length >= FID_LIMITE_EXPRESSO;
+        (function () {
+            const oE = fidProgEditar;
+            fidProgEditar = function (id) {
+                if (!id && fidLimiteAtingido()) return openUpgrade('cafe', 'O plano Expresso inclui 1 cartão de fidelidade. No plano Café pode criar quantos quiser.');
+                return oE.apply(this, arguments);
+            };
         })();
     </script>
 </body>

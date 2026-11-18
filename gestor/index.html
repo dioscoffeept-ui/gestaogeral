@@ -125,7 +125,7 @@ body{overflow-x:hidden}
 <script src="supabase.js"></script>
 <script>
 const sb = supabase.createClient('https://brisrzuvvxkkzhmhsgro.supabase.co', 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', { auth: { persistSession: true, storageKey: 'ds-gestor-auth' } });
-const PRECO = { gratis: 5, cafe: 15, pro: 32 }, PNOME = { free: 'Fichas', gratis: 'Fichas', cafe: 'Café', pro: 'PRO' };
+const PRECO = { gratis: 5, cafe: 15, pro: 32 }, PNOME = { free: 'Expresso', gratis: 'Expresso', cafe: 'Café', pro: 'PRO' };
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const eur = v => (Number(v) || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
@@ -218,7 +218,7 @@ function classificar(e) {
   const dias = e.ult_ativ ? (Date.now() - new Date(e.ult_ativ)) / 864e5 : 999;
   const expiraEm = e.plano_valido_ate ? (new Date(e.plano_valido_ate) - Date.now()) / 864e5 : 999;
   e.risco = !e.bloqueado && ((e.pagante && (dias > 10 || expiraEm < 7)) || (e.oferta && expiraEm < 7));
-  e.estado = e.bloqueado ? ['Bloqueado', 'r'] : e.pagante ? ['A pagar', 'g'] : e.oferta ? ['Oferta / teste', 'b'] : e.expirado ? ['Expirou', 'a'] : ['Fichas', 'n'];
+  e.estado = e.bloqueado ? ['Bloqueado', 'r'] : e.pagante ? ['A pagar', 'g'] : e.oferta ? ['Oferta / teste', 'b'] : e.expirado ? ['Expirou', 'a'] : ['Expresso', 'n'];
 }
 function pintar() {
   const nm = D.mensagens.filter(m => m.estado === 'nova').length, nf = FM.filter(m => !m.lida).length;
@@ -267,7 +267,7 @@ function vGeral() {
 const kpi = (l, v, s) => `<div class="card kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
 // ---------- clientes
 function vClientes() {
-  const F = [['todos', 'Todos'], ['pagantes', 'A pagar'], ['oferta', 'Oferta / teste'], ['gratis', 'Fichas'], ['risco', 'Em risco'], ['bloq', 'Bloqueados']];
+  const F = [['todos', 'Todos'], ['pagantes', 'A pagar'], ['oferta', 'Oferta / teste'], ['gratis', 'Expresso'], ['risco', 'Em risco'], ['bloq', 'Bloqueados']];
   const ok = e => filtro === 'todos' || (filtro === 'pagantes' && e.pagante) || (filtro === 'oferta' && e.oferta) || (filtro === 'gratis' && !e.pagante && !e.oferta) || (filtro === 'risco' && e.risco) || (filtro === 'bloq' && e.bloqueado);
   const q = busca.toLowerCase(), L = D.empresas.filter(e => ok(e) && (!q || (e.nome + ' ' + (e.email || '')).toLowerCase().includes(q)));
   $('#mn').innerHTML = `<div class="tools"><input id="q" type="search" placeholder="Procurar empresa ou e-mail…" value="${esc(busca)}"><div class="chips">${F.map(([k, t]) => `<button class="${k === filtro ? 'on' : ''}" data-f="${k}">${t}</button>`).join('')}</div></div>
