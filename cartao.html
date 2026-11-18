@@ -250,8 +250,10 @@
     const l = document.querySelector('link[rel=manifest]');
     if (ios) { if (l) l.remove(); }
     else {
-      const icons = [{ src: dir + 'cartao-icon-192.png', sizes: '192x192', type: 'image/png' }, { src: dir + 'cartao-icon-512.png', sizes: '512x512', type: 'image/png' }];
-      if (d.marca && d.marca.logo) icons.unshift({ src: d.marca.logo, sizes: '400x400', type: 'image/png', purpose: 'any' });
+      // ícone da loja (feito pela app, nos tamanhos certos); sem ele, o ícone genérico do cartão
+      const ic = d.marca && d.marca.icone, i192 = ic && ic.replace('fid-icone-512.png', 'fid-icone-192.png');
+      const icons = ic ? [{ src: i192, sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: ic, sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: ic, sizes: '512x512', type: 'image/png', purpose: 'maskable' }]
+        : [{ src: dir + 'cartao-icon-192.png', sizes: '192x192', type: 'image/png' }, { src: dir + 'cartao-icon-512.png', sizes: '512x512', type: 'image/png' }];
       const m = { name: (d.loja ? d.loja + ' · ' : '') + (d.titulo || 'Cartão'), short_name: (d.loja || 'Cartão').slice(0, 12).trim(), id: url, start_url: url, scope: dir,
         display: 'standalone', background_color: '#F6F3F0', theme_color: (d.marca && d.marca.brand) || '#983808', icons };
       const href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m));

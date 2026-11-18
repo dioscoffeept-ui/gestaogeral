@@ -20174,5 +20174,40 @@ var qrcode = function() {
             try { const r = await fetch(fidBase() + 'n/' + p.curto + '/', { cache: 'no-store' }); return r.ok && (await r.text()).indexOf('/fid-og-' + p.curto + '.jpg') >= 0; } catch (_) { return false; }
         };
     </script>
+
+    <script>
+        async function fidIconeAtualizar() {
+            if (!fidCfg || !fidCfg.ligado || !dataOwnerId || !sb) return;
+            const logo = fidCfg.logo || (appState.perfil && appState.perfil.logo) || ''; if (!logo) return;
+            const h = fidHash('ic1|' + logo + '|' + fidCor());
+            if (fidCfg.icone && fidCfg.icone.indexOf('v=' + h) >= 0) return;
+            if (window._fidIcEmCurso === h) return; window._fidIcEmCurso = h;
+            try {
+                const img = await fidCarregarImg(logo); if (!img) throw new Error('logótipo');
+                // fundo com a cor do canto do logótipo, para o ícone ficar contínuo (transparente → branco)
+                let fundo = '#ffffff';
+                try { const t = document.createElement('canvas'); t.width = t.height = 8; const tx = t.getContext('2d'); tx.drawImage(img, 0, 0, 8, 8); const d = tx.getImageData(0, 0, 1, 1).data; if (d[3] > 200) fundo = `rgb(${d[0]},${d[1]},${d[2]})`; } catch (_) {}
+                const fazer = n => new Promise(ok => {
+                    const c = document.createElement('canvas'); c.width = c.height = n; const x = c.getContext('2d');
+                    x.fillStyle = fundo; x.fillRect(0, 0, n, n);
+                    const area = n * .78, k = Math.min(area / img.width, area / img.height);
+                    x.imageSmoothingQuality = 'high'; x.drawImage(img, (n - img.width * k) / 2, (n - img.height * k) / 2, img.width * k, img.height * k);
+                    c.toBlob(ok, 'image/png');
+                });
+                const [b512, b192] = await Promise.all([fazer(512), fazer(192)]);
+                for (const [b, n] of [[b512, 512], [b192, 192]]) {
+                    const { error } = await sb.storage.from(PHOTO_BUCKET).upload(`${dataOwnerId}/fid-icone-${n}.png`, b, { upsert: true, contentType: 'image/png', cacheControl: '300' });
+                    if (error) throw error;
+                }
+                const url = sb.storage.from(PHOTO_BUCKET).getPublicUrl(`${dataOwnerId}/fid-icone-512.png`).data.publicUrl + '?v=' + h;
+                const { error } = await sb.from('fidelidade_cfg').update({ icone: url }).eq('dono_id', fidDono());
+                if (!error) fidCfg.icone = url;
+            } catch (e) { console.warn('ícone', e); window._fidIcEmCurso = ''; }
+        }
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () { const r = oP.apply(this, arguments); try { setTimeout(fidIconeAtualizar, 1800); } catch (_) {} return r; };
+        })();
+    </script>
 </body>
 </html>
