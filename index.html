@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 20:50</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 21:00</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20113,55 +20113,59 @@ var qrcode = function() {
         function fidCarregarImg(src) { return new Promise(ok => { if (!src) return ok(null); const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }); }
         function fidLinhas(x, txt, max) { const ws = String(txt || '').split(/\s+/), L = []; let l = ''; ws.forEach(w => { const t = l ? l + ' ' + w : w; if (x.measureText(t).width > max && l) { L.push(l); l = w; } else l = t; }); if (l) L.push(l); return L; }
         async function fidOgImagem(p) {
-            const cor = fidCor(), W = 1200, H = 630, P = 64;
+            // composição centrada: no WhatsApp a pré-visualização pode aparecer em grande (1200×630) ou num quadrado
+            // cortado ao meio. Tudo o que importa (logo, cartão e oferta) fica no quadrado central.
+            const cor = fidCor(), W = 1200, H = 630;
             const [fundo, cartaoBlob] = await Promise.all([fidFundoCarregar(), fidProgPreparar(p)]);
             const cartao = await fidCarregarImg(URL.createObjectURL(cartaoBlob));
             const logo = await fidCarregarImg((fidCfg && fidCfg.logo) || (appState.perfil && appState.perfil.logo) || '');
             try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
             const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
             const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+            x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high';
             x.fillStyle = cor; x.fillRect(0, 0, W, H);
             if (fundo) { const s = Math.max(W / fundo.width, H / fundo.height); x.drawImage(fundo, (W - fundo.width * s) / 2, (H - fundo.height * s) / 2, fundo.width * s, fundo.height * s); const g = x.createLinearGradient(0, 0, W, 0); g.addColorStop(0, 'rgba(20,10,5,.78)'); g.addColorStop(1, 'rgba(20,10,5,.35)'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
             else { x.fillStyle = 'rgba(255,255,255,.10)'; x.beginPath(); x.arc(W - 40, -40, 360, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,.10)'; x.beginPath(); x.arc(-60, H + 40, 260, 0, 7); x.fill(); }
-            // cartão à direita, ligeiramente rodado, com sombra
+            // véu no centro, para o texto ler bem sobre a foto
+            const vg = x.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, 520); vg.addColorStop(0, 'rgba(0,0,0,.30)'); vg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = vg; x.fillRect(0, 0, W, H);
+            x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = '#fff';
+            // topo: logo + nome da loja
+            const nome = (currentEmpresa || '').slice(0, 28);
+            x.font = `800 34px ${T}`; const nw = x.measureText(nome).width, ls = logo ? 58 : 0, gap = logo ? 14 : 0, tot = ls + gap + nw, lx = W / 2 - tot / 2, ty = 36;
+            if (logo) { x.save(); const rr = 16, s0 = ls, X0 = lx, Y0 = ty; x.beginPath(); x.moveTo(X0 + rr, Y0); x.arcTo(X0 + s0, Y0, X0 + s0, Y0 + s0, rr); x.arcTo(X0 + s0, Y0 + s0, X0, Y0 + s0, rr); x.arcTo(X0, Y0 + s0, X0, Y0, rr); x.arcTo(X0, Y0, X0 + s0, Y0, rr); x.closePath(); x.fillStyle = '#fff'; x.fill(); x.clip();
+                const sc = Math.max(s0 / logo.width, s0 / logo.height); x.drawImage(logo, X0 + (s0 - logo.width * sc) / 2, Y0 + (s0 - logo.height * sc) / 2, logo.width * sc, logo.height * sc); x.restore(); }
+            x.fillStyle = '#fff'; x.textAlign = 'left'; x.fillText(nome, lx + ls + gap, ty + 41); x.textAlign = 'center';
+            // cartão ao centro
+            let cardBottom = 420;
             if (cartao) {
-                const cw = 470, ch = Math.min(500, cartao.height * cw / cartao.width), cx = W - P - cw / 2 + 10, cy = H / 2 + 6;
-                x.save(); x.translate(cx, cy); x.rotate(-0.06);
-                x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 40; x.shadowOffsetY = 18;
-                const rr = 28, w2 = cw / 2, h2 = ch / 2; x.beginPath(); x.moveTo(-w2 + rr, -h2); x.arcTo(w2, -h2, w2, h2, rr); x.arcTo(w2, h2, -w2, h2, rr); x.arcTo(-w2, h2, -w2, -h2, rr); x.arcTo(-w2, -h2, w2, -h2, rr); x.closePath();
+                let cw = 440, ch = cartao.height * cw / cartao.width; if (ch > 296) { ch = 296; cw = ch * cartao.width / cartao.height; } const cx = W / 2, cy = 120 + ch / 2 + 6;
+                x.save(); x.translate(cx, cy); x.rotate(-0.035);
+                x.shadowColor = 'rgba(0,0,0,.38)'; x.shadowBlur = 36; x.shadowOffsetY = 16;
+                const rr = 26, w2 = cw / 2, h2 = ch / 2; x.beginPath(); x.moveTo(-w2 + rr, -h2); x.arcTo(w2, -h2, w2, h2, rr); x.arcTo(w2, h2, -w2, h2, rr); x.arcTo(-w2, h2, -w2, -h2, rr); x.arcTo(-w2, -h2, w2, -h2, rr); x.closePath();
                 x.fillStyle = cor; x.fill(); x.shadowColor = 'transparent'; x.clip();
-                x.drawImage(cartao, -w2, -h2, cw, cartao.height * cw / cartao.width);
-                x.lineWidth = 8; x.strokeStyle = 'rgba(255,255,255,.55)'; x.stroke();
-                x.restore();
+                x.drawImage(cartao, -w2, -h2, cw, ch);
+                x.lineWidth = 7; x.strokeStyle = 'rgba(255,255,255,.6)'; x.stroke();
+                x.restore(); cardBottom = cy + h2 + 14;
             }
-            // marca da loja
-            let tx = P;
-            if (logo) { const s = 84; x.save(); const rr = 22; x.beginPath(); x.moveTo(P + rr, P); x.arcTo(P + s, P, P + s, P + s, rr); x.arcTo(P + s, P + s, P, P + s, rr); x.arcTo(P, P + s, P, P, rr); x.arcTo(P, P, P + s, P, rr); x.closePath(); x.fillStyle = '#fff'; x.fill(); x.clip(); const k = Math.max(s / logo.width, s / logo.height); x.drawImage(logo, P + (s - logo.width * k) / 2, P + (s - logo.height * k) / 2, logo.width * k, logo.height * k); x.restore(); tx = P + 84 + 20; }
-            x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
-            x.font = `800 34px ${T}`; x.fillText((currentEmpresa || '').slice(0, 26), tx, P + 38);
-            x.font = `700 24px ${B}`; x.globalAlpha = .85; x.fillText(p.nome.slice(0, 32), tx, P + 74); x.globalAlpha = 1;
-            // a oferta, em grande
-            const maxW = 560; let y = 250;
+            // a oferta, por baixo do cartão
+            const maxW = 600; let y = Math.max(cardBottom + 40, 470);
+            x.fillStyle = '#fff';
             if (p.tipo === 'carimbos') {
-                x.font = `700 30px ${B}`; x.globalAlpha = .9; x.fillText(`Junte ${p.alvo} carimbos e ganhe`, P, y); x.globalAlpha = 1; y += 18;
-                let fs = 76; x.font = `800 ${fs}px ${T}`; let L = fidLinhas(x, p.premio || 'Prémio', maxW);
-                while (L.length > 2 && fs > 50) { fs -= 6; x.font = `800 ${fs}px ${T}`; L = fidLinhas(x, p.premio || 'Prémio', maxW); }
-                L.slice(0, 2).forEach(l => { y += fs * 1.02; x.fillText(l, P, y); });
+                x.font = `700 26px ${B}`; x.globalAlpha = .92; x.fillText(`Junte ${p.alvo} carimbos e ganhe`, W / 2, y); x.globalAlpha = 1;
+                let fs = 58; x.font = `800 ${fs}px ${T}`; while (x.measureText(p.premio || 'Prémio').width > maxW && fs > 34) { fs -= 4; x.font = `800 ${fs}px ${T}`; }
+                x.fillText(p.premio || 'Prémio', W / 2, y + fs + 4);
             } else {
-                const v = fidVantagem(p); let fs = 92; x.font = `800 ${fs}px ${T}`; let L = fidLinhas(x, v, maxW);
-                while (L.length > 2 && fs > 52) { fs -= 6; x.font = `800 ${fs}px ${T}`; L = fidLinhas(x, v, maxW); }
-                y -= 30; L.slice(0, 2).forEach(l => { y += fs * 1.02; x.fillText(l, P, y); });
+                const v = fidVantagem(p); let fs = 62; x.font = `800 ${fs}px ${T}`; while (x.measureText(v).width > maxW && fs > 34) { fs -= 4; x.font = `800 ${fs}px ${T}`; }
+                x.fillText(v, W / 2, y + fs - 14);
+                x.font = `700 24px ${B}`; x.globalAlpha = .9; x.fillText('Toque e crie o seu cartão', W / 2, Math.min(H - 24, y + fs + 26)); x.globalAlpha = 1;
             }
-            // botão
-            const bt = 'Toque e crie o seu cartão', by = H - P - 58; x.font = `800 26px ${B}`; const bw = x.measureText(bt).width + 56;
-            x.fillStyle = '#fff'; x.beginPath(); x.moveTo(P + 29, by); x.arcTo(P + bw, by, P + bw, by + 58, 29); x.arcTo(P + bw, by + 58, P, by + 58, 29); x.arcTo(P, by + 58, P, by, 29); x.arcTo(P, by, P + bw, by, 29); x.closePath(); x.fill();
-            x.fillStyle = cor; x.fillText(bt, P + 28, by + 38);
-            return await new Promise(r => c.toBlob(r, 'image/jpeg', .86));
+            x.textAlign = 'left';
+            return await new Promise(r => c.toBlob(r, 'image/jpeg', .9));
         }
         // a imagem fica sempre no mesmo endereço; só é substituída quando o cartão muda
         fidOgAtualizar = async function (p) {
             if (!p || !p.curto || !p.ativo || !dataOwnerId) return;
-            const h = fidHash('og2|' + fidOgChave(p) + '|' + ((fidCfg && fidCfg.logo) || ''));
+            const h = fidHash('og3|' + fidOgChave(p) + '|' + ((fidCfg && fidCfg.logo) || ''));
             if (p.og_img && p.og_img.indexOf('v=' + h) >= 0) return;
             if (fidOgEmCurso[p.id] === h) return; fidOgEmCurso[p.id] = h;
             try {
@@ -20276,7 +20280,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795033789';
+        const DS_BUILD = '1795034404';
         (function () {
             let aVer = false;
             async function verNova() {
