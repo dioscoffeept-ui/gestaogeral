@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:30</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:50</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1794997042';
+        const DS_BUILD = '1794997502';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20337,6 +20337,107 @@ var qrcode = function() {
             };
             const oOpen = openPurchase;
             openPurchase = function () { const r = oOpen.apply(this, arguments); fatIaPintar(); fatIaVer().then(fatIaPintar); return r; };
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const NUM = /^-?\d{1,3}(?:\.\d{3})*,\d{1,4}$|^-?\d+(?:[.,]\d{1,4})?$/;
+            const ehNum = t => NUM.test(t);
+            const ehUnid = t => /^[A-Z]{1,3}\d{0,2}$/.test(t) && t.length <= 4;
+            const limpaRuido = l => l.split(/\s+/).filter(t => !/^[01]{12,}$/.test(t)).join(' ');
+            const P_TOT = /\b(total|totais|subtotal|base de incid|taxa iva|valor do iva|iliquido|liquido|deposito|montante|referencia|entidade)\b/;
+
+            function preparar(text) {
+                const L = String(text).split(/\r?\n/).map(l => limpaRuido(l.replace(/€/g, ' ').replace(/[|[\]{}]/g, ' ')).replace(/\s+/g, ' ').trim()).filter(Boolean);
+                const out = [];
+                for (let i = 0; i < L.length; i++) {
+                    const a = L[i], b = L[i + 1] || '';
+                    const temDinheiro = s => /-?\d[.,]\d{2}\b/.test(s);
+                    const letras = s => (s.match(/[a-zA-ZÀ-ÿ]/g) || []).length;
+                    // "Barril Prop Euro 50L PT C62"  +  "4000000110 1,00 30,00 0,00 0 30,00"
+                    if (!temDinheiro(a) && letras(a) >= 6 && /^\d{4,14}\s/.test(b) && temDinheiro(b) && letras(b.replace(/^\d+\s/, '')) <= 3) {
+                        const m = b.match(/^(\d{4,14})\s+(.*)$/); out.push(m[1] + ' ' + a + ' ' + m[2]); i++; continue;
+                    }
+                    out.push(a);
+                }
+                return out;
+            }
+
+            function linhaNova(line) {
+                if (line.length < 8) return null;
+                const nl = normTxt(line);
+                if (P_SKIP_START.test(nl) || P_SKIP_ANY.test(nl) || P_TOT.test(nl)) return null;
+                const toks = line.split(' ');
+                // cauda numérica: números, com códigos de unidade pelo meio (só se houver um número à esquerda)
+                let k = toks.length; const tail = [];
+                while (k > 0) {
+                    const t = toks[k - 1];
+                    if (ehNum(t.replace('%', ''))) { tail.unshift(t); k--; continue; }
+                    if (ehUnid(t) && k >= 2 && ehNum(toks[k - 2])) { k--; continue; }
+                    break;
+                }
+                if (tail.length < 3) return null;
+                const nums = tail.map(t => pnum(t.replace('%', '')));
+                const dec = tail.map(t => /[.,]\d/.test(t));
+                // total = último número com casas decimais
+                let e = nums.length - 1; while (e >= 0 && !dec[e]) e--;
+                if (e < 2) return null;
+                const total = nums[e];
+                // IVA: número inteiro logo antes do total (coluna "Iva 23"), ou "23%" na linha
+                let iva = null;
+                if (!dec[e - 1] && [0, 6, 13, 23].includes(nums[e - 1])) iva = nums[e - 1];
+                else { const mi = tail.find(t => /^(0|6|13|23)%$/.test(t)); if (mi) iva = parseInt(mi); }
+                const tol = Math.max(0.03, Math.abs(total) * 0.01);
+                const ok = v => Math.abs(v - total) <= tol;
+                let best = null;
+                const pega = (s, o) => { if (!best || s > best.s) best = Object.assign({ s }, o); };
+                for (let a = 0; a < e; a++) for (let b = a + 1; b < e; b++) {
+                    const q = nums[a], u = nums[b];
+                    if (!q || !(u > 0) || Math.abs(q) > 100000) continue;
+                    const pos = -(a * 0.01);           // prefere a quantidade mais à esquerda
+                    if (ok(q * u)) pega(3 + pos, { qty: q, unit: u, disc: 0 });
+                    for (let d = b + 1; d < e; d++) {
+                        const ds = nums[d]; if (!(ds > 0)) continue;
+                        if (ds < 100 && ok(q * u * (1 - ds / 100))) pega(4 + pos, { qty: q, unit: u, disc: ds });
+                        if (ds < u && ok(q * (u - ds))) pega(4 + pos, { qty: q, unit: u, disc: Math.round(ds / u * 10000) / 100 });
+                        if (ok(q * u - Math.sign(q) * ds)) pega(3.5 + pos, { qty: q, unit: u, disc: Math.round(ds / Math.abs(q * u) * 10000) / 100 });
+                    }
+                }
+                if (!best || !total) return null;
+                let head = toks.slice(0, k).join(' ');
+                const mi2 = head.match(/\b[iI1l][vV][aA4]\s?([zZ2]?\d{1,2})\s?%?\)?/);
+                if (mi2) { const v = parseInt(mi2[1].replace(/[zZ]/, '2'), 10); if ([0, 6, 13, 23].includes(v)) { if (iva === null) iva = v; head = head.slice(0, mi2.index); } }
+                let code = '', lote = '';
+                head = head.replace(/^[^A-Za-zÀ-ÿ0-9]+/, '');
+                let hm = head.match(/^(\d{3,14})\s+/); if (hm) { code = hm[1]; head = head.slice(hm[0].length); }
+                hm = head.match(/^(\d{1,2}[-\/.]\d{1,2}[-\/.]\d{4}|\d{4}[-\/.]\d{2}[-\/.]\d{2})\s+/); if (hm) { lote = isoDate(hm[1]); head = head.slice(hm[0].length); }
+                let desc = head.replace(/\s{2,}/g, ' ').replace(/^[^A-Za-zÀ-ÿ0-9]+|[^A-Za-zÀ-ÿ0-9)]+$/g, '').replace(/(\d)\s?d\b/gi, '$1 cl').trim();
+                while (/\s[A-Za-z:;.,]{1,2}$/.test(desc) && !/\d\s?(cl|ml|g|l|kg|lt|un)$/i.test(desc)) desc = desc.replace(/\s[A-Za-z:;.,]{1,2}$/, '').trim();
+                desc = desc.replace(/\s(C62|CR|B4|UN|CX|KG|PC|FD|EMB)$/, '').trim();
+                if (normTxt(desc).length < 3 || (desc.match(/[a-zA-ZÀ-ÿ]/g) || []).length < 3) return null;
+                const pack = packFromDesc(desc);
+                const sug = bestInvFor(desc);
+                const item = sug ? appState.inventory.find(i => i.id === sug.id) : null;
+                const caucao = /\b(caucion|descaucion|tara|vasilhame|grd ext|gfa ret ext|barril prop)/i.test(desc);
+                return { desc, code, lote, units: best.qty, unitPrice: best.unit, disc: best.disc,
+                    iva: iva ?? (item ? itemIva(item) : 23), total: Math.round(total * 100) / 100, pack,
+                    itemId: caucao ? '' : (sug ? sug.id : ''), sure: !caucao && !!(sug && sug.sure), weak: false,
+                    qty: caucao ? null : packToItemQty(pack, best.qty, item), caucao };
+            }
+
+            const antigo = parseInvoiceLines;
+            parseInvoiceLines = function (text) {
+                const rows = [];
+                preparar(text).forEach(l => {
+                    const r = linhaNova(l);
+                    if (r) { if (r.total !== 0) rows.push(r); return; }
+                    if (P_TOT.test(normTxt(l))) return;
+                    antigo(l).forEach(x => rows.push(x));
+                });
+                return rows;
+            };
+            window.dsParseLinhaFatura = linhaNova;
         })();
     </script>
 </body>
