@@ -1,5 +1,5 @@
 // Cartão de fidelidade: abre do ecrã principal mesmo com internet fraca. Os carimbos vêm sempre da rede.
-const CACHE = 'cartao-12';
+const CACHE = 'cartao-13';
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./cartao.html', './carimbos.js', './selo-latte.svg', './cartao-icon-192.png'])).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('cartao-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

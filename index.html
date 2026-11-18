@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 20:30</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 20:45</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -6198,7 +6198,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     encGeral.total += supTotal; encGeral.semPreco += semPreco;
 
                     const encodedMsg = encodeURIComponent(msgText);
-                    const waUrl = sup.phone ? `https://wa.me/${sup.phone.replace(/[^0-9]/g, '')}?text=${encodedMsg}` : '#';
+                    const waUrl = sup.phone ? `https://api.whatsapp.com/send?phone=${sup.phone.replace(/[^0-9]/g, '')}&text=${encodedMsg}` : '#';
 
                     const card = document.createElement('div');
                     card.className = "bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden";
@@ -12617,7 +12617,7 @@ var qrcode = function() {
         }
         function linkText(url, total) { return 'Olá! Para pagar o seu pedido' + (typeof currentEmpresa !== 'undefined' && currentEmpresa ? ' em ' + currentEmpresa : '') + ' (' + eur2(total) + '), use este link seguro: ' + url; }
         function linkCopy() { if (linkCur && navigator.clipboard) navigator.clipboard.writeText(linkCur.url).then(() => posToast('Link copiado')); else { const i = document.getElementById('paylink-url'); if (i) { i.select(); try { document.execCommand('copy'); posToast('Link copiado'); } catch (_) {} } } }
-        function linkWhats() { if (linkCur) window.open('https://wa.me/?text=' + encodeURIComponent(linkText(linkCur.url, linkCur.total)), '_blank'); }
+        function linkWhats() { if (linkCur) window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(linkText(linkCur.url, linkCur.total)), '_blank'); }
         function linkShare() {
             if (!linkCur) return;
             if (navigator.share) navigator.share({ title: 'Pagamento', text: linkText(linkCur.url, linkCur.total).replace(linkCur.url, '').trim(), url: linkCur.url }).catch(() => {});
@@ -12675,7 +12675,7 @@ var qrcode = function() {
             const o = (appState.orders || []).find(x => x.id === id); if (!o || !o.link) return;
             const t = linkText(o.link, o.total);
             if (navigator.share) navigator.share({ title: 'Pagamento', text: t.replace(o.link, '').trim(), url: o.link }).catch(() => {});
-            else window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+            else window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
         }
         // nomes das formas de pagamento na lista "Hoje"
         (function () { const o = posTodayToggle; posTodayToggle = function () { POS_PAY.push(['link', 'Link', 'fa-link'], ['outro', 'Outro', 'fa-ellipsis']); try { return o.apply(this, arguments); } finally { POS_PAY.splice(-2, 2); } }; })();
@@ -18006,7 +18006,7 @@ var qrcode = function() {
             const k = fidCartoes.find(x => x.id === id); if (!k || !k.telefone) return;
             let t = k.telefone.replace(/\D/g, ''); if (t.length === 9) t = '351' + t;
             const msg = `Olá ${k.nome.split(' ')[0]}! Este é o seu cartão de fidelidade${currentEmpresa ? ' da ' + currentEmpresa : ''}: ${fidLinkCartao(k)}\nO seu código é ${k.codigo}. ${fidCfgDe(k).premio} a cada ${fidCfgDe(k).alvo} carimbos.`;
-            window.open('https://wa.me/' + t + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+            window.open('https://api.whatsapp.com/send?phone=' + t + '&text=' + encodeURIComponent(msg), '_blank', 'noopener');
         }
         function fidCopiar(t) { if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => dsToast('Link copiado')); else dsPerguntar('Copie o link:', t); }
         function fidCartaz() {
@@ -18164,7 +18164,7 @@ var qrcode = function() {
             } catch (e) { if (e && e.name === 'AbortError') return; console.warn(e); }
             if (!k.telefone) { fidCopiar(txt); return; }
             let t = k.telefone.replace(/\D/g, ''); if (t.length === 9) t = '351' + t;
-            window.open('https://wa.me/' + t + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+            window.open('https://api.whatsapp.com/send?phone=' + t + '&text=' + encodeURIComponent(txt), '_blank', 'noopener');
         }
         async function fidVerImagem(id) {
             const k = fidCartoes.find(x => x.id === id); if (!k) return;
@@ -19530,7 +19530,7 @@ var qrcode = function() {
                         <img src="${u}" alt="Imagem do cartão" style="width:100%;border-radius:16px;margin-top:12px">
                         <div style="margin-top:10px;background:#F6F3F0;border-radius:12px;padding:10px 12px;font-size:13px;white-space:pre-wrap">${escapeHtml(txt)}</div>
                         <a class="bp" style="display:block;text-align:center" href="${u}" download="${escapeHtml(file.name)}"><i class="fas fa-download mr-1.5"></i>Guardar a imagem</a>
-                        <a class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" style="display:block;text-align:center" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1.5"></i>Abrir o WhatsApp com a mensagem</a>`);
+                        <a class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" style="display:block;text-align:center" href="https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1.5"></i>Abrir o WhatsApp com a mensagem</a>`);
                     try { await navigator.clipboard.writeText(txt); } catch (_) {}
                     return;
                 } catch (e) { if (e && e.name === 'AbortError') return; console.warn(e); }
@@ -19757,7 +19757,7 @@ var qrcode = function() {
                     if (navigator.share) { try { await navigator.share({ text: txt }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
                     dsModal('fid-pl', `<div class="flex items-start justify-between gap-3"><div><h3>Partilhar ${escapeHtml(p.nome)}</h3><p class="text-sm text-slate-500">A mensagem foi copiada. No WhatsApp, o link mostra a imagem do cartão.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-pl')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                         <img src="${escapeHtml(p.og_img)}" alt="" style="width:100%;border-radius:16px;margin-top:12px"><div style="margin-top:10px;background:#F6F3F0;border-radius:12px;padding:10px 12px;font-size:13px;white-space:pre-wrap">${escapeHtml(txt)}</div>
-                        <a class="bp" style="display:block;text-align:center" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1.5"></i>Abrir o WhatsApp</a>`);
+                        <a class="bp" style="display:block;text-align:center" href="https://api.whatsapp.com/send?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1.5"></i>Abrir o WhatsApp</a>`);
                     try { await navigator.clipboard.writeText(txt); } catch (_) {}
                     return;
                 }
@@ -20067,7 +20067,7 @@ var qrcode = function() {
             const quando = v => new Date(v).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
             const wa = m => { const t = String(m.telefone || '').replace(/\D/g, ''); if (t.length < 9) return ''; const n = t.length === 9 ? '351' + t : t; const k = m.cartao_id && fidCartoes.find(x => x.id === m.cartao_id);
                 const txt = `Olá ${(m.nome || '').split(' ')[0]}! Aqui é ${currentEmpresa || 'a loja'}. Sobre a sua mensagem: ` + (m.assunto === 'link' && k ? `aqui está o link do seu cartão: ${fidLinkCartao(k)}` : '');
-                return `https://wa.me/${n}?text=${encodeURIComponent(txt)}`; };
+                return `https://api.whatsapp.com/send?phone=${n}&text=${encodeURIComponent(txt)}`; };
             return `<summary><i class="fas fa-comments" style="color:var(--brand)"></i><span style="flex:1">Mensagens dos clientes</span>${novas ? `<span class="bd">${novas}</span>` : `<span class="text-xs text-slate-400 font-bold">${fidMsgs.length || ''}</span>`}<i class="fas fa-chevron-down text-slate-400 text-xs"></i></summary>
                 ${fidMsgs.length ? fidMsgs.map(m => `<div class="m ${m.lida ? '' : 'nova'}"><div class="h"><span><b>${escapeHtml(m.nome || 'Cliente')}</b>${m.telefone ? ' · ' + escapeHtml(m.telefone) : ''}</span><span>${quando(m.criado_em)}</span></div>
                     <p class="t"><span class="tag">${FID_ASSUNTO[m.assunto] || 'Dúvida'}</span>${escapeHtml(m.texto)}</p>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795032304';
+        const DS_BUILD = '1795033032';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20635,8 +20635,8 @@ var qrcode = function() {
                 <div class="fc-pg"><i style="width:${d.length ? Math.round(feitos / d.length * 100) : 0}%"></i></div><p class="fc-nota" style="margin-top:0"><b>${feitos} de ${d.length}</b> enviadas</p>
                 ${fidCamp.anexos.length && !fich ? `<p class="fc-nota" style="color:#92400E">Neste aparelho os ficheiros não seguem sozinhos: depois de abrir a conversa, toque no 📎 do WhatsApp para os juntar. No telemóvel seguem juntos.</p>` : ''}
                 <div style="margin-top:6px">${d.map(x => `<div class="fc-row ${fidCamp.enviados.has(x.tel) ? 'ok' : ''}"><span class="n"><b>${escapeHtml(x.nome)}</b><small>${x.tel.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')}</small></span>
-                    <button type="button" onclick="fidCampEnviar('${x.tel}')">${fidCamp.enviados.has(x.tel) ? '✓ Enviada' : 'Enviar'}</button><button type="button" title="Deixar de enviar a este cliente (respondeu SAIR)" aria-label="Tirar da lista" style="background:#fff;color:#7A6A60;border:1.5px solid #E4DCCF;padding:8px 10px" onclick="fidCampTirar('${x.tel}')"><i class="fas fa-user-minus"></i></button></div>`).join('')}</div>
-                <p class="fc-nota">Alguém respondeu SAIR? Toque em <i class="fas fa-user-minus"></i> ao lado do nome: deixa de receber mensagens.</p>
+                    <button type="button" onclick="fidCampEnviar('${x.tel}')">${fidCamp.enviados.has(x.tel) ? '✓ Enviada' : 'Enviar'}</button><button type="button" title="Deixar de enviar a este cliente (respondeu SAIR)" aria-label="Tirar da lista" style="background:#FEE2E2;color:#B91C1C;border:1.5px solid #FECACA;padding:8px 10px" onclick="fidCampTirar('${x.tel}')"><i class="fas fa-bell-slash mr-1"></i>Tirar</button></div>`).join('')}</div>
+                <p class="fc-nota">Alguém respondeu <b>SAIR</b>? Toque em <b style="color:#B91C1C"><i class="fas fa-bell-slash"></i> Tirar</b> ao lado do nome: deixa de receber mensagens.</p>
                 <div class="fc-bts"><button type="button" class="fc-s" onclick="fidCampPintar()">Voltar à mensagem</button></div>`);
         }
         async function fidCampEnviar(tel) {
@@ -20646,7 +20646,7 @@ var qrcode = function() {
                 try { await navigator.clipboard.writeText(x.nome); } catch (_) {}
                 dsToast('Escolha o WhatsApp e a conversa de ' + x.nome.split(' ')[0] + '.');
                 if (!(await fidCampPartilhar(txt))) return;
-            } else window.open('https://wa.me/351' + tel + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+            } else window.open('https://api.whatsapp.com/send?phone=351' + tel + '&text=' + encodeURIComponent(txt), '_blank', 'noopener');
             fidCamp.enviados.add(tel);
             setTimeout(fidCampUmAUm, 400);
         }
@@ -20673,7 +20673,7 @@ var qrcode = function() {
             const t = fidCampTexto('', false);
             if (fidCampPodeFicheiros()) { if (await fidCampPartilhar(t)) { fidCampRegistar(fidCampDest().length); dsToast('Escolha a lista de transmissão no WhatsApp.'); } }
             else if (navigator.share) { try { await navigator.share({ text: t }); fidCampRegistar(fidCampDest().length); } catch (_) {} }
-            else window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener');
+            else window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank', 'noopener');
         }
         function fidCampTodos() {
             if (!(fidCamp.texto || '').trim()) return dsToast('Escreva a mensagem primeiro.', true);
@@ -20696,7 +20696,7 @@ var qrcode = function() {
             let b = root.querySelector('#fid-camp-box');
             if (!b) { b = document.createElement('div'); b.id = 'fid-camp-box'; ref.insertAdjacentElement(ref.id === 'fid-msgs' ? 'beforebegin' : 'afterend', b); }
             const n = fidCampDest().length, ult = (appState.fidCampanhas || [])[0];
-            b.innerHTML = `<i class="fas fa-bullhorn" style="color:var(--brand);font-size:20px"></i><span class="tx"><b>Mensagem para os clientes</b><small>${n} cliente${n === 1 ? '' : 's'} aceit${n === 1 ? 'ou' : 'aram'} receber novidades: eventos, promoções, avisos.${ult ? ' Última: ' + new Date(ult.em).toLocaleDateString('pt-PT') + ' (' + ult.enviados + ')' : ''}</small></span><button type="button" onclick="fidCampAbrir()" ${n ? '' : 'disabled'}>Escrever mensagem</button>`;
+            b.innerHTML = `<i class="fas fa-bullhorn" style="color:var(--brand);font-size:20px"></i><span class="tx"><b>Mensagem para os clientes</b><small>${n} cliente${n === 1 ? '' : 's'} aceit${n === 1 ? 'ou' : 'aram'} receber novidades: eventos, promoções, avisos.${ult ? ' Última: ' + new Date(ult.em).toLocaleDateString('pt-PT') + ' (' + ult.enviados + ')' : ''}</small></span><button type="button" onclick="fidCampAbrir()" ${n ? '' : 'disabled'}>Escrever mensagem</button>${n ? `<button type="button" style="background:#fff;color:#B91C1C;border:1.5px solid #FECACA" onclick="fidCamp.texto=fidCamp.texto||fidCampModelos.livre();fidCamp.enviados=new Set();fidCampUmAUm()"><i class="fas fa-bell-slash mr-1"></i>Quem pediu SAIR</button>` : ''}`;
         }
         (function () {
             const oP = fidPintar;

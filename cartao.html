@@ -221,7 +221,11 @@
     catch (e) { b.disabled = false; b.textContent = 'Aceito e continuo'; alertar(e.message); }
   }
   async function novidades(v) {
-    try { await post(K ? { acao: 'marketing', k: K, valor: v } : { acao: 'marketing', c: C, valor: v }); ultimo = ''; ver(); } catch (e) { alertar(e.message); }
+    document.querySelectorAll('#mk-bloco button').forEach(b => { b.disabled = true; b.textContent = 'A guardar…'; });
+    try {
+      await post(K ? { acao: 'marketing', k: K, valor: v } : { acao: 'marketing', c: C, valor: v }); ultimo = ''; await ver();
+      const ok = document.getElementById('mk-ok'); if (ok) ok.textContent = v ? '✓ Feito. Vai receber as novidades da loja.' : '✓ Feito. Não recebe mais mensagens da loja.';
+    } catch (e) { ultimo = ''; await ver(); alertar(e.message); }
   }
   // Ao guardar no ecrã principal, o atalho tem de abrir ESTE cartão. No iPhone a app do ecrã principal não vê o que o Safari guardou,
   // por isso o endereço do atalho leva o código do cartão.
@@ -370,9 +374,14 @@
       ${redesHtml(d.redes, d)}
       ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link.</p><button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
       ${ajudaHtml(d, true)}
+      <div class="bloco" id="mk-bloco"><h2>Mensagens da loja</h2>
+        ${d.marketing ? `<p class="dica">Recebe novidades, eventos e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS.</p>
+          <button type="button" class="bs" style="border-color:#B91C1C;color:#B91C1C" onclick="novidades(false)">🔕 Não quero receber mais mensagens</button>`
+        : `<p class="dica">Não recebe mensagens${d.loja ? ' da ' + esc(d.loja) : ''}. Os carimbos e o cartão funcionam na mesma.</p>
+          <button type="button" class="bs" onclick="novidades(true)">🔔 Quero receber novidades e ofertas</button>`}
+        <p class="dica" id="mk-ok" style="margin-top:8px;font-weight:700;color:#15803D"></p></div>
       <div class="bloco"><h2>Os seus dados</h2>
-        <label class="chk"><input type="checkbox" ${d.marketing ? 'checked' : ''} onchange="novidades(this.checked)"><span>Receber novidades e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS</span></label>
-        <details class="priv" style="margin-top:12px"><summary>Informação de privacidade</summary>${privTexto(d)}</details>
+        <details class="priv" style="margin-top:4px"><summary>Informação de privacidade</summary>${privTexto(d)}</details>
         <p class="erro" id="msg" role="alert"></p>
         <div id="apagar-box"></div><button type="button" class="apagar-lnk" onclick="apagarPedir()">Apagar o meu cartão</button></div>`;
   }
@@ -433,6 +442,13 @@
       manifestar(d);
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
     } catch (e) {
+      if (/já não existe/i.test(e.message || '')) {
+        // o cartão foi apagado (pela loja ou pelo cliente): esquecer o cartão neste telemóvel e voltar à página da loja para pedir outro
+        let lj = null; try { lj = JSON.parse(localStorage.getItem('ds_cartao_loja') || 'null'); } catch (_) {}
+        try { Object.keys(localStorage).filter(x => x.startsWith('ds_cartao_') && x !== 'ds_cartao_loja' && x !== 'ds_cartao_convite' && localStorage.getItem(x) === K).forEach(x => localStorage.removeItem(x)); } catch (_) {}
+        const nn = (lj && lj.n) || N || '';
+        if (nn) { location.replace('cartao.html?n=' + encodeURIComponent(nn) + '&apagado=1'); return; }
+      }
       if (!silencioso) { topoNeutro(); document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; }
     }
   }
@@ -473,7 +489,7 @@
   new MutationObserver(ajudaLigar).observe(document.getElementById('app'), { childList: true, subtree: true });
   function waLoja(d) {
     const t = `Olá${d.loja ? ' ' + d.loja : ''}! Já tenho o cartão de fidelidade mas perdi o link. Podem enviar-me o link do meu cartão? Obrigado.`;
-    return 'https://wa.me/' + d.whatsapp + '?text=' + encodeURIComponent(t);
+    return 'https://api.whatsapp.com/send?phone=' + d.whatsapp + '&text=' + encodeURIComponent(t);
   }
   function encontrarPintar() {
     const d = window._loja || {};
@@ -503,7 +519,8 @@
     window._loja = d; await seloPreparar(d); marca(d);
     if (!d.ligado) { document.getElementById('app').innerHTML = '<div class="vazio">O cartão de fidelidade não está ativo neste momento.</div>'; return; }
     const S = simples(d);
-    document.getElementById('app').innerHTML = (S ? `<section class="cartao simples"><div class="c-top"><div><small>${esc(d.titulo || 'O seu cartão')}</small><h1>${esc(vantagem(d.programa))}</h1></div></div>
+    const avisoApagado = P.get('apagado') ? `<div class="aviso" style="margin-bottom:12px"><i>ℹ️</i><span>O seu cartão anterior já não existe. Pode criar um cartão novo aqui em baixo, em 30 segundos.</span></div>` : '';
+    document.getElementById('app').innerHTML = avisoApagado + (S ? `<section class="cartao simples"><div class="c-top"><div><small>${esc(d.titulo || 'O seu cartão')}</small><h1>${esc(vantagem(d.programa))}</h1></div></div>
         <div class="c-pe"><div><span class="falta">Basta dizer o seu código ao balcão</span><small>${d.condicoes ? esc(d.condicoes) : 'O cartão fica no seu telemóvel.'}</small></div></div></section>`
       : `<section class="cartao"><div class="c-top"><div><small>Junte ${d.alvo} carimbos e ganhe</small><h1>${esc(d.premio)}</h1></div></div>
         <div class="selos">${selos(d.alvo, 0)}</div>
