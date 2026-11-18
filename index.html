@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:10</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:30</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -7806,7 +7806,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         // a IA falhou: pergunta antes de usar a leitura simples (que se engana muito em faturas de grossistas)
         async function aiFallbackAsk(res) {
             if (!res || res.ok) return true;
-            if (res.code === 'sem_chave' || res.code === 'plano') return true;
+            if (res.code === 'sem_chave' || res.code === 'plano' || res.code === 'sem_ia') return true;
             const why = res.code === 'limite' ? 'O limite gratuito diário de leituras com IA (Google) está esgotado por agora. Volta a funcionar daqui a algumas horas.' : (res.msg || 'A leitura com IA falhou.');
             const ok = await dsConfirmar(why + '\n\nQuer usar a leitura simples, sem IA? Em faturas compridas ou de grossistas (Makro, Recheio…) costuma ter muitos erros — terá de conferir tudo.\n\nOK = ler sem IA · Cancelar = tentar mais tarde ou escrever à mão');
             if (!ok) {
@@ -7822,7 +7822,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
         function aiFallbackNote(res) {
             if (!res || res.ok) return;
-            if (res.code === 'sem_chave') { if (!aiWarned) { aiWarned = true; console.info('Leitura com IA não ativada; a usar leitura local.'); } return; }
+            if (res.code === 'sem_chave' || res.code === 'sem_ia') { if (!aiWarned) { aiWarned = true; console.info('Leitura com IA não ativada; a usar leitura local.'); } return; }
             purchaseProgress('Leitura com IA indisponível (' + res.msg + '). A usar leitura local…', 12);
         }
         async function localOcrText(blob, onp) {
@@ -20234,7 +20234,7 @@ var qrcode = function() {
     </style>
     <script>
         // ---------- leitura das faturas só no PRO
-        const IA_FATURA_MSG = 'A leitura das faturas (foto, PDF e QR) é do plano PRO. No plano Café registe a compra a ditar ou em "Escrever à mão".';
+        const IA_FATURA_MSG = 'A leitura das faturas (foto, PDF e QR) é do plano PRO. No plano Café registe a compra em "Escrever à mão".';
         function iaFaturaBloq() { if (isPro()) return false; openUpgrade('pro', IA_FATURA_MSG); return true; }
         (function () {
             const sem = inp => { try { if (inp && 'value' in inp) inp.value = ''; } catch (_) {} };
@@ -20242,7 +20242,6 @@ var qrcode = function() {
                 if (typeof window[n] !== 'function') return;
                 const o = window[n];
                 window[n] = function (inp, tipo) {
-                    if (n === 'aiReadInvoice' && /^audio\//.test(String(tipo || '')) && hasPlan('cafe')) return o.apply(this, arguments);   // ditar a compra: Café e PRO
                     if (iaFaturaBloq()) { sem(inp); if (n === 'aiReadInvoice') throw new Error(IA_FATURA_MSG); return; } return o.apply(this, arguments); };
             });
             const marcar = () => {
@@ -20277,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1794996160';
+        const DS_BUILD = '1794997042';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20295,6 +20294,49 @@ var qrcode = function() {
             setTimeout(verNova, 3000);
             document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verNova(); });
             setInterval(verNova, 10 * 60 * 1000);
+        })();
+    </script>
+
+    <style>
+        #pc-ia { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--brand-line, #E4DCCF); border-radius: 12px; background: #fff; font-size: 13px; color: #3A2A22; }
+        #pc-ia b { display: block; font-size: 13.5px; } #pc-ia small { color: #7A6A60; }
+        #pc-ia input { width: 20px; height: 20px; accent-color: var(--brand); flex: none; margin: 0; }
+    </style>
+    <script>
+        // ---------- sem ditar a compra por voz
+        (function () {
+            document.querySelectorAll('#purchase-modal button[onclick="vozIniciar()"]').forEach(b => b.remove());
+            const g = document.querySelector('#purchase-modal .grid.lg\\:grid-cols-5'); if (g) { g.classList.remove('lg:grid-cols-5'); g.classList.add('lg:grid-cols-4'); }
+        })();
+
+        // ---------- leitura com IA: só nas contas autorizadas, e só se o utilizador escolher
+        let fatIaPode = null;
+        const fatIaQuer = () => { try { return localStorage.getItem('ds_fatura_ia') === '1'; } catch (_) { return false; } };
+        const fatIaUsar = () => fatIaPode === true && fatIaQuer();
+        async function fatIaVer() {
+            if (fatIaPode !== null || !sb || !currentUser) return fatIaPode;
+            try { const { data, error } = await sb.rpc('fatura_ia'); fatIaPode = !error && data === true; } catch (_) { fatIaPode = false; }
+            return fatIaPode;
+        }
+        function fatIaPintar() {
+            const old = document.getElementById('pc-ia'); if (old) old.remove();
+            if (!fatIaPode || !isPro()) return;
+            const drop = document.getElementById('purchase-drop'); if (!drop) return;
+            drop.insertAdjacentHTML('beforebegin', `<label id="pc-ia"><input type="checkbox" ${fatIaQuer() ? 'checked' : ''} onchange="try{localStorage.setItem('ds_fatura_ia',this.checked?'1':'0')}catch(_){}"><span><b>Ler com IA</b><small>Mais certeiro em faturas compridas, mas pode demorar até 1 minuto. Desligado: lê no aparelho, em segundos.</small></span></label>`);
+        }
+        (function () {
+            const oAi = aiReadInvoice;
+            aiReadInvoice = async function () {
+                if (!fatIaUsar()) return { ok: false, code: 'sem_ia', msg: '' };
+                return oAi.apply(this, arguments);
+            };
+            const oP = purchaseProgress;
+            purchaseProgress = function (label, pct) {
+                if (label && !fatIaUsar() && /com IA/.test(label)) label = 'A ler a fatura…';
+                return oP.call(this, label, pct);
+            };
+            const oOpen = openPurchase;
+            openPurchase = function () { const r = oOpen.apply(this, arguments); fatIaPintar(); fatIaVer().then(fatIaPintar); return r; };
         })();
     </script>
 </body>
