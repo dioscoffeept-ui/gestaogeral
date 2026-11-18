@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:50</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 11:00</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1794997502';
+        const DS_BUILD = '1794997892';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20438,6 +20438,87 @@ var qrcode = function() {
                 return rows;
             };
             window.dsParseLinhaFatura = linhaNova;
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const TIPOS = [
+                ['bebida', /\b(cerve|birra|beer|barril|imperial|heineken|sagres|super ?bock|estrela|moretti|peroni|corona|desperados|vinho|espumante|champanhe|sangria|sumo|nectar|agua|aguas|refrig|cola|pepsi|fanta|sprite|7 ?up|sumol|compal|tonic|schweppes|ginger|ice ?tea|fuze|lipton|nestea|kombucha|red ?bull|monster|energ|gin|vodka|whisk|rum|licor|aperol|martini|porto|bebida|soda|limonada|cidra|sidra|bandida do pomar)/],
+                ['cafe', /\b(cafe|graos|capsul|expresso|descafeinado|cha preto|cha verde|infusao|matcha)\b/],
+                ['lacticinio', /\b(leite|natas|iogurte|queijo|mantei|lactic|mozzarel|burrata|ricotta|mascarpone|chantilly|bebida vegetal|aveia barista)\b/],
+                ['charcutaria', /\b(fiambre|presunto|bacon|chourico|salame|mortadela|peru fumado)\b/],
+                ['fruta', /\b(fruta|banana|morango|laranja|limao|lima|abacate|tomate|alface|legum|cebola|alho|maca fresca|ananas fresco|manga fresca|frutos vermelhos|mirtilo|framboesa|kiwi|pera|uva|batata|cenoura|pepino|rucula|espinafre)\b/],
+                ['embalagem', /\b(copo|copos|tampa|tampas|palhin|guardanap|saco|sacos|embal|descart|pratos? de papel|talher|cuvete)\b/],
+                ['limpeza', /\b(detergen|lixivia|limpez|desinfet|esfreg|papel higien|rolo de cozinha)\b/],
+                ['mercearia', /\b(farinha|acucar|arroz|massa|azeite|oleo|sal|cacau|aveia|mel|xarope|calda|compota|ovos|pao|bolach|cereais|granola)\b/],
+            ];
+            // sinais de bebida embalada: volumes e embalagens típicas
+            const SINAL_BEBIDA = /\b\d+([.,]\d+)?\s?(cl|ml|lt?)\b|\b\d+\s?x\s?\d+([.,]\d+)?\s?(cl|ml|l)\b|\b(gfa?|garrafa|lata|ret|tp|pet|barril)\b/;
+            function tipoDe(txt) {
+                const d = normTxt(txt || '');
+                for (const [k, re] of TIPOS) if (re.test(d)) return k;
+                if (SINAL_BEBIDA.test(d) && !/\b(leite|natas|iogurte|azeite|oleo|detergen|molho)\b/.test(d)) return 'bebida';
+                return '';
+            }
+            function tipoItem(i) {
+                if (!i) return '';
+                const c = normTxt(i.category || '');
+                if (/bebida|bar|cerve|vinho|refrig|sumo/.test(c)) return 'bebida';
+                if (/cafe/.test(c)) return 'cafe';
+                if (/latic|frio/.test(c)) return 'lacticinio';
+                if (/fruta|legum|horti/.test(c)) return 'fruta';
+                if (/embal|descart/.test(c)) return 'embalagem';
+                if (/limpez/.test(c)) return 'limpeza';
+                if (/mercearia|seca/.test(c)) return 'mercearia';
+                return tipoDe(i.name);
+            }
+            window.dsTipoProduto = tipoDe;
+
+            // 1) não aceitar ligações entre tipos diferentes (bebida ↔ fruta, etc.)
+            const oBest = bestInvFor;
+            bestInvFor = function (desc) {
+                const r = oBest.apply(this, arguments);
+                if (!r) return r;
+                const key = normTxt(desc), learned = appState.purchaseAliases && appState.purchaseAliases[key];
+                if (learned === r.id) return r;                       // ligação ensinada pelo utilizador: manda
+                const it = appState.inventory.find(i => i.id === r.id);
+                const td = tipoDe(desc), ti = tipoItem(it);
+                if (td && ti && td !== ti && !(td === 'cafe' && ti === 'bebida')) return null;
+                // variantes que mudam o produto: "Coca Cola Zero" não é "Coca Cola"
+                const V = /\b(zero|light|diet|sem acucar|sem gluten|sem lactose|descafeinado|sem alcool|0 0|magro|meio gordo|gordo|integral|bio)\b/g;
+                const vd = new Set(normTxt(desc).replace(/[.,]/g, ' ').match(V) || []), vi = new Set(normTxt(it && it.name).replace(/[.,]/g, ' ').match(V) || []);
+                if ([...vd].some(x => !vi.has(x)) || [...vi].some(x => !vd.has(x))) return null;
+                return r;
+            };
+
+            // 2) categoria do item novo pelo tipo do produto
+            const MAPA = { bebida: /bebida|bar|refrig/, cafe: /cafe/, lacticinio: /latic|frio/, charcutaria: /frio|charcut/, fruta: /fruta|legum|horti/, embalagem: /embal|descart/, limpeza: /limpez/, mercearia: /mercearia|seca/ };
+            const oCat = purchaseGuessCat;
+            purchaseGuessCat = function (r) {
+                const t = tipoDe(r && r.desc);
+                if (t && MAPA[t]) { const c = appState.inventoryCategories.find(x => MAPA[t].test(normTxt(x))); if (c) return c; }
+                return oCat.apply(this, arguments);
+            };
+
+            // 3) produto sem item no estoque: já fica a "Criar item novo" (o utilizador pode trocar)
+            function criarNovosPorDefeito() {
+                let mudou = false;
+                (purchaseRows || []).forEach(r => {
+                    if (!r || r.itemId || r.caucao || !(Number(r.total) > 0) || !(r.desc || '').trim()) return;
+                    if (/\b(caucion|descaucion|tara|vasilhame|grd ext|gfa ret ext|barril prop|portes|transporte|taxa)\b/i.test(r.desc)) return;
+                    const name = (r.desc || '').replace(/\s{2,}/g, ' ').trim().slice(0, 60);
+                    const q = packToItemQty(r.pack || packFromDesc(r.desc), Number(r.units) || 0, { unit: 'un' }) || (Number(r.units) || null);
+                    r.newItem = { name, category: purchaseGuessCat(r), unit: 'un', qty: q, catAi: false };
+                    r.itemId = '__auto'; r.sure = true; if (q) r.qty = q;
+                    mudou = true;
+                });
+                if (mudou) renderPurchaseRows();
+            }
+            const oRev = startPurchaseReview;
+            startPurchaseReview = function () { const x = oRev.apply(this, arguments); try { criarNovosPorDefeito(); } catch (e) { console.warn(e); } return x; };
+            const oAiStart = startPurchaseFromAi;
+            startPurchaseFromAi = function () { const x = oAiStart.apply(this, arguments); try { criarNovosPorDefeito(); } catch (e) { console.warn(e); } return x; };
         })();
     </script>
 </body>
