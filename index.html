@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 21:30</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 21:40</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20175,7 +20175,7 @@ var qrcode = function() {
         };
         fidPaginaPronta = async function (p) {
             if (!p.og_img) return false;
-            try { const r = await fetch(fidBase() + 'n/' + p.curto + '/', { cache: 'no-store' }); return r.ok && (await r.text()).indexOf('/fid-og-' + p.curto + '.jpg') >= 0; } catch (_) { return false; }
+            try { const r = await fetch(fidBase() + 'n/' + p.curto + '/?t=' + Date.now(), { cache: 'no-store' }); return r.ok && (await r.text()).indexOf(p.og_img) >= 0; } catch (_) { return false; }
         };
     </script>
 
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795035983';
+        const DS_BUILD = '1795036240';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20761,12 +20761,13 @@ var qrcode = function() {
                 if (!pid && ativos.length > 1) return oPart.call(this);           // primeiro escolhe o cartão; depois volta aqui com o pid
                 const p = fidProgPorId(pid) || fidProgPadrao();
                 if (!p || !fidCfg || !fidCfg.ligado) return oPart.call(this, pid);
-                const url = fidBase() + 'n/' + p.curto + '/';
+                const url = fidLinkProg(p);
                 dsModal('fid-sh', `<div class="flex items-start justify-between gap-3"><div><h3>Partilhar ${escapeHtml(p.nome)}</h3><p class="text-sm text-slate-500 mt-1">Os clientes abrem o link e criam o cartão em 30 segundos.</p></div>
                     <button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-sh')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                     <div class="fid-sh-l"><input id="fid-sh-url" readonly value="${escapeHtml(url)}" onclick="this.select()" aria-label="Link do cartão"><button type="button" onclick="fidShCopiar()"><i class="far fa-copy mr-1"></i>Copiar</button></div>
                     <div class="fid-sh-b">
-                        <button type="button" class="bg-[#25D366] text-white" style="background:#25D366;color:#fff" onclick="dsModalFechar('fid-sh');fidPartilhar('${p.id}',true)"><i class="fab fa-whatsapp mr-1"></i>Partilhar com a mensagem e a imagem</button>
+                        <button type="button" style="background:#25D366;color:#fff" onclick="fidShWhats('${p.id}')"><i class="fab fa-whatsapp mr-1"></i>Enviar pelo WhatsApp</button>
+                        ${navigator.share ? `<button type="button" style="background:#fff;border:1.5px solid #E4DCCF;color:#24150E" onclick="fidShOutras('${p.id}')"><i class="fas fa-share-nodes mr-1"></i>Partilhar noutra app</button>` : ''}
                         <button type="button" style="background:#fff;border:1.5px solid #E4DCCF;color:#24150E" onclick="fidShCopiarMsg('${p.id}')"><i class="far fa-clipboard mr-1"></i>Copiar a mensagem com o link</button>
                     </div>
                     <p class="text-xs text-slate-500 mt-3">Use o link onde quiser: Instagram, site, QR code no balcão, e-mail.</p>`);
@@ -20778,7 +20779,7 @@ var qrcode = function() {
         }
         async function fidShCopiarMsg(pid) {
             const p = fidProgPorId(pid); if (!p) return;
-            const txt = (p.mensagem || fidMsgPadrao(p)).trim() + '\n' + fidBase() + 'n/' + p.curto + '/';
+            const txt = fidTextoProg(p);
             try { await navigator.clipboard.writeText(txt); dsToast('Mensagem e link copiados.'); } catch (_) { dsToast('Não deu para copiar.', true); }
         }
     </script>
@@ -20866,6 +20867,48 @@ var qrcode = function() {
         (function () {
             const oPrev = fidCampPrev;
             fidCampPrev = function () { if (fidCamp.salva && fidCamp.chave !== fidCampChaveAtual()) fidCamp.salva = null; return oPrev.apply(this, arguments); };
+        })();
+    </script>
+
+    <script>
+        // link do cartão com a versão da imagem: o WhatsApp vai buscar a imagem nova (não usa a antiga guardada)
+        function fidLinkProg(p) { const v = ((p && p.og_img) || '').match(/[?&]v=([\w-]+)/); return fidBase() + 'n/' + p.curto + '/' + (v ? '?v=' + v[1] : ''); }
+        // o link vai primeiro: assim o WhatsApp mostra a pré-visualização em grande, por cima do texto, numa só mensagem
+        function fidTextoProg(p) { return fidLinkProg(p) + '\n\n' + (p.mensagem || fidMsgPadrao(p)).trim(); }
+        async function fidShEsperar(p) {
+            if (await fidPaginaPronta(p)) return true;
+            fidOgAtualizar(p);
+            dsModal('fid-sh', `<div class="flex items-start justify-between gap-3"><div><h3>A atualizar a imagem</h3><p class="text-sm text-slate-500 mt-1"><i class="fas fa-spinner fa-spin mr-1"></i>A imagem do cartão mudou e está a ser publicada. Costuma demorar 2 a 6 minutos; avançamos sozinhos.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-sh')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>`);
+            for (let i = 0; i < 40; i++) {
+                await new Promise(r => setTimeout(r, 15000));
+                const m = document.getElementById('fid-sh'); if (!m || !m.classList.contains('on')) return false;
+                const pp = fidProgPorId(p.id) || p; if (await fidPaginaPronta(pp)) { dsModalFechar('fid-sh'); return true; }
+            }
+            return false;
+        }
+        async function fidShWhats(pid) {
+            const p = fidProgPorId(pid); if (!p) return;
+            if (!(await fidShEsperar(p))) return;
+            dsModalFechar('fid-sh');
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(fidTextoProg(fidProgPorId(pid) || p)), '_blank', 'noopener');
+        }
+        async function fidShOutras(pid) {
+            const p = fidProgPorId(pid); if (!p) return;
+            try { await navigator.share({ text: fidTextoProg(p) }); dsModalFechar('fid-sh'); } catch (_) {}
+        }
+        // cartão de cada cliente e mensagens aos clientes: link primeiro, texto depois
+        (function () {
+            const oM = fidMensagem;
+            fidMensagem = function (k) {
+                const t = oM.apply(this, arguments), link = fidLinkCartao(k);
+                return link + '\n\n' + t.replace('\n\n' + link, '').replace(link, '').trim();
+            };
+            const oT = fidCampTexto;
+            fidCampTexto = function () {
+                const t = oT.apply(this, arguments); if (!fidCamp.salva) return t;
+                const link = fidCampUrl(fidCamp.salva);
+                return link + '\n\n' + t.replace('\n\n' + link, '').trim();
+            };
         })();
     </script>
 </body>
