@@ -6719,12 +6719,12 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         const PLANS = {
             gratis: { nome: 'Expresso', mes: 5, desc: 'Para fazer as contas às suas bebidas', feats: ['Simulador de margem e lucro líquido', 'Até 10 fichas do bar, com foto', 'Custos e margem calculados sozinhos', '1 cartão de fidelidade (carimbos ou desconto)'] },
             cafe: { nome: 'Café', mes: 15, ano: 149, desc: 'Balcão, stock e vendas do dia',
-                    feats: ['Até 60 fichas do bar, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock e porções prontas', 'Balcão com mesas (10 + 10 esplanada + 5 eventos)', 'Ecrãs do bar e da cozinha, e sessões de caixa', 'Ligação ao POS: Vendus, ou SAF-T e foto de qualquer POS'] },
+                    feats: ['Até 60 fichas do bar, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock e porções prontas', 'Balcão: venda ao balcão e 5 mesas', 'Fornecedores e encomendas por WhatsApp', 'Ecrãs do bar e da cozinha, e sessões de caixa', 'Ligação ao POS: Vendus, ou SAF-T e foto de qualquer POS'] },
             pro: { nome: 'PRO', mes: 32, ano: 320, desc: 'Gestão completa: pedidos, fornecedores, equipa e cozinha',
                    feats: ['Tudo o que o plano Café inclui', 'Fichas do bar sem limite', 'Mesas e eventos sem limite, na planta da sala', 'Fichas da cozinha e do brunch', 'Equipa, relatórios, reservas e pontos', 'Produção, encomendas e fornecedores'] }
         };
         const PLAN_RANK = { gratis: 0, cafe: 1, pro: 2 };
-        const TAB_PLAN = { inventory: 'cafe', sales: 'cafe', production: 'pro', suppliers: 'pro', kitchen: 'pro' };
+        const TAB_PLAN = { inventory: 'cafe', sales: 'cafe', production: 'pro', suppliers: 'cafe', kitchen: 'pro' };
         const FREE_BAR_LIMIT = 10, CAFE_BAR_LIMIT = 60;
         function barLimit() { return isPro() ? Infinity : currentPlan === 'cafe' ? CAFE_BAR_LIMIT : FREE_BAR_LIMIT; }
         const barPlanoNome = () => (PLANS[currentPlan] || PLANS.gratis).nome;
@@ -13714,7 +13714,7 @@ var qrcode = function() {
     <script>
         // ======================================================= NAVEGAÇÃO: FICHAS e ESTOQUE agrupados
         function fichasAbrir() { let t = 'bar'; try { t = localStorage.getItem('ds_fichas') || 'bar'; } catch (_) {} if (t === 'kitchen' && !isPro()) t = 'bar'; switchTab(t); }
-        function estoqueAbrir() { let t = 'inventory'; try { t = localStorage.getItem('ds_estoque') || 'inventory'; } catch (_) {} if (t === 'suppliers' && !hasPlan('pro')) t = 'inventory'; switchTab(t); }
+        function estoqueAbrir() { let t = 'inventory'; try { t = localStorage.getItem('ds_estoque') || 'inventory'; } catch (_) {} if (t === 'suppliers' && !hasPlan('cafe')) t = 'inventory'; switchTab(t); }
         (function () {
             const seg = (grupo, opts) => `<div class="ds-seg2" data-grupo="${grupo}">${opts.map(([t, ic, l]) => `<button type="button" data-t="${t}" onclick="switchTab('${t}')"><i class="fas ${ic}"></i> ${l}<i class="fas fa-lock text-[10px] opacity-60 ds-seg-lock" style="display:none"></i></button>`).join('')}</div>`;
             const F = seg('fichas', [['bar', 'fa-martini-glass-citrus', 'Bebidas'], ['kitchen', 'fa-utensils', 'Comidas']]);
@@ -14613,7 +14613,7 @@ var qrcode = function() {
 
         // ======================================================= MESAS / ESPLANADA / EVENTOS
         const MS_ZONAS = [['sala', 'Sala'], ['esplanada', 'Esplanada'], ['eventos', 'Eventos']];
-        const MS_LIM = { sala: 10, esplanada: 10, eventos: 5 };
+        const MS_LIM = { sala: 5, esplanada: 0, eventos: 0 };
         let msZona = 'sala', msEditar = false, posMesa = null;
         function msLista() { appState.mesas = appState.mesas || []; return appState.mesas; }
         function msLabel(m) { return (m.zona === 'eventos' ? 'Evento ' : m.zona === 'esplanada' ? 'Esplanada ' : 'Mesa ') + m.nome + (m.desc ? ' (' + m.desc + ')' : ''); }
@@ -14635,14 +14635,14 @@ var qrcode = function() {
                 <div class="ms-grid">${z.map(m => { const t = msTotal(m), oc = (m.itens || []).length; return `<button type="button" class="ms-t ${oc ? 'ocup' : ''}" onclick="${msEditar ? `msEditor('${m.id}')` : `msAbrir('${m.id}')`}">
                         <span><span class="n">${escapeHtml(m.nome)}</span>${m.desc ? `<span class="d">${escapeHtml(m.desc)}</span>` : ''}</span><span class="s">${oc ? eur2(t) + ' · ' + desde(m.desde || new Date().toISOString()) : msEditar ? 'tocar para editar' : 'livre'}</span>
                         ${msEditar ? `<span class="ed"><i class="fas fa-trash" onclick="event.stopPropagation();msApagar('${m.id}')" title="Apagar"></i></span>` : ''}</button>`; }).join('')}
-                    ${z.length >= lim ? `<button type="button" class="ms-t novo" onclick="openUpgrade('pro', 'No plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos')"><i class="fas fa-crown text-lg mb-1"></i>Mais mesas com o PRO</button>` : ''}</div>`}
-                <p class="text-[11px] text-slate-400">${pro ? 'Plano PRO: mesas e eventos sem limite.' : 'Plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos.'} Toque numa mesa para abrir a conta; vá juntando pedidos e cobre no fim.</p>
+                    ${z.length >= lim ? `<button type="button" class="ms-t novo" onclick="openUpgrade('pro', 'No plano Café: venda ao balcão e até 5 mesas na sala. Esplanada e eventos são do PRO')"><i class="fas fa-crown text-lg mb-1"></i>Mais mesas com o PRO</button>` : ''}</div>`}
+                <p class="text-[11px] text-slate-400">${pro ? 'Plano PRO: mesas e eventos sem limite.' : 'Plano Café: venda ao balcão e até 5 mesas na sala.'} Toque numa mesa para abrir a conta; vá juntando pedidos e cobre no fim.</p>
             </div>`;
         }
         function msEditor(id) {
             const l = msLista(), m = id ? l.find(x => x.id === id) : null;
             const zona = m ? m.zona : msZona, z = l.filter(x => x.zona === zona);
-            if (!m && !isPro() && z.length >= MS_LIM[zona]) return openUpgrade('pro', 'No plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos');
+            if (!m && !isPro() && z.length >= MS_LIM[zona]) return openUpgrade('pro', 'No plano Café: venda ao balcão e até 5 mesas na sala. Esplanada e eventos são do PRO');
             const sug = m ? m.nome : String((Math.max(0, ...z.map(x => parseInt(x.nome) || 0)) || 0) + 1);
             document.getElementById('ms-ed-t').textContent = m ? 'Editar ' + msLabel(m) : (zona === 'eventos' ? 'Nova mesa para eventos' : 'Nova mesa');
             document.getElementById('ms-ed-nome').value = sug;
@@ -14661,7 +14661,7 @@ var qrcode = function() {
             if (!nome) return dsToast('Escreva o número ou o nome da mesa.', true);
             if (l.some(x => x.id !== id && x.zona === zona && x.nome.toLowerCase() === nome.toLowerCase())) return dsToast('Já existe a mesa ' + nome + ' aqui.', true);
             const m = id ? l.find(x => x.id === id) : null;
-            if ((!m || m.zona !== zona) && !isPro() && l.filter(x => x.zona === zona).length >= MS_LIM[zona]) return openUpgrade('pro', 'No plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos');
+            if ((!m || m.zona !== zona) && !isPro() && l.filter(x => x.zona === zona).length >= MS_LIM[zona]) return openUpgrade('pro', 'No plano Café: venda ao balcão e até 5 mesas na sala. Esplanada e eventos são do PRO');
             if (m) Object.assign(m, { nome, desc, zona });
             else l.push({ id: 'ms_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), nome, desc, zona, itens: [] });
             saveStorage(); msEdFechar(); msZona = zona; msRender();
@@ -15519,8 +15519,8 @@ var qrcode = function() {
                             : oc ? `<span><span class="tot">${eur2(t)}</span><span class="st" style="margin-top:6px"><span class="tm">${fmt(mn)}</span>${pp(m)}</span></span>`
                             : `<span class="st"><span><span class="dot"></span>Livre</span>${m.pessoas ? pp(m) : ''}</span>`}
                     </button>`; }).join('')}
-                    ${z.length >= lim && !msEditar ? `<button type="button" class="ms-t novo" onclick="openUpgrade('pro', 'No plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos')"><i class="fas fa-crown text-lg mb-1"></i>Mais mesas com o PRO</button>` : ''}</div>`}
-                <p class="text-[11px] text-slate-400">${pro ? 'Plano PRO: mesas e eventos sem limite.' : 'Plano Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos.'} Toque numa mesa para abrir a conta. Toque nas pessoas para mudar o número.</p>
+                    ${z.length >= lim && !msEditar ? `<button type="button" class="ms-t novo" onclick="openUpgrade('pro', 'No plano Café: venda ao balcão e até 5 mesas na sala. Esplanada e eventos são do PRO')"><i class="fas fa-crown text-lg mb-1"></i>Mais mesas com o PRO</button>` : ''}</div>`}
+                <p class="text-[11px] text-slate-400">${pro ? 'Plano PRO: mesas e eventos sem limite.' : 'Plano Café: venda ao balcão e até 5 mesas na sala.'} Toque numa mesa para abrir a conta. Toque nas pessoas para mudar o número.</p>
             </div>`;
         };
         // atualiza os minutos das mesas abertas
@@ -17192,7 +17192,7 @@ var qrcode = function() {
                         <h3 class="text-xl font-black text-slate-900">O Balcão faz parte dos planos Café e PRO</h3>
                         <p class="text-sm text-slate-600 mt-2 leading-relaxed">Registe os pedidos, receba e veja tudo o que vendeu, no mesmo sítio onde tem as fichas e o stock.</p>
                         <ul><li><i class="fas fa-check"></i>Pedidos ao balcão e nas mesas, com a planta da sala</li><li><i class="fas fa-check"></i>Ecrãs para o bar e a cozinha, e impressora</li><li><i class="fas fa-check"></i>Sessões de caixa, descontos, gorjetas e reservas</li><li><i class="fas fa-check"></i>Cada venda desconta o stock pela ficha técnica</li></ul>
-                        <p class="text-xs text-slate-500 mt-3">No Café: até 10 mesas na sala, 10 na esplanada e 5 para eventos. No PRO: sem limite.</p><button type="button" onclick="openUpgrade('cafe','O Balcão faz parte dos planos Café e PRO')" class="mt-4 px-6 py-3 rounded-xl text-white font-black" style="background:var(--brand)">Ver os planos</button></div>`;
+                        <p class="text-xs text-slate-500 mt-3">No Café: venda ao balcão e até 5 mesas na sala. No PRO: mesas, esplanada e eventos sem limite.</p><button type="button" onclick="openUpgrade('cafe','O Balcão faz parte dos planos Café e PRO')" class="mt-4 px-6 py-3 rounded-xl text-white font-black" style="background:var(--brand)">Ver os planos</button></div>`;
                 }
                 document.querySelectorAll('.ds-breve').forEach(t => { t.classList.add('pro'); t.innerHTML = '<i class="fas fa-lock" style="font-size:8px"></i> Café'; });
                 return r;
@@ -17667,8 +17667,8 @@ var qrcode = function() {
         // ---- planos sem o Balcão
         try {
             PLANS.cafe.desc = 'Fichas, stock e vendas do dia';
-            PLANS.cafe.feats = ['Até 60 fichas do bar, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock, porções prontas e validades', 'Vendas do dia: SumUp, foto do relatório, SAF-T ou à mão', 'Alertas de stock e de margem'];
-            PLANS.pro.feats = ['Tudo o que o plano Café inclui', 'Fichas do bar sem limite', 'Fichas da cozinha e do brunch', 'Fornecedores, encomendas por WhatsApp e faturas de compra', 'Produção do dia e equipa', 'Validades e desperdício a descontar o stock'];
+            PLANS.cafe.feats = ['Até 60 fichas do bar, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock, porções prontas e validades', 'Fornecedores e encomendas por WhatsApp', 'Balcão: venda ao balcão e 5 mesas', 'Vendas do dia: SumUp, foto do relatório, SAF-T ou à mão', 'Alertas de stock e de margem'];
+            PLANS.pro.feats = ['Tudo o que o plano Café inclui', 'Fichas do bar sem limite', 'Fichas da cozinha e do brunch', 'Leitura das faturas de compra (foto, PDF e QR)', 'Mesas, esplanada e eventos sem limite', 'Produção do dia e equipa', 'Validades e desperdício a descontar o stock'];
         } catch (_) {}
     </script>
 
@@ -20223,6 +20223,52 @@ var qrcode = function() {
             fidProgEditar = function (id) {
                 if (!id && fidLimiteAtingido()) return openUpgrade('cafe', 'O plano Expresso inclui 1 cartão de fidelidade. No plano Café pode criar quantos quiser.');
                 return oE.apply(this, arguments);
+            };
+        })();
+    </script>
+
+    <style>
+        #purchase-modal.ds-sem-ia #purchase-drop, #purchase-modal.ds-sem-ia label[data-ia] { position: relative; opacity: .55; }
+        #purchase-modal.ds-sem-ia label[data-ia]::after { content: 'PRO'; position: absolute; top: 6px; right: 6px; font-size: 10px; font-weight: 900; padding: 1px 6px; border-radius: 6px; background: #fef3c7; color: #92400e; }
+        .ms-lock { font-size: 10px; margin-left: 4px; color: #92400e; }
+    </style>
+    <script>
+        // ---------- leitura das faturas só no PRO
+        const IA_FATURA_MSG = 'A leitura das faturas (foto, PDF, QR e voz) é do plano PRO. No plano Café registe a compra em "Escrever à mão".';
+        function iaFaturaBloq() { if (isPro()) return false; openUpgrade('pro', IA_FATURA_MSG); return true; }
+        (function () {
+            const sem = inp => { try { if (inp && 'value' in inp) inp.value = ''; } catch (_) {} };
+            ['purchaseShotAdd', 'purchaseFromImage', 'purchaseFromPdf', 'purchaseFromQr', 'purchaseHandleFile', 'vozIniciar', 'aiReadInvoice'].forEach(n => {
+                if (typeof window[n] !== 'function') return;
+                const o = window[n];
+                window[n] = function (inp) { if (iaFaturaBloq()) { sem(inp); if (n === 'aiReadInvoice') throw new Error(IA_FATURA_MSG); return; } return o.apply(this, arguments); };
+            });
+            const marcar = () => {
+                const m = document.getElementById('purchase-modal'); if (!m) return;
+                m.querySelectorAll('label input[type=file]').forEach(i => i.closest('label').setAttribute('data-ia', ''));
+                m.classList.toggle('ds-sem-ia', !isPro());
+            };
+            const oOpen = openPurchase;
+            openPurchase = function () { const r = oOpen.apply(this, arguments); marcar(); return r; };
+            // tocar numa opção de leitura no Café abre logo o aviso (sem abrir a câmara ou os ficheiros)
+            document.addEventListener('click', ev => {
+                const l = ev.target.closest && ev.target.closest('#purchase-modal label[data-ia]');
+                if (l && !isPro()) { ev.preventDefault(); ev.stopPropagation(); iaFaturaBloq(); }
+            }, true);
+        })();
+
+        // ---------- mesas: no Café só a sala (5 mesas); esplanada e eventos mostram o cadeado
+        (function () {
+            const oR = msRender;
+            msRender = function () {
+                if (!isPro() && MS_LIM[msZona] === 0) msZona = 'sala';
+                const r = oR.apply(this, arguments);
+                if (!isPro()) document.querySelectorAll('.ms-seg button, .ms-zonas button').forEach(b => {
+                    const k = (b.getAttribute('onclick') || '').match(/msZona='(\w+)'/); if (!k || MS_LIM[k[1]] !== 0) return;
+                    b.setAttribute('onclick', `openUpgrade('pro', 'Esplanada e eventos fazem parte do plano PRO. No Café tem venda ao balcão e até 5 mesas na sala.')`);
+                    if (!b.querySelector('.ms-lock')) b.insertAdjacentHTML('beforeend', '<i class="fas fa-lock ms-lock"></i>');
+                });
+                return r;
             };
         })();
     </script>
