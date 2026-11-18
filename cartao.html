@@ -104,7 +104,7 @@
   .folha h2 { margin: 0 0 8px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 21px; }
   .folha ol { margin: 10px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.7; color: var(--ink); }
   .folha .ic { display: inline-flex; vertical-align: -4px; width: 22px; height: 22px; color: #0A84FF; }
-  .seta-ios { position: fixed; right: 22px; bottom: calc(6px + env(safe-area-inset-bottom)); z-index: 51; font-size: 34px; font-weight: 900; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.5); animation: setaSalta 1s ease-in-out infinite; pointer-events: none; }
+  .seta-ios { position: fixed; right: 22px; bottom: calc(6px + env(safe-area-inset-bottom)); z-index: 51; font-size: 34px; font-weight: 900; color: #983808; text-shadow: 0 0 6px #fff, 0 0 2px #fff; animation: setaSalta 1s ease-in-out infinite; pointer-events: none; }
   @keyframes setaSalta { 50% { transform: translateY(8px); } }
   @media (prefers-reduced-motion: reduce) { .seta-ios { animation: none; } }
   @keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -304,7 +304,7 @@
     }
     f.innerHTML = `<div role="dialog" aria-modal="true"><h2>Adicionar ao ecrã principal</h2>${corpo}
       <button type="button" class="${dentroApp && android ? 'bs' : 'bp'}" onclick="this.closest('.folha').remove()">${dentroApp && android ? 'Agora não' : 'Entendi'}</button></div>`;
-    if (ios && !dentroApp) { const s = document.createElement('div'); s.className = 'seta-ios'; s.innerHTML = '↓'; f.appendChild(s); }
+    if (ios && !dentroApp) { const s = document.createElement('span'); s.className = 'seta-ios'; s.innerHTML = '↓'; f.appendChild(s); }
     f.addEventListener('click', e => { if (e.target === f) f.remove(); });
     document.body.appendChild(f);
   }
