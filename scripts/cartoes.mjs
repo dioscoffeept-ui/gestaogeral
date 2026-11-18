@@ -17,11 +17,26 @@ else {
 }
 const lista = dados.filter(p => /^[A-Za-z0-9]{6}$/.test(p.curto || ''));
 
+// a imagem da pré-visualização fica guardada no próprio site, ao lado da página (como a cartao-og.png):
+// o WhatsApp mostra-a em grande e com qualidade, o que não acontece quando vem de outro endereço
+async function copiarImagem(src, dir) {
+  if (!/^https:\/\//.test(src || '')) return '';
+  const v = (src.match(/[?&]v=([\w-]+)/) || [])[1] || '';
+  const f = path.join(dir, 'og.jpg');
+  try {
+    const r = await fetch(src); if (!r.ok) return '';
+    const buf = Buffer.from(await r.arrayBuffer()); if (buf.length < 1000 || buf.length > 590000) return '';
+    if (!fs.existsSync(f) || !fs.readFileSync(f).equals(buf)) { fs.writeFileSync(f, buf); console.log('imagem', dir); }
+    return 'og.jpg' + (v ? '?v=' + v : '?v=' + buf.length.toString(36));
+  } catch (e) { console.error('imagem', src, e.message); return fs.existsSync(f) ? 'og.jpg' : ''; }
+}
+
 const pasta = path.resolve('n');
 const feitos = new Set();
 for (const p of lista) {
   const dir = path.join(pasta, p.curto); fs.mkdirSync(dir, { recursive: true });
-  const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = p.imagem || BASE + 'cartao-og.png', url = BASE + 'n/' + p.curto + '/';
+  const local = await copiarImagem(p.imagem, dir);
+  const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : (p.imagem || BASE + 'cartao-og.png'), url = BASE + 'n/' + p.curto + '/';
   const html = `<!doctype html>
 <html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(titulo)}</title>
@@ -77,7 +92,8 @@ const https = u => /^https:\/\//.test(u || '') ? u : '';
 const linkar = t => esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" rel="noopener">$1</a>').replace(/\n/g, '<br>');
 for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
   const dir = path.join(pm, c.curto); fs.mkdirSync(dir, { recursive: true });
-  const br = cor(c.cor), img = https(c.imagem) || BASE + 'cartao-og.png', url = BASE + 'm/' + c.curto + '/';
+  const localC = await copiarImagem(c.imagem, dir);
+  const br = cor(c.cor), img = localC ? BASE + 'm/' + c.curto + '/' + localC : (https(c.imagem) || BASE + 'cartao-og.png'), url = BASE + 'm/' + c.curto + '/';
   const desc = String(c.texto || '').replace(/\{nome\}/g, '').replace(/\s+/g, ' ').trim().slice(0, 180);
   const mapa = https(c.local_url) || (c.local ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.local) : '');
   const cartao = /^[A-Za-z0-9]{6}$/.test(c.prog_curto || '') ? '../../cartao.html?n=' + c.prog_curto : '';
