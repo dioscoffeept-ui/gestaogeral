@@ -104,6 +104,9 @@
   .folha h2 { margin: 0 0 8px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 21px; }
   .folha ol { margin: 10px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.7; color: var(--ink); }
   .folha .ic { display: inline-flex; vertical-align: -4px; width: 22px; height: 22px; color: #0A84FF; }
+  .seta-ios { position: fixed; right: 22px; bottom: calc(6px + env(safe-area-inset-bottom)); z-index: 51; font-size: 34px; font-weight: 900; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.5); animation: setaSalta 1s ease-in-out infinite; pointer-events: none; }
+  @keyframes setaSalta { 50% { transform: translateY(8px); } }
+  @media (prefers-reduced-motion: reduce) { .seta-ios { animation: none; } }
   @keyframes sobe { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
   .ajuda summary { list-style: none; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
   .ajuda summary::-webkit-details-marker { display: none; }
@@ -256,8 +259,12 @@
         : [{ src: dir + 'cartao-icon-192.png', sizes: '192x192', type: 'image/png' }, { src: dir + 'cartao-icon-512.png', sizes: '512x512', type: 'image/png' }];
       const m = { name: (d.loja ? d.loja + ' · ' : '') + (d.titulo || 'Cartão'), short_name: (d.loja || 'Cartão').slice(0, 12).trim(), id: url, start_url: url, scope: dir,
         display: 'standalone', background_color: '#F6F3F0', theme_color: (d.marca && d.marca.brand) || '#983808', icons };
-      const href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m));
-      if (l) l.href = href; else { const n = document.createElement('link'); n.rel = 'manifest'; n.href = href; document.head.appendChild(n); }
+      const porMan = href => { const x = document.querySelector('link[rel=manifest]'); if (x) x.href = href; else { const n = document.createElement('link'); n.rel = 'manifest'; n.href = href; document.head.appendChild(n); } };
+      // o Chrome só oferece "Instalar" com um manifesto verdadeiro (ficheiro do site): n/<código>/manifest.webmanifest
+      const cod = /^[A-Za-z0-9]{6}$/.test(d.n || '') ? d.n : '';
+      if (cod) fetch('n/' + cod + '/manifest.webmanifest', { cache: 'no-cache' }).then(r => porMan(r.ok ? 'n/' + cod + '/manifest.webmanifest' : 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m))))
+        .catch(() => porMan('data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m))));
+      else porMan('data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(m)));
     }
     const t = document.querySelector('meta[name=apple-mobile-web-app-title]'); if (t) t.content = (d.loja || 'Cartão').slice(0, 14);
   }
@@ -266,14 +273,38 @@
   window.addEventListener('appinstalled', () => { pedidoInstalar = null; ultimo = ''; ver(true); });
   function instalado() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
   async function instalar() {
+    // o Chrome pode demorar uns segundos a dizer que o cartão se pode instalar: espera um pouco antes de mostrar os passos
+    if (!pedidoInstalar && /android/i.test(navigator.userAgent)) for (let i = 0; i < 12 && !pedidoInstalar; i++) await new Promise(r => setTimeout(r, 250));
     if (pedidoInstalar) { pedidoInstalar.prompt(); try { await pedidoInstalar.userChoice; } catch (_) {} pedidoInstalar = null; return; }
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const partilhar = '<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span>';
+    const ua = navigator.userAgent, android = /android/i.test(ua);
+    // dentro do Instagram, Facebook, WhatsApp, TikTok…: aí não dá para instalar; tem de abrir no navegador
+    const dentroApp = /instagram|fban|fbav|fb_iab|messenger|tiktok|bytedance|line\/|snapchat|twitter|linkedinapp|; wv\)/i.test(ua);
     const f = document.createElement('div'); f.className = 'folha';
-    f.innerHTML = `<div role="dialog" aria-modal="true"><h2>Adicionar ao ecrã principal</h2>${ios
-      ? `<ol><li>Toque em ${partilhar} <b>Partilhar</b>, na barra do Safari.</li><li>Escolha <b>Adicionar ao ecrã principal</b>.</li><li>Toque em <b>Adicionar</b>.</li></ol>`
-      : `<ol><li>Abra o menu <b>⋮</b> do navegador.</li><li>Escolha <b>Instalar app</b> ou <b>Adicionar ao ecrã principal</b>.</li><li>Confirme.</li></ol>`}
-      <button type="button" class="bp" onclick="this.closest('.folha').remove()">Entendi</button></div>`;
+    const tresPontos = '<span class="ic" style="color:var(--ink)"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>';
+    let corpo;
+    if (dentroApp && android) {
+      const destino = 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;end';
+      corpo = `<p class="dica">Está a ver o cartão dentro de outra app. Para o guardar no telemóvel, abra-o no Chrome: depois é só tocar em <b>Instalar</b>.</p>
+        <a class="bp" style="display:block;text-align:center;text-decoration:none" href="${destino}">Abrir no Chrome</a>`;
+    } else if (dentroApp) {
+      corpo = `<p class="dica">Está a ver o cartão dentro de outra app. Toque em ${tresPontos} (ou no ícone da bússola) e escolha <b>Abrir no Safari</b>. No Safari siga os passos para adicionar ao ecrã principal.</p>`;
+    } else if (ios) {
+      corpo = `<ol><li>Toque em ${tresPontos} ao lado do endereço (ou em ${partilhar} <b>Partilhar</b>).</li><li>Toque em <b>Partilhar</b> e depois em <b>Adicionar ao ecrã principal</b>.</li><li>Deixe ligado <b>Abrir como app web</b> e toque em <b>Adicionar</b>.</li></ol>
+        <p class="dica" style="margin-top:8px">O iPhone não deixa as páginas fazerem isto sozinhas: são só estes 3 toques.</p>`;
+    } else if (android) {
+      // aberto a partir do WhatsApp, o link fica numa janela do Chrome que não deixa instalar: abrir no Chrome resolve
+      const destino = 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;end';
+      corpo = `<ol><li>Abra o menu <b>⋮</b> do navegador (em cima, à direita).</li><li>Escolha <b>Instalar app</b> ou <b>Adicionar ao ecrã principal</b>.</li><li>Toque em <b>Instalar</b>.</li></ol>
+        <p class="dica" style="margin-top:8px">Abriu o link pelo WhatsApp e não vê essa opção? Abra o cartão no Chrome: aí aparece o botão <b>Instalar</b>.</p>
+        <a class="bs" style="display:block;text-align:center;text-decoration:none;margin-top:8px" href="${destino}">Abrir no Chrome</a>`;
+    } else {
+      corpo = `<ol><li>Abra o menu do navegador.</li><li>Escolha <b>Instalar app</b> ou <b>Adicionar ao ecrã principal</b>.</li><li>Confirme.</li></ol>`;
+    }
+    f.innerHTML = `<div role="dialog" aria-modal="true"><h2>Adicionar ao ecrã principal</h2>${corpo}
+      <button type="button" class="${dentroApp && android ? 'bs' : 'bp'}" onclick="this.closest('.folha').remove()">${dentroApp && android ? 'Agora não' : 'Entendi'}</button></div>`;
+    if (ios && !dentroApp) { const s = document.createElement('div'); s.className = 'seta-ios'; s.innerHTML = '↓'; f.appendChild(s); }
     f.addEventListener('click', e => { if (e.target === f) f.remove(); });
     document.body.appendChild(f);
   }

@@ -8,9 +8,14 @@ const KEY = 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs';
 const BASE = 'https://dioscoffeept-ui.github.io/gestaogeral/';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-const r = await fetch(URL_SB + '/rest/v1/rpc/fid_paginas', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });
-if (!r.ok) { console.error('Erro ao ler os cartões', r.status, await r.text()); process.exit(1); }
-const lista = (await r.json()).filter(p => /^[A-Za-z0-9]{6}$/.test(p.curto || ''));
+let dados;
+if (process.env.FID_JSON) dados = JSON.parse(fs.readFileSync(process.env.FID_JSON, 'utf8'));   // teste local
+else {
+  const r = await fetch(URL_SB + '/rest/v1/rpc/fid_paginas', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });
+  if (!r.ok) { console.error('Erro ao ler os cartões', r.status, await r.text()); process.exit(1); }
+  dados = await r.json();
+}
+const lista = dados.filter(p => /^[A-Za-z0-9]{6}$/.test(p.curto || ''));
 
 const pasta = path.resolve('n');
 const feitos = new Set();
@@ -42,6 +47,15 @@ for (const p of lista) {
 `;
   const f = path.join(dir, 'index.html');
   if (!fs.existsSync(f) || fs.readFileSync(f, 'utf8') !== html) { fs.writeFileSync(f, html); console.log('atualizado', p.curto); }
+  // manifesto da app do cartão (Android: "Instalar" num toque). Abre o cartão do cliente guardado neste telemóvel.
+  const ic = p.icone || '';
+  const icons = ic ? [{ src: ic.replace('fid-icone-512.png', 'fid-icone-192.png'), sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: ic, sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: ic, sizes: '512x512', type: 'image/png', purpose: 'maskable' }]
+    : [{ src: '../../cartao-icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '../../cartao-icon-512.png', sizes: '512x512', type: 'image/png' }];
+  const man = JSON.stringify({ id: '../../cartao.html?n=' + p.curto, name: (p.loja ? p.loja + ' · ' : '') + p.nome, short_name: (p.loja || p.nome || 'Cartão').slice(0, 12).trim(),
+    start_url: '../../cartao.html?n=' + p.curto + '&app=1', scope: '../../', display: 'standalone', background_color: '#F6F3F0', theme_color: '#983808', icons }, null, 1) + '\n';
+  const fm = path.join(dir, 'manifest.webmanifest');
+  if (!fs.existsSync(fm) || fs.readFileSync(fm, 'utf8') !== man) { fs.writeFileSync(fm, man); console.log('manifesto', p.curto); }
   feitos.add(p.curto);
 }
 // cartões apagados ou em pausa: a página deixa de existir (o link antigo com ?código continua a funcionar)
