@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 20:45</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 20:50</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795033032';
+        const DS_BUILD = '1795033789';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20696,12 +20696,89 @@ var qrcode = function() {
             let b = root.querySelector('#fid-camp-box');
             if (!b) { b = document.createElement('div'); b.id = 'fid-camp-box'; ref.insertAdjacentElement(ref.id === 'fid-msgs' ? 'beforebegin' : 'afterend', b); }
             const n = fidCampDest().length, ult = (appState.fidCampanhas || [])[0];
-            b.innerHTML = `<i class="fas fa-bullhorn" style="color:var(--brand);font-size:20px"></i><span class="tx"><b>Mensagem para os clientes</b><small>${n} cliente${n === 1 ? '' : 's'} aceit${n === 1 ? 'ou' : 'aram'} receber novidades: eventos, promoções, avisos.${ult ? ' Última: ' + new Date(ult.em).toLocaleDateString('pt-PT') + ' (' + ult.enviados + ')' : ''}</small></span><button type="button" onclick="fidCampAbrir()" ${n ? '' : 'disabled'}>Escrever mensagem</button>${n ? `<button type="button" style="background:#fff;color:#B91C1C;border:1.5px solid #FECACA" onclick="fidCamp.texto=fidCamp.texto||fidCampModelos.livre();fidCamp.enviados=new Set();fidCampUmAUm()"><i class="fas fa-bell-slash mr-1"></i>Quem pediu SAIR</button>` : ''}`;
+            b.innerHTML = `<i class="fas fa-bullhorn" style="color:var(--brand);font-size:20px"></i><span class="tx"><b>Mensagem para os clientes</b><small>${n} cliente${n === 1 ? '' : 's'} aceit${n === 1 ? 'ou' : 'aram'} receber novidades: eventos, promoções, avisos.${ult ? ' Última: ' + new Date(ult.em).toLocaleDateString('pt-PT') + ' (' + ult.enviados + ')' : ''}</small></span><button type="button" onclick="fidCampAbrir()" ${n ? '' : 'disabled'}>Escrever mensagem</button>`;
         }
         (function () {
             const oP = fidPintar;
             fidPintar = function () { const r = oP.apply(this, arguments); try { fidCamp.prog = ''; fidCampCaixa(); } catch (e) { console.warn(e); } return r; };
         })();
+    </script>
+
+    <style>
+        .fid-sino { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #E4DCCF; background: #fff; color: #9C8B80; font-size: 17px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+        .fid-sino.on { background: #FEF3C7; border-color: #FCD34D; color: #B45309; }
+        .fid-sh-l { display: flex; gap: 8px; margin-top: 12px; }
+        .fid-sh-l input { flex: 1; min-width: 0; border: 1.5px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 14px; background: #F6F3F0; color: #24150E; }
+        .fid-sh-l button { padding: 10px 14px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 900; font-size: 14px; white-space: nowrap; }
+        .fid-sh-b { display: grid; gap: 8px; margin-top: 12px; }
+        .fid-sh-b button { padding: 12px; border-radius: 12px; font-weight: 900; font-size: 14.5px; }
+    </style>
+    <script>
+        // ---------- sininho em cada cliente: recebe ou não as mensagens da loja (em todos os cartões do mesmo telemóvel)
+        async function fidSino(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const t = fidTel9(k.telefone), ids = fidCartoes.filter(x => x.id === id || (t.length === 9 && fidTel9(x.telefone) === t)).map(x => x.id);
+            const novo = !k.marketing, nome = (k.nome || 'o cliente').split(' ')[0];
+            const ok = novo
+                ? await dsConfirm('Voltar a enviar mensagens a ' + nome + '?', 'Só ligue se o cliente lhe pediu para voltar a receber novidades e ofertas.', { ok: 'O cliente pediu: ligar' })
+                : await dsConfirm('Deixar de enviar mensagens a ' + nome + '?', 'Use quando o cliente pede para não receber (por exemplo, respondeu SAIR). O cartão e os carimbos continuam.', { ok: 'Desligar mensagens' });
+            if (!ok) return;
+            const { error } = await sb.from('fidelidade_cartoes').update({ marketing: novo, marketing_em: new Date().toISOString() }).in('id', ids);
+            if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
+            fidCartoes.forEach(x => { if (ids.includes(x.id)) x.marketing = novo; });
+            dsToast(novo ? nome + ' volta a receber as mensagens.' : nome + ' já não recebe mensagens.');
+            fidPintar();
+        }
+        (function () {
+            const oL = fidLista;
+            fidLista = function () {
+                const r = oL.apply(this, arguments);
+                try {
+                    document.querySelectorAll('#fid-lista .fid-c').forEach(el => {
+                        if (el.querySelector('.fid-sino')) return;
+                        let k = null;
+                        for (const x of el.querySelectorAll('[onclick]')) { const m = (x.getAttribute('onclick') || '').match(/'([0-9a-f-]{36})'/); if (m) { k = fidCartoes.find(c => c.id === m[1]); if (k) break; } }
+                        if (!k) return;
+                        const b = el.querySelector('.fid-mais') || null;
+                        const mk = el.querySelector('.fid-rgpd .mk'); if (mk) mk.remove();
+                        const btn = `<button type="button" class="fid-sino ${k.marketing ? 'on' : ''}" onclick="fidSino('${k.id}')" title="${k.marketing ? 'Recebe as mensagens da loja. Toque para desligar.' : 'Não recebe mensagens. Toque para ligar.'}" aria-label="${k.marketing ? 'Recebe mensagens' : 'Não recebe mensagens'}"><i class="fas ${k.marketing ? 'fa-bell' : 'fa-bell-slash'}"></i></button>`;
+                        if (b) { b.insertAdjacentHTML('beforebegin', btn); if (b.parentElement) { b.parentElement.style.display = 'flex'; b.parentElement.style.gap = '8px'; b.parentElement.style.alignItems = 'flex-start'; } }
+                        else { const t = el.querySelector('.t') || el; t.insertAdjacentHTML('beforeend', btn); }
+                    });
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
+
+        // ---------- partilhar o cartão: escolher entre partilhar e copiar o link
+        (function () {
+            const oPart = fidPartilhar;
+            fidPartilhar = function (pid, direto) {
+                if (direto) return oPart.call(this, pid);
+                const ativos = (fidProgs || []).filter(p => p.ativo);
+                if (!pid && ativos.length > 1) return oPart.call(this);           // primeiro escolhe o cartão; depois volta aqui com o pid
+                const p = fidProgPorId(pid) || fidProgPadrao();
+                if (!p || !fidCfg || !fidCfg.ligado) return oPart.call(this, pid);
+                const url = fidBase() + 'n/' + p.curto + '/';
+                dsModal('fid-sh', `<div class="flex items-start justify-between gap-3"><div><h3>Partilhar ${escapeHtml(p.nome)}</h3><p class="text-sm text-slate-500 mt-1">Os clientes abrem o link e criam o cartão em 30 segundos.</p></div>
+                    <button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-sh')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                    <div class="fid-sh-l"><input id="fid-sh-url" readonly value="${escapeHtml(url)}" onclick="this.select()" aria-label="Link do cartão"><button type="button" onclick="fidShCopiar()"><i class="far fa-copy mr-1"></i>Copiar</button></div>
+                    <div class="fid-sh-b">
+                        <button type="button" class="bg-[#25D366] text-white" style="background:#25D366;color:#fff" onclick="dsModalFechar('fid-sh');fidPartilhar('${p.id}',true)"><i class="fab fa-whatsapp mr-1"></i>Partilhar com a mensagem e a imagem</button>
+                        <button type="button" style="background:#fff;border:1.5px solid #E4DCCF;color:#24150E" onclick="fidShCopiarMsg('${p.id}')"><i class="far fa-clipboard mr-1"></i>Copiar a mensagem com o link</button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-3">Use o link onde quiser: Instagram, site, QR code no balcão, e-mail.</p>`);
+            };
+        })();
+        async function fidShCopiar() {
+            const i = document.getElementById('fid-sh-url'); if (!i) return;
+            try { await navigator.clipboard.writeText(i.value); dsToast('Link copiado.'); } catch (_) { i.select(); try { document.execCommand('copy'); dsToast('Link copiado.'); } catch (__) { dsToast('Selecione o link e copie.', true); } }
+        }
+        async function fidShCopiarMsg(pid) {
+            const p = fidProgPorId(pid); if (!p) return;
+            const txt = (p.mensagem || fidMsgPadrao(p)).trim() + '\n' + fidBase() + 'n/' + p.curto + '/';
+            try { await navigator.clipboard.writeText(txt); dsToast('Mensagem e link copiados.'); } catch (_) { dsToast('Não deu para copiar.', true); }
+        }
     </script>
 </body>
 </html>
