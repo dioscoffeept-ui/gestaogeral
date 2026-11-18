@@ -20234,14 +20234,16 @@ var qrcode = function() {
     </style>
     <script>
         // ---------- leitura das faturas só no PRO
-        const IA_FATURA_MSG = 'A leitura das faturas (foto, PDF, QR e voz) é do plano PRO. No plano Café registe a compra em "Escrever à mão".';
+        const IA_FATURA_MSG = 'A leitura das faturas (foto, PDF e QR) é do plano PRO. No plano Café registe a compra a ditar ou em "Escrever à mão".';
         function iaFaturaBloq() { if (isPro()) return false; openUpgrade('pro', IA_FATURA_MSG); return true; }
         (function () {
             const sem = inp => { try { if (inp && 'value' in inp) inp.value = ''; } catch (_) {} };
-            ['purchaseShotAdd', 'purchaseFromImage', 'purchaseFromPdf', 'purchaseFromQr', 'purchaseHandleFile', 'vozIniciar', 'aiReadInvoice'].forEach(n => {
+            ['purchaseShotAdd', 'purchaseFromImage', 'purchaseFromPdf', 'purchaseFromQr', 'purchaseHandleFile', 'aiReadInvoice'].forEach(n => {
                 if (typeof window[n] !== 'function') return;
                 const o = window[n];
-                window[n] = function (inp) { if (iaFaturaBloq()) { sem(inp); if (n === 'aiReadInvoice') throw new Error(IA_FATURA_MSG); return; } return o.apply(this, arguments); };
+                window[n] = function (inp, tipo) {
+                    if (n === 'aiReadInvoice' && /^audio\//.test(String(tipo || '')) && hasPlan('cafe')) return o.apply(this, arguments);   // ditar a compra: Café e PRO
+                    if (iaFaturaBloq()) { sem(inp); if (n === 'aiReadInvoice') throw new Error(IA_FATURA_MSG); return; } return o.apply(this, arguments); };
             });
             const marcar = () => {
                 const m = document.getElementById('purchase-modal'); if (!m) return;
