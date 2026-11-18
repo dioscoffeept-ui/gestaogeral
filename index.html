@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:05</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 10:10</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20272,6 +20272,29 @@ var qrcode = function() {
                 });
                 return r;
             };
+        })();
+    </script>
+
+    <script>
+        // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
+        const DS_BUILD = '1794996160';
+        (function () {
+            let aVer = false;
+            async function verNova() {
+                if (aVer || !navigator.onLine) return; aVer = true;
+                try {
+                    const t = await fetch('./index.html?v=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '');
+                    const m = t.match(/const DS_BUILD = '([^']+)'/);
+                    if (m && m[1] !== DS_BUILD) {
+                        const ocupado = document.querySelector('#purchase-modal.flex, #recipe-modal.flex, #pp-modal.on') || (typeof posCart !== 'undefined' && posCart.length);
+                        if (ocupado) { try { dsToast('Há uma versão nova do Dio’Stock. Feche e abra a app para atualizar.'); } catch (_) {} }
+                        else { try { const rg = await navigator.serviceWorker?.getRegistration(); await rg?.update(); } catch (_) {} location.reload(); }
+                    }
+                } catch (_) {} finally { aVer = false; }
+            }
+            setTimeout(verNova, 3000);
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verNova(); });
+            setInterval(verNova, 10 * 60 * 1000);
         })();
     </script>
 </body>
