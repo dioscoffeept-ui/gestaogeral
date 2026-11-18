@@ -1,7 +1,7 @@
 name: Páginas dos cartões de fidelidade
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -19,10 +19,10 @@ jobs:
       - run: node scripts/cartoes.mjs
       - name: Guardar
         run: |
-          if [ -n "$(git status --porcelain n)" ]; then
+          if [ -n "$(git status --porcelain n m)" ]; then
             git config user.name "Dio'Stock"
             git config user.email "diostockpt@users.noreply.github.com"
-            git add n
+            git add n m
             git commit -m "Cartões: páginas de pré-visualização"
             git pull --rebase -q
             git push

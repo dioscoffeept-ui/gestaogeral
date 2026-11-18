@@ -62,3 +62,70 @@ for (const p of lista) {
 for (const d of fs.readdirSync(pasta, { withFileTypes: true })) {
   if (d.isDirectory() && /^[A-Za-z0-9]{6}$/.test(d.name) && !feitos.has(d.name)) { fs.rmSync(path.join(pasta, d.name), { recursive: true }); console.log('removido', d.name); }
 }
+
+// ---------- mensagens aos clientes (eventos, promoções): uma página por mensagem, com a imagem para a pré-visualização do WhatsApp
+let camps = [];
+if (process.env.CAMP_JSON) camps = JSON.parse(fs.readFileSync(process.env.CAMP_JSON, 'utf8'));
+else {
+  const rc = await fetch(URL_SB + '/rest/v1/rpc/fid_campanhas_paginas', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });
+  if (rc.ok) camps = await rc.json(); else console.error('Erro ao ler as mensagens', rc.status, await rc.text());
+}
+const pm = path.resolve('m'); fs.mkdirSync(pm, { recursive: true });
+const feitasM = new Set();
+const cor = c => /^#[0-9a-fA-F]{6}$/.test(c || '') ? c : '#983808';
+const https = u => /^https:\/\//.test(u || '') ? u : '';
+const linkar = t => esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
+  const dir = path.join(pm, c.curto); fs.mkdirSync(dir, { recursive: true });
+  const br = cor(c.cor), img = https(c.imagem) || BASE + 'cartao-og.png', url = BASE + 'm/' + c.curto + '/';
+  const desc = String(c.texto || '').replace(/\{nome\}/g, '').replace(/\s+/g, ' ').trim().slice(0, 180);
+  const mapa = https(c.local_url) || (c.local ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.local) : '');
+  const cartao = /^[A-Za-z0-9]{6}$/.test(c.prog_curto || '') ? '../../cartao.html?n=' + c.prog_curto : '';
+  const titulo = c.titulo + (c.loja ? ' · ' + c.loja : '');
+  const html = `<!doctype html>
+<html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(titulo)}</title>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${esc(c.loja || "Dio'Stock")}">
+<meta property="og:title" content="${esc(titulo)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${esc(img)}">
+<meta property="og:image:secure_url" content="${esc(img)}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="${esc(url)}">
+<meta property="og:locale" content="pt_PT">
+<meta name="description" content="${esc(desc)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="${br}">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Schibsted+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--b:${br}}*{box-sizing:border-box}body{margin:0;background:#F6F3F0;color:#231F20;font:16px/1.55 'Schibsted Grotesk',system-ui,sans-serif}
+main{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+header{display:flex;align-items:center;gap:12px;padding:6px 0 14px}header img{width:48px;height:48px;border-radius:14px;object-fit:cover;background:#fff}header b{font:800 20px 'Bricolage Grotesque',sans-serif}
+.pst{width:100%;border-radius:20px;display:block;box-shadow:0 10px 30px rgba(36,21,14,.18)}
+h1{font:800 30px/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-.02em;margin:20px 0 8px}
+.tx{background:#fff;border:1px solid #E4DCCF;border-radius:16px;padding:16px;margin-top:12px;overflow-wrap:anywhere}.tx a{color:var(--b);font-weight:700}
+.bt{display:block;text-align:center;text-decoration:none;font-weight:800;padding:14px;border-radius:14px;margin-top:10px}
+.p{background:var(--b);color:#fff}.s{background:#fff;color:#231F20;border:1.5px solid #E4DCCF}
+footer{text-align:center;color:#7A6A60;font-size:13px;margin-top:26px}
+</style></head><body><main>
+<header>${https(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : ''}<b>${esc(c.loja || '')}</b></header>
+<img class="pst" src="${esc(img)}" alt="${esc(c.titulo)}">
+<h1>${esc(c.titulo)}</h1>
+<div class="tx">${linkar(String(c.texto || '').replace(/\{nome\}/g, '').replace(/^\s*Olá[^\n]{0,20}\n+/i, '').trim())}</div>
+${mapa ? `<a class="bt p" href="${esc(mapa)}" rel="noopener">📍 ${esc(c.local || 'Ver no mapa')}</a>` : ''}
+${cartao ? `<a class="bt ${mapa ? 's' : 'p'}" href="${cartao}">☕ Abrir o meu cartão de fidelidade</a>` : ''}
+<footer>Feito com Dio'Stock</footer>
+</main></body></html>
+`;
+  const f = path.join(dir, 'index.html');
+  if (!fs.existsSync(f) || fs.readFileSync(f, 'utf8') !== html) { fs.writeFileSync(f, html); console.log('mensagem', c.curto); }
+  feitasM.add(c.curto);
+}
+for (const d of fs.readdirSync(pm, { withFileTypes: true })) {
+  if (d.isDirectory() && /^[A-Za-z0-9]{6}$/.test(d.name) && !feitasM.has(d.name)) { fs.rmSync(path.join(pm, d.name), { recursive: true }); console.log('mensagem removida', d.name); }
+}
+if (!fs.readdirSync(pm).length) fs.writeFileSync(path.join(pm, '.gitkeep'), '');

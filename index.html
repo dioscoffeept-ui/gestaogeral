@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 21:00</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 21:30</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -18144,9 +18144,9 @@ var qrcode = function() {
         }
         function fidMensagem(k) {
             const alvo = fidCfgDe(k).alvo, n = Math.min(k.carimbos, alvo), falta = Math.max(0, alvo - k.carimbos);
-            return `Olá ${k.nome.split(' ')[0]}! ☕ O seu cartão de fidelidade${currentEmpresa ? ' da ' + currentEmpresa : ''}: ${n} de ${alvo} carimbos.` +
+            return `Olá ${k.nome.split(' ')[0]}! ☕\nO seu cartão de fidelidade${currentEmpresa ? ' da ' + currentEmpresa : ''} tem *${n} de ${alvo} carimbos*.` +
                 (falta ? ` Faltam ${falta} para ${fidCfgDe(k).premio.charAt(0).toLowerCase() + fidCfgDe(k).premio.slice(1)}.` : ` ${fidCfgDe(k).premio} à sua espera!`) +
-                `\nO seu código: ${k.codigo}\n${fidLinkCartao(k)}`;
+                `\nCódigo para o balcão: *${k.codigo}*\n\n${fidLinkCartao(k)}`;
         }
         let fidImgCache = {};
         async function fidPreparar(k) {
@@ -18157,12 +18157,8 @@ var qrcode = function() {
         async function fidWhats(id) {
             const k = fidCartoes.find(x => x.id === id); if (!k) return;
             const txt = fidMensagem(k);
-            try {
-                const blob = await fidPreparar(k);
-                const file = new File([blob], 'cartao-' + k.codigo + '.png', { type: 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: txt }); return; }
-            } catch (e) { if (e && e.name === 'AbortError') return; console.warn(e); }
-            if (!k.telefone) { fidCopiar(txt); return; }
+            // só texto com o link: o WhatsApp mostra a pré-visualização do cartão numa só mensagem
+            if (!k.telefone) { if (navigator.share) { try { await navigator.share({ text: txt }); return; } catch (e) { if (e && e.name === 'AbortError') return; } } fidCopiar(txt); return; }
             let t = k.telefone.replace(/\D/g, ''); if (t.length === 9) t = '351' + t;
             window.open('https://api.whatsapp.com/send?phone=' + t + '&text=' + encodeURIComponent(txt), '_blank', 'noopener');
         }
@@ -19464,7 +19460,7 @@ var qrcode = function() {
             const oM = fidMensagem;
             fidMensagem = function (k) {
                 const p = fidProgDe(k); if (!p || p.tipo === 'carimbos') return oM.apply(this, arguments);
-                return `Olá ${k.nome.split(' ')[0]}! O seu ${p.nome}${currentEmpresa ? ' da ' + currentEmpresa : ''}: ${fidVantagem(p)}.\nO seu código: ${k.codigo}\n${fidLinkCartao(k)}`;
+                return `Olá ${k.nome.split(' ')[0]}! ☕\nO seu ${p.nome}${currentEmpresa ? ' da ' + currentEmpresa : ''}: *${fidVantagem(p)}*.\nCódigo para o balcão: *${k.codigo}*\n\n${fidLinkCartao(k)}`;
             };
         })();
     </script>
@@ -20280,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795034404';
+        const DS_BUILD = '1795035983';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20554,7 +20550,7 @@ var qrcode = function() {
         .fc-nota { font-size: 12.5px; color: #7A6A60; margin-top: 8px; }
     </style>
     <script>
-        let fidCamp = { texto: '', local: '', anexos: [], sair: true, prog: '', enviados: new Set() };
+        let fidCamp = { titulo: '', texto: '', local: '', anexos: [], sair: true, prog: '', enviados: new Set(), salva: null, chave: '' };
         // clientes que aceitaram receber novidades, um por telemóvel
         function fidCampDest() {
             const vistos = new Set(), out = [];
@@ -20578,8 +20574,11 @@ var qrcode = function() {
         function fidCampTexto(nome, comNome = true) {
             let t = (fidCamp.texto || '').trim();
             t = t.replace(/\{nome\}/g, comNome ? (String(nome || '').split(' ')[0] || '') : '').replace(/Olá !/g, 'Olá!').replace(/Olá  /g, 'Olá ');
-            const loc = fidCampLocal(); if (loc) t += `\n\n📍 ${(fidCamp.local || '').trim()}${/^https?:/i.test(fidCamp.local) ? '' : '\n' + loc}`;
-            if (fidCamp.sair) t += '\n\nPara deixar de receber estas mensagens, responda SAIR.';
+            const loc = (fidCamp.local || '').trim();
+            if (loc && !/^https?:/i.test(loc)) t += `\n\n📍 ${loc}`;
+            if (fidCamp.salva) t += '\n\n' + fidCampUrl(fidCamp.salva);
+            else if (loc) t += '\n' + fidCampLocal();
+            if (fidCamp.sair) t += '\n\n_Para deixar de receber estas mensagens, responda SAIR._';
             return t;
         }
         function fidCampAbrir() {
@@ -20595,12 +20594,14 @@ var qrcode = function() {
                 ${progs.length > 1 ? `<label class="fc-l" for="fc-prog">Clientes do cartão</label><select id="fc-prog" class="fc-in" onchange="fidCamp.prog=this.value;fidCampPintar()"><option value="">Todos os cartões</option>${progs.map(p => `<option value="${p.id}" ${fidCamp.prog === p.id ? 'selected' : ''}>${escapeHtml(p.nome)}</option>`).join('')}</select>` : ''}
                 <span class="fc-l">Começar de um modelo</span>
                 <div class="fc-chips"><button type="button" onclick="fidCampModelo('evento')">📍 Evento</button><button type="button" onclick="fidCampModelo('promo')">✨ Promoção</button><button type="button" onclick="fidCampModelo('livre')">✏️ Em branco</button></div>
+                <label class="fc-l" for="fc-tit">Título <span style="font-weight:600;color:#7A6A60">· aparece em grande na pré-visualização</span></label>
+                <input id="fc-tit" class="fc-in" maxlength="70" placeholder="Ex.: Estamos no Mercado de Campo de Ourique" value="${escapeHtml(fidCamp.titulo)}" oninput="fidCamp.titulo=this.value">
                 <label class="fc-l" for="fc-txt">Mensagem <span style="font-weight:600;color:#7A6A60">· {nome} é trocado pelo nome de cada cliente</span></label>
                 <textarea id="fc-txt" class="fc-in" oninput="fidCamp.texto=this.value;fidCampPrev()">${escapeHtml(fidCamp.texto)}</textarea>
                 <label class="fc-l" for="fc-loc">Local (opcional)</label>
                 <input id="fc-loc" class="fc-in" placeholder="Morada, nome do sítio ou link do Google Maps" value="${escapeHtml(fidCamp.local)}" oninput="fidCamp.local=this.value;fidCampPrev()">
-                <span class="fc-l">Fotos, vídeo ou PDF (opcional)</span>
-                <label class="fc-s" style="display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;font-weight:800;font-size:13.5px;cursor:pointer"><i class="fas fa-paperclip"></i>Juntar ficheiro<input type="file" accept="image/*,video/*,application/pdf" multiple class="hidden" onchange="fidCampAnexar(this)"></label>
+                <span class="fc-l">Foto do evento ou da promoção (opcional) <span style="font-weight:600;color:#7A6A60">· sem foto, fazemos uma imagem com a sua marca</span></span>
+                <label class="fc-s" style="display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;font-weight:800;font-size:13.5px;cursor:pointer"><i class="fas fa-paperclip"></i>Juntar ficheiro<input type="file" accept="image/*" class="hidden" onchange="fidCampAnexar(this)"></label>
                 <div class="fc-anx">${fidCamp.anexos.map((f, i) => `<span>${/^image/.test(f.type) ? '🖼️' : /^video/.test(f.type) ? '🎬' : '📄'} ${escapeHtml(f.name.slice(0, 28))}<button type="button" aria-label="Tirar" onclick="fidCamp.anexos.splice(${i},1);fidCampPintar()">×</button></span>`).join('')}</div>
                 <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;font-weight:700;color:#3A2A22"><input type="checkbox" ${fidCamp.sair ? 'checked' : ''} onchange="fidCamp.sair=this.checked;fidCampPrev()" style="width:18px;height:18px;accent-color:var(--brand)"> Juntar "Para deixar de receber, responda SAIR."</label>
                 <span class="fc-l">Pré-visualização</span><div class="fc-prev" id="fc-prev"></div>
@@ -20618,7 +20619,7 @@ var qrcode = function() {
         function fidCampPrev() { const p = document.getElementById('fc-prev'); if (p) { const d = fidCampDest(); p.textContent = fidCampTexto(d[0] ? d[0].nome : 'Ana'); } }
         function fidCampAnexar(inp) {
             const fs = Array.from(inp.files || []); inp.value = '';
-            fs.forEach(f => { if (f.size > 60 * 1024 * 1024) return dsToast(f.name + ' é demasiado grande (máx. 60 MB).', true); fidCamp.anexos.push(f); });
+            fs.forEach(f => { if (!/^image\//.test(f.type)) return dsToast('Escolha uma foto (JPG ou PNG).', true); if (f.size > 25 * 1024 * 1024) return dsToast(f.name + ' é demasiado grande.', true); fidCamp.anexos = [f]; });
             fidCamp.texto = (document.getElementById('fc-txt') || {}).value ?? fidCamp.texto; fidCampPintar();
         }
         const fidCampPodeFicheiros = () => { try { return !!(fidCamp.anexos.length && navigator.canShare && navigator.canShare({ files: fidCamp.anexos })); } catch (_) { return false; } };
@@ -20633,11 +20634,12 @@ var qrcode = function() {
         // ---- cliente a cliente
         function fidCampUmAUm() {
             if (!(fidCamp.texto || '').trim()) return dsToast('Escreva a mensagem primeiro.', true);
-            const d = fidCampDest(), feitos = d.filter(x => fidCamp.enviados.has(x.tel)).length, fich = fidCampPodeFicheiros();
+            if (!fidCamp.salva || fidCamp.chave !== fidCampChaveAtual()) return fidCampPreparar(fidCampUmAUm);
+            const d = fidCampDest(), feitos = d.filter(x => fidCamp.enviados.has(x.tel)).length, fich = false;
             dsModal('fid-camp', `<div class="flex items-start justify-between gap-3"><div><h3>Enviar cliente a cliente</h3><p class="text-sm text-slate-500 mt-1">${fich ? 'Toque em <b>Enviar</b>, escolha o WhatsApp e depois a conversa com o nome indicado. A mensagem e os ficheiros já vão juntos.' : 'Toque em <b>Enviar</b>: abre a conversa do cliente no WhatsApp com a mensagem escrita. Só tem de tocar em enviar e voltar aqui.'}</p></div>
                 <button type="button" class="p-2 text-slate-400" onclick="fidCampFechar()" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 <div class="fc-pg"><i style="width:${d.length ? Math.round(feitos / d.length * 100) : 0}%"></i></div><p class="fc-nota" style="margin-top:0"><b>${feitos} de ${d.length}</b> enviadas</p>
-                ${fidCamp.anexos.length && !fich ? `<p class="fc-nota" style="color:#92400E">Neste aparelho os ficheiros não seguem sozinhos: depois de abrir a conversa, toque no 📎 do WhatsApp para os juntar. No telemóvel seguem juntos.</p>` : ''}
+
                 <div style="margin-top:6px">${d.map(x => `<div class="fc-row ${fidCamp.enviados.has(x.tel) ? 'ok' : ''}"><span class="n"><b>${escapeHtml(x.nome)}</b><small>${x.tel.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')}</small></span>
                     <button type="button" onclick="fidCampEnviar('${x.tel}')">${fidCamp.enviados.has(x.tel) ? '✓ Enviada' : 'Enviar'}</button><button type="button" title="Deixar de enviar a este cliente (respondeu SAIR)" aria-label="Tirar da lista" style="background:#FEE2E2;color:#B91C1C;border:1.5px solid #FECACA;padding:8px 10px" onclick="fidCampTirar('${x.tel}')"><i class="fas fa-bell-slash mr-1"></i>Tirar</button></div>`).join('')}</div>
                 <p class="fc-nota">Alguém respondeu <b>SAIR</b>? Toque em <b style="color:#B91C1C"><i class="fas fa-bell-slash"></i> Tirar</b> ao lado do nome: deixa de receber mensagens.</p>
@@ -20646,11 +20648,7 @@ var qrcode = function() {
         async function fidCampEnviar(tel) {
             const x = fidCampDest().find(y => y.tel === tel); if (!x) return;
             const txt = fidCampTexto(x.nome);
-            if (fidCampPodeFicheiros()) {
-                try { await navigator.clipboard.writeText(x.nome); } catch (_) {}
-                dsToast('Escolha o WhatsApp e a conversa de ' + x.nome.split(' ')[0] + '.');
-                if (!(await fidCampPartilhar(txt))) return;
-            } else window.open('https://api.whatsapp.com/send?phone=351' + tel + '&text=' + encodeURIComponent(txt), '_blank', 'noopener');
+            window.open('https://api.whatsapp.com/send?phone=351' + tel + '&text=' + encodeURIComponent(txt), '_blank', 'noopener');
             fidCamp.enviados.add(tel);
             setTimeout(fidCampUmAUm, 400);
         }
@@ -20675,19 +20673,19 @@ var qrcode = function() {
         async function fidCampCopiar() { try { await navigator.clipboard.writeText(fidCampTexto('', false)); dsToast('Mensagem copiada.'); } catch (_) { dsToast('Não deu para copiar.', true); } }
         async function fidCampPartilharTodos() {
             const t = fidCampTexto('', false);
-            if (fidCampPodeFicheiros()) { if (await fidCampPartilhar(t)) { fidCampRegistar(fidCampDest().length); dsToast('Escolha a lista de transmissão no WhatsApp.'); } }
-            else if (navigator.share) { try { await navigator.share({ text: t }); fidCampRegistar(fidCampDest().length); } catch (_) {} }
+            if (navigator.share) { try { await navigator.share({ text: t }); fidCampRegistar(fidCampDest().length); } catch (_) {} }
             else window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank', 'noopener');
         }
         function fidCampTodos() {
             if (!(fidCamp.texto || '').trim()) return dsToast('Escreva a mensagem primeiro.', true);
+            if (!fidCamp.salva || fidCamp.chave !== fidCampChaveAtual()) return fidCampPreparar(fidCampTodos);
             const n = fidCampDest().length;
             dsModal('fid-camp', `<div class="flex items-start justify-between gap-3"><div><h3>Enviar a todos de uma vez</h3><p class="text-sm text-slate-500 mt-1">Com uma <b>lista de transmissão</b> do WhatsApp, a mensagem vai para os ${n} clientes num só envio. Cada um recebe-a como mensagem privada.</p></div>
                 <button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-camp')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 <ol class="fc-ol">
                     <li><b>Guarde os clientes nos contactos</b> do telemóvel (só da primeira vez):<div class="fc-bts" style="margin-top:6px"><button type="button" class="fc-s" onclick="fidCampVcf()"><i class="fas fa-address-book mr-1"></i>Baixar os ${n} contactos</button></div></li>
                     <li>No WhatsApp, crie a lista: <b>⋮ → Nova transmissão</b> (Android) ou <b>Conversas → Listas → Transmissão</b> (iPhone), e escolha os clientes. Também só da primeira vez.</li>
-                    <li>Envie a mensagem para a lista:<div class="fc-bts" style="margin-top:6px"><button type="button" class="fc-wa" onclick="fidCampPartilharTodos()"><i class="fab fa-whatsapp mr-1"></i>${fidCamp.anexos.length ? 'Partilhar mensagem e ficheiros' : 'Partilhar a mensagem'}</button><button type="button" class="fc-s" onclick="fidCampCopiar()"><i class="far fa-copy mr-1"></i>Copiar só o texto</button></div></li>
+                    <li>Envie a mensagem para a lista:<div class="fc-bts" style="margin-top:6px"><button type="button" class="fc-wa" onclick="fidCampPartilharTodos()"><i class="fab fa-whatsapp mr-1"></i>Partilhar a mensagem</button><button type="button" class="fc-s" onclick="fidCampCopiar()"><i class="far fa-copy mr-1"></i>Copiar só o texto</button></div></li>
                 </ol>
                 <p class="fc-nota">Na lista de transmissão a mensagem não leva o nome de cada cliente. E só chega a quem também tiver o número da loja guardado — se alguém não receber, use o envio cliente a cliente.</p>
                 <div class="fc-bts"><button type="button" class="fc-s" onclick="fidCampPintar()">Voltar à mensagem</button></div>`);
@@ -20783,6 +20781,92 @@ var qrcode = function() {
             const txt = (p.mensagem || fidMsgPadrao(p)).trim() + '\n' + fidBase() + 'n/' + p.curto + '/';
             try { await navigator.clipboard.writeText(txt); dsToast('Mensagem e link copiados.'); } catch (_) { dsToast('Não deu para copiar.', true); }
         }
+    </script>
+
+    <script>
+        // ---------- mensagem para os clientes: página própria com imagem (pré-visualização grande no WhatsApp)
+        const fidCampUrl = c => fidBase() + 'm/' + c.curto + '/';
+        const fidCampChaveAtual = () => JSON.stringify([fidCamp.titulo, fidCamp.texto, fidCamp.local, fidCamp.prog, fidCamp.anexos.map(f => f.name + f.size)]);
+        function fidCampTituloAuto() {
+            const t = (fidCamp.titulo || '').trim(); if (t) return t.slice(0, 70);
+            const l = (fidCamp.texto || '').split('\n').map(x => x.replace(/\{nome\}/g, '').replace(/^Olá\s*!?\s*[^\w\s]*\s*/i, '').trim()).find(x => x.length > 3);
+            return (l || currentEmpresa || 'Novidades').replace(/[\[\]]/g, '').slice(0, 70);
+        }
+        async function fidCampPoster() {
+            const W = 1200, H = 630, cor = fidCor();
+            const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
+            try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
+            const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
+            const foto = fidCamp.anexos[0] ? await fidCarregarImg(URL.createObjectURL(fidCamp.anexos[0])) : null;
+            if (foto) {
+                // fundo: a própria foto, desfocada; à frente: a foto inteira, ao centro
+                const s = Math.max(W / foto.width, H / foto.height); x.filter = 'blur(28px) brightness(.65)';
+                x.drawImage(foto, (W - foto.width * s) / 2, (H - foto.height * s) / 2, foto.width * s, foto.height * s); x.filter = 'none';
+                const s2 = Math.min((W - 40) / foto.width, (H - 40) / foto.height), w = foto.width * s2, h = foto.height * s2;
+                x.save(); x.shadowColor = 'rgba(0,0,0,.4)'; x.shadowBlur = 30; x.shadowOffsetY = 10; x.drawImage(foto, (W - w) / 2, (H - h) / 2, w, h); x.restore();
+            } else {
+                x.fillStyle = cor; x.fillRect(0, 0, W, H);
+                const fundo = await fidFundoCarregar();
+                if (fundo) { const s = Math.max(W / fundo.width, H / fundo.height); x.drawImage(fundo, (W - fundo.width * s) / 2, (H - fundo.height * s) / 2, fundo.width * s, fundo.height * s); x.fillStyle = 'rgba(0,0,0,.45)'; x.fillRect(0, 0, W, H); }
+                else { x.fillStyle = 'rgba(255,255,255,.10)'; x.beginPath(); x.arc(W - 60, -60, 380, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,.10)'; x.beginPath(); x.arc(-40, H + 60, 280, 0, 7); x.fill(); }
+                const logo = await fidCarregarImg((fidCfg && fidCfg.logo) || (appState.perfil && appState.perfil.logo) || '');
+                x.textAlign = 'center'; x.fillStyle = '#fff';
+                const nome = (currentEmpresa || '').slice(0, 30); x.font = `800 34px ${T}`;
+                const nw = x.measureText(nome).width, ls = logo ? 58 : 0, g = logo ? 14 : 0, lx = W / 2 - (ls + g + nw) / 2;
+                if (logo) { x.save(); x.beginPath(); x.roundRect ? x.roundRect(lx, 50, ls, ls, 16) : x.rect(lx, 50, ls, ls); x.fillStyle = '#fff'; x.fill(); x.clip(); const sc = Math.max(ls / logo.width, ls / logo.height); x.drawImage(logo, lx + (ls - logo.width * sc) / 2, 50 + (ls - logo.height * sc) / 2, logo.width * sc, logo.height * sc); x.restore(); }
+                x.fillStyle = '#fff'; x.textAlign = 'left'; x.fillText(nome, lx + ls + g, 91); x.textAlign = 'center';
+                let fs = 76; x.font = `800 ${fs}px ${T}`; let L = fidLinhas(x, fidCampTituloAuto(), 900);
+                while (L.length > 3 && fs > 44) { fs -= 6; x.font = `800 ${fs}px ${T}`; L = fidLinhas(x, fidCampTituloAuto(), 900); }
+                L = L.slice(0, 3); let y = H / 2 - (L.length * fs * 1.05) / 2 + fs * .8 + 10;
+                L.forEach(l => { x.fillText(l, W / 2, y); y += fs * 1.05; });
+                const loc = (fidCamp.local || '').trim();
+                if (loc && !/^https?:/i.test(loc)) { x.font = `700 30px ${B}`; x.globalAlpha = .92; x.fillText('📍 ' + loc.slice(0, 50), W / 2, Math.min(H - 50, y + 26)); x.globalAlpha = 1; }
+                x.textAlign = 'left';
+            }
+            return await new Promise(r => c.toBlob(r, 'image/jpeg', .88));
+        }
+        async function fidCampPaginaPronta(c) {
+            try { const r = await fetch(fidCampUrl(c) + '?t=' + Date.now(), { cache: 'no-store' }); return r.ok && (await r.text()).indexOf('m/' + c.curto + '/') >= 0; } catch (_) { return false; }
+        }
+        let fidCampEspera = null;
+        async function fidCampPreparar(depois) {
+            fidCamp.titulo = (document.getElementById('fc-tit') || {}).value ?? fidCamp.titulo;
+            fidCamp.texto = (document.getElementById('fc-txt') || {}).value ?? fidCamp.texto;
+            const chave = fidCampChaveAtual();
+            if (fidCamp.salva && fidCamp.chave === chave) return depois();
+            const ecra = (t, extra = '') => dsModal('fid-camp', `<div class="flex items-start justify-between gap-3"><div><h3>A preparar a mensagem</h3><p class="text-sm text-slate-500 mt-1">${t}</p></div><button type="button" class="p-2 text-slate-400" onclick="clearInterval(fidCampEspera);dsModalFechar('fid-camp')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>${extra}`);
+            ecra('<i class="fas fa-spinner fa-spin mr-1"></i>A criar a imagem e a página da mensagem…');
+            try {
+                const blob = await fidCampPoster();
+                const path = `${dataOwnerId}/camp-${Date.now().toString(36)}.jpg`;
+                const { error: e1 } = await sb.storage.from(PHOTO_BUCKET).upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '31536000' });
+                if (e1) throw e1;
+                const imagem = sb.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+                const loc = (fidCamp.local || '').trim();
+                const prog = fidProgPorId(fidCamp.prog) || (fidProgs || []).find(p => p.ativo) || null;
+                const { data, error } = await sb.from('fidelidade_campanhas').insert({ dono_id: dataOwnerId, titulo: fidCampTituloAuto(), texto: (fidCamp.texto || '').slice(0, 1500), imagem,
+                    local: loc && !/^https?:/i.test(loc) ? loc.slice(0, 200) : null, local_url: /^https?:/i.test(loc) ? loc.slice(0, 600) : null, prog_curto: prog ? prog.curto : null }).select('id, curto').single();
+                if (error) throw error;
+                fidCamp.salva = data; fidCamp.chave = chave;
+            } catch (e) { console.warn(e); ecra('Não foi possível preparar a mensagem. Verifique a ligação e tente de novo.', `<div class="fc-bts"><button type="button" class="fc-s" onclick="fidCampPintar()">Voltar à mensagem</button></div>`); return; }
+            // a página fica pronta em poucos minutos (é publicada automaticamente)
+            const pintarEspera = seg => ecra(`A página com a imagem está a ser publicada. Assim, no WhatsApp, a mensagem aparece com a imagem em grande. Costuma demorar <b>2 a 6 minutos</b>.`,
+                `<div class="fc-pg"><i style="width:${Math.min(95, Math.round(seg / 360 * 100))}%"></i></div><p class="fc-nota" style="margin-top:0">${Math.floor(seg / 60)} min ${seg % 60} s · pode deixar esta janela aberta, avançamos sozinhos</p>
+                 <div class="fc-bts"><button type="button" class="fc-s" onclick="clearInterval(fidCampEspera);fidCampDepois()">Enviar já (a imagem pode não aparecer)</button></div>`);
+            window.fidCampDepois = depois;
+            let seg = 0; pintarEspera(0); clearInterval(fidCampEspera);
+            if (await fidCampPaginaPronta(fidCamp.salva)) return depois();
+            fidCampEspera = setInterval(async () => {
+                seg += 15; const m = document.getElementById('fid-camp'); if (!m || !m.classList.contains('on')) return clearInterval(fidCampEspera);
+                if (await fidCampPaginaPronta(fidCamp.salva)) { clearInterval(fidCampEspera); dsToast('Mensagem pronta.'); return depois(); }
+                pintarEspera(seg);
+            }, 15000);
+        }
+        // pré-visualização no editor: mostra também o link
+        (function () {
+            const oPrev = fidCampPrev;
+            fidCampPrev = function () { if (fidCamp.salva && fidCamp.chave !== fidCampChaveAtual()) fidCamp.salva = null; return oPrev.apply(this, arguments); };
+        })();
     </script>
 </body>
 </html>
