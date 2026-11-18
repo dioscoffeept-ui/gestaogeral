@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 11:00</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 18/11/2026 20:30</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1794997892';
+        const DS_BUILD = '1795032304';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20519,6 +20519,188 @@ var qrcode = function() {
             startPurchaseReview = function () { const x = oRev.apply(this, arguments); try { criarNovosPorDefeito(); } catch (e) { console.warn(e); } return x; };
             const oAiStart = startPurchaseFromAi;
             startPurchaseFromAi = function () { const x = oAiStart.apply(this, arguments); try { criarNovosPorDefeito(); } catch (e) { console.warn(e); } return x; };
+        })();
+    </script>
+
+    <style>
+        #fid-camp-box { margin-top: 14px; border: 1.5px solid #E4DCCF; border-radius: 16px; background: #fff; padding: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        #fid-camp-box .tx { flex: 1 1 220px; min-width: 0; }
+        #fid-camp-box b { display: block; color: #24150E; font-size: 15px; }
+        #fid-camp-box small { color: #7A6A60; font-size: 12.5px; }
+        #fid-camp-box button { padding: 10px 14px; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 900; font-size: 14px; }
+        #fid-camp-box button:disabled { opacity: .5; }
+        .fc-l { display: block; font-size: 12.5px; font-weight: 800; color: #5B4A40; margin: 12px 0 5px; }
+        .fc-in { width: 100%; border: 1.5px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; color: #24150E; }
+        textarea.fc-in { min-height: 130px; resize: vertical; line-height: 1.45; }
+        .fc-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+        .fc-chips button { padding: 6px 11px; border-radius: 999px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 13px; font-weight: 800; color: #3A2A22; }
+        .fc-anx { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .fc-anx span { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 10px; background: #F6F3F0; font-size: 12.5px; font-weight: 700; max-width: 100%; }
+        .fc-anx span button { color: #B91C1C; font-weight: 900; }
+        .fc-prev { margin-top: 12px; padding: 12px; border-radius: 12px; background: #E7F8EE; border: 1px solid #C9EED8; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; color: #13281C; }
+        .fc-bts { display: grid; gap: 8px; margin-top: 14px; }
+        .fc-bts button, .fc-bts a { padding: 12px; border-radius: 12px; font-weight: 900; font-size: 14.5px; text-align: center; text-decoration: none; display: block; }
+        .fc-p { background: var(--brand); color: #fff; } .fc-s { background: #fff; border: 1.5px solid #E4DCCF; color: #24150E; } .fc-wa { background: #25D366; color: #fff; }
+        .fc-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid #F1EBE3; }
+        .fc-row .n { flex: 1; min-width: 0; } .fc-row .n b { display: block; font-size: 14px; } .fc-row .n small { color: #7A6A60; }
+        .fc-row button { padding: 8px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; background: #25D366; color: #fff; white-space: nowrap; }
+        .fc-row.ok button { background: #fff; color: #15803D; border: 1.5px solid #BBF7D0; }
+        .fc-pg { height: 8px; border-radius: 99px; background: #F1EBE3; overflow: hidden; margin: 10px 0 4px; } .fc-pg i { display: block; height: 100%; background: #25D366; }
+        .fc-ol { list-style: decimal; margin: 8px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.65; color: #3A2A22; }
+        .fc-nota { font-size: 12.5px; color: #7A6A60; margin-top: 8px; }
+    </style>
+    <script>
+        let fidCamp = { texto: '', local: '', anexos: [], sair: true, prog: '', enviados: new Set() };
+        // clientes que aceitaram receber novidades, um por telemóvel
+        function fidCampDest() {
+            const vistos = new Set(), out = [];
+            (fidCartoes || []).forEach(k => {
+                if (!k.marketing) return;
+                if (fidCamp.prog && k.programa_id !== fidCamp.prog) return;
+                const t = fidTel9(k.telefone); if (t.length !== 9 || vistos.has(t)) return;
+                vistos.add(t); out.push({ id: k.id, nome: k.nome || 'Cliente', tel: t });
+            });
+            return out.sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
+        }
+        const fidCampModelos = {
+            evento: () => `Olá {nome}! 👋\nEste sábado estamos no [nome do evento], das [hora] às [hora].\nVenha provar ${'['}o que vai ter${']'} e trazer o seu cartão: cada compra conta para o prémio. ☕\n\nAté lá!\n${currentEmpresa || ''}`,
+            promo: () => `Olá {nome}! ✨\nSó esta semana: [a promoção].\nMostre o seu cartão de fidelidade ao balcão.\n\n${currentEmpresa || ''}`,
+            livre: () => `Olá {nome}!\n\n${currentEmpresa || ''}`,
+        };
+        function fidCampLocal() {
+            const l = (fidCamp.local || '').trim(); if (!l) return '';
+            return /^https?:\/\//i.test(l) ? l : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(l);
+        }
+        function fidCampTexto(nome, comNome = true) {
+            let t = (fidCamp.texto || '').trim();
+            t = t.replace(/\{nome\}/g, comNome ? (String(nome || '').split(' ')[0] || '') : '').replace(/Olá !/g, 'Olá!').replace(/Olá  /g, 'Olá ');
+            const loc = fidCampLocal(); if (loc) t += `\n\n📍 ${(fidCamp.local || '').trim()}${/^https?:/i.test(fidCamp.local) ? '' : '\n' + loc}`;
+            if (fidCamp.sair) t += '\n\nPara deixar de receber estas mensagens, responda SAIR.';
+            return t;
+        }
+        function fidCampAbrir() {
+            if (!fidCarregado) return dsToast('A carregar os cartões…');
+            fidCamp.enviados = new Set();
+            if (!fidCamp.texto) fidCamp.texto = fidCampModelos.evento();
+            fidCampPintar();
+        }
+        function fidCampPintar() {
+            const d = fidCampDest(), progs = fidProgs || [];
+            dsModal('fid-camp', `<div class="flex items-start justify-between gap-3"><div><h3>Mensagem para os clientes</h3><p class="text-sm text-slate-500 mt-1">Vai para os <b>${d.length}</b> cliente${d.length === 1 ? '' : 's'} que aceitaram receber novidades no cartão.</p></div>
+                <button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-camp')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                ${progs.length > 1 ? `<label class="fc-l" for="fc-prog">Clientes do cartão</label><select id="fc-prog" class="fc-in" onchange="fidCamp.prog=this.value;fidCampPintar()"><option value="">Todos os cartões</option>${progs.map(p => `<option value="${p.id}" ${fidCamp.prog === p.id ? 'selected' : ''}>${escapeHtml(p.nome)}</option>`).join('')}</select>` : ''}
+                <span class="fc-l">Começar de um modelo</span>
+                <div class="fc-chips"><button type="button" onclick="fidCampModelo('evento')">📍 Evento</button><button type="button" onclick="fidCampModelo('promo')">✨ Promoção</button><button type="button" onclick="fidCampModelo('livre')">✏️ Em branco</button></div>
+                <label class="fc-l" for="fc-txt">Mensagem <span style="font-weight:600;color:#7A6A60">· {nome} é trocado pelo nome de cada cliente</span></label>
+                <textarea id="fc-txt" class="fc-in" oninput="fidCamp.texto=this.value;fidCampPrev()">${escapeHtml(fidCamp.texto)}</textarea>
+                <label class="fc-l" for="fc-loc">Local (opcional)</label>
+                <input id="fc-loc" class="fc-in" placeholder="Morada, nome do sítio ou link do Google Maps" value="${escapeHtml(fidCamp.local)}" oninput="fidCamp.local=this.value;fidCampPrev()">
+                <span class="fc-l">Fotos, vídeo ou PDF (opcional)</span>
+                <label class="fc-s" style="display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:12px;font-weight:800;font-size:13.5px;cursor:pointer"><i class="fas fa-paperclip"></i>Juntar ficheiro<input type="file" accept="image/*,video/*,application/pdf" multiple class="hidden" onchange="fidCampAnexar(this)"></label>
+                <div class="fc-anx">${fidCamp.anexos.map((f, i) => `<span>${/^image/.test(f.type) ? '🖼️' : /^video/.test(f.type) ? '🎬' : '📄'} ${escapeHtml(f.name.slice(0, 28))}<button type="button" aria-label="Tirar" onclick="fidCamp.anexos.splice(${i},1);fidCampPintar()">×</button></span>`).join('')}</div>
+                <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;font-weight:700;color:#3A2A22"><input type="checkbox" ${fidCamp.sair ? 'checked' : ''} onchange="fidCamp.sair=this.checked;fidCampPrev()" style="width:18px;height:18px;accent-color:var(--brand)"> Juntar "Para deixar de receber, responda SAIR."</label>
+                <span class="fc-l">Pré-visualização</span><div class="fc-prev" id="fc-prev"></div>
+                <div class="fc-bts">
+                    <button type="button" class="fc-p" ${d.length ? '' : 'disabled'} onclick="fidCampUmAUm()"><i class="fab fa-whatsapp mr-1"></i>Enviar no WhatsApp, cliente a cliente</button>
+                    <button type="button" class="fc-s" ${d.length ? '' : 'disabled'} onclick="fidCampTodos()"><i class="fas fa-users mr-1"></i>Enviar a todos de uma vez (lista de transmissão)</button>
+                </div>
+                ${d.length ? '' : '<p class="fc-nota">Ainda nenhum cliente aceitou receber novidades. Os clientes escolhem isso ao criar o cartão.</p>'}`);
+            fidCampPrev();
+        }
+        function fidCampModelo(k) {
+            if (fidCamp.texto && fidCamp.texto.trim() !== fidCampModelos.evento().trim() && fidCamp.texto.trim().length > 30) { /* troca na mesma: o utilizador pediu o modelo */ }
+            fidCamp.texto = fidCampModelos[k](); const t = document.getElementById('fc-txt'); if (t) t.value = fidCamp.texto; fidCampPrev();
+        }
+        function fidCampPrev() { const p = document.getElementById('fc-prev'); if (p) { const d = fidCampDest(); p.textContent = fidCampTexto(d[0] ? d[0].nome : 'Ana'); } }
+        function fidCampAnexar(inp) {
+            const fs = Array.from(inp.files || []); inp.value = '';
+            fs.forEach(f => { if (f.size > 60 * 1024 * 1024) return dsToast(f.name + ' é demasiado grande (máx. 60 MB).', true); fidCamp.anexos.push(f); });
+            fidCamp.texto = (document.getElementById('fc-txt') || {}).value ?? fidCamp.texto; fidCampPintar();
+        }
+        const fidCampPodeFicheiros = () => { try { return !!(fidCamp.anexos.length && navigator.canShare && navigator.canShare({ files: fidCamp.anexos })); } catch (_) { return false; } };
+        async function fidCampPartilhar(texto) {
+            try { await navigator.share({ files: fidCamp.anexos, text: texto }); return true; }
+            catch (e) { if (e && e.name === 'AbortError') return false; dsToast('Não deu para partilhar os ficheiros neste aparelho.', true); return false; }
+        }
+        function fidCampRegistar(n) {
+            try { appState.fidCampanhas = appState.fidCampanhas || []; appState.fidCampanhas.unshift({ em: new Date().toISOString(), texto: (fidCamp.texto || '').slice(0, 500), enviados: n }); appState.fidCampanhas = appState.fidCampanhas.slice(0, 30); saveStorage(); } catch (_) {}
+        }
+
+        // ---- cliente a cliente
+        function fidCampUmAUm() {
+            if (!(fidCamp.texto || '').trim()) return dsToast('Escreva a mensagem primeiro.', true);
+            const d = fidCampDest(), feitos = d.filter(x => fidCamp.enviados.has(x.tel)).length, fich = fidCampPodeFicheiros();
+            dsModal('fid-camp', `<div class="flex items-start justify-between gap-3"><div><h3>Enviar cliente a cliente</h3><p class="text-sm text-slate-500 mt-1">${fich ? 'Toque em <b>Enviar</b>, escolha o WhatsApp e depois a conversa com o nome indicado. A mensagem e os ficheiros já vão juntos.' : 'Toque em <b>Enviar</b>: abre a conversa do cliente no WhatsApp com a mensagem escrita. Só tem de tocar em enviar e voltar aqui.'}</p></div>
+                <button type="button" class="p-2 text-slate-400" onclick="fidCampFechar()" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <div class="fc-pg"><i style="width:${d.length ? Math.round(feitos / d.length * 100) : 0}%"></i></div><p class="fc-nota" style="margin-top:0"><b>${feitos} de ${d.length}</b> enviadas</p>
+                ${fidCamp.anexos.length && !fich ? `<p class="fc-nota" style="color:#92400E">Neste aparelho os ficheiros não seguem sozinhos: depois de abrir a conversa, toque no 📎 do WhatsApp para os juntar. No telemóvel seguem juntos.</p>` : ''}
+                <div style="margin-top:6px">${d.map(x => `<div class="fc-row ${fidCamp.enviados.has(x.tel) ? 'ok' : ''}"><span class="n"><b>${escapeHtml(x.nome)}</b><small>${x.tel.replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3')}</small></span>
+                    <button type="button" onclick="fidCampEnviar('${x.tel}')">${fidCamp.enviados.has(x.tel) ? '✓ Enviada' : 'Enviar'}</button><button type="button" title="Deixar de enviar a este cliente (respondeu SAIR)" aria-label="Tirar da lista" style="background:#fff;color:#7A6A60;border:1.5px solid #E4DCCF;padding:8px 10px" onclick="fidCampTirar('${x.tel}')"><i class="fas fa-user-minus"></i></button></div>`).join('')}</div>
+                <p class="fc-nota">Alguém respondeu SAIR? Toque em <i class="fas fa-user-minus"></i> ao lado do nome: deixa de receber mensagens.</p>
+                <div class="fc-bts"><button type="button" class="fc-s" onclick="fidCampPintar()">Voltar à mensagem</button></div>`);
+        }
+        async function fidCampEnviar(tel) {
+            const x = fidCampDest().find(y => y.tel === tel); if (!x) return;
+            const txt = fidCampTexto(x.nome);
+            if (fidCampPodeFicheiros()) {
+                try { await navigator.clipboard.writeText(x.nome); } catch (_) {}
+                dsToast('Escolha o WhatsApp e a conversa de ' + x.nome.split(' ')[0] + '.');
+                if (!(await fidCampPartilhar(txt))) return;
+            } else window.open('https://wa.me/351' + tel + '?text=' + encodeURIComponent(txt), '_blank', 'noopener');
+            fidCamp.enviados.add(tel);
+            setTimeout(fidCampUmAUm, 400);
+        }
+        async function fidCampTirar(tel) {
+            const x = fidCampDest().find(y => y.tel === tel); if (!x) return;
+            if (!(await dsConfirm('Deixar de enviar mensagens a ' + x.nome + '?', 'Tira a autorização de novidades de todos os cartões deste cliente. Ele pode voltar a ligá-la no cartão.', { ok: 'Tirar da lista' }))) return;
+            const ids = (fidCartoes || []).filter(k => fidTel9(k.telefone) === tel).map(k => k.id);
+            const { error } = await sb.from('fidelidade_cartoes').update({ marketing: false }).in('id', ids);
+            if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
+            (fidCartoes || []).forEach(k => { if (ids.includes(k.id)) k.marketing = false; });
+            dsToast(x.nome.split(' ')[0] + ' já não recebe mensagens.'); fidCampUmAUm(); fidCampCaixa();
+        }
+        function fidCampFechar() { if (fidCamp.enviados.size) { fidCampRegistar(fidCamp.enviados.size); dsToast(fidCamp.enviados.size + ' mensage' + (fidCamp.enviados.size === 1 ? 'm enviada' : 'ns enviadas') + '.'); } dsModalFechar('fid-camp'); fidCamp.enviados = new Set(); fidCampCaixa(); }
+
+        // ---- todos de uma vez: lista de transmissão do WhatsApp
+        function fidCampVcf() {
+            const loja = currentEmpresa || 'Loja';
+            const v = fidCampDest().map(x => `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${x.nome} (${loja})\r\nN:${x.nome};;;;\r\nTEL;TYPE=CELL:+351${x.tel}\r\nNOTE:Cliente do cartão de fidelidade\r\nEND:VCARD`).join('\r\n');
+            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([v], { type: 'text/vcard' })); a.download = 'clientes-' + normTxt(loja).replace(/[^a-z0-9]+/g, '-') + '.vcf';
+            document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+        }
+        async function fidCampCopiar() { try { await navigator.clipboard.writeText(fidCampTexto('', false)); dsToast('Mensagem copiada.'); } catch (_) { dsToast('Não deu para copiar.', true); } }
+        async function fidCampPartilharTodos() {
+            const t = fidCampTexto('', false);
+            if (fidCampPodeFicheiros()) { if (await fidCampPartilhar(t)) { fidCampRegistar(fidCampDest().length); dsToast('Escolha a lista de transmissão no WhatsApp.'); } }
+            else if (navigator.share) { try { await navigator.share({ text: t }); fidCampRegistar(fidCampDest().length); } catch (_) {} }
+            else window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank', 'noopener');
+        }
+        function fidCampTodos() {
+            if (!(fidCamp.texto || '').trim()) return dsToast('Escreva a mensagem primeiro.', true);
+            const n = fidCampDest().length;
+            dsModal('fid-camp', `<div class="flex items-start justify-between gap-3"><div><h3>Enviar a todos de uma vez</h3><p class="text-sm text-slate-500 mt-1">Com uma <b>lista de transmissão</b> do WhatsApp, a mensagem vai para os ${n} clientes num só envio. Cada um recebe-a como mensagem privada.</p></div>
+                <button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-camp')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <ol class="fc-ol">
+                    <li><b>Guarde os clientes nos contactos</b> do telemóvel (só da primeira vez):<div class="fc-bts" style="margin-top:6px"><button type="button" class="fc-s" onclick="fidCampVcf()"><i class="fas fa-address-book mr-1"></i>Baixar os ${n} contactos</button></div></li>
+                    <li>No WhatsApp, crie a lista: <b>⋮ → Nova transmissão</b> (Android) ou <b>Conversas → Listas → Transmissão</b> (iPhone), e escolha os clientes. Também só da primeira vez.</li>
+                    <li>Envie a mensagem para a lista:<div class="fc-bts" style="margin-top:6px"><button type="button" class="fc-wa" onclick="fidCampPartilharTodos()"><i class="fab fa-whatsapp mr-1"></i>${fidCamp.anexos.length ? 'Partilhar mensagem e ficheiros' : 'Partilhar a mensagem'}</button><button type="button" class="fc-s" onclick="fidCampCopiar()"><i class="far fa-copy mr-1"></i>Copiar só o texto</button></div></li>
+                </ol>
+                <p class="fc-nota">Na lista de transmissão a mensagem não leva o nome de cada cliente. E só chega a quem também tiver o número da loja guardado — se alguém não receber, use o envio cliente a cliente.</p>
+                <div class="fc-bts"><button type="button" class="fc-s" onclick="fidCampPintar()">Voltar à mensagem</button></div>`);
+        }
+
+        // caixa no separador Fidelidade, por cima das mensagens dos clientes
+        function fidCampCaixa() {
+            const root = document.querySelector('#fid-page') || document.querySelector('#fid-modal'); if (!root) return;
+            const ref = root.querySelector('#fid-msgs') || root.querySelector('#fid-progs') || root.querySelector('.fid-link'); if (!ref) return;
+            let b = root.querySelector('#fid-camp-box');
+            if (!b) { b = document.createElement('div'); b.id = 'fid-camp-box'; ref.insertAdjacentElement(ref.id === 'fid-msgs' ? 'beforebegin' : 'afterend', b); }
+            const n = fidCampDest().length, ult = (appState.fidCampanhas || [])[0];
+            b.innerHTML = `<i class="fas fa-bullhorn" style="color:var(--brand);font-size:20px"></i><span class="tx"><b>Mensagem para os clientes</b><small>${n} cliente${n === 1 ? '' : 's'} aceit${n === 1 ? 'ou' : 'aram'} receber novidades: eventos, promoções, avisos.${ult ? ' Última: ' + new Date(ult.em).toLocaleDateString('pt-PT') + ' (' + ult.enviados + ')' : ''}</small></span><button type="button" onclick="fidCampAbrir()" ${n ? '' : 'disabled'}>Escrever mensagem</button>`;
+        }
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () { const r = oP.apply(this, arguments); try { fidCamp.prog = ''; fidCampCaixa(); } catch (e) { console.warn(e); } return r; };
         })();
     </script>
 </body>
