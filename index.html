@@ -21160,8 +21160,14 @@ var qrcode = function() {
                 h += `<g transform="rotate(${mid} ${cx} ${cy})"><text x="${cx}" y="${cy - R + 34}" text-anchor="middle" font-family="Schibsted Grotesk, sans-serif" font-weight="800" font-size="${fs}" fill="${p.nada ? '#5B4A40' : rlTinta(cores[i])}">${linhas.map((l, j) => `<tspan x="${cx}" dy="${j ? fs + 2 : 0}">${escapeHtml(l)}</tspan>`).join('')}</text></g>`;
             });
             for (let i = 0; i < n; i++) { const [x, y] = pt(i * a, R - 6); h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#fff"/>`; }
+            // o centro (logótipo) faz parte da roda: preenchido até à borda e gira com ela
+            const logo = rlLogo();
+            if (logo) h += `<defs><clipPath id="rl-cl"><circle cx="${cx}" cy="${cy}" r="48"/></clipPath></defs><circle cx="${cx}" cy="${cy}" r="48" fill="#fff"/><image href="${escapeHtml(logo)}" x="${cx - 48}" y="${cy - 48}" width="96" height="96" preserveAspectRatio="xMidYMid slice" clip-path="url(#rl-cl)"/>`;
+            else h += `<circle cx="${cx}" cy="${cy}" r="48" fill="${escapeHtml(fidCor())}"/><text x="${cx}" y="${cy + 15}" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="44" fill="#fff">${escapeHtml(((currentEmpresa || 'D').trim()[0] || 'D').toUpperCase())}</text>`;
+            h += `<circle cx="${cx}" cy="${cy}" r="48" fill="none" stroke="#231F20" stroke-width="5"/>`;
             return h + '</svg>';
         }
+        const rlLogo = () => (fidCfg && fidCfg.logo) || (appState && appState.perfil && appState.perfil.logo) || '';
         function rlQuebrar(t, max) {
             const w = t.split(/\s+/), l = []; let c = '';
             w.forEach(x => { if ((c + ' ' + x).trim().length > max && c) { l.push(c); c = x; } else c = (c + ' ' + x).trim(); });
@@ -21175,11 +21181,10 @@ var qrcode = function() {
             }
             rlCfg = rlLer(); if (!rlRascunho) rlRascunho = JSON.parse(JSON.stringify(rlCfg.premios));
             const pr = rlCfg.premios, k = rlCli && fidCartoes.find(x => x.id === rlCli);
-            const logo = (fidCfg && fidCfg.logo) || '';
             box.innerHTML = `<div class="rl-card">
                     <h3>Roleta da sorte</h3>
                     <p class="sub rl-cfg-only">O cliente gira a roleta e ganha o prémio onde a seta parar. Os prémios e as chances escolhe você, em baixo.</p>
-                    <div class="rl-palco"><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(fidCor())}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(pr)}<div class="rl-centro">${logo ? `<img src="${escapeHtml(logo)}" alt="">` : '<i class="fas fa-gift"></i>'}</div></div>
+                    <div class="rl-palco"><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(fidCor())}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(pr)}</div>
                     <button type="button" class="rl-girar" id="rl-girar" onclick="rlGirar()"><i class="fas fa-rotate-right"></i>Girar</button>
                     <button type="button" class="rl-cli" onclick="rlEscolherCliente()"><i class="fas ${k ? 'fa-stamp' : 'fa-user-plus'}"></i><span>${k ? `${escapeHtml(k.nome)} · ${k.codigo}<small>O prémio fica registado no cartão deste cliente</small>` : `Para que cliente? <small>Opcional: escolha o cartão para registar o prémio</small>`}</span><b class="x">${k ? 'Trocar' : 'Escolher'}</b></button>
                     <div class="rl-acoes">${k ? `<button type="button" onclick="rlCli='';rlPintar()"><i class="fas fa-xmark"></i>Sem cliente</button>` : ''}<button type="button" onclick="rlEcra()"><i class="fas ${box.classList.contains('cheio') ? 'fa-compress' : 'fa-expand'}"></i>${box.classList.contains('cheio') ? 'Sair do ecrã do cliente' : 'Mostrar ao cliente'}</button></div>
