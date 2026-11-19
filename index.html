@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:15</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:30</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -18160,7 +18160,7 @@ var qrcode = function() {
             // só texto com o link: o WhatsApp mostra a pré-visualização do cartão numa só mensagem
             if (!k.telefone) { if (navigator.share) { try { await navigator.share({ text: txt }); return; } catch (e) { if (e && e.name === 'AbortError') return; } } fidCopiar(txt); return; }
             let t = k.telefone.replace(/\D/g, ''); if (t.length === 9) t = '351' + t;
-            window.open('https://api.whatsapp.com/send?phone=' + t + '&text=' + encodeURIComponent(txt), '_blank', 'noopener');
+            await fidEnviarComImagem(txt, t);
         }
         async function fidVerImagem(id) {
             const k = fidCartoes.find(x => x.id === id); if (!k) return;
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795097280';
+        const DS_BUILD = '1795098093';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20888,10 +20888,34 @@ var qrcode = function() {
             }
             return false;
         }
+        // No computador, o WhatsApp faz a pré-visualização do link pequena, ao lado. Para a imagem sair grande e nítida,
+        // copiamos a imagem aprovada (cartao-og.png) e o cliente recebe-a como foto, com o link por baixo, numa só mensagem.
+        const fidNoComputador = () => !/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent);
+        async function fidCopiarImagemCartao() {
+            try {
+                const blob = await fetch(fidBase() + 'cartao-og.png', { cache: 'force-cache' }).then(r => r.blob());
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                return true;
+            } catch (e) { console.warn(e); return false; }
+        }
+        async function fidEnviarComImagem(link, tel) {
+            const url = 'https://api.whatsapp.com/send?' + (tel ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(link);
+            if (!fidNoComputador()) { window.open(url, '_blank', 'noopener'); return; }
+            const ok = await fidCopiarImagemCartao();
+            window.open(url, '_blank', 'noopener');
+            if (!ok) return;
+            dsModal('fid-img', `<div class="flex items-start justify-between gap-3"><div><h3>Falta um passo no WhatsApp</h3></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-img')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <ol style="list-style:decimal;padding-left:20px;margin-top:8px;font-size:15px;line-height:1.7">
+                    <li>No WhatsApp, com o link já escrito, carregue em <b>Ctrl + V</b> (no Mac, <b>⌘ + V</b>).</li>
+                    <li>Aparece a <b>imagem do cartão em grande</b>, com o link por baixo.</li>
+                    <li>Carregue em <b>Enviar</b>.</li></ol>
+                <p class="text-xs text-slate-500 mt-3">A imagem já está copiada. No telemóvel não é preciso este passo.</p>
+                <button type="button" class="w-full mt-4 rounded-xl py-3 font-black" style="background:var(--brand);color:#fff" onclick="dsModalFechar('fid-img')">Entendi</button>`);
+        }
         async function fidShWhats(pid) {
             const p = fidProgPorId(pid); if (!p) return;
             dsModalFechar('fid-sh');
-            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(fidTextoProg(fidProgPorId(pid) || p)), '_blank', 'noopener');
+            await fidEnviarComImagem(fidTextoProg(fidProgPorId(pid) || p), '');
         }
         async function fidShOutras(pid) {
             const p = fidProgPorId(pid); if (!p) return;
