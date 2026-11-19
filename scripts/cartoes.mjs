@@ -3,7 +3,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { pngCartao } from './og.mjs';
 
 const URL_SB = 'https://brisrzuvvxkkzhmhsgro.supabase.co';
 const KEY = 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs';
@@ -37,14 +36,9 @@ const pasta = path.resolve('n');
 const feitos = new Set();
 for (const p of lista) {
   const dir = path.join(pasta, p.curto); fs.mkdirSync(dir, { recursive: true });
-  // imagem desenhada aqui, no estilo da cartao-og.png, guardada no próprio site (grande e nítida no WhatsApp)
-  let local = '';
-  try {
-    const png = pngCartao(p), fo = path.join(dir, 'og.png');
-    if (!fs.existsSync(fo) || !fs.readFileSync(fo).equals(png)) { fs.writeFileSync(fo, png); console.log('imagem', p.curto); }
-    local = 'og.png?v=' + crypto.createHash('md5').update(png).digest('hex').slice(0, 8);
-    const velha = path.join(dir, 'og.jpg'); if (fs.existsSync(velha)) fs.rmSync(velha);
-  } catch (e) { console.error('imagem', p.curto, e.message); }
+  // imagem da pré-visualização: SEMPRE a cartao-og.png (a imagem aprovada pelo Giovani). Não trocar.
+  for (const v of ['og.png', 'og.jpg']) { const f = path.join(dir, v); if (fs.existsSync(f)) fs.rmSync(f); }
+  const local = '';
   const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : BASE + 'cartao-og.png', url = BASE + 'n/' + p.curto + '/';
   const html = `<!doctype html>
 <html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
