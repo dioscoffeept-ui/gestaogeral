@@ -19223,6 +19223,10 @@ var qrcode = function() {
         #fid-pe input, #fid-pe textarea, #fid-pe select { width: 100%; margin-top: 4px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; }
         #fid-pe textarea { resize: vertical; }
         #fid-pe .dois { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        #fid-pe .pe-extra { margin-top: 14px; padding: 12px; border: 1.5px dashed #E4DCCF; border-radius: 14px; background: #FFFCF8; }
+        #fid-pe .pe-extra > b { font-size: 13.5px; color: #231F20; } #fid-pe .pe-extra > b span { font-weight: 600; color: #7A6A60; }
+        #fid-pe label.ck { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-weight: 700; }
+        #fid-pe label.ck input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); flex: none; }
         #fid-pe .vista { margin-top: 12px; border-radius: 14px; background: #F6F3F0; padding: 10px 12px; font-size: 13px; color: #3A2A22; white-space: pre-wrap; }
         #fid-pe .vista b { display: block; font-size: 11.5px; color: #7A6A60; margin-bottom: 2px; }
         .fid-escolha button { display: flex; width: 100%; align-items: center; gap: 10px; text-align: left; padding: 12px; border: 1.5px solid #E4DCCF; border-radius: 14px; margin-top: 8px; background: #fff; }
@@ -19241,15 +19245,22 @@ var qrcode = function() {
             if (p.tipo === 'beneficio') return p.beneficio || p.nome;
             return p.premio || 'Prémio';
         }
+        // cartão de carimbos com vantagens a mais: desconto fixo em cada compra e/ou outra vantagem
+        const fidDescProgTxt = p => !p || !p.desconto_tipo || !(+p.desconto_valor > 0) ? '' : fidNum(p.desconto_valor) + (p.desconto_tipo === 'eur' ? ' €' : '%') + ' de desconto';
+        function fidExtrasTxt(p) {
+            if (!p || p.tipo !== 'carimbos') return '';
+            const l = []; const d = fidDescProgTxt(p); if (d) l.push(d + ' em cada compra'); if (p.beneficio) l.push(p.beneficio);
+            return l.join(' + ');
+        }
         function fidRegra(p) {
             if (!p) return '';
-            if (p.tipo === 'carimbos') return `${p.premio || 'Prémio'} a cada ${p.alvo} carimbos`;
+            if (p.tipo === 'carimbos') return `${p.premio || 'Prémio'} a cada ${p.alvo} carimbos` + (fidExtrasTxt(p) ? ' + ' + fidExtrasTxt(p) : '');
             return fidVantagem(p) + (p.tipo === 'desconto' ? ' em cada compra' : '');
         }
         function fidMsgPadrao(p) {
             const loja = currentEmpresa ? ' da ' + currentEmpresa : '';
             if (!p) return '';
-            if (p.tipo === 'carimbos') return `Crie o seu ${p.nome.toLowerCase().startsWith('cartão') ? p.nome.charAt(0).toLowerCase() + p.nome.slice(1) : 'cartão ' + p.nome}${loja}: junte ${p.alvo} carimbos e ganhe ${(p.premio || 'um prémio').charAt(0).toLowerCase() + (p.premio || 'um prémio').slice(1)}.`;
+            if (p.tipo === 'carimbos') return `Crie o seu ${p.nome.toLowerCase().startsWith('cartão') ? p.nome.charAt(0).toLowerCase() + p.nome.slice(1) : 'cartão ' + p.nome}${loja}: junte ${p.alvo} carimbos e ganhe ${(p.premio || 'um prémio').charAt(0).toLowerCase() + (p.premio || 'um prémio').slice(1)}.` + (fidExtrasTxt(p) ? ` E tem já ${fidExtrasTxt(p).charAt(0).toLowerCase() + fidExtrasTxt(p).slice(1)}.` : '');
             return `Crie o seu ${p.nome.toLowerCase().startsWith('cartão') ? p.nome.charAt(0).toLowerCase() + p.nome.slice(1) : 'cartão ' + p.nome}${loja}: ${fidVantagem(p).charAt(0).toLowerCase() + fidVantagem(p).slice(1)}${p.tipo === 'desconto' ? ' nas suas compras' : ''}.`;
         }
         const fidProgPorId = id => fidProgs.find(p => p.id === id);
@@ -19314,6 +19325,7 @@ var qrcode = function() {
                             b.setAttribute('onclick', `fidUso('${k.id}')`); b.innerHTML = '<i class="fas fa-check"></i>'; b.title = 'Registar uso'; b.setAttribute('aria-label', 'Registar uso');
                             el.querySelectorAll('.fid-acoes button').forEach(x => { const oc = x.getAttribute('onclick') || ''; if (/fidMudar|fidUsar/.test(oc)) x.remove(); });
                         }
+                        else if (p && fidExtrasTxt(p) && !el.querySelector('.fid-vant')) { const se = el.querySelector('.fid-selos'); if (se) se.insertAdjacentHTML('afterend', `<div class="fid-vant"><i class="fas fa-percent"></i>${escapeHtml(fidExtrasTxt(p))}</div>`); }
                     });
                 } catch (e) { console.warn(e); }
                 return r;
@@ -19385,7 +19397,13 @@ var qrcode = function() {
                 <label>Nome do cartão<input id="pe-nome" maxlength="40" placeholder="Ex.: Cartão VIP, Cartão de desconto" value="${escapeHtml(p.nome)}"></label>
                 <label>Como funciona</label>
                 <div class="seg">${Object.entries(FID_TIPOS).map(([t, [ic, l]]) => `<button type="button" data-t="${t}" class="${p.tipo === t ? 'on' : ''}"><i class="fas ${ic}"></i>${l}</button>`).join('')}</div>
-                <div data-tipo="carimbos"><div class="dois"><label>Carimbos para o prémio<input id="pe-alvo" type="number" min="2" max="30" value="${p.alvo}"></label><label>Prémio<input id="pe-premio" maxlength="60" placeholder="Um café grátis" value="${escapeHtml(p.premio || '')}"></label></div></div>
+                <div data-tipo="carimbos"><div class="dois"><label>Carimbos para o prémio<input id="pe-alvo" type="number" min="2" max="30" value="${p.alvo}"></label><label>Prémio<input id="pe-premio" maxlength="60" placeholder="Um café grátis" value="${escapeHtml(p.premio || '')}"></label></div>
+                    <div class="pe-extra"><b>Juntar a este cartão <span>(opcional)</span></b>
+                        <label class="ck"><input id="pe-x-desc" type="checkbox" ${p.tipo === 'carimbos' && +p.desconto_valor > 0 ? 'checked' : ''}>Desconto fixo em cada compra</label>
+                        <div class="dois" data-x="desc"><label>Desconto<select id="pe-x-dt"><option value="pct" ${p.desconto_tipo !== 'eur' ? 'selected' : ''}>Em %</option><option value="eur" ${p.desconto_tipo === 'eur' ? 'selected' : ''}>Em €</option></select></label><label>Valor<input id="pe-x-dv" type="number" min="0.5" max="1000" step="0.5" inputmode="decimal" placeholder="Ex.: 10" value="${p.tipo === 'carimbos' && p.desconto_valor ? p.desconto_valor : ''}"></label></div>
+                        <label class="ck"><input id="pe-x-ben" type="checkbox" ${p.tipo === 'carimbos' && p.beneficio ? 'checked' : ''}>Outra vantagem</label>
+                        <div data-x="ben"><label>O que o cliente ganha<input id="pe-x-bt" maxlength="80" placeholder="Ex.: Bolo do dia a metade do preço" value="${escapeHtml(p.tipo === 'carimbos' ? (p.beneficio || '') : '')}"></label></div>
+                        <p class="text-xs text-slate-500 mt-1">O cliente junta carimbos e tem também estas vantagens em todas as compras.</p></div></div>
                 <div data-tipo="desconto"><div class="dois"><label>Desconto<select id="pe-dt"><option value="pct" ${p.desconto_tipo !== 'eur' ? 'selected' : ''}>Em %</option><option value="eur" ${p.desconto_tipo === 'eur' ? 'selected' : ''}>Em €</option></select></label><label>Valor<input id="pe-dv" type="number" min="0.5" max="1000" step="0.5" inputmode="decimal" placeholder="Ex.: 10" value="${p.desconto_valor || ''}"></label></div></div>
                 <div data-tipo="beneficio"><label>O que o cliente ganha<input id="pe-ben" maxlength="80" placeholder="Ex.: Sobremesa grátis às sextas" value="${escapeHtml(p.beneficio || '')}"></label></div>
                 <label>Condições <span class="text-slate-400 font-normal">(opcional)</span><input id="pe-cond" maxlength="200" placeholder="Ex.: Não acumula com outras promoções." value="${escapeHtml(p.condicoes || '')}"></label>
@@ -19399,11 +19417,16 @@ var qrcode = function() {
             const ler = () => ({ nome: document.getElementById('pe-nome').value.trim(), tipo, alvo: Math.max(2, Math.min(30, parseInt(document.getElementById('pe-alvo').value) || 9)),
                 premio: document.getElementById('pe-premio').value.trim() || 'Um café grátis', desconto_tipo: document.getElementById('pe-dt').value,
                 desconto_valor: parseFloat(String(document.getElementById('pe-dv').value).replace(',', '.')) || null, beneficio: document.getElementById('pe-ben').value.trim(),
-                condicoes: document.getElementById('pe-cond').value.trim(), mensagem: document.getElementById('pe-msg').value.trim() });
+                condicoes: document.getElementById('pe-cond').value.trim(), mensagem: document.getElementById('pe-msg').value.trim(),
+                x_desc: document.getElementById('pe-x-desc').checked, x_dt: document.getElementById('pe-x-dt').value, x_dv: parseFloat(String(document.getElementById('pe-x-dv').value).replace(',', '.')) || null,
+                x_ben: document.getElementById('pe-x-ben').checked ? document.getElementById('pe-x-bt').value.trim() : '' });
             const vista = () => {
+                document.querySelector('#fid-pe [data-x="desc"]').style.display = document.getElementById('pe-x-desc').checked ? '' : 'none';
+                document.querySelector('#fid-pe [data-x="ben"]').style.display = document.getElementById('pe-x-ben').checked ? '' : 'none';
                 document.querySelectorAll('#fid-pe .seg button').forEach(b => b.classList.toggle('on', b.dataset.t === tipo));
                 document.querySelectorAll('#fid-pe [data-tipo]').forEach(d => d.style.display = d.dataset.tipo === tipo ? '' : 'none');
                 const v = ler(); v.nome = v.nome || 'Cartão de fidelidade';
+                if (tipo === 'carimbos') { v.desconto_tipo = v.x_desc && v.x_dv > 0 ? v.x_dt : null; v.desconto_valor = v.x_desc ? v.x_dv : null; v.beneficio = v.x_ben || ''; }
                 document.getElementById('pe-vista').innerHTML = `<b>Assim fica a mensagem</b>${escapeHtml(v.mensagem || fidMsgPadrao(v))}\n${escapeHtml(fidBase() + 'n/?' + ((p0 && p0.curto) || 'xxxxxx'))}`;
             };
             document.querySelectorAll('#fid-pe .seg button').forEach(b => b.onclick = () => { tipo = b.dataset.t; vista(); });
@@ -19422,8 +19445,11 @@ var qrcode = function() {
                 if (tipo === 'desconto' && !(v.desconto_valor > 0)) return dsToast('Escreva o valor do desconto.', true);
                 if (tipo === 'desconto' && v.desconto_tipo === 'pct' && v.desconto_valor > 100) return dsToast('O desconto não pode passar de 100%.', true);
                 if (tipo === 'beneficio' && !v.beneficio) return dsToast('Escreva o que o cliente ganha.', true);
-                const row = { nome: v.nome, tipo, alvo: v.alvo, premio: tipo === 'carimbos' ? v.premio : null, desconto_tipo: tipo === 'desconto' ? v.desconto_tipo : null, desconto_valor: tipo === 'desconto' ? Math.round(v.desconto_valor * 100) / 100 : null,
-                    beneficio: tipo === 'beneficio' ? v.beneficio : null, condicoes: v.condicoes || null, mensagem: v.mensagem || null, atualizado_em: new Date().toISOString() };
+                if (tipo === 'carimbos' && v.x_desc && !(v.x_dv > 0)) return dsToast('Escreva o valor do desconto fixo.', true);
+                if (tipo === 'carimbos' && v.x_desc && v.x_dt === 'pct' && v.x_dv > 100) return dsToast('O desconto não pode passar de 100%.', true);
+                if (tipo === 'carimbos' && document.getElementById('pe-x-ben').checked && !v.x_ben) return dsToast('Escreva a outra vantagem, ou desmarque-a.', true);
+                const row = { nome: v.nome, tipo, alvo: v.alvo, premio: tipo === 'carimbos' ? v.premio : null, desconto_tipo: tipo === 'desconto' ? v.desconto_tipo : (tipo === 'carimbos' && v.x_desc ? v.x_dt : null), desconto_valor: tipo === 'desconto' ? Math.round(v.desconto_valor * 100) / 100 : (tipo === 'carimbos' && v.x_desc ? Math.round(v.x_dv * 100) / 100 : null),
+                    beneficio: tipo === 'beneficio' ? v.beneficio : (tipo === 'carimbos' && v.x_ben ? v.x_ben : null), condicoes: v.condicoes || null, mensagem: v.mensagem || null, atualizado_em: new Date().toISOString() };
                 const at = document.getElementById('pe-ativo'); if (at) row.ativo = at.checked;
                 const q = p0 ? sb.from('fidelidade_programas').update(row).eq('id', p0.id) : sb.from('fidelidade_programas').insert(Object.assign({ dono_id: fidDono(), ordem: fidProgs.length }, row));
                 const { data, error } = await q.select('*').single();
@@ -19810,7 +19836,7 @@ var qrcode = function() {
             dsModalFechar('pos-fc'); posRenderCart(); dsToast('Cartão de ' + k.nome.split(' ')[0] + ' associado à conta.');
         }
         function posFidDescontar(kid) {
-            const k = fidCartoes.find(x => x.id === kid), p = k && fidProgDe(k); if (!p || p.tipo !== 'desconto') return;
+            const k = fidCartoes.find(x => x.id === kid), p = k && fidProgDe(k); if (!p || !p.desconto_tipo || !(+p.desconto_valor > 0)) return;
             if (posFidDesc === kid) { posFidDesc = ''; posDesc = null; }
             else { posFidDesc = kid; posDesc = { tipo: p.desconto_tipo === 'eur' ? '€' : '%', v: +p.desconto_valor, motivo: p.nome }; }
             posRenderCart();
@@ -19833,7 +19859,7 @@ var qrcode = function() {
                             const p = fidProgDe(k), exp = fidExpirado(k);
                             if (exp) return `<div class="ln exp"><i class="fas fa-hourglass-end"></i><span>${escapeHtml(p ? p.nome : 'Cartão')}<small>Expirou a ${fidData(k.valido_ate)}</small></span></div>`;
                             if (!p || p.tipo === 'carimbos') { const a = fidCfgDe(k).alvo, n = Math.min(k.carimbos, a);
-                                return `<div class="ln"><i class="fas fa-stamp"></i><span>${escapeHtml(p ? p.nome : 'Cartão')} · ${n}/${a}<small>${k.carimbos >= a ? 'Tem prémio: ' + escapeHtml(fidCfgDe(k).premio) : '+1 carimbo sozinho ao fechar a conta'}</small></span>${k.carimbos >= a ? `<button type="button" onclick="fidUsar('${k.id}');setTimeout(posRenderCart,600)">Entregar prémio</button>` : ''}</div>`; }
+                                return `<div class="ln"><i class="fas fa-stamp"></i><span>${escapeHtml(p ? p.nome : 'Cartão')} · ${n}/${a}<small>${k.carimbos >= a ? 'Tem prémio: ' + escapeHtml(fidCfgDe(k).premio) : '+1 carimbo sozinho ao fechar a conta'}${fidExtrasTxt(p) ? ' · ' + escapeHtml(fidExtrasTxt(p)) : ''}</small></span>${k.carimbos >= a ? `<button type="button" onclick="fidUsar('${k.id}');setTimeout(posRenderCart,600)">Entregar prémio</button>` : ''}${p && p.desconto_tipo && +p.desconto_valor > 0 ? `<button type="button" class="${posFidDesc === k.id ? 'on' : ''}" onclick="posFidDescontar('${k.id}')">${posFidDesc === k.id ? '✓ ' + escapeHtml(fidDescProgTxt(p)) : 'Aplicar ' + escapeHtml(fidDescProgTxt(p))}</button>` : ''}</div>`; }
                             if (p.tipo === 'desconto') return `<div class="ln"><i class="fas fa-percent"></i><span>${escapeHtml(p.nome)}<small>${escapeHtml(fidVantagem(p))}</small></span><button type="button" class="${posFidDesc === k.id ? 'on' : ''}" onclick="posFidDescontar('${k.id}')">${posFidDesc === k.id ? '✓ Aplicado' : 'Aplicar'}</button></div>`;
                             return `<div class="ln"><i class="fas fa-star"></i><span>${escapeHtml(p.nome)}<small>${escapeHtml(fidVantagem(p))}</small></span></div>`;
                         }).join('');
@@ -19856,7 +19882,7 @@ var qrcode = function() {
                     if (sel && sel.id && posSemNif && o.cliente) o.cliente.nif = '';
                     const carimbos = ks.filter(k => { const p = fidProgDe(k); return !p || p.tipo === 'carimbos'; });
                     carimbos.forEach(k => { try { fidMudar(k.id, 1, 'compra'); } catch (_) {} });
-                    if (desc && ks.some(k => k.id === desc)) { try { fidUso(desc); } catch (_) {} }
+                    if (desc && ks.some(k => k.id === desc)) { try { const kd = ks.find(k => k.id === desc), pd = fidProgDe(kd); if (!pd || pd.tipo !== 'carimbos') fidUso(desc); } catch (_) {} }
                     if (carimbos.length) o.fidelidade = carimbos.map(k => k.id);
                     posSemNif = false; posFidDesc = '';
                 }
@@ -20938,6 +20964,395 @@ var qrcode = function() {
             fidCampTexto = function () {
                 if (!fidCamp.salva) return oT.apply(this, arguments);
                 return fidCampUrl(fidCamp.salva);   // só o link: o texto vai na pré-visualização, em grande
+            };
+        })();
+    </script>
+
+    <style>
+        #fid-vis .fid-gratis { display: inline-flex; align-items: center; gap: 6px; }
+        #fid-livres .lq { display: flex; gap: 8px; margin-top: 12px; }
+        #fid-livres .lq input { flex: 1; min-width: 0; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; }
+        #fid-livres .lq button { padding: 0 14px; border-radius: 12px; font-weight: 800; background: var(--brand); color: #fff; }
+        #fid-livres .lq button.o { background: #fff; color: #231F20; border: 1.5px solid #E4DCCF; }
+        #fid-livres .ch { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        #fid-livres .ch button { padding: 6px 11px; border-radius: 999px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 13px; font-weight: 700; color: #5B4A40; }
+        #fid-livres .gr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; max-height: 52vh; overflow-y: auto; }
+        @media (min-width: 640px) { #fid-livres .gr { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        #fid-livres .gr button { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; border: 2px solid transparent; background: #F1EBE3; }
+        #fid-livres .gr button:hover, #fid-livres .gr button:focus-visible { border-color: var(--brand); }
+        #fid-livres .gr img { width: 100%; height: 100%; object-fit: cover; }
+        #fid-livres .gr button.carrega { opacity: .5; }
+        #fid-livres .nota { font-size: 12px; color: #7A6A60; margin-top: 10px; }
+        html.dark #fid-livres .lq input, html.dark #fid-livres .ch button, html.dark #fid-livres .lq button.o { background: #2A1B14; color: #F2ECE4; border-color: #44332A; }
+    </style>
+    <script>
+        // ---------- Imagens grátis (as mesmas das fichas) no Logótipo, Carimbo e Foto de fundo do cartão
+        const FID_LIVRES = {
+            logo: { t: 'Logótipo no cartão', q: 'coffee cup', s: ['coffee cup', 'coffee beans', 'croissant', 'pizza', 'cupcake', 'tea'] },
+            carimbo: { t: 'Carimbo', q: 'coffee bean', s: ['coffee bean', 'latte art', 'heart', 'star', 'donut', 'leaf'] },
+            fundo: { t: 'Foto de fundo', q: 'coffee shop', s: ['coffee shop', 'latte art', 'espresso', 'bakery', 'pizza', 'brunch'] }
+        };
+        let fidLivresLista = [], fidLivresCampo = 'logo';
+        function fidLivres(campo) {
+            fidLivresCampo = campo; const c = FID_LIVRES[campo];
+            dsModal('fid-livres', `<div class="flex items-start justify-between gap-3"><div><h3>Imagens grátis · ${c.t}</h3><p class="text-sm text-slate-500 mt-1">Escolha uma imagem. A seguir pode ajustar o recorte.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-livres')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <div class="lq"><input id="fl-q" value="${escapeHtml(c.q)}" placeholder="Ex.: coffee, cake, pizza" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault();fidLivresProcurar(1)}"><button type="button" onclick="fidLivresProcurar(1)" aria-label="Procurar"><i class="fas fa-search"></i></button><button type="button" class="o" onclick="fidLivresProcurar(0)" title="Outras imagens" aria-label="Outras imagens"><i class="fas fa-shuffle"></i></button></div>
+                <div class="ch">${c.s.map(x => `<button type="button" onclick="document.getElementById('fl-q').value='${x}';fidLivresProcurar(1)">${x}</button>`).join('')}</div>
+                <div class="gr" id="fl-gr"></div>
+                <p class="nota" id="fl-msg"></p>
+                <p class="nota">Imagens de bancos gratuitos (Openverse e Wikimedia Commons). Em inglês encontra mais resultados.</p>`);
+            fidLivresProcurar(1);
+        }
+        async function fidLivresProcurar(page) {
+            const q = (document.getElementById('fl-q').value || '').trim(), gr = document.getElementById('fl-gr'), msg = document.getElementById('fl-msg');
+            if (!q) { msg.textContent = 'Escreva o que procura (de preferência em inglês).'; return; }
+            const pg = page || (1 + Math.floor(Math.random() * 4));
+            gr.innerHTML = '<p class="nota" style="grid-column:1/-1;text-align:center;padding:24px 0"><i class="fas fa-circle-notch fa-spin mr-1"></i>A procurar imagens…</p>'; msg.textContent = '';
+            try {
+                let l = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=' + pg)).json()).fotos) || [];
+                if (!l.length && pg > 1) l = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=1')).json()).fotos) || [];
+                for (let i = l.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [l[i], l[k]] = [l[k], l[i]]; }
+                fidLivresLista = l.slice(0, 16);
+                gr.innerHTML = fidLivresLista.map((f, i) => `<button type="button" onclick="fidLivresUsar(${i}, this)" title="${escapeHtml(f.title || '')}"><img loading="lazy" decoding="async" src="${escapeHtml(f.thumb)}" alt="" onerror="this.closest('button').remove()"></button>`).join('')
+                    || '<p class="nota" style="grid-column:1/-1;text-align:center;padding:24px 0">Nenhuma imagem encontrada. Tente outra palavra, em inglês.</p>';
+            } catch (e) {
+                console.warn(e); gr.innerHTML = '';
+                msg.textContent = String(e.message) === 'login' ? 'Entre na sua conta para procurar imagens.' : 'Não foi possível procurar imagens agora. Tente de novo daqui a pouco.';
+            }
+        }
+        async function fidLivresUsar(i, bt) {
+            const f = fidLivresLista[i]; if (!f) return;
+            document.querySelectorAll('#fl-gr button').forEach(b => b.disabled = true); if (bt) bt.classList.add('carrega');
+            try {
+                let r; try { r = await fotosCall('img=' + encodeURIComponent(f.full)); } catch (_) { r = await fotosCall('img=' + encodeURIComponent(f.thumb)); }
+                const b = await r.blob();
+                const file = new File([b], 'imagem.' + (((b.type || 'image/jpeg').split('/')[1]) || 'jpg'), { type: b.type || 'image/jpeg' });
+                dsModalFechar('fid-livres');
+                await fidCarregarFoto({ files: [file], value: '' }, fidLivresCampo);
+            } catch (e) {
+                console.warn(e); dsToast('Não foi possível usar esta imagem. Escolha outra.', true);
+                document.querySelectorAll('#fl-gr button').forEach(b => b.disabled = false); if (bt) bt.classList.remove('carrega');
+            }
+        }
+        (function () {
+            const oV = fidVisPintar;
+            fidVisPintar = function () {
+                const r = oV.apply(this, arguments);
+                try {
+                    const box = document.getElementById('fid-vis'); if (!box) return r;
+                    const bt = c => `<button type="button" class="fid-bt fid-gratis" onclick="fidLivres('${c}')"><i class="fas fa-images"></i>Imagens grátis</button>`;
+                    ['logo', 'fundo'].forEach(c => {
+                        const inp = box.querySelector(`input[type=file][onchange*="'${c}'"]`), l = inp && inp.closest('label');
+                        if (l && !l.parentElement.querySelector(`.fid-gratis[onclick*="'${c}'"]`)) l.insertAdjacentHTML('afterend', bt(c));
+                    });
+                    const car = box.querySelector('.fid-car');
+                    if (car && !box.querySelector(`.fid-gratis[onclick*="'carimbo'"]`)) car.insertAdjacentHTML('afterend', `<div style="margin-top:8px">${bt('carimbo')}</div>`);
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+        })();
+    </script>
+
+    <style>
+        /* ---------- Fidelidade: separadores Cartões | Roleta da sorte */
+        #fid-sub { max-width: 720px; margin: 0 auto 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border-radius: 16px; background: #EFE8DF; }
+        #fid-sub button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 8px; border-radius: 12px; font-weight: 800; font-size: 14px; color: #5B4A40; }
+        #fid-sub button.on { background: #fff; color: #231F20; box-shadow: 0 1px 2px rgba(35,31,32,.12); }
+        #fid-sub button.on i { color: var(--brand); }
+        #fid-sub .lk { font-size: 11px; color: #92400e; }
+        html.dark #fid-sub { background: #2A1B14; } html.dark #fid-sub button { color: #C9BBAF; } html.dark #fid-sub button.on { background: #44332A; color: #F2ECE4; }
+
+        #fid-roleta { max-width: 720px; margin: 0 auto; }
+        #fid-roleta .rl-card { background: #fff; border: 1px solid #EEE6DA; border-radius: 22px; padding: 18px 18px 22px; }
+        #fid-roleta h3 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 800; color: #231F20; letter-spacing: -0.02em; }
+        #fid-roleta .sub { font-size: 14px; color: #5B4A40; margin-top: 4px; }
+        .rl-palco { position: relative; width: min(100%, 420px); margin: 18px auto 0; aspect-ratio: 1; }
+        .rl-palco svg.rl-roda { width: 100%; height: 100%; display: block; transition: transform 5.2s cubic-bezier(.12,.8,.12,1); will-change: transform; }
+        .rl-palco .rl-seta { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); width: 34px; height: 40px; z-index: 2; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+        .rl-palco .rl-centro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 22%; aspect-ratio: 1; border-radius: 50%; background: #fff; border: 4px solid #231F20; display: flex; align-items: center; justify-content: center; z-index: 2; overflow: hidden; }
+        .rl-palco .rl-centro img { width: 78%; height: 78%; object-fit: contain; }
+        .rl-palco .rl-centro i { font-size: 26px; color: var(--brand); }
+        .rl-girar { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(100%, 420px); margin: 18px auto 0; padding: 16px; border-radius: 16px; background: var(--brand); color: #fff; font-weight: 900; font-size: 18px; }
+        .rl-girar:disabled { opacity: .55; }
+        .rl-cli { display: flex; align-items: center; gap: 10px; width: min(100%, 420px); margin: 12px auto 0; padding: 10px 12px; border: 1.5px solid #E4DCCF; border-radius: 14px; background: #FFFCF8; text-align: left; }
+        .rl-cli i { color: var(--brand); width: 20px; text-align: center; }
+        .rl-cli span { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: #231F20; }
+        .rl-cli small { display: block; font-weight: 600; color: #7A6A60; font-size: 12px; }
+        .rl-cli b.x { font-size: 13px; color: var(--brand); }
+        .rl-acoes { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .rl-acoes button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 13px; font-weight: 800; color: #24150E; }
+        .rl-sec { margin-top: 16px; background: #fff; border: 1px solid #EEE6DA; border-radius: 22px; padding: 16px 18px; }
+        .rl-sec > b { font-family: 'Bricolage Grotesque', sans-serif; font-size: 17px; color: #231F20; }
+        .rl-sec p.n { font-size: 12.5px; color: #7A6A60; margin-top: 2px; }
+        .rl-pl { margin-top: 10px; display: grid; gap: 8px; }
+        .rl-p { display: grid; grid-template-columns: 18px 1fr 92px 40px; gap: 8px; align-items: center; }
+        .rl-p .cor { width: 18px; height: 18px; border-radius: 6px; border: 1px solid rgba(0,0,0,.12); }
+        .rl-p input { width: 100%; min-width: 0; border: 1px solid #E4DCCF; border-radius: 12px; padding: 9px 10px; font-size: 16px; background: #fff; }
+        .rl-p .ch { position: relative; } .rl-p .ch input { padding-right: 26px; text-align: right; } .rl-p .ch span { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #7A6A60; }
+        .rl-p button { height: 40px; border-radius: 12px; color: #B91C1C; }
+        .rl-p.nada input[data-k="nome"] { color: #7A6A60; font-style: italic; }
+        .rl-lin { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .rl-lin button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 13px; font-weight: 800; color: #24150E; }
+        .rl-lin button.p { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .rl-ck { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 14px; font-weight: 700; color: #3A2A22; }
+        .rl-ck input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); flex: none; }
+        .rl-tot { font-size: 12.5px; margin-top: 8px; color: #5B4A40; }
+        .rl-tot.mau { color: #B91C1C; font-weight: 700; }
+        .rl-log { margin-top: 8px; }
+        .rl-log div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid #F1EBE2; font-size: 13.5px; }
+        .rl-log div span { color: #231F20; font-weight: 700; } .rl-log div small { color: #7A6A60; white-space: nowrap; }
+        .rl-bloq { text-align: center; padding: 26px 10px; }
+        .rl-bloq i { font-size: 30px; color: var(--brand); }
+        .rl-bloq button { margin-top: 12px; padding: 12px 18px; border-radius: 14px; background: var(--brand); color: #fff; font-weight: 900; }
+        /* resultado */
+        #rl-res .big { font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 800; color: #231F20; text-align: center; letter-spacing: -0.02em; line-height: 1.1; margin-top: 10px; }
+        #rl-res .ico { font-size: 44px; text-align: center; }
+        #rl-res p.t { text-align: center; color: #5B4A40; margin-top: 8px; font-size: 14px; }
+        #rl-res .bts { display: grid; gap: 8px; margin-top: 16px; }
+        #rl-res .bts button { padding: 13px; border-radius: 14px; font-weight: 900; border: 1.5px solid #E4DCCF; background: #fff; color: #24150E; }
+        #rl-res .bts button.p { background: var(--brand); border-color: var(--brand); color: #fff; }
+        #rl-fogo { position: fixed; inset: 0; z-index: 9999; pointer-events: none; }
+        #rl-res.ganhou > div { background: #231F20; color: #fff; }
+        #rl-res.ganhou .big { color: #fff; } #rl-res.ganhou p.t { color: #E4DCCF; }
+        #rl-res.ganhou .bts button.p { background: #fff; border-color: #fff; color: #231F20; }
+        /* ecrã para o cliente */
+        #fid-roleta.cheio { position: fixed; inset: 0; z-index: 80; max-width: none; margin: 0; background: #F6F3F0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; justify-content: center; }
+        #fid-roleta.cheio .rl-card { border: 0; background: transparent; }
+        #fid-roleta.cheio .rl-sec, #fid-roleta.cheio .rl-cfg-only { display: none; }
+        #fid-roleta.cheio .rl-palco, #fid-roleta.cheio .rl-girar { width: min(100%, 72vh); }
+        html.dark #fid-roleta .rl-card, html.dark .rl-sec { background: #2A1B14; border-color: #44332A; }
+        html.dark #fid-roleta h3, html.dark .rl-sec > b, html.dark .rl-log div span, html.dark .rl-cli span { color: #F2ECE4; }
+        html.dark #fid-roleta .sub, html.dark .rl-tot { color: #C9BBAF; }
+        html.dark .rl-p input, html.dark .rl-lin button:not(.p), html.dark .rl-acoes button, html.dark .rl-cli { background: #1F130E; border-color: #44332A; color: #F2ECE4; }
+        html.dark #fid-roleta.cheio { background: #1F130E; }
+        @media (max-width: 639px) { #fid-roleta .rl-card { padding: 16px 14px 18px; border-radius: 18px; } #fid-roleta h3 { font-size: 22px; } .rl-p { grid-template-columns: 14px 1fr 80px 36px; gap: 6px; } }
+    </style>
+    <script>
+        // ======================================================= ROLETA DA SORTE (separador próprio no Fidelidade)
+        const RL_PADRAO = { premios: [
+            { nome: 'Um café grátis', peso: 10 }, { nome: 'Tente outra vez', peso: 30, nada: true },
+            { nome: '10% de desconto', peso: 20 }, { nome: 'Tente outra vez', peso: 25, nada: true },
+            { nome: 'Um bolo grátis', peso: 5 }, { nome: '5% de desconto', peso: 10 }], diario: true, ultimos: [] };
+        let rlCfg = null, rlRascunho = null, rlAberta = 'cartoes', rlAngulo = 0, rlCli = '', rlAGirar = false;
+        const rlPode = () => hasPlan('cafe');
+        function rlLer() {
+            const r = fidCfg && fidCfg.roleta;
+            const base = JSON.parse(JSON.stringify(RL_PADRAO));
+            if (!r || !Array.isArray(r.premios) || r.premios.length < 2) return base;
+            return { premios: r.premios.slice(0, 12).map(p => ({ nome: String(p.nome || '').slice(0, 40), peso: Math.max(0, Math.min(100, +p.peso || 0)), nada: !!p.nada })),
+                diario: r.diario !== false, ultimos: Array.isArray(r.ultimos) ? r.ultimos.slice(0, 30) : [] };
+        }
+        function rlCores(n) {
+            const c = fidCor ? fidCor() : '#983808', l = [c, '#231F20', '#F6F3F0', '#87300F'];
+            const out = []; for (let i = 0; i < n; i++) out.push(l[i % l.length]);
+            if (n > 1 && n % 4 === 1) out[n - 1] = '#5B4A40';   // a última fatia não fica da mesma cor que a primeira
+            return out;
+        }
+        const rlTinta = bg => /^#(F6F3F0|FFFFFF)$/i.test(bg) ? '#231F20' : '#FFFFFF';
+        function rlRodaSvg(pr) {
+            const n = pr.length, R = 200, cx = 210, cy = 210, cores = rlCores(n), a = 360 / n;
+            const pt = (ang, r) => { const t = (ang - 90) * Math.PI / 180; return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; };
+            let h = `<svg class="rl-roda" id="rl-roda" viewBox="0 0 420 420" role="img" aria-label="Roleta com ${n} prémios" style="transform:rotate(${rlAngulo}deg)"><circle cx="210" cy="210" r="208" fill="#231F20"/>`;
+            pr.forEach((p, i) => {
+                const [x1, y1] = pt(i * a, R), [x2, y2] = pt((i + 1) * a, R), big = a > 180 ? 1 : 0, mid = i * a + a / 2;
+                h += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${big} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${p.nada ? '#E4DCCF' : cores[i]}" stroke="#231F20" stroke-width="2"/>`;
+                const txt = (p.nome || '—').trim(), linhas = rlQuebrar(txt, n > 8 ? 12 : 14), fs = n > 8 ? 13 : (n > 6 ? 15 : 17);
+                h += `<g transform="rotate(${mid} ${cx} ${cy})"><text x="${cx}" y="${cy - R + 34}" text-anchor="middle" font-family="Schibsted Grotesk, sans-serif" font-weight="800" font-size="${fs}" fill="${p.nada ? '#5B4A40' : rlTinta(cores[i])}">${linhas.map((l, j) => `<tspan x="${cx}" dy="${j ? fs + 2 : 0}">${escapeHtml(l)}</tspan>`).join('')}</text></g>`;
+            });
+            for (let i = 0; i < n; i++) { const [x, y] = pt(i * a, R - 6); h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#fff"/>`; }
+            return h + '</svg>';
+        }
+        function rlQuebrar(t, max) {
+            const w = t.split(/\s+/), l = []; let c = '';
+            w.forEach(x => { if ((c + ' ' + x).trim().length > max && c) { l.push(c); c = x; } else c = (c + ' ' + x).trim(); });
+            if (c) l.push(c); return l.slice(0, 3);
+        }
+        function rlPintar() {
+            const box = document.getElementById('fid-roleta'); if (!box) return;
+            if (!rlPode()) {
+                box.innerHTML = `<div class="rl-card"><div class="rl-bloq"><i class="fas fa-lock"></i><h3 class="mt-2">Roleta da sorte</h3><p class="sub">Os clientes giram a roleta e ganham prémios que você escolhe. Disponível nos planos Café e PRO.</p><button type="button" onclick="openUpgrade('cafe','A roleta da sorte é dos planos Café e PRO.')">Ver planos</button></div></div>`;
+                return;
+            }
+            rlCfg = rlLer(); if (!rlRascunho) rlRascunho = JSON.parse(JSON.stringify(rlCfg.premios));
+            const pr = rlCfg.premios, k = rlCli && fidCartoes.find(x => x.id === rlCli);
+            const logo = (fidCfg && fidCfg.logo) || '';
+            box.innerHTML = `<div class="rl-card">
+                    <h3>Roleta da sorte</h3>
+                    <p class="sub rl-cfg-only">O cliente gira a roleta e ganha o prémio onde a seta parar. Os prémios e as chances escolhe você, em baixo.</p>
+                    <div class="rl-palco"><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(fidCor())}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(pr)}<div class="rl-centro">${logo ? `<img src="${escapeHtml(logo)}" alt="">` : '<i class="fas fa-gift"></i>'}</div></div>
+                    <button type="button" class="rl-girar" id="rl-girar" onclick="rlGirar()"><i class="fas fa-rotate-right"></i>Girar</button>
+                    <button type="button" class="rl-cli" onclick="rlEscolherCliente()"><i class="fas ${k ? 'fa-stamp' : 'fa-user-plus'}"></i><span>${k ? `${escapeHtml(k.nome)} · ${k.codigo}<small>O prémio fica registado no cartão deste cliente</small>` : `Para que cliente? <small>Opcional: escolha o cartão para registar o prémio</small>`}</span><b class="x">${k ? 'Trocar' : 'Escolher'}</b></button>
+                    <div class="rl-acoes">${k ? `<button type="button" onclick="rlCli='';rlPintar()"><i class="fas fa-xmark"></i>Sem cliente</button>` : ''}<button type="button" onclick="rlEcra()"><i class="fas ${box.classList.contains('cheio') ? 'fa-compress' : 'fa-expand'}"></i>${box.classList.contains('cheio') ? 'Sair do ecrã do cliente' : 'Mostrar ao cliente'}</button></div>
+                </div>
+                <div class="rl-sec"><b>Prémios e chances</b><p class="n">Cada fatia é um prémio. A chance diz quantas vezes em 100 a roleta para nessa fatia. Use "Sem prémio" para as fatias de "Tente outra vez".</p>
+                    <div class="rl-pl" id="rl-pl"></div>
+                    <p class="rl-tot" id="rl-tot"></p>
+                    <div class="rl-lin"><button type="button" onclick="rlJuntar(false)"><i class="fas fa-plus"></i>Prémio</button><button type="button" onclick="rlJuntar(true)"><i class="fas fa-plus"></i>Sem prémio</button><button type="button" onclick="rlIguais()"><i class="fas fa-equals"></i>Chances iguais</button></div>
+                    <label class="rl-ck"><input type="checkbox" id="rl-diario" ${rlCfg.diario ? 'checked' : ''}>Cada cliente gira só 1 vez por dia (quando escolhe o cartão)</label>
+                    <div class="rl-lin"><button type="button" class="p" onclick="rlGuardar()"><i class="fas fa-check"></i>Guardar a roleta</button></div>
+                </div>
+                <div class="rl-sec"><b>Últimos prémios</b>
+                    <div class="rl-log">${rlCfg.ultimos.length ? rlCfg.ultimos.slice(0, 10).map(u => `<div><span>${escapeHtml(u.premio)}${u.cliente ? ' · ' + escapeHtml(u.cliente) : ''}</span><small>${new Date(u.em).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></div>`).join('') : '<p class="n" style="padding-top:6px">Ainda ninguém girou a roleta. Os prémios ganhos aparecem aqui.</p>'}</div>
+                </div>`;
+            rlListaPintar();
+        }
+        function rlListaPintar() {
+            const el = document.getElementById('rl-pl'); if (!el) return;
+            const cores = rlCores(rlRascunho.length);
+            el.innerHTML = rlRascunho.map((p, i) => `<div class="rl-p ${p.nada ? 'nada' : ''}"><span class="cor" style="background:${p.nada ? '#E4DCCF' : cores[i]}"></span>
+                    <input data-k="nome" data-i="${i}" maxlength="40" value="${escapeHtml(p.nome)}" placeholder="${p.nada ? 'Tente outra vez' : 'Ex.: Um café grátis'}" aria-label="Prémio ${i + 1}">
+                    <span class="ch"><input data-k="peso" data-i="${i}" type="number" inputmode="numeric" min="0" max="100" value="${p.peso}" aria-label="Chance do prémio ${i + 1}"><span>%</span></span>
+                    <button type="button" onclick="rlTirar(${i})" aria-label="Tirar esta fatia" ${rlRascunho.length <= 2 ? 'disabled style="opacity:.3"' : ''}><i class="fas fa-trash"></i></button></div>`).join('');
+            el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
+                const p = rlRascunho[+inp.dataset.i]; if (!p) return;
+                if (inp.dataset.k === 'nome') p.nome = inp.value; else p.peso = Math.max(0, Math.min(100, parseInt(inp.value) || 0));
+                rlTotal();
+            }));
+            rlTotal();
+        }
+        function rlTotal() {
+            const t = rlRascunho.reduce((s, p) => s + (+p.peso || 0), 0), el = document.getElementById('rl-tot'); if (!el) return;
+            el.className = 'rl-tot' + (t === 100 ? '' : ' mau');
+            el.textContent = t === 100 ? 'As chances somam 100%.' : `As chances somam ${t}%. Ajuste para somarem 100% (ou carregue em "Chances iguais").`;
+        }
+        function rlJuntar(nada) { if (rlRascunho.length >= 12) return dsToast('A roleta tem no máximo 12 fatias.', true); rlRascunho.push({ nome: nada ? 'Tente outra vez' : '', peso: 0, nada: !!nada }); rlListaPintar(); const l = document.querySelectorAll('#rl-pl input[data-k="nome"]'); if (!nada && l.length) l[l.length - 1].focus(); }
+        function rlTirar(i) { if (rlRascunho.length <= 2) return; rlRascunho.splice(i, 1); rlListaPintar(); }
+        function rlIguais() { const n = rlRascunho.length, b = Math.floor(100 / n); rlRascunho.forEach((p, i) => p.peso = b + (i < 100 - b * n ? 1 : 0)); rlListaPintar(); }
+        async function rlSalvar(obj) {
+            const { data, error } = await sb.from('fidelidade_cfg').upsert({ dono_id: fidDono(), roleta: obj }, { onConflict: 'dono_id' }).select('*').single();
+            if (error) { console.warn(error); return false; }
+            fidCfg = Object.assign(fidCfg || {}, data); return true;
+        }
+        async function rlGuardar() {
+            const l = rlRascunho.map(p => ({ nome: String(p.nome || '').trim().slice(0, 40), peso: Math.max(0, Math.min(100, +p.peso || 0)), nada: !!p.nada }));
+            if (l.some(p => !p.nome)) return dsToast('Escreva o nome de todos os prémios.', true);
+            if (l.length < 2) return dsToast('A roleta precisa de pelo menos 2 fatias.', true);
+            const t = l.reduce((s, p) => s + p.peso, 0);
+            if (t !== 100) return dsToast(`As chances somam ${t}%. Ajuste para 100%.`, true);
+            if (!l.some(p => !p.nada && p.peso > 0)) return dsToast('Ponha pelo menos um prémio com chance acima de 0%.', true);
+            const atual = rlLer();
+            if (!(await rlSalvar({ premios: l, diario: document.getElementById('rl-diario').checked, ultimos: atual.ultimos }))) return dsToast('Não foi possível guardar a roleta. Tente de novo.', true);
+            rlRascunho = null; rlPintar(); dsToast('Roleta guardada.');
+        }
+        function rlEscolherCliente() {
+            const pintar = q => {
+                q = normTxt(q || ''); const d = q.replace(/\D/g, '');
+                const l = fidCartoes.filter(k => !q || normTxt(k.nome).includes(q) || (d && (String(k.codigo) === d || String(k.telefone || '').replace(/\D/g, '').includes(d)))).slice(0, 30);
+                document.getElementById('rlc-l').innerHTML = l.length ? l.map(k => `<button type="button" onclick="rlCli='${k.id}';dsModalFechar('rl-c');rlPintar()"><i class="fas fa-stamp"></i><span><b>${escapeHtml(k.nome)} · ${k.codigo}</b><small>${escapeHtml((fidProgDe(k) || {}).nome || 'Cartão')}${k.telefone ? ' · ' + escapeHtml(k.telefone) : ''}</small></span></button>`).join('') : '<p class="text-sm text-slate-500 mt-3">Nenhum cartão encontrado.</p>';
+            };
+            dsModal('rl-c', `<div class="flex items-start justify-between gap-3"><div><h3>Para que cliente?</h3><p class="text-sm text-slate-500 mt-1">Procure pelo nome, telemóvel ou código do cartão.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('rl-c')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <input id="rlc-q" class="w-full mt-3" style="font-size:16px;padding:10px 12px;border:1px solid #E4DCCF;border-radius:12px" placeholder="Nome, telemóvel ou código" autocomplete="off"><div id="rlc-l" class="fid-escolha"></div>`);
+            const i = document.getElementById('rlc-q'); i.addEventListener('input', () => pintar(i.value)); pintar(''); setTimeout(() => i.focus(), 50);
+        }
+        const rlHoje = () => new Date().toISOString().slice(0, 10);
+        function rlSorteio(pr) {
+            const tot = pr.reduce((s, p) => s + (+p.peso || 0), 0);
+            const a = new Uint32Array(1); crypto.getRandomValues(a);
+            let r = (a[0] / 4294967296) * tot;
+            for (let i = 0; i < pr.length; i++) { r -= (+pr[i].peso || 0); if (r < 0) return i; }
+            return pr.length - 1;
+        }
+        async function rlGirar() {
+            if (rlAGirar) return;
+            const cfg = rlLer(), pr = cfg.premios;
+            if (pr.reduce((s, p) => s + p.peso, 0) <= 0) return dsToast('Escolha as chances dos prémios e guarde a roleta.', true);
+            const k = rlCli && fidCartoes.find(x => x.id === rlCli);
+            if (k && cfg.diario && (Array.isArray(k.historico) ? k.historico : []).some(h => h.t === 'roleta' && String(h.em || '').slice(0, 10) === rlHoje()))
+                return dsToast(`${k.nome.split(' ')[0]} já girou a roleta hoje. Volte amanhã.`, true);
+            const i = rlSorteio(pr), n = pr.length, fatia = 360 / n;
+            // a fatia sorteada pára debaixo da seta (no topo), num ponto ao acaso dentro dela
+            const dentro = (0.15 + Math.random() * 0.7) * fatia, alvo = 360 - (i * fatia + dentro);
+            rlAngulo = rlAngulo - (rlAngulo % 360) + 360 * 6 + alvo;
+            const roda = document.getElementById('rl-roda'), bt = document.getElementById('rl-girar');
+            rlAGirar = true; if (bt) { bt.disabled = true; bt.innerHTML = '<i class="fas fa-rotate-right fa-spin"></i>A girar…'; }
+            const reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (roda) { roda.style.transitionDuration = reduz ? '0.01s' : ''; requestAnimationFrame(() => { roda.style.transform = `rotate(${rlAngulo}deg)`; }); }
+            await new Promise(r => setTimeout(r, reduz ? 200 : 5400));
+            rlAGirar = false;
+            const p = pr[i];
+            // registar
+            const reg = { premio: p.nada ? 'Sem prémio' : p.nome, cliente: k ? k.nome.split(' ')[0] + ' · ' + k.codigo : '', em: new Date().toISOString() };
+            rlSalvar(Object.assign({}, cfg, { ultimos: [reg].concat(cfg.ultimos).slice(0, 30) })).then(ok => { if (ok && document.getElementById('rl-pl') && !rlAGirar) { const lg = document.querySelector('#fid-roleta .rl-log'); if (lg) rlPintarLog(); } });
+            if (k) {
+                const hist = (Array.isArray(k.historico) ? k.historico : []).concat([{ t: 'roleta', n: 0, premio: p.nada ? '' : p.nome, em: reg.em, por: (currentUser && currentUser.email) || '' }]).slice(-60);
+                k.historico = hist;
+                sb.from('fidelidade_cartoes').update({ historico: hist }).eq('id', k.id).then(({ error }) => { if (error) dsToast('O prémio não ficou registado no cartão. Verifique a internet.', true); });
+            }
+            if (bt) { bt.disabled = false; bt.innerHTML = '<i class="fas fa-rotate-right"></i>Girar de novo'; }
+            rlResultado(p, k);
+        }
+        function rlPintarLog() {
+            const lg = document.querySelector('#fid-roleta .rl-log'); if (!lg) return; const u = rlLer().ultimos;
+            lg.innerHTML = u.slice(0, 10).map(x => `<div><span>${escapeHtml(x.premio)}${x.cliente ? ' · ' + escapeHtml(x.cliente) : ''}</span><small>${new Date(x.em).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></div>`).join('');
+        }
+        function rlResultado(p, k) {
+            if (p.nada) {
+                const m0 = document.getElementById('rl-res'); if (m0) m0.classList.remove('ganhou');
+                dsModal('rl-res', `<div class="ico">🙂</div><div class="big">${escapeHtml(p.nome || 'Não foi desta vez')}</div><p class="t">Não saiu prémio desta vez.${k && rlLer().diario ? ' Pode tentar de novo amanhã.' : ''}</p><div class="bts"><button type="button" class="p" onclick="dsModalFechar('rl-res')">Fechar</button></div>`);
+                return;
+            }
+            dsModal('rl-res', `<div class="ico">🎉</div><p class="t" style="margin-top:4px">${k ? escapeHtml(k.nome.split(' ')[0]) + ' ganhou' : 'Ganhou'}</p><div class="big">${escapeHtml(p.nome)}</div>
+                <p class="t">${k ? 'Ficou registado no cartão ' + escapeHtml(k.codigo) + '.' : 'Mostre este ecrã ao balcão para receber o prémio.'}</p>
+                <div class="bts"><button type="button" class="p" onclick="dsModalFechar('rl-res')">Fechar</button></div>`).classList.add('ganhou');
+            rlFogo();
+        }
+        // fogos de artifício
+        function rlFogo() {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            const old = document.getElementById('rl-fogo'); if (old) old.remove();
+            const cv = document.createElement('canvas'); cv.id = 'rl-fogo'; document.body.appendChild(cv);
+            const dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+            cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+            const x = cv.getContext('2d'); x.scale(dpr, dpr);
+            const cores = [fidCor(), '#FBBF24', '#FFFFFF', '#E0794F', '#F87171', '#4ADE80', '#60A5FA'];
+            const parts = [], foguetes = [];
+            const rebentar = (fx, fy) => { const c = cores[Math.floor(Math.random() * cores.length)], n = 70 + Math.floor(Math.random() * 40);
+                for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * 5.5; parts.push({ x: fx, y: fy, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vida: 60 + Math.random() * 40, t: 0, c: Math.random() < .25 ? '#FFFFFF' : c, r: 1.6 + Math.random() * 1.8 }); } };
+            let lancados = 0; const total = 9;
+            const lancar = () => { if (lancados >= total) return; lancados++; foguetes.push({ x: W * (0.15 + Math.random() * 0.7), y: H + 10, vy: -(9 + Math.random() * 4), alvo: H * (0.12 + Math.random() * 0.35) }); setTimeout(lancar, 220 + Math.random() * 260); };
+            lancar();
+            const t0 = performance.now();
+            const passo = now => {
+                x.clearRect(0, 0, W, H);
+                foguetes.forEach(f => { f.y += f.vy; f.vy *= 0.985; x.fillStyle = '#FBBF24'; x.beginPath(); x.arc(f.x, f.y, 3, 0, 7); x.fill(); if (f.y <= f.alvo) { f.feito = true; rebentar(f.x, f.y); } });
+                for (let i = foguetes.length - 1; i >= 0; i--) if (foguetes[i].feito) foguetes.splice(i, 1);
+                parts.forEach(p => { p.t++; p.vx *= 0.97; p.vy = p.vy * 0.97 + 0.08; p.x += p.vx; p.y += p.vy; const a = Math.max(0, 1 - p.t / p.vida); x.globalAlpha = a; x.fillStyle = p.c; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 7); x.fill(); });
+                x.globalAlpha = 1;
+                for (let i = parts.length - 1; i >= 0; i--) if (parts[i].t > parts[i].vida) parts.splice(i, 1);
+                if (now - t0 < 6500 && (parts.length || foguetes.length || lancados < total)) requestAnimationFrame(passo); else cv.remove();
+            };
+            requestAnimationFrame(passo);
+        }
+        function rlEcra() {
+            const b = document.getElementById('fid-roleta'); if (!b) return;
+            b.classList.toggle('cheio'); rlPintar();
+            if (b.classList.contains('cheio')) { try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(() => {}); } catch (_) {} }
+            else { try { document.fullscreenElement && document.exitFullscreen(); } catch (_) {} }
+        }
+        document.addEventListener('fullscreenchange', () => { const b = document.getElementById('fid-roleta'); if (!document.fullscreenElement && b && b.classList.contains('cheio')) { b.classList.remove('cheio'); rlPintar(); } });
+        function fidSub(qual) {
+            rlAberta = qual;
+            const pg = document.getElementById('fid-page'), rl = document.getElementById('fid-roleta');
+            if (pg) pg.style.display = qual === 'roleta' ? 'none' : '';
+            if (rl) { rl.style.display = qual === 'roleta' ? '' : 'none'; if (qual !== 'roleta') rl.classList.remove('cheio'); }
+            document.querySelectorAll('#fid-sub button').forEach(b => b.classList.toggle('on', b.dataset.s === qual));
+            if (qual === 'roleta') { rlRascunho = null; rlPintar(); }
+        }
+        function fidSubMontar() {
+            const t = document.getElementById('tab-fidelidade'), pg = document.getElementById('fid-page'); if (!t || !pg) return;
+            if (!document.getElementById('fid-sub')) {
+                pg.insertAdjacentHTML('beforebegin', `<div id="fid-sub" role="tablist"><button type="button" data-s="cartoes" class="on" onclick="fidSub('cartoes')"><i class="fas fa-stamp"></i>Cartões</button><button type="button" data-s="roleta" onclick="fidSub('roleta')"><i class="fas fa-dharmachakra"></i>Roleta da sorte${rlPode() ? '' : ' <i class="fas fa-lock lk"></i>'}</button></div>`);
+                pg.insertAdjacentHTML('afterend', '<div id="fid-roleta" style="display:none"></div>');
+            }
+            const lk = document.querySelector('#fid-sub .lk'); if (lk) lk.style.display = rlPode() ? 'none' : '';
+            if (rlAberta === 'roleta') { const pgx = document.getElementById('fid-page'); if (pgx) pgx.style.display = 'none'; const rl = document.getElementById('fid-roleta'); if (rl) rl.style.display = ''; }
+        }
+        (function () {
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try { fidSubMontar(); if (rlAberta === 'roleta' && !rlAGirar && !document.querySelector('#fid-roleta :focus')) rlPintar(); } catch (e) { console.warn(e); }
+                return r;
             };
         })();
     </script>

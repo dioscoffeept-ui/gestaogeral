@@ -197,6 +197,14 @@
     if (pr.tipo === 'desconto' && pr.desconto) return String(pr.desconto.valor).replace('.', ',') + (pr.desconto.tipo === 'pct' ? '%' : ' €') + ' de desconto';
     return pr.beneficio || pr.premio || pr.nome || '';
   }
+  // cartão de carimbos com vantagens a mais (desconto fixo e/ou outra vantagem)
+  function extras(pr) {
+    if (!pr || (pr.tipo && pr.tipo !== 'carimbos')) return [];
+    const l = [];
+    if (pr.desconto) l.push(String(pr.desconto.valor).replace('.', ',') + (pr.desconto.tipo === 'pct' ? '%' : ' €') + ' de desconto em cada compra');
+    if (pr.beneficio) l.push(pr.beneficio);
+    return l;
+  }
   function selos(alvo, n) {
     let h = '';
     for (let i = 1; i <= alvo; i++) h += `<span class="selo ${i <= n ? 'on' : ''}" aria-label="${i <= n ? 'carimbo' : 'vazio'}">${i <= n ? SELO : ''}</span>`;
@@ -366,6 +374,7 @@
         ${S ? `<div class="vant"><small>${esc(d.titulo || '')}</small><b>${esc(V)}</b></div>` : `<div class="selos">${selos(d.alvo, n)}</div>`}
         ${S ? `<div class="c-pe"><div><span class="falta">Mostre ao balcão</span><small>${d.condicoes ? esc(d.condicoes) : 'Diga o seu código ao pagar.'}</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'vez usado' : 'vezes usado'}</small></div>` : ''}</div>` : `<div class="c-pe"><div><span class="falta">${tem ? 'Prémio desbloqueado' : 'Faltam ' + falta + (falta === 1 ? ' carimbo' : ' carimbos')}</span><small>${esc(d.premio)} a cada ${d.alvo} carimbos</small></div>${d.premios ? `<div style="text-align:right"><span class="falta">${d.premios}</span><small>${d.premios === 1 ? 'prémio usado' : 'prémios usados'}</small></div>` : ''}</div>`}
       </section>
+      ${!S && extras(d.programa).length ? `<div class="aviso desc"><i>🏷️</i><span>Este cartão também lhe dá ${esc(extras(d.programa).join(' e ').replace(/^./, c => c.toLowerCase()))}. Diga o código <b>${esc(d.codigo)}</b> ao balcão.</span></div>` : ''}
       ${d.desconto ? `<div class="aviso desc"><i>🏷️</i><span>Tem ${esc(String(d.desconto.valor).replace('.', ','))}${d.desconto.tipo === 'pct' ? '%' : ' €'} de desconto de cliente fixo${d.desconto.nota ? ' ' + esc(d.desconto.nota) : ''}. Diga o código <b>${esc(d.codigo)}</b> ao balcão.</span></div>` : ''}
       ${tem && !S ? `<div class="aviso"><i>🎁</i><span>Tem ${esc(d.premio.toLowerCase())} à espera. Mostre este ecrã ao balcão.</span></div>` : ''}
       ${d.expirado ? `<div class="aviso" style="background:#FEE2E2;color:#7F1D1D"><i>⌛</i><span>Este cartão expirou a ${dataPT(d.valido_ate)}. Fale com a loja para o renovar.</span></div>` : (d.valido_ate ? `<p class="dica" style="text-align:center;margin-top:10px">Válido até <b>${dataPT(d.valido_ate)}</b></p>` : '')}
@@ -524,7 +533,7 @@
         <div class="c-pe"><div><span class="falta">Basta dizer o seu código ao balcão</span><small>${d.condicoes ? esc(d.condicoes) : 'O cartão fica no seu telemóvel.'}</small></div></div></section>`
       : `<section class="cartao"><div class="c-top"><div><small>Junte ${d.alvo} carimbos e ganhe</small><h1>${esc(d.premio)}</h1></div></div>
         <div class="selos">${selos(d.alvo, 0)}</div>
-        <div class="c-pe"><div><span class="falta">1 carimbo em cada compra</span><small>${d.condicoes ? esc(d.condicoes) : "Ao completar o cartão, recebe o prémio e começa de novo."}</small></div></div></section>`) + `
+        <div class="c-pe"><div><span class="falta">1 carimbo em cada compra</span><small>${d.condicoes ? esc(d.condicoes) : "Ao completar o cartão, recebe o prémio e começa de novo."}</small></div></div></section>` + (extras(d.programa).length ? `<div class="aviso desc"><i>🏷️</i><span>E ganha já ${esc(extras(d.programa).join(' e ').replace(/^./, c => c.toLowerCase()))}.</span></div>` : '')) + `
       <form class="bloco" id="f" novalidate><h2>Criar o meu cartão</h2>
         <p class="dica">É grátis e fica guardado neste telemóvel. Não precisa de palavra-passe.</p>
         <label>Nome<input id="nome" autocomplete="given-name" maxlength="40" placeholder="Como o chamamos"></label>
