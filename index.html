@@ -20990,7 +20990,9 @@ var qrcode = function() {
         const FID_LIVRES = {
             logo: { t: 'Logótipo no cartão', q: 'coffee cup', s: ['coffee cup', 'coffee beans', 'croissant', 'pizza', 'cupcake', 'tea'] },
             carimbo: { t: 'Carimbo', q: 'coffee bean', s: ['coffee bean', 'latte art', 'heart', 'star', 'donut', 'leaf'] },
-            fundo: { t: 'Foto de fundo', q: 'coffee shop', s: ['coffee shop', 'latte art', 'espresso', 'bakery', 'pizza', 'brunch'] }
+            fundo: { t: 'Foto de fundo', q: 'coffee shop', s: ['coffee shop', 'latte art', 'espresso', 'bakery', 'pizza', 'brunch'] },
+            'rl-logo': { t: 'Logótipo da roleta', q: 'coffee cup', s: ['coffee cup', 'coffee beans', 'gift', 'croissant', 'pizza', 'cupcake'] },
+            'rl-fundo': { t: 'Fundo da roleta', q: 'coffee shop', s: ['coffee shop', 'confetti', 'latte art', 'bakery', 'party', 'brunch'] }
         };
         let fidLivresLista = [], fidLivresCampo = 'logo';
         function fidLivres(campo) {
@@ -21028,7 +21030,8 @@ var qrcode = function() {
                 const b = await r.blob();
                 const file = new File([b], 'imagem.' + (((b.type || 'image/jpeg').split('/')[1]) || 'jpg'), { type: b.type || 'image/jpeg' });
                 dsModalFechar('fid-livres');
-                await fidCarregarFoto({ files: [file], value: '' }, fidLivresCampo);
+                if (/^rl-/.test(fidLivresCampo)) await rlCarregarFoto({ files: [file], value: '' }, fidLivresCampo.slice(3));
+                else await fidCarregarFoto({ files: [file], value: '' }, fidLivresCampo);
             } catch (e) {
                 console.warn(e); dsToast('Não foi possível usar esta imagem. Escolha outra.', true);
                 document.querySelectorAll('#fl-gr button').forEach(b => b.disabled = false); if (bt) bt.classList.remove('carrega');
@@ -21126,52 +21129,97 @@ var qrcode = function() {
         html.dark .rl-p input, html.dark .rl-lin button:not(.p), html.dark .rl-acoes button, html.dark .rl-cli { background: #1F130E; border-color: #44332A; color: #F2ECE4; }
         html.dark #fid-roleta.cheio { background: #1F130E; }
         @media (max-width: 639px) { #fid-roleta .rl-card { padding: 16px 14px 18px; border-radius: 18px; } #fid-roleta h3 { font-size: 22px; } .rl-p { grid-template-columns: 14px 1fr 80px 36px; gap: 6px; } }
+        #fid-roleta .rl-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .rl-def-bt { display: inline-flex; align-items: center; gap: 7px; flex: none; padding: 9px 13px; border-radius: 12px; border: 1.5px solid #24150E; background: #fff; font-size: 13.5px; font-weight: 800; color: #24150E; }
+        .rl-def-bt.on { background: #24150E; color: #fff; }
+        .rl-def { margin-top: 14px; padding: 14px; border: 1.5px solid #E4DCCF; border-radius: 18px; background: #FFFCF8; }
+        .rl-def .rl-tt { font-family: 'Bricolage Grotesque', sans-serif; font-size: 16px; font-weight: 800; color: #231F20; margin: 16px 0 4px; }
+        .rl-def .rl-tt:first-child { margin-top: 0; }
+        .rl-def .n { font-size: 12.5px; color: #7A6A60; margin-top: 4px; }
+        .rl-f { display: block; margin-top: 12px; font-size: 13px; font-weight: 700; color: #3A2A22; }
+        .rl-f > span { display: block; }
+        .rl-f input:not([type]) , .rl-f input[maxlength] { width: 100%; margin-top: 4px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; font-weight: 600; }
+        .rl-img { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        .rl-img .pv { width: 64px; height: 64px; border-radius: 14px; background-size: cover; background-position: center; border: 1.5px solid #E4DCCF; flex: none; }
+        .rl-img .pv.redondo { border-radius: 50%; border: 4px solid #231F20; }
+        .rl-img .pv.largo { width: 96px; }
+        .rl-img-bt { display: flex; flex-wrap: wrap; gap: 6px; }
+        .rl-b { display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border-radius: 12px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 13px; font-weight: 800; color: #24150E; cursor: pointer; }
+        .rl-b.p { background: var(--brand); border-color: var(--brand); color: #fff; }
+        .rl-cores { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .rl-cores button, .rl-cores .mais { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #E4DCCF; }
+        .rl-cores button.on { box-shadow: 0 0 0 3px #231F20; }
+        .rl-cores .mais { position: relative; display: flex; align-items: center; justify-content: center; background: #fff; color: #5B4A40; cursor: pointer; overflow: hidden; }
+        .rl-cores .mais input, .rl-p .cor input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; border: 0; padding: 0; }
+        .rl-p .cor { position: relative; display: block; width: 24px; height: 24px; border-radius: 7px; border: 1.5px solid rgba(35,31,32,.25); cursor: pointer; overflow: hidden; }
+        .rl-p { grid-template-columns: 24px 1fr 92px 40px !important; }
+        .rl-fim { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 16px; }
+        .rl-fim .rl-b { justify-content: center; padding: 13px; font-size: 14.5px; }
+        .rl-cena { border-radius: 20px; padding: 6px 4px 10px; margin-top: 10px; }
+        .rl-cena.foto { background: linear-gradient(rgba(35,31,32,.25), rgba(35,31,32,.25)), var(--rlf) center / cover no-repeat; padding: 22px 12px 18px; }
+        .rl-cena .rl-palco { margin-top: 8px; }
+        #fid-roleta.cheio .rl-cena.foto { position: fixed; inset: 0; z-index: -1; border-radius: 0; }
+        #fid-roleta.cheio .rl-card { position: relative; z-index: 0; }
+        html.dark .rl-def { background: #1F130E; border-color: #44332A; } html.dark .rl-def .rl-tt, html.dark .rl-f { color: #F2ECE4; }
+        html.dark .rl-b:not(.p), html.dark .rl-def-bt:not(.on), html.dark .rl-f input[maxlength] { background: #2A1B14; border-color: #44332A; color: #F2ECE4; }
+        html.dark .rl-ck { color: #F2ECE4; } html.dark .rl-def .n { color: #C9BBAF; }
+        @media (max-width: 639px) { .rl-p { grid-template-columns: 22px 1fr 76px 34px !important; gap: 6px; } .rl-def-bt { padding: 8px 10px; } }
     </style>
     <script>
         // ======================================================= ROLETA DA SORTE (separador próprio no Fidelidade)
-        const RL_PADRAO = { premios: [
+        const RL_PADRAO = { titulo: 'Roleta da sorte', logo: '', fundo: '', cor: '', premios: [
             { nome: 'Um café grátis', peso: 10 }, { nome: 'Tente outra vez', peso: 30, nada: true },
             { nome: '10% de desconto', peso: 20 }, { nome: 'Tente outra vez', peso: 25, nada: true },
             { nome: 'Um bolo grátis', peso: 5 }, { nome: '5% de desconto', peso: 10 }], diario: true, ultimos: [] };
-        let rlCfg = null, rlRascunho = null, rlAberta = 'cartoes', rlAngulo = 0, rlCli = '', rlAGirar = false;
+        let rlCfg = null, rlRascunho = null, rlDefAberta = false, rlAberta = 'cartoes', rlAngulo = 0, rlCli = '', rlAGirar = false;
         const rlPode = () => hasPlan('cafe');
+        const rlHex = v => /^#[0-9a-fA-F]{6}$/.test(String(v || '')) ? String(v) : '';
+        const rlUrl = v => /^https:\/\//.test(String(v || '')) ? String(v).slice(0, 400) : '';
         function rlLer() {
             const r = fidCfg && fidCfg.roleta;
             const base = JSON.parse(JSON.stringify(RL_PADRAO));
-            if (!r || !Array.isArray(r.premios) || r.premios.length < 2) return base;
-            return { premios: r.premios.slice(0, 12).map(p => ({ nome: String(p.nome || '').slice(0, 40), peso: Math.max(0, Math.min(100, +p.peso || 0)), nada: !!p.nada })),
+            if (!r || typeof r !== 'object') return base;
+            const pr = Array.isArray(r.premios) && r.premios.length >= 2 ? r.premios.slice(0, 12).map(p => ({ nome: String(p.nome || '').slice(0, 40), peso: Math.max(0, Math.min(100, +p.peso || 0)), nada: !!p.nada, cor: rlHex(p.cor) })) : base.premios;
+            return { titulo: String(r.titulo || base.titulo).slice(0, 40), logo: rlUrl(r.logo), fundo: rlUrl(r.fundo), cor: rlHex(r.cor), premios: pr,
                 diario: r.diario !== false, ultimos: Array.isArray(r.ultimos) ? r.ultimos.slice(0, 30) : [] };
         }
-        function rlCores(n) {
-            const c = fidCor ? fidCor() : '#983808', l = [c, '#231F20', '#F6F3F0', '#87300F'];
+        // a cfg em uso: o rascunho das Definições (pré-visualização ao vivo) ou a guardada
+        const rlAtual = () => (rlDefAberta && rlRascunho) || rlCfg || rlLer();
+        const rlBrand = c => rlHex(c && c.cor) || fidCor();
+        function rlCores(n, c) {
+            const l = [rlBrand(c), '#231F20', '#F6F3F0', '#87300F'];
             const out = []; for (let i = 0; i < n; i++) out.push(l[i % l.length]);
             if (n > 1 && n % 4 === 1) out[n - 1] = '#5B4A40';   // a última fatia não fica da mesma cor que a primeira
             return out;
         }
-        const rlTinta = bg => /^#(F6F3F0|FFFFFF)$/i.test(bg) ? '#231F20' : '#FFFFFF';
-        function rlRodaSvg(pr) {
-            const n = pr.length, R = 200, cx = 210, cy = 210, cores = rlCores(n), a = 360 / n;
+        const rlCorFatia = (c, i) => { const p = c.premios[i]; return rlHex(p.cor) || (p.nada ? '#E4DCCF' : rlCores(c.premios.length, c)[i]); };
+        const rlTinta = bg => { const h = bg.replace('#', ''), r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16); return (0.299 * r + 0.587 * g + 0.114 * b) > 160 ? '#231F20' : '#FFFFFF'; };
+        const rlLogo = c => (c && c.logo) || (fidCfg && fidCfg.logo) || (appState && appState.perfil && appState.perfil.logo) || '';
+        function rlRodaSvg(c) {
+            const pr = c.premios, n = pr.length, R = 200, cx = 210, cy = 210, a = 360 / n;
             const pt = (ang, r) => { const t = (ang - 90) * Math.PI / 180; return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; };
-            let h = `<svg class="rl-roda" id="rl-roda" viewBox="0 0 420 420" role="img" aria-label="Roleta com ${n} prémios" style="transform:rotate(${rlAngulo}deg)"><circle cx="210" cy="210" r="208" fill="#231F20"/>`;
+            let h = `<svg class="rl-roda" id="rl-roda" viewBox="0 0 420 420" role="img" aria-label="Roleta com ${n} fatias" style="transform:rotate(${rlAngulo}deg)"><circle cx="210" cy="210" r="208" fill="#231F20"/>`;
             pr.forEach((p, i) => {
-                const [x1, y1] = pt(i * a, R), [x2, y2] = pt((i + 1) * a, R), big = a > 180 ? 1 : 0, mid = i * a + a / 2;
-                h += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${big} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${p.nada ? '#E4DCCF' : cores[i]}" stroke="#231F20" stroke-width="2"/>`;
+                const [x1, y1] = pt(i * a, R), [x2, y2] = pt((i + 1) * a, R), big = a > 180 ? 1 : 0, mid = i * a + a / 2, bg = rlCorFatia(c, i);
+                h += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${R},${R} 0 ${big} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${bg}" stroke="#231F20" stroke-width="2"/>`;
                 const txt = (p.nome || '—').trim(), linhas = rlQuebrar(txt, n > 8 ? 12 : 14), fs = n > 8 ? 13 : (n > 6 ? 15 : 17);
-                h += `<g transform="rotate(${mid} ${cx} ${cy})"><text x="${cx}" y="${cy - R + 34}" text-anchor="middle" font-family="Schibsted Grotesk, sans-serif" font-weight="800" font-size="${fs}" fill="${p.nada ? '#5B4A40' : rlTinta(cores[i])}">${linhas.map((l, j) => `<tspan x="${cx}" dy="${j ? fs + 2 : 0}">${escapeHtml(l)}</tspan>`).join('')}</text></g>`;
+                h += `<g transform="rotate(${mid} ${cx} ${cy})"><text x="${cx}" y="${cy - R + 34}" text-anchor="middle" font-family="Schibsted Grotesk, sans-serif" font-weight="800" font-size="${fs}" fill="${rlTinta(bg)}">${linhas.map((l, j) => `<tspan x="${cx}" dy="${j ? fs + 2 : 0}">${escapeHtml(l)}</tspan>`).join('')}</text></g>`;
             });
             for (let i = 0; i < n; i++) { const [x, y] = pt(i * a, R - 6); h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="#fff"/>`; }
             // o centro (logótipo) faz parte da roda: preenchido até à borda e gira com ela
-            const logo = rlLogo();
+            const logo = rlLogo(c);
             if (logo) h += `<defs><clipPath id="rl-cl"><circle cx="${cx}" cy="${cy}" r="48"/></clipPath></defs><circle cx="${cx}" cy="${cy}" r="48" fill="#fff"/><image href="${escapeHtml(logo)}" x="${cx - 48}" y="${cy - 48}" width="96" height="96" preserveAspectRatio="xMidYMid slice" clip-path="url(#rl-cl)"/>`;
-            else h += `<circle cx="${cx}" cy="${cy}" r="48" fill="${escapeHtml(fidCor())}"/><text x="${cx}" y="${cy + 15}" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="44" fill="#fff">${escapeHtml(((currentEmpresa || 'D').trim()[0] || 'D').toUpperCase())}</text>`;
+            else h += `<circle cx="${cx}" cy="${cy}" r="48" fill="${escapeHtml(rlBrand(c))}"/><text x="${cx}" y="${cy + 15}" text-anchor="middle" font-family="Bricolage Grotesque, sans-serif" font-weight="800" font-size="44" fill="#fff">${escapeHtml(((currentEmpresa || 'D').trim()[0] || 'D').toUpperCase())}</text>`;
             h += `<circle cx="${cx}" cy="${cy}" r="48" fill="none" stroke="#231F20" stroke-width="5"/>`;
             return h + '</svg>';
         }
-        const rlLogo = () => (fidCfg && fidCfg.logo) || (appState && appState.perfil && appState.perfil.logo) || '';
         function rlQuebrar(t, max) {
             const w = t.split(/\s+/), l = []; let c = '';
             w.forEach(x => { if ((c + ' ' + x).trim().length > max && c) { l.push(c); c = x; } else c = (c + ' ' + x).trim(); });
             if (c) l.push(c); return l.slice(0, 3);
+        }
+        function rlPalcoHtml(c) {
+            return `<div class="rl-palco"><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(rlBrand(c))}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(c)}</div>`;
         }
         function rlPintar() {
             const box = document.getElementById('fid-roleta'); if (!box) return;
@@ -21179,65 +21227,121 @@ var qrcode = function() {
                 box.innerHTML = `<div class="rl-card"><div class="rl-bloq"><i class="fas fa-lock"></i><h3 class="mt-2">Roleta da sorte</h3><p class="sub">Os clientes giram a roleta e ganham prémios que você escolhe. Disponível nos planos Café e PRO.</p><button type="button" onclick="openUpgrade('cafe','A roleta da sorte é dos planos Café e PRO.')">Ver planos</button></div></div>`;
                 return;
             }
-            rlCfg = rlLer(); if (!rlRascunho) rlRascunho = JSON.parse(JSON.stringify(rlCfg.premios));
-            const pr = rlCfg.premios, k = rlCli && fidCartoes.find(x => x.id === rlCli);
+            rlCfg = rlLer();
+            const c = rlAtual(), k = rlCli && fidCartoes.find(x => x.id === rlCli), cheio = box.classList.contains('cheio');
             box.innerHTML = `<div class="rl-card">
-                    <h3>Roleta da sorte</h3>
-                    <p class="sub rl-cfg-only">O cliente gira a roleta e ganha o prémio onde a seta parar. Os prémios e as chances escolhe você, em baixo.</p>
-                    <div class="rl-palco"><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(fidCor())}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(pr)}</div>
-                    <button type="button" class="rl-girar" id="rl-girar" onclick="rlGirar()"><i class="fas fa-rotate-right"></i>Girar</button>
+                    <div class="rl-topo"><div class="min-w-0"><h3>${escapeHtml(c.titulo || 'Roleta da sorte')}</h3><p class="sub rl-cfg-only">O cliente gira a roleta e ganha o prémio onde a seta parar.</p></div>
+                        <button type="button" class="rl-def-bt rl-cfg-only ${rlDefAberta ? 'on' : ''}" onclick="rlDefAbrir()"><i class="fas fa-sliders"></i>Definições</button></div>
+                    <div id="rl-def" class="rl-cfg-only"></div>
+                    <div class="rl-cena ${c.fundo ? 'foto' : ''}" style="${c.fundo ? `--rlf:url('${escapeHtml(c.fundo)}')` : ''}">${rlPalcoHtml(c)}</div>
+                    <button type="button" class="rl-girar" id="rl-girar" onclick="rlGirar()" style="background:${escapeHtml(rlBrand(c))};color:${rlTinta(rlBrand(c))}"><i class="fas fa-rotate-right"></i>Girar</button>
                     <button type="button" class="rl-cli" onclick="rlEscolherCliente()"><i class="fas ${k ? 'fa-stamp' : 'fa-user-plus'}"></i><span>${k ? `${escapeHtml(k.nome)} · ${k.codigo}<small>O prémio fica registado no cartão deste cliente</small>` : `Para que cliente? <small>Opcional: escolha o cartão para registar o prémio</small>`}</span><b class="x">${k ? 'Trocar' : 'Escolher'}</b></button>
-                    <div class="rl-acoes">${k ? `<button type="button" onclick="rlCli='';rlPintar()"><i class="fas fa-xmark"></i>Sem cliente</button>` : ''}<button type="button" onclick="rlEcra()"><i class="fas ${box.classList.contains('cheio') ? 'fa-compress' : 'fa-expand'}"></i>${box.classList.contains('cheio') ? 'Sair do ecrã do cliente' : 'Mostrar ao cliente'}</button></div>
-                </div>
-                <div class="rl-sec"><b>Prémios e chances</b><p class="n">Cada fatia é um prémio. A chance diz quantas vezes em 100 a roleta para nessa fatia. Use "Sem prémio" para as fatias de "Tente outra vez".</p>
-                    <div class="rl-pl" id="rl-pl"></div>
-                    <p class="rl-tot" id="rl-tot"></p>
-                    <div class="rl-lin"><button type="button" onclick="rlJuntar(false)"><i class="fas fa-plus"></i>Prémio</button><button type="button" onclick="rlJuntar(true)"><i class="fas fa-plus"></i>Sem prémio</button><button type="button" onclick="rlIguais()"><i class="fas fa-equals"></i>Chances iguais</button></div>
-                    <label class="rl-ck"><input type="checkbox" id="rl-diario" ${rlCfg.diario ? 'checked' : ''}>Cada cliente gira só 1 vez por dia (quando escolhe o cartão)</label>
-                    <div class="rl-lin"><button type="button" class="p" onclick="rlGuardar()"><i class="fas fa-check"></i>Guardar a roleta</button></div>
+                    <div class="rl-acoes">${k ? `<button type="button" onclick="rlCli='';rlPintar()"><i class="fas fa-xmark"></i>Sem cliente</button>` : ''}<button type="button" onclick="rlEcra()"><i class="fas ${cheio ? 'fa-compress' : 'fa-expand'}"></i>${cheio ? 'Sair do ecrã do cliente' : 'Mostrar ao cliente'}</button></div>
                 </div>
                 <div class="rl-sec"><b>Últimos prémios</b>
-                    <div class="rl-log">${rlCfg.ultimos.length ? rlCfg.ultimos.slice(0, 10).map(u => `<div><span>${escapeHtml(u.premio)}${u.cliente ? ' · ' + escapeHtml(u.cliente) : ''}</span><small>${new Date(u.em).toLocaleString('pt-PT', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></div>`).join('') : '<p class="n" style="padding-top:6px">Ainda ninguém girou a roleta. Os prémios ganhos aparecem aqui.</p>'}</div>
+                    <div class="rl-log">${rlCfg.ultimos.length ? '' : '<p class="n" style="padding-top:6px">Ainda ninguém girou a roleta. Os prémios ganhos aparecem aqui.</p>'}</div>
                 </div>`;
+            if (rlCfg.ultimos.length) rlPintarLog();
+            if (rlDefAberta) rlDefPintar();
+        }
+        // só a roda e o fundo (pré-visualização ao vivo enquanto edita, sem perder o foco dos campos)
+        function rlPintarRoda() {
+            const c = rlAtual(), cena = document.querySelector('#fid-roleta .rl-cena'); if (!cena) return;
+            cena.classList.toggle('foto', !!c.fundo); cena.style.setProperty('--rlf', c.fundo ? `url('${c.fundo.replace(/'/g, '%27')}')` : '');
+            cena.innerHTML = rlPalcoHtml(c);
+            const h = document.querySelector('#fid-roleta .rl-topo h3'); if (h) h.textContent = c.titulo || 'Roleta da sorte';
+            const g = document.getElementById('rl-girar'); if (g) { g.style.background = rlBrand(c); g.style.color = rlTinta(rlBrand(c)); }
+        }
+
+        // ---------- Definições da roleta
+        function rlDefAbrir() {
+            if (rlDefAberta) return rlDefFechar();
+            rlDefAberta = true; rlRascunho = JSON.parse(JSON.stringify(rlLer())); rlPintar();
+            const d = document.getElementById('rl-def'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        async function rlDefFechar() {
+            if (rlRascunho && JSON.stringify(rlRascunho) !== JSON.stringify(rlLer()) && !(await dsConfirm('Sair sem guardar?', 'As alterações à roleta perdem-se.', { ok: 'Sair sem guardar' }))) return;
+            rlDefAberta = false; rlRascunho = null; rlPintar();
+        }
+        const RL_CORES = ['#983808', '#231F20', '#87300F', '#5B4A40', '#B45309', '#1E3A8A', '#14532D', '#9D174D'];
+        function rlDefPintar() {
+            const el = document.getElementById('rl-def'), r = rlRascunho; if (!el || !r) return;
+            const corCartao = fidCor(), brand = rlBrand(r);
+            const fotoBt = (campo, tem, txtSem, txtTirar) => `<div class="rl-img-bt"><label class="rl-b"><i class="fas fa-upload"></i>${tem ? 'Trocar' : txtSem}<input type="file" accept="image/*" class="hidden" onchange="rlCarregarFoto(this,'${campo}')"></label><button type="button" class="rl-b" onclick="fidLivres('rl-${campo}')"><i class="fas fa-images"></i>Imagens grátis</button>${tem ? `<button type="button" class="rl-b" onclick="rlRascunho.${campo}='';rlDefPintar();rlPintarRoda()">${txtTirar}</button>` : ''}</div>`;
+            el.innerHTML = `<div class="rl-def">
+                    <p class="rl-tt">Aparência</p>
+                    <label class="rl-f">Título por cima da roleta<input id="rl-d-tit" maxlength="40" value="${escapeHtml(r.titulo || '')}" placeholder="Roleta da sorte"></label>
+                    <div class="rl-f"><span>Logótipo no centro</span><div class="rl-img"><span class="pv redondo" style="${rlLogo(r) ? `background-image:url('${escapeHtml(rlLogo(r))}')` : `background:${brand}`}"></span>${fotoBt('logo', !!r.logo, 'Carregar logótipo', 'Usar o do cartão')}</div>
+                        <p class="n">${r.logo ? 'Logótipo só da roleta.' : 'Sem logótipo próprio, usamos o do cartão de fidelidade (ou o da conta).'} Fica recortado num círculo, preenchido até à borda.</p></div>
+                    <div class="rl-f"><span>Foto de fundo</span><div class="rl-img"><span class="pv largo" style="${r.fundo ? `background-image:url('${escapeHtml(r.fundo)}')` : 'background:#F6F3F0'}"></span>${fotoBt('fundo', !!r.fundo, 'Pôr uma foto', 'Sem foto')}</div>
+                        <p class="n">Aparece atrás da roleta, também no ecrã do cliente.</p></div>
+                    <div class="rl-f"><span>Cor da roleta</span><div class="rl-cores">${[...new Set([corCartao].concat(RL_CORES))].map(cc => `<button type="button" style="background:${cc}" class="${brand.toLowerCase() === cc.toLowerCase() ? 'on' : ''}" onclick="rlRascunho.cor='${cc === corCartao ? '' : cc}';rlDefPintar();rlPintarRoda()" aria-label="Cor ${cc}" title="${cc === corCartao ? 'A cor do cartão' : cc}"></button>`).join('')}<label class="mais" title="Outra cor"><input type="color" value="${brand}" oninput="rlRascunho.cor=this.value;rlPintarRoda()" onchange="rlDefPintar()"><i class="fas fa-eye-dropper"></i></label></div>
+                        <p class="n">Usada na seta, no botão Girar e nas fatias sem cor própria.</p></div>
+
+                    <p class="rl-tt">Prémios e chances</p>
+                    <p class="n">Cada fatia é um prémio. A chance diz quantas vezes em 100 a roleta para nessa fatia. Toque no quadrado para mudar a cor da fatia.</p>
+                    <div class="rl-pl" id="rl-pl"></div>
+                    <p class="rl-tot" id="rl-tot"></p>
+                    <div class="rl-lin"><button type="button" onclick="rlJuntar(false)"><i class="fas fa-plus"></i>Prémio</button><button type="button" onclick="rlJuntar(true)"><i class="fas fa-plus"></i>Sem prémio</button><button type="button" onclick="rlIguais()"><i class="fas fa-equals"></i>Chances iguais</button><button type="button" onclick="rlRascunho.premios.forEach(p=>p.cor='');rlListaPintar();rlPintarRoda()"><i class="fas fa-palette"></i>Cores automáticas</button></div>
+
+                    <p class="rl-tt">Regras</p>
+                    <label class="rl-ck"><input type="checkbox" id="rl-diario" ${r.diario ? 'checked' : ''} onchange="rlRascunho.diario=this.checked">Cada cliente gira só 1 vez por dia (quando escolhe o cartão)</label>
+
+                    <div class="rl-fim"><button type="button" class="rl-b" onclick="rlDefFechar()">Cancelar</button><button type="button" class="rl-b p" onclick="rlGuardar()"><i class="fas fa-check"></i>Guardar a roleta</button></div>
+                </div>`;
+            const t = document.getElementById('rl-d-tit'); t.addEventListener('input', () => { rlRascunho.titulo = t.value; rlPintarRoda(); });
             rlListaPintar();
         }
         function rlListaPintar() {
-            const el = document.getElementById('rl-pl'); if (!el) return;
-            const cores = rlCores(rlRascunho.length);
-            el.innerHTML = rlRascunho.map((p, i) => `<div class="rl-p ${p.nada ? 'nada' : ''}"><span class="cor" style="background:${p.nada ? '#E4DCCF' : cores[i]}"></span>
+            const el = document.getElementById('rl-pl'); if (!el || !rlRascunho) return;
+            const r = rlRascunho;
+            el.innerHTML = r.premios.map((p, i) => `<div class="rl-p ${p.nada ? 'nada' : ''}"><label class="cor" style="background:${rlCorFatia(r, i)}" title="Cor da fatia"><input type="color" value="${rlCorFatia(r, i)}" data-k="cor" data-i="${i}" aria-label="Cor da fatia ${i + 1}"></label>
                     <input data-k="nome" data-i="${i}" maxlength="40" value="${escapeHtml(p.nome)}" placeholder="${p.nada ? 'Tente outra vez' : 'Ex.: Um café grátis'}" aria-label="Prémio ${i + 1}">
                     <span class="ch"><input data-k="peso" data-i="${i}" type="number" inputmode="numeric" min="0" max="100" value="${p.peso}" aria-label="Chance do prémio ${i + 1}"><span>%</span></span>
-                    <button type="button" onclick="rlTirar(${i})" aria-label="Tirar esta fatia" ${rlRascunho.length <= 2 ? 'disabled style="opacity:.3"' : ''}><i class="fas fa-trash"></i></button></div>`).join('');
+                    <button type="button" onclick="rlTirar(${i})" aria-label="Tirar esta fatia" ${r.premios.length <= 2 ? 'disabled style="opacity:.3"' : ''}><i class="fas fa-trash"></i></button></div>`).join('');
             el.querySelectorAll('input').forEach(inp => inp.addEventListener('input', () => {
-                const p = rlRascunho[+inp.dataset.i]; if (!p) return;
-                if (inp.dataset.k === 'nome') p.nome = inp.value; else p.peso = Math.max(0, Math.min(100, parseInt(inp.value) || 0));
-                rlTotal();
+                const p = rlRascunho.premios[+inp.dataset.i]; if (!p) return;
+                if (inp.dataset.k === 'nome') p.nome = inp.value;
+                else if (inp.dataset.k === 'cor') { p.cor = inp.value; inp.parentElement.style.background = inp.value; }
+                else p.peso = Math.max(0, Math.min(100, parseInt(inp.value) || 0));
+                rlTotal(); rlPintarRoda();
             }));
             rlTotal();
         }
         function rlTotal() {
-            const t = rlRascunho.reduce((s, p) => s + (+p.peso || 0), 0), el = document.getElementById('rl-tot'); if (!el) return;
+            const t = rlRascunho.premios.reduce((s, p) => s + (+p.peso || 0), 0), el = document.getElementById('rl-tot'); if (!el) return;
             el.className = 'rl-tot' + (t === 100 ? '' : ' mau');
             el.textContent = t === 100 ? 'As chances somam 100%.' : `As chances somam ${t}%. Ajuste para somarem 100% (ou carregue em "Chances iguais").`;
         }
-        function rlJuntar(nada) { if (rlRascunho.length >= 12) return dsToast('A roleta tem no máximo 12 fatias.', true); rlRascunho.push({ nome: nada ? 'Tente outra vez' : '', peso: 0, nada: !!nada }); rlListaPintar(); const l = document.querySelectorAll('#rl-pl input[data-k="nome"]'); if (!nada && l.length) l[l.length - 1].focus(); }
-        function rlTirar(i) { if (rlRascunho.length <= 2) return; rlRascunho.splice(i, 1); rlListaPintar(); }
-        function rlIguais() { const n = rlRascunho.length, b = Math.floor(100 / n); rlRascunho.forEach((p, i) => p.peso = b + (i < 100 - b * n ? 1 : 0)); rlListaPintar(); }
+        function rlJuntar(nada) { const l = rlRascunho.premios; if (l.length >= 12) return dsToast('A roleta tem no máximo 12 fatias.', true); l.push({ nome: nada ? 'Tente outra vez' : '', peso: 0, nada: !!nada, cor: '' }); rlListaPintar(); rlPintarRoda(); const x = document.querySelectorAll('#rl-pl input[data-k="nome"]'); if (!nada && x.length) x[x.length - 1].focus(); }
+        function rlTirar(i) { const l = rlRascunho.premios; if (l.length <= 2) return; l.splice(i, 1); rlListaPintar(); rlPintarRoda(); }
+        function rlIguais() { const l = rlRascunho.premios, n = l.length, b = Math.floor(100 / n); l.forEach((p, i) => p.peso = b + (i < 100 - b * n ? 1 : 0)); rlListaPintar(); }
+        async function rlCarregarFoto(inp, campo) {
+            const f = inp.files && inp.files[0]; try { inp.value = ''; } catch (_) {} if (!f) return;
+            if (!/^image\//.test(f.type)) return dsToast('Escolha uma imagem.', true);
+            const op = campo === 'fundo' ? { titulo: 'Ajustar a foto de fundo', aspeto: 1, saida: 1200, inicio: 'cobrir' } : { titulo: 'Ajustar o logótipo', aspeto: 1, saida: 600, png: true, inicio: 'cobrir' };
+            const d = await dsRecortar(f, op); if (!d) return;
+            dsToast('A enviar a imagem…');
+            try { rlRascunho[campo] = await uploadPhoto(d, 'rl-' + campo); rlDefPintar(); rlPintarRoda(); dsToast('Imagem pronta. Carregue em Guardar a roleta.'); }
+            catch (e) { console.warn(e); dsToast('Não foi possível enviar a imagem. Tente de novo.', true); }
+        }
         async function rlSalvar(obj) {
             const { data, error } = await sb.from('fidelidade_cfg').upsert({ dono_id: fidDono(), roleta: obj }, { onConflict: 'dono_id' }).select('*').single();
             if (error) { console.warn(error); return false; }
             fidCfg = Object.assign(fidCfg || {}, data); return true;
         }
         async function rlGuardar() {
-            const l = rlRascunho.map(p => ({ nome: String(p.nome || '').trim().slice(0, 40), peso: Math.max(0, Math.min(100, +p.peso || 0)), nada: !!p.nada }));
+            const r = rlRascunho; if (!r) return;
+            const l = r.premios.map(p => ({ nome: String(p.nome || '').trim().slice(0, 40), peso: Math.max(0, Math.min(100, +p.peso || 0)), nada: !!p.nada, cor: rlHex(p.cor) }));
             if (l.some(p => !p.nome)) return dsToast('Escreva o nome de todos os prémios.', true);
             if (l.length < 2) return dsToast('A roleta precisa de pelo menos 2 fatias.', true);
             const t = l.reduce((s, p) => s + p.peso, 0);
             if (t !== 100) return dsToast(`As chances somam ${t}%. Ajuste para 100%.`, true);
             if (!l.some(p => !p.nada && p.peso > 0)) return dsToast('Ponha pelo menos um prémio com chance acima de 0%.', true);
             const atual = rlLer();
-            if (!(await rlSalvar({ premios: l, diario: document.getElementById('rl-diario').checked, ultimos: atual.ultimos }))) return dsToast('Não foi possível guardar a roleta. Tente de novo.', true);
-            rlRascunho = null; rlPintar(); dsToast('Roleta guardada.');
+            const obj = { titulo: String(r.titulo || '').trim().slice(0, 40) || 'Roleta da sorte', logo: rlUrl(r.logo), fundo: rlUrl(r.fundo), cor: rlHex(r.cor), premios: l, diario: !!r.diario, ultimos: atual.ultimos };
+            if (!(await rlSalvar(obj))) return dsToast('Não foi possível guardar a roleta. Tente de novo.', true);
+            rlDefAberta = false; rlRascunho = null; rlPintar(); dsToast('Roleta guardada.');
         }
         function rlEscolherCliente() {
             const pintar = q => {
@@ -21259,9 +21363,9 @@ var qrcode = function() {
         }
         async function rlGirar() {
             if (rlAGirar) return;
-            const cfg = rlLer(), pr = cfg.premios;
+            const teste = !!(rlDefAberta && rlRascunho), cfg = teste ? rlRascunho : rlLer(), pr = cfg.premios;
             if (pr.reduce((s, p) => s + p.peso, 0) <= 0) return dsToast('Escolha as chances dos prémios e guarde a roleta.', true);
-            const k = rlCli && fidCartoes.find(x => x.id === rlCli);
+            const k = !teste && rlCli && fidCartoes.find(x => x.id === rlCli);
             if (k && cfg.diario && (Array.isArray(k.historico) ? k.historico : []).some(h => h.t === 'roleta' && String(h.em || '').slice(0, 10) === rlHoje()))
                 return dsToast(`${k.nome.split(' ')[0]} já girou a roleta hoje. Volte amanhã.`, true);
             const i = rlSorteio(pr), n = pr.length, fatia = 360 / n;
@@ -21277,6 +21381,7 @@ var qrcode = function() {
             const p = pr[i];
             // registar
             const reg = { premio: p.nada ? 'Sem prémio' : p.nome, cliente: k ? k.nome.split(' ')[0] + ' · ' + k.codigo : '', em: new Date().toISOString() };
+            if (teste) { if (bt) { bt.disabled = false; bt.innerHTML = '<i class="fas fa-rotate-right"></i>Girar de novo'; } dsToast('Teste (não fica registado): ' + (p.nada ? 'sem prémio' : p.nome) + '.'); return; }
             rlSalvar(Object.assign({}, cfg, { ultimos: [reg].concat(cfg.ultimos).slice(0, 30) })).then(ok => { if (ok && document.getElementById('rl-pl') && !rlAGirar) { const lg = document.querySelector('#fid-roleta .rl-log'); if (lg) rlPintarLog(); } });
             if (k) {
                 const hist = (Array.isArray(k.historico) ? k.historico : []).concat([{ t: 'roleta', n: 0, premio: p.nada ? '' : p.nome, em: reg.em, por: (currentUser && currentUser.email) || '' }]).slice(-60);
@@ -21341,7 +21446,7 @@ var qrcode = function() {
             if (pg) pg.style.display = qual === 'roleta' ? 'none' : '';
             if (rl) { rl.style.display = qual === 'roleta' ? '' : 'none'; if (qual !== 'roleta') rl.classList.remove('cheio'); }
             document.querySelectorAll('#fid-sub button').forEach(b => b.classList.toggle('on', b.dataset.s === qual));
-            if (qual === 'roleta') { rlRascunho = null; rlPintar(); }
+            if (qual === 'roleta') { rlRascunho = null; rlDefAberta = false; rlPintar(); }
         }
         function fidSubMontar() {
             const t = document.getElementById('tab-fidelidade'), pg = document.getElementById('fid-page'); if (!t || !pg) return;
