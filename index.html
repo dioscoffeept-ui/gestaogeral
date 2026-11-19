@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:35</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:40</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795098385';
+        const DS_BUILD = '1795098585';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20873,7 +20873,7 @@ var qrcode = function() {
     <script>
         // link do cartão com a versão da imagem: o WhatsApp vai buscar a imagem nova (não usa a antiga guardada)
         // o mesmo link da imagem aprovada (cartao.html, com a cartao-og.png grande); funciona logo, mesmo num cartão acabado de criar
-        function fidLinkProg(p) { return fidBase() + 'cartao.html?n=' + p.curto; }
+        function fidLinkProg(p) { return fidBase() + 'cartao.html?n=' + p.curto + '&v=' + Date.now().toString(36); }   // link novo a cada envio: o WhatsApp não usa a pré-visualização antiga guardada
         // o link vai primeiro: assim o WhatsApp mostra a pré-visualização em grande, por cima do texto, numa só mensagem
         // SÓ o link: com texto junto, o WhatsApp põe a imagem pequena. Assim fica grande, como na imagem aprovada.
         function fidTextoProg(p) { return fidLinkProg(p); }
