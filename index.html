@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:30</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:35</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795098093';
+        const DS_BUILD = '1795098385';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20900,7 +20900,7 @@ var qrcode = function() {
         }
         async function fidEnviarComImagem(link, tel) {
             const url = 'https://api.whatsapp.com/send?' + (tel ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(link);
-            if (!fidNoComputador()) { window.open(url, '_blank', 'noopener'); return; }
+            window.open(url, '_blank', 'noopener'); return;   // um só clique: só o link (sem Ctrl+V)
             const ok = await fidCopiarImagemCartao();
             window.open(url, '_blank', 'noopener');
             if (!ok) return;
