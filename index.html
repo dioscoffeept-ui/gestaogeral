@@ -1315,7 +1315,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:40</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:45</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20276,7 +20276,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795098585';
+        const DS_BUILD = '1795098697';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -20873,7 +20873,7 @@ var qrcode = function() {
     <script>
         // link do cartão com a versão da imagem: o WhatsApp vai buscar a imagem nova (não usa a antiga guardada)
         // o mesmo link da imagem aprovada (cartao.html, com a cartao-og.png grande); funciona logo, mesmo num cartão acabado de criar
-        function fidLinkProg(p) { return fidBase() + 'cartao.html?n=' + p.curto + '&v=' + Date.now().toString(36); }   // link novo a cada envio: o WhatsApp não usa a pré-visualização antiga guardada
+        function fidLinkProg(p) { return fidBase() + 'cartao.html?n=' + p.curto; }
         // o link vai primeiro: assim o WhatsApp mostra a pré-visualização em grande, por cima do texto, numa só mensagem
         // SÓ o link: com texto junto, o WhatsApp põe a imagem pequena. Assim fica grande, como na imagem aprovada.
         function fidTextoProg(p) { return fidLinkProg(p); }
@@ -20898,19 +20898,28 @@ var qrcode = function() {
                 return true;
             } catch (e) { console.warn(e); return false; }
         }
+        // Como a 16/11: a imagem aprovada (cartao-og.png) vai como FOTO, em cima e grande, com o link por baixo — num só toque.
+        let fidOgFicheiro = null;
+        async function fidOgPreparar() {
+            if (fidOgFicheiro) return fidOgFicheiro;
+            try {
+                const blob = await fetch(fidBase() + 'cartao-og.png', { cache: 'force-cache' }).then(r => r.ok ? r.blob() : null);
+                if (blob) fidOgFicheiro = new File([blob], 'cartao-fidelidade.png', { type: 'image/png' });
+            } catch (_) {}
+            return fidOgFicheiro;
+        }
+        setTimeout(fidOgPreparar, 3000);   // já pronta quando carregar em Partilhar (o toque não se perde à espera)
         async function fidEnviarComImagem(link, tel) {
+            try {
+                const f = fidOgFicheiro || await fidOgPreparar();
+                if (f && navigator.canShare && navigator.canShare({ files: [f] })) {
+                    await navigator.share({ files: [f], text: link });
+                    return;
+                }
+            } catch (e) { if (e && e.name === 'AbortError') return; console.warn(e); }
+            // sem partilha de ficheiros neste aparelho: abre o WhatsApp só com o link
             const url = 'https://api.whatsapp.com/send?' + (tel ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(link);
-            window.open(url, '_blank', 'noopener'); return;   // um só clique: só o link (sem Ctrl+V)
-            const ok = await fidCopiarImagemCartao();
             window.open(url, '_blank', 'noopener');
-            if (!ok) return;
-            dsModal('fid-img', `<div class="flex items-start justify-between gap-3"><div><h3>Falta um passo no WhatsApp</h3></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fid-img')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
-                <ol style="list-style:decimal;padding-left:20px;margin-top:8px;font-size:15px;line-height:1.7">
-                    <li>No WhatsApp, com o link já escrito, carregue em <b>Ctrl + V</b> (no Mac, <b>⌘ + V</b>).</li>
-                    <li>Aparece a <b>imagem do cartão em grande</b>, com o link por baixo.</li>
-                    <li>Carregue em <b>Enviar</b>.</li></ol>
-                <p class="text-xs text-slate-500 mt-3">A imagem já está copiada. No telemóvel não é preciso este passo.</p>
-                <button type="button" class="w-full mt-4 rounded-xl py-3 font-black" style="background:var(--brand);color:#fff" onclick="dsModalFechar('fid-img')">Entendi</button>`);
         }
         async function fidShWhats(pid) {
             const p = fidProgPorId(pid); if (!p) return;
