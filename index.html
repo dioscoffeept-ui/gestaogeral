@@ -22242,6 +22242,7 @@ var qrcode = function() {
         let dsEnvioPendente = null;
         async function dsEnviarImagem(blob, nome, texto, tel) {
             const f = new File([blob], nome, { type: blob.type || 'image/png' });
+            if (blob.type === 'image/jpeg') try { dsToast('No WhatsApp, toque em HD antes de enviar para a foto seguir nítida.'); } catch (_) {}
             if (navigator.canShare && navigator.canShare({ files: [f] })) {
                 try { await navigator.share({ files: [f], text: texto }); return; }
                 catch (e) {
@@ -22256,7 +22257,7 @@ var qrcode = function() {
             try { const png = blob.type === 'image/png' ? blob : await dsParaPng(blob); await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]); copiada = true; } catch (e) { console.warn(e); }
             const u = URL.createObjectURL(blob);
             dsModal('ds-envio', `<div><div class="flex items-start justify-between gap-3"><h3>Enviar com a foto</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('ds-envio')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
-                <p class="text-sm text-slate-500 mt-1">${copiada ? '<b>A imagem já está copiada.</b> No WhatsApp, abra a conversa e cole com <b>Ctrl+V</b> (no Mac, <b>Cmd+V</b>): a foto fica em cima e o texto por baixo, na mesma mensagem.' : 'Guarde a imagem e junte-a na conversa do WhatsApp. O texto já vai escrito.'}</p>
+                <p class="text-sm text-slate-500 mt-1">${copiada ? '<b>A imagem já está copiada.</b> No WhatsApp, abra a conversa e cole com <b>Ctrl+V</b> (no Mac, <b>Cmd+V</b>): a foto fica em cima e o texto por baixo, na mesma mensagem.' : 'Guarde a imagem e junte-a na conversa do WhatsApp. O texto já vai escrito.'}${blob.type === 'image/jpeg' ? ' Antes de enviar, toque em <b>HD</b> para a foto seguir nítida.' : ''}</p>
                 <img src="${u}" alt="" style="width:100%;max-height:44vh;object-fit:contain;border-radius:14px;margin-top:12px;background:#F6F3F0">
                 <a class="bp" style="display:block;text-align:center;margin-top:12px;background:#25D366" href="https://api.whatsapp.com/send?${tel ? 'phone=' + tel + '&' : ''}text=${encodeURIComponent(texto)}" target="_blank" rel="noopener" onclick="setTimeout(()=>dsModalFechar('ds-envio'),400)"><i class="fab fa-whatsapp mr-1"></i>Abrir o WhatsApp</a>
                 <a style="display:block;text-align:center;margin-top:8px;padding:12px;border-radius:12px;border:1.5px solid #E4DCCF;font-weight:800;color:#24150E" href="${u}" download="${escapeHtml(nome)}"><i class="fas fa-download mr-1"></i>Guardar a imagem</a></div>`);
@@ -22302,12 +22303,14 @@ var qrcode = function() {
         async function eqImagemTabela(o) {
             try { await document.fonts.load('800 40px "Bricolage Grotesque"'); await document.fonts.load('700 20px "Schibsted Grotesk"'); } catch (_) {}
             const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
-            const S = 2, P = 36, NM = 250, CW = o.cw || 168, TW = o.tw || 150, nC = o.cols.length, W = P * 2 + NM + nC * CW + TW;
+            const P = 36, NM = 250, CW = o.cw || 168, TW = o.tw || 150, nC = o.cols.length, W = P * 2 + NM + nC * CW + TW;
             const cor = fidCor ? fidCor() : '#983808', linha = '#E4DCCF', txt = '#231F20', txt2 = '#5B4A40', txt3 = '#7A6A60', suave = '#FBEDE6', fundo = '#F6F3F0';
             // altura de cada linha conforme o que leva
             const LH = 21, alt = l => l.tipo === 'area' ? 40 : Math.max(64, 22 + Math.max(1, ...l.cels.map(c => c.reduce((a, it) => a + (it.chip ? 28 : LH), 0))) );
             const topo = 132, cab = 58, corpoH = o.linhas.reduce((a, l) => a + alt(l), 0), peH = (o.pe || []).length * 42, H = topo + cab + corpoH + peH + (o.nota ? 64 : 34) + P;
-            const cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S; const x = cv.getContext('2d'); x.scale(S, S);
+            // nitidez máxima que o WhatsApp mantém em HD (4096 px no lado maior)
+            const S = Math.min(3, 4096 / Math.max(W, H));
+            const cv = document.createElement('canvas'); cv.width = Math.round(W * S); cv.height = Math.round(H * S); const x = cv.getContext('2d'); x.scale(S, S); x.imageSmoothingQuality = 'high';
             x.fillStyle = fundo; x.fillRect(0, 0, W, H);
             // cabeçalho
             const logo = await fidCarregarImg((appState.perfil && appState.perfil.logo) || '');
@@ -22370,7 +22373,7 @@ var qrcode = function() {
             x.fillStyle = txt3; x.font = `600 15px ${B}`;
             if (o.nota) x.fillText(o.nota, P, cy0 + ch + 34);
             x.textAlign = 'right'; x.fillText("Feito com Dio'Stock", W - P, H - 18); x.textAlign = 'left';
-            return await new Promise(r => cv.toBlob(r, 'image/png'));
+            return await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.95));
         }
         function eqColsSemana(ks) { const hoje = eqKey(new Date()); return ks.map((k, i) => { const d = eqData(k); return { t: EQ_DIAS[i], s: `${d.getDate()} ${eqMes(d)}`, hj: k === hoje }; }); }
         async function eqImagemEscala() {
@@ -22417,7 +22420,7 @@ var qrcode = function() {
             return eqImagemTabela({ titulo: 'Tips da semana', sub: `${currentEmpresa ? currentEmpresa + ' · ' : ''}${eqSemanaTxt(eqSeg)}`, direita: eqEur(r.total), direitaSub: 'total recebido', cols: eqColsSemana(ks), linhas, pe, totTit: 'A receber', nmTit: 'Pessoa',
                 nota: ({ turno: 'Cada turno dividido em partes iguais por quem trabalhou', dia: 'Cada dia dividido por quem trabalhou', semana: 'A semana dividida por quem trabalhou' })[cfg.modo] + ({ iguais: '', turnos: ', pelos turnos trabalhados', horas: ', pelas horas' })[cfg.modo === 'turno' ? 'iguais' : cfg.divisao] + '. As faltas não recebem.' });
         }
-        const eqNomeFich = t => t + '-' + eqKey(eqSeg) + '.png';
+        const eqNomeFich = t => t + '-' + eqKey(eqSeg) + '.jpg';
         eqEnviarEscala = async function () {
             const bt = document.activeElement; if (bt && bt.tagName === 'BUTTON') { bt.disabled = true; setTimeout(() => { bt.disabled = false; }, 2500); }
             try { const b = await eqImagemEscala(); await dsEnviarImagem(b, eqNomeFich('escala'), `Escala da semana ${eqSemanaTxt(eqSeg)}${currentEmpresa ? ' · ' + currentEmpresa : ''}`, ''); }
