@@ -2241,6 +2241,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Nome da Receita *</label>
                         <input type="text" id="recipe-name" required class="w-full rounded-xl border-slate-300 text-sm">
                     </div>
+                    <div class="sm:col-span-3 order-last">
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Descrição <span class="normal-case font-semibold text-slate-400">(opcional · aparece no menu online)</span></label>
+                        <textarea id="recipe-descricao" rows="2" maxlength="300" placeholder="Ex.: Burrata, nozes, pesto e tomate cherry" class="w-full rounded-xl border-slate-300 text-sm"></textarea>
+                    </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Rendimento / Porção</label>
                         <input type="text" id="recipe-size" placeholder="Calculado pelos ingredientes" class="w-full rounded-xl border-slate-300 text-sm">
@@ -19136,7 +19140,7 @@ var qrcode = function() {
             saveStorage(); try { renderBarRecipes(); renderKitchenRecipes(); } catch (_) {}
             dsModalFechar('imp-rec');
             const semLig = lista.reduce((a, x) => a + x.ingredientes.filter(g => !g.item_id).length, 0);
-            dsToast(`${lista.length} ${lista.length === 1 ? 'ficha criada' : 'fichas criadas'}${semLig ? `. Faltam ligar ${semLig} ${semLig === 1 ? 'ingrediente' : 'ingredientes'} ao estoque.` : '.'}`);
+            dsToast(`${lista.length} ${lista.length === 1 ? 'ficha criada' : 'fichas criadas'}${semLig && appState.inventory.length ? `. Faltam ligar ${semLig} ${semLig === 1 ? 'ingrediente' : 'ingredientes'} ao estoque.` : '.'}`);
             const temCoz = lista.some(x => x.tipo === 'KITCHEN'), temBar = lista.some(x => x.tipo !== 'KITCHEN');
             try { switchTab(temBar || !temCoz ? 'bar' : 'kitchen'); } catch (_) {}
         }
@@ -22911,8 +22915,10 @@ function impLocal(txt) {
     const descIngs = d => d.replace(/\([^)]*\)/g, '').split(/,|;|\s+e\s+(?=[a-zà-ú])|\s+com\s+/i).map(x => x.trim().replace(/^(?:com|e)\s+/i, '').replace(/\.$/, '')).filter(x => x && x.length < 50 && !/^(base|opcional|à escolha)/i.test(x)).map(x => ({ nome: x.charAt(0).toUpperCase() + x.slice(1), quantidade: null, unidade: '', item_id: '' }));
     // 1) partir em pedaços: linhas e blocos separados por 2+ espaços
     let segs = String(txt).replace(/\r/g, '').split(/\n|\s{3,}|\t/).map(s => s.trim()).filter(Boolean);
+    // linhas partidas a meio (PDF, Word): a continuação começa por minúscula ou vem depois de vírgula/travessão
+    segs = segs.reduce((acc, x) => { const ant = acc[acc.length - 1]; if (ant && (/^[a-zà-ú(&]/.test(x) || /[,—–\-&]$|\s(e|com|de)$/i.test(ant))) acc[acc.length - 1] = ant + ' ' + x; else acc.push(x); return acc; }, []);
     // 2) secções coladas ao primeiro produto: "Entradas (Starters)Couvert — …", "PizzasTodas as…"
-    const out = []; let sec = '', ultimo = null;
+    const out = [], notaSec = {}; let sec = '', ultimo = null;
     const novaSec = s => { sec = semEn(limpa(s)).replace(/[:.]$/, ''); ultimo = null; };
     for (let s of segs) {
         let m = s.match(/^(.{2,70}?\([^)]{2,50}\))(?=[A-ZÀ-Ú])(.*)$/);
@@ -22946,13 +22952,17 @@ function impLocal(txt) {
         if (ultimo && /^\d+[.)]\s+/.test(s)) { (ultimo.passos = ultimo.passos || []).push(s.replace(/^\d+[.)]\s+/, '')); continue; }
         // título de secção solto (curto, sem preço)
         if (s.length <= 45 && !/[.!?]$/.test(s) && !/\d/.test(s) && /^[A-ZÀ-Ú]/.test(s)) { novaSec(s); continue; }
+        // título em lista ("Gin, Sangria, Cervejas, Soft Drinks & Cafetaria"): todas as palavras com maiúscula
+        if (s.length <= 80 && !/[.!?:]$/.test(s) && preco(s) == null && s.split(/[\s,]+/).filter(Boolean).every(w => /^[A-ZÀ-Ú0-9&]/.test(w) || /^(e|de|do|da|dos|das|com|&)$/i.test(w))) { novaSec(s); continue; }
+        // frase da secção ("Todas as pizzas levam…", "Acompanhamentos (escolha 1): …"): vira a descrição dos produtos dessa secção que não têm uma
+        if (s.length > 15 && preco(s) == null) { const ant = notaSec[sec]; notaSec[sec] = (ant && !/[.!?]$/.test(ant) ? ant + ' ' : '') + limpa(s).replace(/\s*Escolha um molho:?\s*$/i, '').replace(/:$/, ''); continue; }
         // nome de produto sozinho numa linha seguido de ingredientes nas linhas seguintes
     }
     const vistos = new Set();
     return out.filter(x => { const k = x.nome.toLowerCase(); if (vistos.has(k + '|' + x.pvp)) return false; vistos.add(k + '|' + x.pvp); return true; }).map(x => {
         const ingTxt = (x.ings || []).map(g => g.nome).join(' ');
         const tipo = COZ.test(x.sec) ? 'KITCHEN' : BAR.test(x.sec) || BAR.test(x.nome) || (!x.sec && /\b(caf[eé]|leite|gelo|xarope|t[oó]nica|sumo)\b/i.test(ingTxt) && !/\b(p[aã]o|queijo|fiambre|ovo)/i.test(ingTxt)) ? 'BAR' : 'KITCHEN';
-        return { nome: x.nome.slice(0, 80), tipo, categoria: (x.sec || '').slice(0, 40), tamanho: x.tamanho || '', pvp: x.pvp || null,
+        return { nome: x.nome.slice(0, 80), tipo, categoria: (x.sec || '').slice(0, 40), tamanho: x.tamanho || '', pvp: x.pvp || null, descricao: (x.desc || notaSec[x.sec] || '').replace(/\.$/, '').slice(0, 300),
             ingredientes: (x.ings && x.ings.length ? x.ings : (x.desc ? descIngs(x.desc) : [])).slice(0, 40), passos: x.passos || [] };
     });
 }
@@ -23049,6 +23059,56 @@ impLer = async function () {
     const ver = async () => { const v = await ler(); if (!v) return; if (!atual) { atual = v; return; } if (v !== atual) aviso(); };
     ver(); setInterval(ver, 5 * 60e3);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(); });
+})();
+</script>
+
+<script>
+// ======================================================= DESCRIÇÃO DA FICHA (menu online) — no formulário, na ficha aberta e na importação
+(function () {
+    const oOpen = openRecipeModal;
+    openRecipeModal = function () { const r = oOpen.apply(this, arguments); const d = document.getElementById('recipe-descricao'); if (d) d.value = ''; return r; };
+    const oEdit = editRecipe;
+    editRecipe = function (id) { const r = oEdit.apply(this, arguments); const rec = appState.recipes.find(x => x.id === id), d = document.getElementById('recipe-descricao'); if (d) d.value = (rec && rec.descricao) || ''; return r; };
+    const oSave = saveRecipe;
+    saveRecipe = function (e) {
+        const d = document.getElementById('recipe-descricao'), v = d ? d.value.trim().slice(0, 300) : '';
+        const id = document.getElementById('recipe-id').value, antes = new Set(appState.recipes.map(x => x.id));
+        const res = oSave.apply(this, arguments);
+        const rc = id ? appState.recipes.find(x => x.id === id) : appState.recipes.find(x => !antes.has(x.id));
+        if (rc) { if (v) rc.descricao = v; else delete rc.descricao; saveStorage(); }
+        return res;
+    };
+    const oView = openRecipeViewModal;
+    openRecipeViewModal = function (id) {
+        const res = oView.apply(this, arguments);
+        const rec = appState.recipes.find(x => x.id === id), h = document.getElementById('view-recipe-name');
+        let p = document.getElementById('view-recipe-desc');
+        if (h) { if (!p) { h.insertAdjacentHTML('afterend', '<p id="view-recipe-desc" class="text-sm font-semibold text-slate-600 mt-1" style="max-width:52ch"></p>'); p = document.getElementById('view-recipe-desc'); } p.textContent = (rec && rec.descricao) || ''; p.style.display = rec && rec.descricao ? '' : 'none'; }
+        return res;
+    };
+    // importação: mostrar e deixar corrigir a descrição; guardá-la na ficha
+    const oRever = impRever;
+    impRever = function (notas) {
+        const r = oRever.apply(this, arguments);
+        impRes.forEach((x, i) => {
+            const el = document.getElementById('imp-r' + i); if (!el || el.querySelector('.imp-desc')) return;
+            const meta = el.querySelector('.meta');
+            if (meta) meta.insertAdjacentHTML('afterend', `<textarea class="imp-desc" rows="2" maxlength="300" placeholder="Descrição (opcional)" oninput="impRes[${i}].descricao=this.value" style="width:100%;margin-top:8px;font-size:13px;border:1px solid #E4DCCF;border-radius:10px;padding:8px 10px">${escapeHtml(x.descricao || '')}</textarea>`);
+        });
+        return r;
+    };
+    const oCriar = impCriar;
+    impCriar = function () {
+        const antes = new Set(appState.recipes.map(x => x.id));
+        const sel = impRes.filter(x => x.usar && x.nome.trim());
+        const res = oCriar.apply(this, arguments);
+        const novas = appState.recipes.filter(x => !antes.has(x.id));
+        let ch = false;
+        const usados = new Set();
+        novas.forEach(rc => { const x = sel.find(y => !usados.has(y) && y.nome.trim() === rc.name); if (!x) return; usados.add(x); if ((x.descricao || '').trim()) { rc.descricao = x.descricao.trim().slice(0, 300); ch = true; } });
+        if (ch) { saveStorage(); try { renderBarRecipes(); renderKitchenRecipes(); } catch (_) {} }
+        return res;
+    };
 })();
 </script>
 </body>
