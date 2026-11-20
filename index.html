@@ -19000,7 +19000,7 @@ var qrcode = function() {
         function impAbrir(tipo) {
             if (!sb || !currentUser) return dsToast('Entre na sua conta para importar receitas.', true);
             impFich = []; window._impTipo = tipo || 'BAR';
-            dsModal('imp-rec', `<div class="flex items-start justify-between gap-3"><div><h3>Importar receitas</h3><p class="text-sm text-slate-500 mt-1">Envie as receitas escritas ou o menu inteiro. A IA cria as fichas e depois você confirma e liga os ingredientes ao estoque.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('imp-rec')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+            dsModal('imp-rec', `<div class="flex items-start justify-between gap-3"><div><h3>Importar receitas</h3><p class="text-sm text-slate-500 mt-1">Envie as receitas escritas ou o menu inteiro. Texto, Word e PDF são lidos na hora; as fotos são lidas com IA. Depois confirma as fichas (ligar ao estoque é opcional).</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('imp-rec')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 <label class="imp-zona" id="imp-zona"><input type="file" id="imp-in" class="hidden" multiple accept="image/*,application/pdf,.pdf,.docx,.txt,.md,.csv" onchange="impJuntar(this.files); this.value=''">
                     <i class="fas fa-file-arrow-up"></i><b>Escolher fotos, PDF ou documento</b><small>Fotos (até ${IMP_MAX}), PDF, Word (.docx) ou texto. No telemóvel pode tirar a foto na hora.</small></label>
                 <div class="imp-fich" id="imp-fich"></div>
@@ -19101,7 +19101,7 @@ var qrcode = function() {
                     ${bloqueada ? '<p class="nota">As fichas da Cozinha fazem parte do plano PRO.</p>' : ''}
                 </div>`;
             }).join('');
-            dsModal('imp-rec', `<div class="imp-topo"><div class="flex items-start justify-between gap-3"><div><h3>Confirme as fichas</h3><p class="text-sm text-slate-500 mt-1">Encontrei ${impRes.length} ${impRes.length === 1 ? 'receita' : 'receitas'}. Corrija o que for preciso e ligue os ingredientes ao estoque (pode fazer depois).</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('imp-rec')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+            dsModal('imp-rec', `<div class="imp-topo"><div class="flex items-start justify-between gap-3"><div><h3>Confirme as fichas</h3><p class="text-sm text-slate-500 mt-1">Encontrei ${impRes.length} ${impRes.length === 1 ? 'receita' : 'receitas'}. Corrija o que for preciso. Ligar os ingredientes ao estoque é opcional.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('imp-rec')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 ${notas ? `<p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2 mt-2"><i class="fas fa-triangle-exclamation mr-1"></i>${escapeHtml(notas)}</p>` : ''}
                 <div class="flex gap-2 mt-2 text-xs font-bold"><button type="button" class="text-slate-600 underline" onclick="impRes.forEach(x=>x.usar=!(x.tipo==='KITCHEN'&&!isPro()));impRever()">Marcar todas</button><button type="button" class="text-slate-600 underline" onclick="impRes.forEach(x=>x.usar=false);impRever()">Desmarcar todas</button></div></div>
                 ${html}
@@ -22887,6 +22887,146 @@ async function dsApagarFicha(id) {
 }
 deleteRecipe = function (id) { return dsApagarFicha(id); };
 viewRecipeDelete = function () { const id = viewRecipeId; if (id) return dsApagarFicha(id); };
+</script>
+
+<script>
+// ======================================================= IMPORTAR RECEITAS: leitura local (instantânea) para texto, Word e PDF com texto; IA só para fotos e PDF digitalizado
+// Leitor local de menus e receitas (sem IA): rápido e previsível.
+function impLocal(txt) {
+    const BAR = /(bebida|cocktail|aperitiv|\bgin\b|sangria|cerveja|sidra|soft|[áa]gua|cafetaria|\bcaf[eé]s?\b|\bch[aá]s?\b|sumo|smoothie|vinho|drink|\bbar\b|licor|espumante|refrigerante|limonada|batido|latte|cappuccino|expresso|espresso|mojito|gal[aã]o|meia de leite|carioca|garoto|mocha|matcha|frapp|iced|kombucha|caipiri|spritz|tonic|t[oó]nic|sour|negroni|fizz|\bcola\b|coca|ice ?tea|pellegrino|heineken|guaran)/i;
+    const COZ = /(entrada|massa|pizza|salada|sandu|sandes|tosta|prato|sobremesa|\bdoces?\b|bolo|pastelaria|brunch|pequeno|petisc|sopa|hamb|burger|wrap|bowl|panqueca|waffle|\bovos\b|infantil|acompanhamento|starter|main|dessert)/i;
+    const TAM = /^(ta[cç]a|pequen[ao]|grande|m[eé]di[ao]|jarro|copo|garrafa|caneca|espumante grande|meia|imperial|fino|pint)$/i;
+    const UN = { kg: ['g', 1000], g: ['g', 1], gr: ['g', 1], l: ['ml', 1000], lt: ['ml', 1000], litro: ['ml', 1000], litros: ['ml', 1000], cl: ['ml', 10], ml: ['ml', 1], un: ['un', 1], unid: ['un', 1], unidade: ['un', 1], unidades: ['un', 1], dose: ['doses', 1], doses: ['doses', 1], shot: ['doses', 1], shots: ['doses', 1], fatia: ['un', 1], fatias: ['un', 1], gotas: ['gotas', 1], pitada: ['pitadas', 1], pitadas: ['pitadas', 1], colher: ['g', 15], colheres: ['g', 15] };
+    const num = s => parseFloat(String(s).replace(',', '.'));
+    const limpa = s => String(s || '').replace(/\((?:new|novo|nova|novidade)\)/ig, '').replace(/\(\s*nota:[^)]*\)?/ig, '').replace(/\(\s*pre[cç]o[^)]*\)?/ig, '').replace(/\s+/g, ' ').replace(/^\s*(?:[•·*\-–—]+|\d+[.)])\s+/, '').replace(/\s*\($/, '').trim();
+    const semEn = s => s.replace(/\s*\((?:[A-Za-z][A-Za-z &'-]*)\)\s*$/, '').trim();   // "Entradas (Starters)" → "Entradas"
+    const preco = s => { const m = String(s).match(/(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:€|eur\b|euros?)|€\s*(\d{1,3}(?:[.,]\d{1,2})?)/i); return m ? num(m[1] || m[2]) : null; };
+    const qtdIng = s => {   // "leite meio-gordo 200 ml" | "200 ml de leite" | "2 fatias pão"
+        s = s.trim().replace(/\.$/, ''); let m;
+        const u = '(kg|gr|g|ml|cl|lt|litros?|l|un|unid|unidades?|doses?|shots?|fatias?|gotas|pitadas?|colher(?:es)?)';
+        if ((m = s.match(new RegExp('^(.*?)\\s+(\\d+(?:[.,]\\d+)?)\\s*' + u + '?$', 'i'))) && m[1]) { const k = UN[(m[3] || '').toLowerCase()]; return { nome: m[1].trim(), quantidade: num(m[2]) * (k ? k[1] : 1), unidade: k ? k[0] : 'un', item_id: '' }; }
+        if ((m = s.match(new RegExp('^(\\d+(?:[.,]\\d+)?)\\s*' + u + '?\\s+(?:de\\s+)?(.+)$', 'i')))) { const k = UN[(m[2] || '').toLowerCase()]; return { nome: m[3].trim(), quantidade: num(m[1]) * (k ? k[1] : 1), unidade: k ? k[0] : 'un', item_id: '' }; }
+        return { nome: s, quantidade: null, unidade: '', item_id: '' };
+    };
+    const descIngs = d => d.replace(/\([^)]*\)/g, '').split(/,|;|\s+e\s+(?=[a-zà-ú])|\s+com\s+/i).map(x => x.trim().replace(/^(?:com|e)\s+/i, '').replace(/\.$/, '')).filter(x => x && x.length < 50 && !/^(base|opcional|à escolha)/i.test(x)).map(x => ({ nome: x.charAt(0).toUpperCase() + x.slice(1), quantidade: null, unidade: '', item_id: '' }));
+    // 1) partir em pedaços: linhas e blocos separados por 2+ espaços
+    let segs = String(txt).replace(/\r/g, '').split(/\n|\s{3,}|\t/).map(s => s.trim()).filter(Boolean);
+    // 2) secções coladas ao primeiro produto: "Entradas (Starters)Couvert — …", "PizzasTodas as…"
+    const out = []; let sec = '', ultimo = null;
+    const novaSec = s => { sec = semEn(limpa(s)).replace(/[:.]$/, ''); ultimo = null; };
+    for (let s of segs) {
+        let m = s.match(/^(.{2,70}?\([^)]{2,50}\))(?=[A-ZÀ-Ú])(.*)$/);
+        if (m && !preco(m[1]) && !/[—–]/.test(m[1])) { novaSec(m[1]); s = m[2]; }
+        else if ((m = s.match(/^((?:[A-ZÀ-Ú][a-zà-ú]+)(?:\s(?:&|e|,)?\s?[A-ZÀ-Ú][a-zà-ú]+)*?[a-zà-ú])([A-ZÀ-Ú][a-zà-ú]+[\s:,])/)) && m[1].length < 50) { novaSec(m[1]); s = s.slice(m[1].length); }
+        s = s.trim(); if (!s) continue;
+        const p = preco(s), partes = s.split(/\s+[—–]\s+|\s+-\s+(?=\S)/).map(x => x.trim()).filter(Boolean);
+        // lista na mesma linha: "Aperitivos: Amarguinha (4€), Licor Beirão (4€)"
+        const inl = [...s.matchAll(/([^,:;()]+?)\s*\((\d{1,3}(?:[.,]\d{1,2})?)\s*€\)/g)];
+        if (inl.length >= 2 || (inl.length === 1 && /:\s*\S/.test(s.slice(s.indexOf(')') + 1)) === false && /^[^:]+:/.test(s))) {
+            const pref = (s.match(/^([^:]{2,60}):/) || [])[1];
+            const cat = pref ? semEn(limpa(pref)).replace(/\s*\([^)]*\)/, '') : sec;
+            for (const x of inl) {
+                let nome = limpa(x[1]).replace(/^[:\s]+/, '');
+                if (pref && TAM.test(nome)) nome = cat + ' ' + nome.toLowerCase();
+                if (nome) out.push({ nome, sec: cat, pvp: num(x[2]), desc: '' });
+            }
+            ultimo = null; continue;
+        }
+        if (partes.length >= 2 || (p != null && partes.length === 1)) {
+            const nome = limpa(partes[0].replace(/\s*\d{1,3}(?:[.,]\d{1,2})?\s*€.*$/, ''));
+            const resto = partes.slice(1).filter(x => preco(x) == null || !/^\s*\d/.test(x) || x.replace(/[\d.,€\s]/g, '').length > 2);
+            let tamanho = '', desc = [];
+            resto.forEach(x => { if (/^\d+(?:[.,]\d+)?\s*(ml|cl|l|g|kg|un|doses?)$/i.test(x)) tamanho = x; else if (preco(x) == null || x.replace(/[\d.,€\s]/g, '').length > 2) desc.push(x.replace(/\s*\(?\d{1,3}(?:[.,]\d{1,2})?\s*€\)?\s*$/, '')); });
+            if (nome && nome.length <= 70) { ultimo = { nome, sec, pvp: p, desc: limpa(desc.join(', ')), tamanho, ings: [] }; out.push(ultimo); }
+            continue;
+        }
+        // linha de ingredientes com quantidades a seguir a um produto
+        if (ultimo && /\d/.test(s) && /,|\d\s*(g|ml|cl|kg|l|un|dose)/i.test(s)) { s.split(/,|;/).map(x => x.trim()).filter(Boolean).forEach(x => ultimo.ings.push(qtdIng(x))); continue; }
+        // passo de preparação ("1. Misture…")
+        if (ultimo && /^\d+[.)]\s+/.test(s)) { (ultimo.passos = ultimo.passos || []).push(s.replace(/^\d+[.)]\s+/, '')); continue; }
+        // título de secção solto (curto, sem preço)
+        if (s.length <= 45 && !/[.!?]$/.test(s) && !/\d/.test(s) && /^[A-ZÀ-Ú]/.test(s)) { novaSec(s); continue; }
+        // nome de produto sozinho numa linha seguido de ingredientes nas linhas seguintes
+    }
+    const vistos = new Set();
+    return out.filter(x => { const k = x.nome.toLowerCase(); if (vistos.has(k + '|' + x.pvp)) return false; vistos.add(k + '|' + x.pvp); return true; }).map(x => {
+        const ingTxt = (x.ings || []).map(g => g.nome).join(' ');
+        const tipo = COZ.test(x.sec) ? 'KITCHEN' : BAR.test(x.sec) || BAR.test(x.nome) || (!x.sec && /\b(caf[eé]|leite|gelo|xarope|t[oó]nica|sumo)\b/i.test(ingTxt) && !/\b(p[aã]o|queijo|fiambre|ovo)/i.test(ingTxt)) ? 'BAR' : 'KITCHEN';
+        return { nome: x.nome.slice(0, 80), tipo, categoria: (x.sec || '').slice(0, 40), tamanho: x.tamanho || '', pvp: x.pvp || null,
+            ingredientes: (x.ings && x.ings.length ? x.ings : (x.desc ? descIngs(x.desc) : [])).slice(0, 40), passos: x.passos || [] };
+    });
+}
+
+async function impPdfTexto(f) {
+    const lib = await impCarregarScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', 'pdfjsLib');
+    lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await lib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise;
+    let t = '';
+    for (let n = 1; n <= Math.min(pdf.numPages, 30); n++) {
+        const pg = await pdf.getPage(n), c = await pg.getTextContent();
+        let y = null;
+        for (const it of c.items) {
+            const yy = it.transform ? Math.round(it.transform[5]) : y;
+            if (y !== null && Math.abs(yy - y) > 3) t += '\n'; else if (t && !/\s$/.test(t) && it.str && !/^\s/.test(it.str)) t += ' ';
+            t += it.str; y = yy; if (it.hasEOL) { t += '\n'; y = null; }
+        }
+        t += '\n\n';
+    }
+    return t;
+}
+impLer = async function () {
+    const bt = document.getElementById('imp-ler'), er = document.getElementById('imp-erro');
+    const txt0 = (document.getElementById('imp-txt').value || '').trim();
+    if (!impFich.length && !txt0) { er.textContent = 'Escolha um ficheiro ou cole o texto das receitas.'; er.classList.remove('hidden'); return; }
+    er.classList.add('hidden'); bt.disabled = true;
+    const passo = t => { bt.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i>' + t; };
+    try {
+        const ficheiros = []; let texto = txt0;
+        for (const f of impFich) {
+            passo('A abrir ' + f.name + '…');
+            if (/^image\//.test(f.type)) ficheiros.push({ media_type: 'image/jpeg', data: await impImagem(f) });
+            else if (/pdf/.test(f.type) || /\.pdf$/i.test(f.name)) {
+                let t = ''; try { t = await impPdfTexto(f); } catch (e) { console.warn('pdf', e); }
+                if (t.replace(/\s/g, '').length > 40) texto += '\n\n' + t;   // PDF com texto: lê-se aqui mesmo
+                else { if (f.size > 10 * 1024 * 1024) throw new Error(f.name + ' é demasiado grande para ler (máx. 10 MB).'); ficheiros.push({ media_type: 'application/pdf', data: await blobToB64(f) }); }
+            } else if (/\.docx$/i.test(f.name) || /wordprocessing/.test(f.type)) {
+                const m = await impCarregarScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js', 'mammoth');
+                const r = await m.extractRawText({ arrayBuffer: await f.arrayBuffer() });
+                texto += '\n\n' + (r.value || '');
+            } else texto += '\n\n' + await f.text();
+        }
+        let receitas = [], notas = '';
+        if (texto.trim()) { passo('A ler o texto…'); receitas = impLocal(texto); }
+        if (ficheiros.length || (!receitas.length && texto.trim())) {
+            passo(ficheiros.length ? 'A ler as fotos… (pode levar até 1 minuto)' : 'A ler com IA…');
+            const { data: ss } = await sb.auth.getSession();
+            const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 150000);
+            try {
+                const r = await fetch(SUPABASE_URL + '/functions/v1/ler-receitas', { method: 'POST', signal: ctl.signal,
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + ss.session.access_token, apikey: SUPABASE_KEY },
+                    body: JSON.stringify({ ficheiros, texto: receitas.length ? '' : texto.trim(), inventario: appState.inventory.map(i => ({ id: i.id, name: i.name, unit: i.unit })), cat_bar: appState.barCategories, cat_cozinha: appState.kitchenCategories }) });
+                const j = await r.json().catch(() => ({}));
+                if (r.ok && j.receitas) { receitas = receitas.concat(j.receitas); notas = j.notas || ''; }
+                else if (!receitas.length) throw new Error(j.mensagem || 'A leitura das fotos não respondeu agora. Tente de novo daqui a pouco, ou cole o texto do menu.');
+                else notas = 'As fotos não foram lidas agora (' + (j.mensagem || 'serviço ocupado') + '). As receitas do texto estão abaixo.';
+            } catch (e) {
+                if (!receitas.length) throw e.name === 'AbortError' ? new Error('A leitura das fotos demorou demasiado. Tente com menos fotos, ou cole o texto do menu.') : e;
+                notas = 'As fotos não foram lidas agora. As receitas do texto estão abaixo.';
+            } finally { clearTimeout(tm); }
+        }
+        if (!receitas.length) throw new Error('Não encontrei receitas. Escreva uma por linha, por exemplo: "Galão — 250 ml — 1,80 €".');
+        impRes = receitas.map(x => {
+            const ja = appState.recipes.some(r0 => normTxt(r0.name) === normTxt(x.nome));
+            const cats = x.tipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories;
+            const cat = cats.find(c => normTxt(c) === normTxt(x.categoria)) || x.categoria || '';
+            return Object.assign(x, { usar: !ja && (x.tipo !== 'KITCHEN' || isPro()), ja, categoria: cat, passos: x.passos || [],
+                ingredientes: (x.ingredientes || []).map(g => Object.assign(g, { item_id: appState.inventory.some(i => i.id === g.item_id) ? g.item_id : ((appState.inventory.find(i => normTxt(i.name) === normTxt(g.nome)) || {}).id || '') })) });
+        });
+        impRever(notas);
+    } catch (e) {
+        er.textContent = e.message || 'Não foi possível ler.'; er.classList.remove('hidden');
+    } finally { if (document.getElementById('imp-ler')) { bt.disabled = false; bt.innerHTML = '<i class="fas fa-wand-magic-sparkles mr-1.5"></i>Ler as receitas'; } }
+};
 </script>
 </body>
 </html>
