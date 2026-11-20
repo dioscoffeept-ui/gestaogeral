@@ -22811,5 +22811,67 @@ fidShWhats = async function (pid) {
 };
 fidShOutras = fidShWhats;
 </script>
+
+<style>
+/* ======================================================= TEMA CLARO: texto secundário sempre legível (contraste AA sobre o creme) */
+html:not(.dark) .text-slate-400, html:not(.dark) .text-gray-400, html:not(.dark) .text-stone-400, html:not(.dark) .text-zinc-400, html:not(.dark) .text-neutral-400 { color: #74655B !important; }
+html:not(.dark) .text-slate-500, html:not(.dark) .text-gray-500, html:not(.dark) .text-stone-500, html:not(.dark) .text-zinc-500 { color: #5B4A40 !important; }
+html:not(.dark) .text-slate-300, html:not(.dark) .text-gray-300, html:not(.dark) .text-stone-300 { color: #958479 !important; }
+html:not(.dark) input::placeholder, html:not(.dark) textarea::placeholder { color: #8A7A70 !important; opacity: 1; }
+html:not(.dark) #ds-onde-sub, html:not(.dark) .ds-indice > span { color: #6B5B52 !important; }
+html:not(.dark) .opacity-40, html:not(.dark) .opacity-50 { opacity: .62 !important; }
+html:not(.dark) .border-slate-100, html:not(.dark) .border-gray-100 { border-color: #E4DCCF !important; }
+
+/* ======================================================= FUNDO COM VIDA: luz quente e formas da marca, por trás de tudo */
+html:not(.dark) body {
+    background-image:
+        radial-gradient(900px 520px at 100% -8%, rgba(152, 56, 8, .13), transparent 62%),
+        radial-gradient(760px 520px at -12% 104%, rgba(225, 140, 60, .14), transparent 60%),
+        radial-gradient(520px 380px at 55% 46%, rgba(255, 255, 255, .55), transparent 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .14  0 0 0 0 .08  0 0 0 0 .05  0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") !important;
+    background-attachment: fixed !important;
+}
+html.dark body {
+    background-image:
+        radial-gradient(900px 520px at 100% -8%, rgba(224, 121, 79, .14), transparent 62%),
+        radial-gradient(760px 520px at -12% 104%, rgba(152, 56, 8, .16), transparent 60%) !important;
+    background-attachment: fixed !important;
+}
+#ds-deco { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+#ds-deco i { position: absolute; display: block; }
+#ds-deco .c1 { width: 420px; height: 420px; border-radius: 50%; right: -150px; top: 90px; background: rgba(152, 56, 8, .07); }
+#ds-deco .c2 { width: 180px; height: 180px; border-radius: 50%; right: 140px; top: 420px; border: 26px solid rgba(152, 56, 8, .06); }
+#ds-deco .q1 { width: 300px; height: 300px; left: -110px; bottom: -60px; border-radius: 44px; transform: rotate(18deg); background: rgba(225, 140, 60, .09); }
+#ds-deco .q2 { width: 120px; height: 120px; left: 18%; top: 140px; border-radius: 26px; transform: rotate(-12deg); background: rgba(152, 56, 8, .045); }
+#ds-deco .d1 { width: 260px; height: 260px; right: 8%; bottom: -40px; opacity: .07; background: no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='214 221 114 145'%3E%3Cpath fill='%23983808' fill-rule='evenodd' d='M285.94,221.79h-71.81v144.01h104.27l9.08-55.02-41.54-89ZM275.92,336.73h-31.92v-51.88h31.92v51.88Z'/%3E%3C/svg%3E"); }
+html.dark #ds-deco .c1, html.dark #ds-deco .q2 { background: rgba(255, 255, 255, .035); }
+html.dark #ds-deco .c2 { border-color: rgba(255, 255, 255, .04); }
+html.dark #ds-deco .q1 { background: rgba(224, 121, 79, .07); }
+html.dark #ds-deco .d1 { opacity: .05; filter: brightness(2.2); }
+@media (max-width: 767px) { #ds-deco .c1 { width: 280px; height: 280px; right: -120px; top: 70px; } #ds-deco .c2, #ds-deco .q2 { display: none; } #ds-deco .q1 { width: 200px; height: 200px; } #ds-deco .d1 { width: 170px; height: 170px; right: -20px; bottom: 60px; } }
+/* o conteúdo fica por cima das formas */
+body > main, main.flex-1 { position: relative; z-index: 1; }
+/* texto claro sobre os cartões escuros e título do topo no tema escuro */
+:is(#tab-home, #tab-inventory, #tab-sales, #tab-suppliers, #ds-x, body) .text-white\/75.text-white\/75.text-white\/75 { color: rgba(255, 255, 255, .78) !important; } :is(#tab-home, #tab-inventory, #tab-sales, #tab-suppliers, #ds-x, body) .text-white\/85.text-white\/85.text-white\/85 { color: rgba(255, 255, 255, .88) !important; }
+html.dark #ds-onde { color: #F2ECE4 !important; } html.dark #ds-onde-sub { color: #C9BBAF !important; }
+/* cartões com um pouco mais de presença */
+html:not(.dark) main .bg-white { box-shadow: 0 1px 0 rgba(35, 31, 32, .04), 0 10px 26px -18px rgba(91, 42, 18, .28); }
+</style>
+<script>
+(function () { if (document.getElementById('ds-deco')) return; const d = document.createElement('div'); d.id = 'ds-deco'; d.setAttribute('aria-hidden', 'true'); d.innerHTML = '<i class="c1"></i><i class="c2"></i><i class="q1"></i><i class="q2"></i><i class="d1"></i>'; document.body.prepend(d); })();
+</script>
+
+<style>
+/* ======================================================= TEMA ESCURO: as caixas brancas (cartões, janelas) ficam claras com texto escuro */
+html.dark :is(#tab-home, #tab-inventory, #tab-sales, #tab-suppliers) { --ink2: #E2D7CC !important; --ink3: #BDB0A4 !important; }
+html.dark :is(.ds-eyebrow, .ds-group) { color: #E0794F !important; } html.dark #imp-bt#imp-bt#imp-bt { color: #E0794F !important; }
+html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) { color: #231F20; color-scheme: light; }
+html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(.text-slate-400, .text-gray-400, .dark\:text-slate-400) { color: #74655B !important; }
+html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(.text-slate-500, .text-gray-500, .dark\:text-slate-500) { color: #5B4A40 !important; }
+html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(.text-slate-600, .text-slate-700, .text-gray-600, .text-gray-700, .dark\:text-slate-300, .dark\:text-slate-200, .dark\:text-slate-100, .dark\:text-white) { color: #3F3229 !important; }
+html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(.text-slate-800, .text-slate-900, .text-gray-800, .text-gray-900) { color: #231F20 !important; }
+html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(input, select, textarea) { background-color: #fff; color: #231F20; }
+html.dark #tab-sales .text-slate-500, html.dark #tab-suppliers .text-slate-500, html.dark #tab-inventory .text-slate-500, html.dark #tab-sales .text-slate-400, html.dark #tab-suppliers .text-slate-400, html.dark #tab-inventory .text-slate-400 { color: #BDB0A4 !important; }
+</style>
 </body>
 </html>
