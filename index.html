@@ -22428,5 +22428,24 @@ var qrcode = function() {
             catch (e) { console.warn(e); dsToast('Não foi possível criar a imagem das tips. Tente de novo.', true); }
         };
     </script>
+
+    <style>
+        /* Colaboradores: tudo cabe na largura, sem arrastar para o lado */
+        form[onsubmit="addCollaborator(event)"] { display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px !important; }
+        form[onsubmit="addCollaborator(event)"] > #set-colab-email, form[onsubmit="addCollaborator(event)"] > button { grid-column: 1 / -1; width: 100%; min-width: 0; }
+        form[onsubmit="addCollaborator(event)"] > select { width: 100%; min-width: 0; }
+        form[onsubmit="addCollaborator(event)"] > button { padding-top: 11px; padding-bottom: 11px; }
+        #set-colab-list, #set-colab-list > div, .settings-pane[data-pane="equipa"] { min-width: 0; max-width: 100%; }
+        #set-colab-list .cb-perm { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+        #set-colab-list .cb-perm select { width: 100%; min-width: 0; }
+        #set-colab-list p.truncate { max-width: 100%; }
+        .settings-pane[data-pane="equipa"] { overflow-x: hidden; }
+        /* separadores das Configurações: todos à vista no telemóvel (sem arrastar) */
+        @media (max-width: 639px) {
+            #settings-modal nav.no-scrollbar { display: grid !important; grid-template-columns: 1fr 1fr; gap: 6px; overflow: visible !important; }
+            #settings-modal nav.no-scrollbar .settings-tab { width: 100%; text-align: center; padding: 9px 6px; white-space: nowrap; }
+            #settings-modal nav.no-scrollbar .settings-tab i { width: auto; margin-right: 4px; }
+        }
+    </style>
 </body>
 </html>
