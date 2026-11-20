@@ -22599,5 +22599,80 @@ var qrcode = function() {
 html:not(.dark) { background-color: #F4EEE6 !important; }
 html.dark { background-color: #0b1120 !important; }
 </style>
+
+<script>
+// ======================================================= ESCALA / TIPS: escolher foto ou ficheiro PDF (nítido no WhatsApp)
+// PDF com a imagem lá dentro: o WhatsApp não o comprime e mostra a 1.ª página em grande
+async function dsPdfDeImagem(jpeg) {
+    const bmp = await createImageBitmap(jpeg); const iw = bmp.width, ih = bmp.height; try { bmp.close(); } catch (_) {}
+    const W = 842, H = Math.round(W * ih / iw);
+    const img = new Uint8Array(await jpeg.arrayBuffer());
+    const enc = t => new TextEncoder().encode(t);
+    const partes = [], offs = []; let tam = 0;
+    const add = b => { partes.push(b); tam += b.length; };
+    add(enc('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n'));
+    const obj = (n, corpo, stream) => { offs[n] = tam; add(enc(n + ' 0 obj\n' + corpo)); if (stream) { add(enc('\nstream\n')); add(stream); add(enc('\nendstream')); } add(enc('\nendobj\n')); };
+    const cont = enc(`q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`);
+    obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+    obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+    obj(3, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>`);
+    obj(4, `<< /Type /XObject /Subtype /Image /Width ${iw} /Height ${ih} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.length} >>`, img);
+    obj(5, `<< /Length ${cont.length} >>`, cont);
+    const x = tam; let xr = 'xref\n0 6\n0000000000 65535 f \n'; for (let i = 1; i <= 5; i++) xr += String(offs[i]).padStart(10, '0') + ' 00000 n \n';
+    add(enc(xr + `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`));
+    return new Blob(partes, { type: 'application/pdf' });
+}
+let eqEnvio = null;
+async function eqEnvioAbrir(tipo) {
+    dsModal('eq-envio', `<div style="text-align:center"><h3>A preparar…</h3><p class="text-sm text-slate-500 mt-2"><i class="fas fa-circle-notch fa-spin mr-1"></i>A criar a ${tipo === 'tips' ? 'tabela das tips' : 'escala'} em alta resolução</p></div>`);
+    try {
+        let img, texto;
+        if (tipo === 'tips') { const r = eqCalcular(eqSeg); img = await eqImagemTips(); texto = `Tips da semana ${eqSemanaTxt(eqSeg)}${currentEmpresa ? ' · ' + currentEmpresa : ''}: ${eqEur(r.total)}`; }
+        else { img = await eqImagemEscala(); texto = `Escala da semana ${eqSemanaTxt(eqSeg)}${currentEmpresa ? ' · ' + currentEmpresa : ''}`; }
+        const base = (tipo === 'tips' ? 'tips-' : 'escala-') + eqKey(eqSeg);
+        const pdf = await dsPdfDeImagem(img);
+        eqEnvio = { img, pdf, texto, base };
+        const u = URL.createObjectURL(img);
+        dsModal('eq-envio', `<div><div class="flex items-start justify-between gap-3"><h3>Enviar ${tipo === 'tips' ? 'as tips' : 'a escala'}</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-envio')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+            <img src="${u}" alt="" style="width:100%;max-height:34vh;object-fit:contain;border-radius:12px;margin-top:10px;background:#F6F3F0;border:1px solid #E4DCCF">
+            <button type="button" class="bp" style="width:100%;margin-top:12px;background:#25D366" onclick="eqEnvioPdf()"><i class="fas fa-file-pdf mr-1"></i>Enviar como ficheiro (nítido)</button>
+            <p class="text-xs text-slate-500" style="margin:6px 2px 0;text-align:center">O WhatsApp não reduz a qualidade. Abre com um toque e dá para ampliar.</p>
+            <button type="button" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1.5px solid #E4DCCF;font-weight:800;color:#231F20" onclick="eqEnvioFoto()"><i class="fas fa-image mr-1"></i>Enviar como foto</button>
+            <p class="text-xs text-slate-500" style="margin:6px 2px 0;text-align:center">No WhatsApp, toque em <b>HD</b> antes de enviar.</p></div>`);
+    } catch (e) { console.warn(e); dsModalFechar('eq-envio'); dsToast('Não foi possível criar o ficheiro. Tente de novo.', true); }
+}
+async function eqEnvioPdf() {
+    const e = eqEnvio; if (!e) return;
+    const f = new File([e.pdf], e.base + '.pdf', { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        try { await navigator.share({ files: [f], text: e.texto }); dsModalFechar('eq-envio'); return; }
+        catch (err) { if (err && err.name === 'AbortError') return; console.warn(err); }
+    }
+    // computador: guarda o PDF e abre o WhatsApp para o juntar
+    const a = document.createElement('a'); a.href = URL.createObjectURL(e.pdf); a.download = e.base + '.pdf'; document.body.appendChild(a); a.click(); a.remove();
+    dsModal('eq-envio', `<div><div class="flex items-start justify-between gap-3"><h3>Ficheiro guardado</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-envio')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+        <p class="text-sm text-slate-500 mt-1">O ficheiro <b>${escapeHtml(e.base)}.pdf</b> está nas Transferências. No WhatsApp, abra a conversa, toque no clipe <b>📎 → Documento</b> e escolha o ficheiro.</p>
+        <a class="bp" style="display:block;text-align:center;margin-top:12px;background:#25D366" href="https://web.whatsapp.com/" target="_blank" rel="noopener"><i class="fab fa-whatsapp mr-1"></i>Abrir o WhatsApp</a></div>`);
+}
+async function eqEnvioFoto() {
+    const e = eqEnvio; if (!e) return; dsModalFechar('eq-envio');
+    await dsEnviarImagem(e.img, e.base + '.jpg', e.texto, '');
+}
+eqEnviarEscala = function () { return eqEnvioAbrir('escala'); };
+eqEnviarTips = function () { return eqEnvioAbrir('tips'); };
+
+// ======================================================= CARTÃO: só o link, para o WhatsApp mostrar a imagem grande em cima e o texto por baixo, numa só mensagem
+function fidAbrirWhats(link, tel) {
+    const url = 'https://api.whatsapp.com/send?' + (tel ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(link);
+    const w = window.open(url, '_blank', 'noopener'); if (!w) location.href = url;
+}
+fidShWhats = function (pid) { const p = fidProgPorId(pid); if (!p) return; dsModalFechar('fid-sh'); fidAbrirWhats(fidLinkProg(p), ''); };
+fidShOutras = async function (pid) { const p = fidProgPorId(pid); if (!p) return; try { await navigator.share({ url: fidLinkProg(p) }); dsModalFechar('fid-sh'); } catch (e) { if (!e || e.name !== 'AbortError') fidShWhats(pid); } };
+fidWhats = function (id) {
+    const k = fidCartoes.find(x => x.id === id); if (!k) return;
+    let tel = ''; if (k.telefone) { tel = k.telefone.replace(/\D/g, ''); if (tel.length === 9) tel = '351' + tel; }
+    fidAbrirWhats(fidLinkCartao(k), tel);
+};
+</script>
 </body>
 </html>
