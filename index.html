@@ -22234,5 +22234,199 @@ var qrcode = function() {
             settingsMsg(campo === 'permissao' ? `Acesso mudado para "${PERM_TXT[v]}". Vale a partir da próxima vez que a pessoa abrir o Dio'Stock.` : 'Guardado.', 'ok');
         }
     </script>
+
+    <script>
+        // ======================================================= ENVIAR COM FOTO: a imagem vai em cima, o texto e o link por baixo (numa só mensagem)
+        // Telemóvel: partilha a foto com a legenda. Computador: copia a foto e abre o WhatsApp com o texto; basta colar (Ctrl+V).
+        let dsEnvioPendente = null;
+        async function dsEnviarImagem(blob, nome, texto, tel) {
+            const f = new File([blob], nome, { type: blob.type || 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [f] })) {
+                try { await navigator.share({ files: [f], text: texto }); return; }
+                catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                    // o aparelho pediu um toque novo (a imagem demorou a ficar pronta): mais um toque e segue
+                    if (e && e.name === 'NotAllowedError') { dsEnvioPendente = { f, texto }; dsModal('ds-envio', `<div style="text-align:center"><h3>Imagem pronta</h3><p class="text-sm text-slate-500 mt-1">Toque para escolher a conversa. A foto vai em cima e o texto com o link por baixo.</p><img src="${URL.createObjectURL(blob)}" alt="" style="width:100%;max-height:46vh;object-fit:contain;border-radius:14px;margin-top:12px"><button type="button" class="bp" style="width:100%;margin-top:12px" onclick="dsEnviarPendente()"><i class="fab fa-whatsapp mr-1"></i>Enviar</button></div>`); return; }
+                    console.warn(e);
+                }
+            }
+            // computador (ou aparelho sem partilha de ficheiros)
+            let copiada = false;
+            try { const png = blob.type === 'image/png' ? blob : await dsParaPng(blob); await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })]); copiada = true; } catch (e) { console.warn(e); }
+            const u = URL.createObjectURL(blob);
+            dsModal('ds-envio', `<div><div class="flex items-start justify-between gap-3"><h3>Enviar com a foto</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('ds-envio')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <p class="text-sm text-slate-500 mt-1">${copiada ? '<b>A imagem já está copiada.</b> No WhatsApp, abra a conversa e cole com <b>Ctrl+V</b> (no Mac, <b>Cmd+V</b>): a foto fica em cima e o texto por baixo, na mesma mensagem.' : 'Guarde a imagem e junte-a na conversa do WhatsApp. O texto já vai escrito.'}</p>
+                <img src="${u}" alt="" style="width:100%;max-height:44vh;object-fit:contain;border-radius:14px;margin-top:12px;background:#F6F3F0">
+                <a class="bp" style="display:block;text-align:center;margin-top:12px;background:#25D366" href="https://api.whatsapp.com/send?${tel ? 'phone=' + tel + '&' : ''}text=${encodeURIComponent(texto)}" target="_blank" rel="noopener" onclick="setTimeout(()=>dsModalFechar('ds-envio'),400)"><i class="fab fa-whatsapp mr-1"></i>Abrir o WhatsApp</a>
+                <a style="display:block;text-align:center;margin-top:8px;padding:12px;border-radius:12px;border:1.5px solid #E4DCCF;font-weight:800;color:#24150E" href="${u}" download="${escapeHtml(nome)}"><i class="fas fa-download mr-1"></i>Guardar a imagem</a></div>`);
+        }
+        async function dsEnviarPendente() {
+            const p = dsEnvioPendente; if (!p) return; dsModalFechar('ds-envio');
+            try { await navigator.share({ files: [p.f], text: p.texto }); } catch (e) { if (!e || e.name !== 'AbortError') console.warn(e); }
+            dsEnvioPendente = null;
+        }
+        function dsParaPng(blob) {
+            return new Promise((ok, ko) => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight; c.getContext('2d').drawImage(i, 0, 0); c.toBlob(b => b ? ok(b) : ko(new Error('png')), 'image/png'); }; i.onerror = ko; i.src = URL.createObjectURL(blob); });
+        }
+
+        // ---------- cartão de fidelidade: vai a imagem real do cartão (com a cor, o carimbo e o fundo da loja)
+        // partilhar o cartão com clientes novos: o cartão da loja, como o cliente o vai ver
+        fidShWhats = async function (pid) {
+            const p = fidProgPorId(pid); if (!p) return;
+            dsModalFechar('fid-sh');
+            let blob = null; try { blob = await fidProgPreparar(p); } catch (e) { console.warn(e); }
+            if (!blob) return fidEnviarComImagem(fidTextoProg(p), '');
+            await dsEnviarImagem(blob, 'cartao-' + (p.nome || 'fidelidade').normalize('NFD').replace(/[^\w]+/g, '-').toLowerCase() + '.png', fidTextoProg(p), '');
+        };
+        fidShOutras = async function (pid) { return fidShWhats(pid); };
+        // enviar a um cliente o SEU cartão: os carimbos dele, o nome e o código
+        fidWhats = async function (id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const txt = fidMensagem(k);
+            let tel = ''; if (k.telefone) { tel = k.telefone.replace(/\D/g, ''); if (tel.length === 9) tel = '351' + tel; }
+            let blob = null; try { blob = await fidPreparar(k); } catch (e) { console.warn(e); }
+            if (!blob) return fidEnviarComImagem(txt, tel);
+            await dsEnviarImagem(blob, 'cartao-' + String(k.nome || 'cliente').split(' ')[0].normalize('NFD').replace(/[^\w]+/g, '').toLowerCase() + '.png', txt, tel);
+        };
+        // deixar as imagens prontas antes do toque (assim a partilha abre logo)
+        (function () {
+            const oP = fidPartilhar;
+            fidPartilhar = function (pid) { const r = oP.apply(this, arguments); try { const p = fidProgPorId(pid) || fidProgPadrao(); if (p && fidCfg && fidCfg.ligado) fidProgPreparar(p).catch(() => {}); } catch (_) {} return r; };
+        })();
+        document.addEventListener('pointerdown', ev => {
+            try { const b = ev.target.closest && ev.target.closest('[onclick*="fidWhats("]'); if (!b) return; const id = (/fidWhats\('([^']+)'/.exec(b.getAttribute('onclick')) || [])[1]; const k = id && fidCartoes.find(x => x.id === id); if (k) fidPreparar(k).catch(() => {}); } catch (_) {}
+        }, true);
+
+        // ======================================================= EQUIPE: escala e tips enviadas como FOTO
+        async function eqImagemTabela(o) {
+            try { await document.fonts.load('800 40px "Bricolage Grotesque"'); await document.fonts.load('700 20px "Schibsted Grotesk"'); } catch (_) {}
+            const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
+            const S = 2, P = 36, NM = 250, CW = o.cw || 168, TW = o.tw || 150, nC = o.cols.length, W = P * 2 + NM + nC * CW + TW;
+            const cor = fidCor ? fidCor() : '#983808', linha = '#E4DCCF', txt = '#231F20', txt2 = '#5B4A40', txt3 = '#7A6A60', suave = '#FBEDE6', fundo = '#F6F3F0';
+            // altura de cada linha conforme o que leva
+            const LH = 21, alt = l => l.tipo === 'area' ? 40 : Math.max(64, 22 + Math.max(1, ...l.cels.map(c => c.reduce((a, it) => a + (it.chip ? 28 : LH), 0))) );
+            const topo = 132, cab = 58, corpoH = o.linhas.reduce((a, l) => a + alt(l), 0), peH = (o.pe || []).length * 42, H = topo + cab + corpoH + peH + (o.nota ? 64 : 34) + P;
+            const cv = document.createElement('canvas'); cv.width = W * S; cv.height = H * S; const x = cv.getContext('2d'); x.scale(S, S);
+            x.fillStyle = fundo; x.fillRect(0, 0, W, H);
+            // cabeçalho
+            const logo = await fidCarregarImg((appState.perfil && appState.perfil.logo) || '');
+            let tx = P; if (logo) { x.save(); x.beginPath(); x.roundRect ? x.roundRect(P, 32, 64, 64, 16) : x.rect(P, 32, 64, 64); x.clip(); const sc = Math.max(64 / logo.width, 64 / logo.height); x.drawImage(logo, P + (64 - logo.width * sc) / 2, 32 + (64 - logo.height * sc) / 2, logo.width * sc, logo.height * sc); x.restore(); tx = P + 82; }
+            x.fillStyle = txt; x.font = `800 36px ${T}`; x.fillText(o.titulo, tx, 66);
+            x.fillStyle = txt2; x.font = `600 18px ${B}`; x.fillText(o.sub || '', tx, 94);
+            if (o.direita) { x.textAlign = 'right'; x.fillStyle = cor; x.font = `800 30px ${T}`; x.fillText(o.direita, W - P, 66); x.fillStyle = txt3; x.font = `600 16px ${B}`; x.fillText(o.direitaSub || '', W - P, 92); x.textAlign = 'left'; }
+            // cartão branco
+            const cx0 = P, cy0 = topo, cw = W - 2 * P, ch = cab + corpoH + peH;
+            x.fillStyle = '#fff'; x.strokeStyle = linha; x.lineWidth = 1.5; x.beginPath(); x.roundRect ? x.roundRect(cx0, cy0, cw, ch, 18) : x.rect(cx0, cy0, cw, ch); x.fill(); x.stroke();
+            x.save(); x.beginPath(); x.roundRect ? x.roundRect(cx0, cy0, cw, ch, 18) : x.rect(cx0, cy0, cw, ch); x.clip();
+            x.fillStyle = fundo; x.fillRect(cx0, cy0, cw, cab);
+            const colX = i => cx0 + NM + i * CW, totX = cx0 + NM + nC * CW;
+            x.textAlign = 'center';
+            o.cols.forEach((c, i) => { x.fillStyle = c.hj ? cor : txt2; x.font = `800 17px ${B}`; x.fillText(c.t, colX(i) + CW / 2, cy0 + 26); x.fillStyle = txt3; x.font = `600 14px ${B}`; x.fillText(c.s || '', colX(i) + CW / 2, cy0 + 46); });
+            x.fillStyle = txt2; x.font = `800 17px ${B}`; x.fillText(o.totTit || 'Semana', totX + TW / 2, cy0 + 36);
+            x.textAlign = 'left'; x.fillStyle = txt2; x.font = `800 16px ${B}`; x.fillText(o.nmTit || 'Pessoa', cx0 + 18, cy0 + 36);
+            let y = cy0 + cab;
+            const hr = yy => { x.strokeStyle = linha; x.lineWidth = 1; x.beginPath(); x.moveTo(cx0, yy); x.lineTo(cx0 + cw, yy); x.stroke(); };
+            hr(y);
+            const corta = (t, max) => { t = String(t || ''); if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; };
+            o.linhas.forEach(l => {
+                const h = alt(l);
+                if (l.tipo === 'area') { x.fillStyle = fundo; x.fillRect(cx0, y, cw, h); x.fillStyle = txt2; x.font = `800 14px ${B}`; x.fillText(String(l.nome).toUpperCase(), cx0 + 18, y + 26); y += h; hr(y); return; }
+                if (l.destaque) { x.fillStyle = suave; x.fillRect(totX, y, TW, h); }
+                x.fillStyle = l.cor || cor; x.beginPath(); x.arc(cx0 + 24, y + h / 2, 6, 0, 7); x.fill();
+                x.fillStyle = txt; x.font = `800 18px ${B}`; x.fillText(corta(l.nome, NM - 54), cx0 + 40, y + h / 2 + (l.sub ? -2 : 6));
+                if (l.sub) { x.fillStyle = txt3; x.font = `600 13px ${B}`; x.fillText(corta(l.sub, NM - 54), cx0 + 40, y + h / 2 + 17); }
+                x.textAlign = 'center';
+                l.cels.forEach((c, i) => {
+                    const mx = colX(i) + CW / 2, tot = c.reduce((a, it) => a + (it.chip ? 28 : LH), 0); let yy = y + (h - tot) / 2;
+                    if (c.fundo) { x.fillStyle = c.fundo; x.beginPath(); x.roundRect ? x.roundRect(colX(i) + 8, y + 7, CW - 16, h - 14, 12) : x.rect(colX(i) + 8, y + 7, CW - 16, h - 14); x.fill(); }
+                    c.forEach(it => {
+                        if (it.chip) {
+                            x.font = `800 14px ${B}`; const w = x.measureText(it.t).width + 18;
+                            x.fillStyle = it.x ? '#FEE2E2' : suave; x.beginPath(); x.roundRect ? x.roundRect(mx - w / 2, yy + 3, w, 22, 11) : x.rect(mx - w / 2, yy + 3, w, 22); x.fill();
+                            x.fillStyle = it.x ? '#B91C1C' : cor; x.fillText(it.t, mx, yy + 19);
+                            if (it.x) { x.strokeStyle = '#B91C1C'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(mx - w / 2 + 8, yy + 14); x.lineTo(mx + w / 2 - 8, yy + 14); x.stroke(); }
+                            yy += 28;
+                        } else {
+                            x.font = `${it.forte ? 800 : 700} ${it.tam || 15}px ${B}`; x.fillStyle = it.cor || (it.fraco ? txt3 : txt);
+                            x.fillText(corta(it.t, CW - 14), mx, yy + 16); yy += LH;
+                        }
+                    });
+                });
+                x.font = `800 ${l.totTam || 17}px ${B}`; x.fillStyle = txt; x.fillText(l.tot || '', totX + TW / 2, y + h / 2 + (l.totSub ? -2 : 6));
+                if (l.totSub) { x.font = `600 13px ${B}`; x.fillStyle = l.totSubCor || txt3; x.fillText(l.totSub, totX + TW / 2, y + h / 2 + 17); }
+                x.textAlign = 'left';
+                y += h; hr(y);
+            });
+            (o.pe || []).forEach(r => {
+                x.fillStyle = fundo; x.fillRect(cx0, y, cw, 42);
+                x.fillStyle = txt; x.font = `800 16px ${B}`; x.fillText(r.nome, cx0 + 18, y + 27);
+                x.textAlign = 'center'; r.vals.forEach((v, i) => x.fillText(v, colX(i) + CW / 2, y + 27)); if (r.tot) x.fillText(r.tot, totX + TW / 2, y + 27); x.textAlign = 'left';
+                y += 42; hr(y);
+            });
+            // linhas verticais
+            x.strokeStyle = linha; x.lineWidth = 1; x.beginPath(); x.moveTo(cx0 + NM, cy0); x.lineTo(cx0 + NM, cy0 + ch); x.moveTo(totX, cy0); x.lineTo(totX, cy0 + ch); x.stroke();
+            x.restore();
+            x.fillStyle = txt3; x.font = `600 15px ${B}`;
+            if (o.nota) x.fillText(o.nota, P, cy0 + ch + 34);
+            x.textAlign = 'right'; x.fillText("Feito com Dio'Stock", W - P, H - 18); x.textAlign = 'left';
+            return await new Promise(r => cv.toBlob(r, 'image/png'));
+        }
+        function eqColsSemana(ks) { const hoje = eqKey(new Date()); return ks.map((k, i) => { const d = eqData(k); return { t: EQ_DIAS[i], s: `${d.getDate()} ${eqMes(d)}`, hj: k === hoje }; }); }
+        async function eqImagemEscala() {
+            const e = eqDados(), ks = eqSemanaKeys(eqSeg), areas = eqAreas(), varias = areas.length > 1 || (areas[0] || '') !== '';
+            const linhas = [];
+            areas.forEach(a => {
+                const l = e.staff.filter(s => eqArea(s) === a); if (!l.length) return;
+                if (varias) linhas.push({ tipo: 'area', nome: a || 'Sem área' });
+                l.forEach(s => {
+                    let h = 0, f = 0, fl = 0;
+                    const cels = ks.map(k => {
+                        const c = eqCel(k, s.id); if (c && c.folga) f++; fl += eqFaltas(c); if (eqTrab(c)) h += eqHorasCel(c, s);
+                        if (!c) return [{ t: '—', fraco: true }];
+                        if (c.folga) return Object.assign([{ t: 'Folga', fraco: true, forte: true }], { fundo: '#F6F3F0' });
+                        if (c.fd) return Object.assign([{ t: 'Falta', cor: '#B91C1C', forte: true }].concat(c.fm ? [{ t: c.fm, fraco: true, tam: 13 }] : []), { fundo: '#FEE2E2' });
+                        const ft = c.ft || [], out = [];
+                        (c.t || []).filter(eqTurno).forEach(id => { out.push({ chip: true, t: eqTurnoNome(id), x: ft.includes(id) }); if (!(c.ini && c.fim)) { const hh = eqTurnoH(s, id); out.push({ t: ft.includes(id) ? 'falta' : `${hh.ini}–${hh.fim}`, cor: ft.includes(id) ? '#B91C1C' : null, tam: 14 }); } });
+                        if (c.ini && c.fim) out.push({ t: `${c.ini}–${c.fim}`, tam: 14 });
+                        return out.length ? out : [{ t: '—', fraco: true }];
+                    });
+                    linhas.push({ nome: s.nome, sub: s.funcao || '', cor: s.cor, cels, tot: eqHtxt(h), totSub: `${f} folga${f === 1 ? '' : 's'}${fl ? ` · ${fl} falta${fl === 1 ? '' : 's'}` : ''}`, totSubCor: fl ? '#B91C1C' : null });
+                });
+            });
+            const pe = areas.map(a => { const l = e.staff.filter(s => eqArea(s) === a); return { nome: 'A trabalhar' + (varias ? ' · ' + (a || 'Sem área') : ''), vals: ks.map(k => String(l.filter(s => eqTrab(eqCel(k, s.id))).length)) }; });
+            return eqImagemTabela({ titulo: 'Escala da semana', sub: `${currentEmpresa ? currentEmpresa + ' · ' : ''}${eqSemanaTxt(eqSeg)}`, cols: eqColsSemana(ks), linhas, pe, totTit: 'Horas',
+                nota: 'Turnos: ' + e.turnos.map(t => `${t.nome} ${t.ini}–${t.fim}`).join(' · ') });
+        }
+        async function eqImagemTips() {
+            const e = eqDados(), r = eqCalcular(eqSeg), ks = r.ks, cfg = r.cfg;
+            const quem = e.staff.filter(s => s.tipsModo !== 'nao');
+            const linhas = quem.map(s => {
+                const x = r.res[s.id];
+                const cels = ks.map((k, d) => {
+                    const c = eqCel(k, s.id), out = [];
+                    if (cfg.modo !== 'semana') out.push(x.dias[d] ? { t: eqEur(x.dias[d]), forte: true, tam: 16 } : { t: '—', fraco: true });
+                    if (c && c.folga) out.push({ t: 'folga', fraco: true, tam: 13 });
+                    else if (c && c.fd) out.push({ t: 'falta', cor: '#B91C1C', tam: 13 });
+                    else if (c) { const n = (c.t || []).filter(eqTurno).map(id => eqAbrev(eqTurnoNome(id)) + ((c.ft || []).includes(id) ? ' ✗' : '')).join(' + '); if (n) out.push({ t: n, fraco: true, tam: 13 }); }
+                    return out.length ? out : [{ t: '—', fraco: true }];
+                });
+                return { nome: s.nome, sub: s.tipsModo === 'sempre' ? 'todos os dias' : '', cor: s.cor, cels, tot: eqEur(x.total), totTam: 19, destaque: true };
+            });
+            const pe = cfg.modo === 'semana' ? [{ nome: 'Tips da semana', vals: ks.map(() => ''), tot: eqEur(r.total) }] : [{ nome: 'Tips do dia', vals: r.porDia.map(v => v ? eqEur(v) : '0,00 €'), tot: eqEur(r.total) }];
+            return eqImagemTabela({ titulo: 'Tips da semana', sub: `${currentEmpresa ? currentEmpresa + ' · ' : ''}${eqSemanaTxt(eqSeg)}`, direita: eqEur(r.total), direitaSub: 'total recebido', cols: eqColsSemana(ks), linhas, pe, totTit: 'A receber', nmTit: 'Pessoa',
+                nota: ({ turno: 'Cada turno dividido em partes iguais por quem trabalhou', dia: 'Cada dia dividido por quem trabalhou', semana: 'A semana dividida por quem trabalhou' })[cfg.modo] + ({ iguais: '', turnos: ', pelos turnos trabalhados', horas: ', pelas horas' })[cfg.modo === 'turno' ? 'iguais' : cfg.divisao] + '. As faltas não recebem.' });
+        }
+        const eqNomeFich = t => t + '-' + eqKey(eqSeg) + '.png';
+        eqEnviarEscala = async function () {
+            const bt = document.activeElement; if (bt && bt.tagName === 'BUTTON') { bt.disabled = true; setTimeout(() => { bt.disabled = false; }, 2500); }
+            try { const b = await eqImagemEscala(); await dsEnviarImagem(b, eqNomeFich('escala'), `Escala da semana ${eqSemanaTxt(eqSeg)}${currentEmpresa ? ' · ' + currentEmpresa : ''}`, ''); }
+            catch (e) { console.warn(e); dsToast('Não foi possível criar a imagem da escala. Tente de novo.', true); }
+        };
+        eqEnviarTips = async function () {
+            const bt = document.activeElement; if (bt && bt.tagName === 'BUTTON') { bt.disabled = true; setTimeout(() => { bt.disabled = false; }, 2500); }
+            try { const r = eqCalcular(eqSeg); const b = await eqImagemTips(); await dsEnviarImagem(b, eqNomeFich('tips'), `Tips da semana ${eqSemanaTxt(eqSeg)}${currentEmpresa ? ' · ' + currentEmpresa : ''}: ${eqEur(r.total)}`, ''); }
+            catch (e) { console.warn(e); dsToast('Não foi possível criar a imagem das tips. Tente de novo.', true); }
+        };
+    </script>
 </body>
 </html>
