@@ -4131,6 +4131,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         let currentUser = null;
         let currentEmpresa = '';
         let dataOwnerId = null;          // conta dona dos dados (a própria ou a da empresa que convidou)
+        let dsPerm = 'dono';          // dono | tudo | editar | ver
         let currentRole = 'dono';        // dono | colaborador
         let currentPlan = 'gratis';      // gratis | cafe | pro
         let currentPlanUntil = null;
@@ -4456,7 +4457,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             STORAGE_KEY = CACHE_PREFIX + dataOwnerId + '__' + user.id;
             const meta = user.user_metadata || {};
             if (meta.tema) applyTheme(meta.tema);
+            dsPerm = 'dono';
             await loadStorage();
+            try { await dsPermCarregar(); } catch (e) { console.warn(e); }
             renderProfile();
             document.getElementById('app-loading').classList.add('hidden');
             if (typeof applyPlan === 'function') applyPlan();
@@ -21494,69 +21497,80 @@ var qrcode = function() {
     </style>
 
     <style>
-        /* ======================================================= EQUIPE: escala de folgas + tips */
+        /* ======================================================= EQUIPE: escala, tips e documentos */
         #tab-equipa { --eq-cafe: var(--brand, #983808); --eq-linha: #E4DCCF; --eq-txt: #231F20; --eq-txt2: #5B4A40; --eq-txt3: #7A6A60; --eq-card: #fff; --eq-suave: #FBEDE6; --eq-fundo: #F6F3F0; }
         html.dark #tab-equipa { --eq-linha: #44332A; --eq-txt: #F2ECE4; --eq-txt2: #C9BBAF; --eq-txt3: #A8998D; --eq-card: #2A1B14; --eq-suave: rgba(152,56,8,.22); --eq-fundo: #1F130E; }
         .eq-wrap { max-width: 1180px; margin: 0 auto; }
         .eq-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
         .eq-head h2 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: var(--eq-txt); line-height: 1.1; }
         .eq-head p { font-size: 13.5px; color: var(--eq-txt2); margin-top: 4px; }
-        .eq-seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #EFE8DF; }
+        .eq-seg { display: inline-grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 14px; background: #EFE8DF; }
         html.dark .eq-seg { background: #2A1B14; }
-        .eq-seg button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 16px; border-radius: 11px; font-weight: 800; font-size: 14px; color: var(--eq-txt2); }
+        .eq-seg button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 14px; border-radius: 11px; font-weight: 800; font-size: 14px; color: var(--eq-txt2); white-space: nowrap; }
         .eq-seg button.on { background: var(--eq-card); color: var(--eq-txt); box-shadow: 0 1px 2px rgba(35,31,32,.12); }
         .eq-seg button.on i { color: var(--eq-cafe); }
         .eq-semana { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
         .eq-semana .nav { width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); color: var(--eq-txt); }
         .eq-semana b { font-size: 16px; font-weight: 800; color: var(--eq-txt); min-width: 170px; text-align: center; }
         .eq-semana .hoje { padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; color: var(--eq-cafe); }
-        .eq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-        .eq-b { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 12px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); font-size: 13.5px; font-weight: 800; color: var(--eq-txt); }
+        .eq-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .eq-b { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 12px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); font-size: 13.5px; font-weight: 800; color: var(--eq-txt); cursor: pointer; }
         .eq-b i { color: var(--eq-cafe); }
         .eq-b.p { background: var(--eq-cafe); border-color: var(--eq-cafe); color: #fff; } .eq-b.p i { color: #fff; }
         .eq-card { margin-top: 14px; background: var(--eq-card); border: 1px solid var(--eq-linha); border-radius: 18px; overflow: hidden; }
         .eq-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table.eq-t { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 760px; }
+        table.eq-t { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 820px; }
         .eq-t th, .eq-t td { border-bottom: 1px solid var(--eq-linha); padding: 0; text-align: center; vertical-align: middle; }
         .eq-t thead th { font-size: 12px; font-weight: 800; color: var(--eq-txt2); padding: 10px 6px; background: var(--eq-fundo); white-space: nowrap; }
         .eq-t thead th small { display: block; font-weight: 600; color: var(--eq-txt3); font-size: 11.5px; }
         .eq-t thead th.hj { color: var(--eq-cafe); }
-        .eq-t .nm { position: sticky; left: 0; z-index: 1; background: var(--eq-card); text-align: left; min-width: 132px; max-width: 170px; border-right: 1px solid var(--eq-linha); }
+        .eq-t .nm { position: sticky; left: 0; z-index: 1; background: var(--eq-card); text-align: left; min-width: 140px; max-width: 180px; border-right: 1px solid var(--eq-linha); }
         .eq-t thead .nm { background: var(--eq-fundo); }
         .eq-t .nm button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; text-align: left; }
         .eq-t .nm .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
         .eq-t .nm span { min-width: 0; font-size: 14px; font-weight: 800; color: var(--eq-txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .eq-t .nm small { display: block; font-size: 11.5px; font-weight: 600; color: var(--eq-txt3); }
-        .eq-t td.c { min-width: 92px; padding: 5px 4px; }
-        .eq-t td.c > button { width: 100%; min-height: 54px; border-radius: 12px; padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 1.5px dashed transparent; }
+        .eq-t tr.area td { background: var(--eq-fundo); text-align: left; padding: 7px 12px; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--eq-txt2); }
+        .eq-t tr.area td.nm { background: var(--eq-fundo); }
+        .eq-t td.c { min-width: 100px; padding: 5px 4px; }
+        .eq-t td.c > button { width: 100%; min-height: 58px; border-radius: 12px; padding: 5px 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 1.5px dashed transparent; }
         .eq-t td.c > button:hover { border-color: var(--eq-linha); }
         .eq-t td.c > button.vazio { color: var(--eq-txt3); }
         .eq-t td.c > button.folga { background: var(--eq-fundo); color: var(--eq-txt3); font-weight: 800; font-size: 12.5px; }
+        .eq-t td.c > button.falta { background: #FEE2E2; }
+        html.dark .eq-t td.c > button.falta { background: rgba(239,68,68,.16); }
+        .eq-turno { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
         .eq-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: var(--eq-suave); color: var(--eq-cafe); white-space: nowrap; }
         html.dark .eq-chip { color: #E0794F; }
-        .eq-hr { font-size: 11px; font-weight: 700; color: var(--eq-txt3); white-space: nowrap; }
-        .eq-t td.tot { min-width: 84px; font-size: 13px; font-weight: 800; color: var(--eq-txt); padding: 6px; white-space: nowrap; }
+        .eq-chip.x { background: #FEE2E2; color: #B91C1C; text-decoration: line-through; }
+        html.dark .eq-chip.x { background: rgba(239,68,68,.2); color: #F87171; }
+        .eq-hr { font-size: 11px; font-weight: 700; color: var(--eq-txt2); white-space: nowrap; }
+        .eq-fl { font-size: 10.5px; font-weight: 800; color: #B91C1C; text-transform: uppercase; letter-spacing: .04em; }
+        html.dark .eq-fl { color: #F87171; }
+        .eq-t td.tot { min-width: 92px; font-size: 13px; font-weight: 800; color: var(--eq-txt); padding: 6px; white-space: nowrap; }
         .eq-t td.tot small { display: block; font-weight: 600; color: var(--eq-txt3); font-size: 11.5px; }
-        .eq-t tfoot td { background: var(--eq-fundo); font-size: 13px; font-weight: 800; color: var(--eq-txt); padding: 10px 6px; }
-        .eq-t tfoot td.nm { background: var(--eq-fundo); padding: 10px 12px; }
+        .eq-t td.tot small.f { color: #B91C1C; }
+        .eq-t tfoot td { background: var(--eq-fundo); font-size: 13px; font-weight: 800; color: var(--eq-txt); padding: 9px 6px; }
+        .eq-t tfoot td.nm { background: var(--eq-fundo); padding: 9px 12px; }
+        .eq-t tfoot td.nm small { display: inline; font-weight: 600; color: var(--eq-txt3); }
         .eq-vazio { padding: 36px 16px; text-align: center; }
         .eq-vazio b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; color: var(--eq-txt); }
-        .eq-vazio p { font-size: 14px; color: var(--eq-txt2); margin: 6px auto 14px; max-width: 420px; }
+        .eq-vazio p { font-size: 14px; color: var(--eq-txt2); margin: 6px auto 14px; max-width: 440px; }
         .eq-nota { font-size: 12.5px; color: var(--eq-txt3); margin-top: 10px; line-height: 1.5; }
         /* tips */
         .eq-opc { margin-top: 14px; display: grid; gap: 12px; }
         @media (min-width: 900px) { .eq-opc { grid-template-columns: 1fr 1fr; } }
-        .eq-box { background: var(--eq-card); border: 1px solid var(--eq-linha); border-radius: 18px; padding: 14px; }
+        .eq-box { background: var(--eq-card); border: 1px solid var(--eq-linha); border-radius: 18px; padding: 14px 16px; }
         .eq-box > b { font-size: 14px; font-weight: 800; color: var(--eq-txt); }
         .eq-box > p { font-size: 12.5px; color: var(--eq-txt3); margin-top: 2px; }
-        .eq-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .eq-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .eq-pills button { padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); font-size: 13px; font-weight: 800; color: var(--eq-txt2); }
         .eq-pills button.on { background: var(--eq-txt); border-color: var(--eq-txt); color: var(--eq-card); }
         .eq-pills button:disabled { opacity: .45; }
         .eq-din { position: relative; display: block; }
         .eq-din input { width: 100%; min-width: 0; border: 1px solid var(--eq-linha); border-radius: 10px; padding: 8px 22px 8px 8px; font-size: 16px; font-weight: 700; text-align: right; background: var(--eq-card); color: var(--eq-txt); }
         .eq-din span { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--eq-txt3); pointer-events: none; }
-        .eq-t td.in { padding: 6px 4px; min-width: 92px; }
+        .eq-t td.in { padding: 6px 4px; min-width: 96px; }
         .eq-t td.lbl { text-align: left; padding: 8px 12px; font-size: 13px; font-weight: 800; color: var(--eq-txt); }
         .eq-t td.lbl small { display: block; font-weight: 600; color: var(--eq-txt3); }
         .eq-t td.v { font-size: 13.5px; font-weight: 700; color: var(--eq-txt); padding: 6px; }
@@ -21564,69 +21578,115 @@ var qrcode = function() {
         .eq-t td.v button:hover { background: var(--eq-fundo); }
         .eq-t td.v .m { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
         .eq-t td.v .m span { font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; background: var(--eq-suave); color: var(--eq-cafe); }
+        .eq-t td.v .m span.x { background: #FEE2E2; color: #B91C1C; text-decoration: line-through; }
         html.dark .eq-t td.v .m span { color: #E0794F; }
         .eq-t td.v .zero { color: var(--eq-txt3); font-weight: 600; }
-        .eq-t td.rec { background: var(--eq-suave); font-size: 15px; font-weight: 900; color: var(--eq-txt); min-width: 96px; }
+        .eq-t td.rec { background: var(--eq-suave); font-size: 15px; font-weight: 900; color: var(--eq-txt); min-width: 100px; }
         .eq-aviso { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #FEF3C7; color: #92400E; font-size: 13px; font-weight: 600; }
         .eq-aviso i { margin-right: 6px; }
         html.dark .eq-aviso { background: rgba(245,158,11,.14); color: #FBBF24; }
-        .eq-res { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin-top: 8px; }
-        .eq-res div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--eq-linha); font-size: 14px; }
-        .eq-res span { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--eq-txt); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .eq-res span i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-        .eq-res b { color: var(--eq-txt); font-weight: 900; white-space: nowrap; }
         .eq-sem { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
         .eq-sem .eq-din { width: 160px; }
+        .eq-res { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); column-gap: 32px; row-gap: 4px; margin-top: 10px; }
+        .eq-res div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 2px; border-bottom: 1px solid var(--eq-linha); font-size: 14.5px; }
+        .eq-res span { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--eq-txt); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .eq-res span i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+        .eq-res b { color: var(--eq-txt); font-weight: 900; white-space: nowrap; }
+        /* documentos */
+        .eq-docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+        .eq-doc { display: flex; flex-direction: column; text-align: left; background: var(--eq-card); border: 1px solid var(--eq-linha); border-radius: 16px; overflow: hidden; cursor: pointer; }
+        .eq-doc:hover { border-color: var(--eq-txt3); }
+        .eq-doc .cap { height: 120px; display: flex; align-items: center; justify-content: center; background: var(--eq-fundo); background-size: cover; background-position: center; color: var(--eq-cafe); font-size: 38px; }
+        .eq-doc .cap.pdf { color: #B91C1C; } .eq-doc .cap.txt { color: var(--eq-txt2); }
+        .eq-doc .inf { padding: 10px 12px 12px; }
+        .eq-doc .inf b { display: block; font-size: 14px; font-weight: 800; color: var(--eq-txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .eq-doc .inf small { display: block; font-size: 12px; color: var(--eq-txt3); margin-top: 2px; }
+        .eq-doc .cat { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: var(--eq-suave); color: var(--eq-cafe); }
+        #eq-ver { position: fixed; inset: 0; z-index: 75; background: rgba(20,12,8,.97); display: none; flex-direction: column; }
+        #eq-ver.on { display: flex; }
+        #eq-ver .top { display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: #fff; }
+        #eq-ver .top b { flex: 1; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #eq-ver .top button, #eq-ver .top a { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; background: rgba(255,255,255,.12); color: #fff; font-size: 13px; font-weight: 800; }
+        #eq-ver .area { flex: 1; min-height: 0; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 0 8px 12px; }
+        #eq-ver .area img { max-width: 100%; max-height: 100%; object-fit: contain; margin: auto; cursor: zoom-in; border-radius: 6px; background: #fff; }
+        #eq-ver .area.zoom { align-items: flex-start; justify-content: flex-start; }
+        #eq-ver .area.zoom img { max-width: none; max-height: none; width: 200%; cursor: zoom-out; }
+        #eq-ver .area iframe { width: 100%; max-width: 1000px; height: 100%; border: 0; border-radius: 8px; background: #fff; }
+        #eq-ver .area .texto { width: 100%; max-width: 760px; background: #fff; color: #231F20; border-radius: 12px; padding: 22px 24px; font-size: 15.5px; line-height: 1.65; white-space: pre-wrap; word-wrap: break-word; margin: 0 auto; }
+        #eq-ver .area .texto h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 12px; white-space: normal; }
         /* modais */
         .eq-m h3 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800; color: #231F20; }
         .eq-m .sub { font-size: 13px; color: #7A6A60; margin-top: 2px; }
         .eq-m label.f { display: block; margin-top: 12px; font-size: 13px; font-weight: 700; color: #3A2A22; }
-        .eq-m label.f input, .eq-m label.f select { display: block; width: 100%; margin-top: 4px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; }
+        .eq-m label.f input, .eq-m label.f select, .eq-m label.f textarea { display: block; width: 100%; margin-top: 4px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; }
         .eq-m .dois { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .eq-m .ck { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 11px 12px; border: 1.5px solid #E4DCCF; border-radius: 14px; font-size: 14px; font-weight: 700; color: #231F20; cursor: pointer; }
         .eq-m .ck input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); flex: none; }
-        .eq-m .ck small { margin-left: auto; font-weight: 600; color: #7A6A60; }
-        .eq-m .ck.folga:has(input:checked) { background: #F6F3F0; }
+        .eq-m .ck small { margin-left: auto; font-weight: 600; color: #7A6A60; text-align: right; }
+        .eq-m .ck.falta { border-color: #FECACA; } .eq-m .ck.falta input { accent-color: #B91C1C; }
+        .eq-m .tit { margin-top: 16px; font-size: 13px; font-weight: 800; color: #231F20; }
+        .eq-m .tit span { font-weight: 600; color: #7A6A60; }
         .eq-m .cores { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
         .eq-m .cores button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #E4DCCF; }
         .eq-m .cores button.on { box-shadow: 0 0 0 3px #231F20; }
+        .eq-m .opc { display: grid; gap: 6px; margin-top: 6px; }
+        .eq-m .opc label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1.5px solid #E4DCCF; border-radius: 14px; font-size: 14px; font-weight: 700; color: #231F20; cursor: pointer; }
+        .eq-m .opc label input { margin-top: 2px; width: 18px; height: 18px; accent-color: var(--brand); flex: none; }
+        .eq-m .opc label small { display: block; font-weight: 600; color: #7A6A60; font-size: 12px; }
+        .eq-m .opc label:has(input:checked) { border-color: #231F20; }
         .eq-m .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
         .eq-m .acoes button { flex: 1; min-width: 110px; padding: 12px; border-radius: 14px; font-weight: 900; border: 1.5px solid #E4DCCF; background: #fff; color: #24150E; }
         .eq-m .acoes button.p { background: var(--brand); border-color: var(--brand); color: #fff; flex: 2; }
-        .eq-m .acoes button.d { color: #B91C1C; flex: none; }
+        .eq-m .acoes button.d { color: #B91C1C; flex: none; min-width: 52px; }
         .eq-m .tl { display: grid; grid-template-columns: 1fr 96px 96px 40px; gap: 6px; align-items: center; margin-top: 8px; }
         .eq-m .tl input { width: 100%; min-width: 0; border: 1px solid #E4DCCF; border-radius: 12px; padding: 9px 10px; font-size: 16px; background: #fff; }
         .eq-m .tl button { height: 40px; color: #B91C1C; }
+        .eq-m .hp { display: grid; grid-template-columns: 1fr 118px 118px; gap: 6px; align-items: center; margin-top: 6px; font-size: 13px; font-weight: 700; color: #3A2A22; }
+        .eq-m .hp input { width: 100%; min-width: 0; border: 1px solid #E4DCCF; border-radius: 12px; padding: 8px 8px; font-size: 16px; background: #fff; }
         .eq-m .dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 6px; }
         .eq-m .dias button { padding: 9px 0; border-radius: 10px; border: 1.5px solid #E4DCCF; font-size: 12.5px; font-weight: 800; color: #5B4A40; background: #fff; }
         .eq-m .dias button.on { background: #231F20; border-color: #231F20; color: #fff; }
-        @media (max-width: 639px) { .eq-head h2 { font-size: 22px; } .eq-semana b { min-width: 0; flex: 1; } .eq-t td.c { min-width: 80px; } .eq-t .nm { min-width: 112px; } }
+        .eq-m .pz { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .eq-m .pz button { padding: 7px 11px; border-radius: 999px; border: 1.5px solid #E4DCCF; font-size: 13px; font-weight: 800; color: #5B4A40; background: #fff; }
+        .eq-m .pz button.on { background: #231F20; border-color: #231F20; color: #fff; }
+        .eq-m .drop { margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px; border: 2px dashed #E4DCCF; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 700; color: #5B4A40; cursor: pointer; }
+        .eq-m .drop i { font-size: 26px; color: var(--brand); }
+        .eq-m .drop small { font-weight: 600; color: #7A6A60; }
+        /* colaboradores: permissões */
+        .cb-perm { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .cb-perm select { border: 1px solid #E4DCCF; border-radius: 10px; padding: 6px 8px; font-size: 13px; font-weight: 700; background: #fff; }
+        html.dark .cb-perm select { background: #1F130E; border-color: #44332A; color: #F2ECE4; }
+        .cb-leg { font-size: 11.5px; color: #7A6A60; line-height: 1.5; margin-top: 6px; }
+        body.ds-so-ver::after { content: 'Só leitura'; position: fixed; left: 50%; transform: translateX(-50%); bottom: 74px; z-index: 46; padding: 5px 12px; border-radius: 999px; background: #231F20; color: #fff; font-size: 12px; font-weight: 800; pointer-events: none; opacity: .85; }
+        @media (min-width: 768px) { body.ds-so-ver::after { bottom: 14px; } }
+        @media (max-width: 639px) { .eq-head h2 { font-size: 22px; } .eq-seg { width: 100%; } .eq-seg button { padding: 9px 6px; font-size: 13px; } .eq-semana b { min-width: 0; flex: 1; } .eq-t td.c { min-width: 92px; } .eq-t .nm { min-width: 116px; } .eq-docs { grid-template-columns: 1fr 1fr; } .eq-doc .cap { height: 96px; } }
         #ds-bottom-nav#ds-bottom-nav#ds-bottom-nav { grid-template-columns: none !important; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
     </style>
     <script>
-        // ======================================================= EQUIPE: escala de folgas e tips
-        // Tudo fica em appState.equipa (vai para a nuvem com o resto dos dados da empresa).
+        // ======================================================= EQUIPE: escala, tips e documentos
+        // Os dados ficam em appState.equipa (vão para a nuvem com o resto da empresa); os ficheiros no armazenamento privado "documentos".
         const EQ_DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
         const EQ_DIAS_L = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
         const EQ_CORES = ['#983808', '#231F20', '#B45309', '#1E3A8A', '#14532D', '#9D174D', '#5B4A40', '#0E7490'];
-        let eqVista = 'escala', eqSeg = null;
-        const eqPodeEditar = () => typeof currentRole === 'undefined' || currentRole === 'dono';
+        const EQ_AREAS = ['Sala', 'Cozinha', 'Bar', 'Balcão'];
+        const EQ_CATS = ['Manual', 'Normas', 'Regras', 'Formação', 'Outros'];
+        let eqVista = 'escala', eqSeg = null, eqDocCat = '';
+        const eqPodeEditar = () => typeof dsPerm === 'undefined' ? (typeof currentRole === 'undefined' || currentRole === 'dono') : (dsPerm === 'dono' || dsPerm === 'tudo');
         function eqDados() {
             if (!appState.equipa || typeof appState.equipa !== 'object') appState.equipa = {};
             const e = appState.equipa;
             if (!Array.isArray(e.staff)) e.staff = [];
             if (!Array.isArray(e.turnos) || !e.turnos.length) e.turnos = [{ id: 'alm', nome: 'Almoço', ini: '11:00', fim: '16:00' }, { id: 'jan', nome: 'Jantar', ini: '18:00', fim: '23:00' }];
-            if (!e.escala || typeof e.escala !== 'object') e.escala = {};
-            if (!e.tips || typeof e.tips !== 'object') e.tips = {};
-            if (!e.tipsSemana || typeof e.tipsSemana !== 'object') e.tipsSemana = {};
-            if (!e.tipsCfg || typeof e.tipsCfg !== 'object') e.tipsCfg = {};
+            ['escala', 'tips', 'tipsSemana', 'tipsCfg'].forEach(k => { if (!e[k] || typeof e[k] !== 'object' || Array.isArray(e[k])) e[k] = {}; });
+            if (!Array.isArray(e.docs)) e.docs = [];
+            e.staff.forEach(s => { if (!s.tipsModo) s.tipsModo = s.tips === false ? 'nao' : 'trabalha'; });
             return e;
         }
         function eqGuardar() { try { saveStorage(); } catch (e) { console.error(e); } }
-        // datas (sempre no fuso do aparelho)
+        // datas (no fuso do aparelho)
         const eqKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         const eqData = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
-        function eqSegunda(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return x; }
+        function eqSegunda(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
         const eqMais = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
         const eqSemanaKeys = seg => [0, 1, 2, 3, 4, 5, 6].map(i => eqKey(eqMais(seg, i)));
         const eqMes = d => d.toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '');
@@ -21634,91 +21694,101 @@ var qrcode = function() {
         const eqEur = v => (Math.round(v * 100) / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
         const eqNum = v => { const n = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; };
         const eqId = () => 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-        // horas
         const eqMin = h => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(h || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; };
         function eqDur(ini, fim) { const a = eqMin(ini), b = eqMin(fim); if (a == null || b == null) return 0; let d = b - a; if (d <= 0) d += 1440; return d / 60; }
         const eqHtxt = h => { const t = Math.round(h * 60), hh = Math.floor(t / 60), mm = t % 60; return mm ? `${hh}h${String(mm).padStart(2, '0')}` : `${hh}h`; };
-        // célula da escala: { t: ['alm'], ini, fim } | { folga: true } | undefined
-        const eqCel = (k, sid) => ((eqDados().escala[k] || {})[sid]) || null;
-        const eqTrab = c => !!c && !c.folga && ((Array.isArray(c.t) && c.t.length) || (c.ini && c.fim));
-        function eqHorasCel(c) {
-            if (!eqTrab(c)) return 0;
-            if (c.ini && c.fim) return eqDur(c.ini, c.fim);
-            return (c.t || []).reduce((s, id) => { const t = eqDados().turnos.find(x => x.id === id); return s + (t ? eqDur(t.ini, t.fim) : 0); }, 0);
-        }
-        const eqNTurnos = c => !eqTrab(c) ? 0 : Math.max(1, (c.t || []).filter(id => eqDados().turnos.some(x => x.id === id)).length);
-        const eqTurnoNome = id => (eqDados().turnos.find(x => x.id === id) || {}).nome || '';
+        const eqTurno = id => eqDados().turnos.find(x => x.id === id);
+        const eqTurnoNome = id => (eqTurno(id) || {}).nome || '';
         const eqAbrev = n => { const s = String(n || '').trim(); return s.length <= 4 ? s : s.slice(0, 3) + '.'; };
+        const eqPessoaDe = sid => eqDados().staff.find(x => x.id === sid);
+        // horário do turno para esta pessoa (cada pessoa pode ter o seu)
+        function eqTurnoH(s, id) { const t = eqTurno(id) || {}, h = s && s.horas && s.horas[id]; return h && eqMin(h.ini) != null && eqMin(h.fim) != null ? { ini: h.ini, fim: h.fim } : { ini: t.ini, fim: t.fim }; }
+        // célula: { t:[turnos], ini, fim, ft:[turnos em falta], fd:true (faltou ao dia), fm:'motivo' } | { folga:true }
+        const eqCel = (k, sid) => ((eqDados().escala[k] || {})[sid]) || null;
+        const eqTurnosEf = c => !c || c.folga || c.fd ? [] : (c.t || []).filter(id => eqTurno(id) && !(c.ft || []).includes(id));
+        const eqTrab = c => !!c && !c.folga && !c.fd && (eqTurnosEf(c).length > 0 || (!!(c.ini && c.fim) && !(c.t || []).length));
+        const eqFaltas = c => !c || c.folga ? 0 : c.fd ? 1 : (c.ft || []).filter(id => (c.t || []).includes(id)).length;
+        function eqHorasCel(c, s) {
+            if (!eqTrab(c)) return 0;
+            if (c.ini && c.fim) { const tot = (c.t || []).length; const ef = eqTurnosEf(c).length; return eqDur(c.ini, c.fim) * (tot ? ef / tot : 1); }
+            return eqTurnosEf(c).reduce((a, id) => { const h = eqTurnoH(s, id); return a + eqDur(h.ini, h.fim); }, 0);
+        }
+        const eqNTurnos = c => !eqTrab(c) ? 0 : Math.max(1, eqTurnosEf(c).length);
+        const eqArea = s => (s && s.area) || '';
+        function eqAreas() { const l = []; eqDados().staff.forEach(s => { const a = eqArea(s); if (!l.includes(a)) l.push(a); }); return l.sort((a, b) => (a ? 0 : 1) - (b ? 0 : 1) || (EQ_AREAS.indexOf(a) + 1 || 99) - (EQ_AREAS.indexOf(b) + 1 || 99) || a.localeCompare(b)); }
 
-        // ---------- divisão justa ao cêntimo: a soma das partes é sempre igual ao total
-        function eqDividir(total, pesos) {
-            const C = Math.round(total * 100), W = pesos.reduce((s, w) => s + w, 0);
-            if (!(C > 0) || !(W > 0)) return pesos.map(() => 0);
-            const raw = pesos.map(w => C * w / W), base = raw.map(Math.floor);
-            let sobra = C - base.reduce((s, x) => s + x, 0);
-            raw.map((r, i) => ({ i, f: r - base[i], w: pesos[i] })).filter(x => x.w > 0).sort((a, b) => b.f - a.f || b.w - a.w || a.i - b.i)
-                .forEach(x => { if (sobra > 0) { base[x.i]++; sobra--; } });
-            return base.map(c => c / 100);
+        // ---------- divisão justa ao cêntimo
+        // as partes são calculadas exatas (sem arredondar) e só o total da semana de cada pessoa é arredondado:
+        // quem fez o mesmo recebe o mesmo, e a soma bate sempre com o total.
+        function eqArredondar(exatos, totalC, desempate) {
+            const ids = Object.keys(exatos), base = {}, frac = [];
+            ids.forEach(id => { const c = exatos[id] * 100; base[id] = Math.floor(c + 1e-9); frac.push({ id, f: c - base[id] }); });
+            let sobra = totalC - ids.reduce((a, id) => a + base[id], 0);
+            frac.sort((a, b) => (Math.abs(b.f - a.f) > 1e-6 ? b.f - a.f : 0) || (desempate ? desempate(a.id, b.id) : 0));
+            for (let i = 0; i < frac.length && sobra > 0; i++) { if (frac[i].f > 1e-9) { base[frac[i].id]++; sobra--; } }
+            const out = {}; ids.forEach(id => out[id] = base[id] / 100); return out;
         }
         const eqTipsCfg = segK => { const e = eqDados(), c = e.tipsCfg[segK] || e.tipsCfg._ultimo || {}; return { modo: ['turno', 'dia', 'semana'].includes(c.modo) ? c.modo : 'turno', divisao: ['iguais', 'turnos', 'horas'].includes(c.divisao) ? c.divisao : 'iguais' }; };
-        // calcula a semana inteira: quanto recebe cada pessoa em cada dia
         function eqCalcular(seg) {
             const e = eqDados(), ks = eqSemanaKeys(seg), segK = ks[0], cfg = eqTipsCfg(segK);
-            const quem = e.staff.filter(s => s.tips !== false);
-            const res = {}; quem.forEach(s => res[s.id] = { dias: [0, 0, 0, 0, 0, 0, 0], total: 0 });
+            const quem = e.staff.filter(s => s.tipsModo !== 'nao'), sempre = s => s.tipsModo === 'sempre';
+            const ex = {}, exDia = {}; quem.forEach(s => { ex[s.id] = 0; exDia[s.id] = [0, 0, 0, 0, 0, 0, 0]; });
             const porDia = [0, 0, 0, 0, 0, 0, 0], avisos = []; let total = 0;
-            const peso = (c, modo) => cfg.divisao === 'horas' ? eqHorasCel(c) : cfg.divisao === 'turnos' ? eqNTurnos(c) : 1;
+            const peso = (c, s) => cfg.divisao === 'horas' ? eqHorasCel(c, s) : cfg.divisao === 'turnos' ? eqNTurnos(c) : 1;
+            const juntar = (v, l, w, d) => { const W = w.reduce((a, x) => a + x, 0); l.forEach((s, i) => { const x = v * w[i] / W; ex[s.id] += x; if (d != null) exDia[s.id][d] += x; }); };
             if (cfg.modo === 'turno') {
                 ks.forEach((k, d) => {
                     const td = (e.tips[k] && e.tips[k].t) || {};
                     e.turnos.forEach(t => {
-                        const v = eqNum(td[t.id]); if (!v) return;
-                        porDia[d] += v; total += v;
-                        const l = quem.filter(s => { const c = eqCel(k, s.id); return eqTrab(c) && (c.t || []).includes(t.id); });
-                        if (!l.length) { avisos.push(`${EQ_DIAS_L[d]}, ${t.nome}: ${eqEur(v)} de tips mas ninguém escalado neste turno.`); return; }
-                        eqDividir(v, l.map(() => 1)).forEach((x, i) => { res[l[i].id].dias[d] += x; });
+                        const v = eqNum(td[t.id]); if (!v) return; porDia[d] += v; total += v;
+                        const l = quem.filter(s => sempre(s) || eqTurnosEf(eqCel(k, s.id)).includes(t.id));
+                        if (!l.some(s => !sempre(s))) avisos.push(`${EQ_DIAS_L[d]}, ${t.nome}: ${eqEur(v)} de tips mas ninguém escalado neste turno.`);
+                        if (l.length) juntar(v, l, l.map(() => 1), d);
                     });
                 });
             } else if (cfg.modo === 'dia') {
                 ks.forEach((k, d) => {
-                    const v = eqNum(e.tips[k] && e.tips[k].d); if (!v) return;
-                    porDia[d] += v; total += v;
-                    const l = quem.filter(s => eqTrab(eqCel(k, s.id)));
-                    const w = l.map(s => peso(eqCel(k, s.id)));
-                    if (!l.length || !w.some(x => x > 0)) { avisos.push(`${EQ_DIAS_L[d]}: ${eqEur(v)} de tips mas ninguém escalado neste dia.`); return; }
-                    eqDividir(v, w).forEach((x, i) => { res[l[i].id].dias[d] += x; });
+                    const v = eqNum(e.tips[k] && e.tips[k].d); if (!v) return; porDia[d] += v; total += v;
+                    const trab = quem.filter(s => !sempre(s) && eqTrab(eqCel(k, s.id))), w = trab.map(s => peso(eqCel(k, s.id), s));
+                    const mx = w.length ? Math.max(...w) : 1, sp = quem.filter(s => sempre(s) && !trab.includes(s));
+                    const l = trab.concat(sp), ww = w.concat(sp.map(() => mx));
+                    if (!trab.length) avisos.push(`${EQ_DIAS_L[d]}: ${eqEur(v)} de tips mas ninguém escalado neste dia.`);
+                    if (l.length && ww.some(x => x > 0)) juntar(v, l, ww, d);
                 });
             } else {
                 const v = eqNum(e.tipsSemana[segK]);
                 if (v) {
                     total = v;
-                    const w = quem.map(s => ks.reduce((acc, k) => { const c = eqCel(k, s.id); return acc + (eqTrab(c) ? (cfg.divisao === 'iguais' ? 1 : peso(c)) : 0); }, 0));
-                    const ww = cfg.divisao === 'iguais' ? w.map(x => x > 0 ? 1 : 0) : w;
-                    if (!ww.some(x => x > 0)) avisos.push(`${eqEur(v)} de tips da semana mas ninguém escalado.`);
-                    else eqDividir(v, ww).forEach((x, i) => { res[quem[i].id].total += x; });
+                    const w0 = quem.map(s => sempre(s) ? 0 : ks.reduce((a, k) => { const c = eqCel(k, s.id); return a + (eqTrab(c) ? (cfg.divisao === 'iguais' ? 1 : peso(c, s)) : 0); }, 0));
+                    const mx = Math.max(0, ...w0), w = quem.map((s, i) => sempre(s) ? (cfg.divisao === 'iguais' ? 1 : mx) : (cfg.divisao === 'iguais' ? (w0[i] > 0 ? 1 : 0) : w0[i]));
+                    if (!w0.some(x => x > 0)) avisos.push(`${eqEur(v)} de tips da semana mas ninguém escalado.`);
+                    if (w.some(x => x > 0)) juntar(v, quem, w, null);
                 }
             }
-            Object.values(res).forEach(r => { r.dias = r.dias.map(x => Math.round(x * 100) / 100); if (cfg.modo !== 'semana') r.total = Math.round(r.dias.reduce((s, x) => s + x, 0) * 100) / 100; });
-            return { res, porDia, total: Math.round(total * 100) / 100, avisos, cfg, ks };
+            const totalC = Math.round(total * 100), dist = quem.filter(s => ex[s.id] > 0);
+            const horas = id => ks.reduce((a, k) => a + eqHorasCel(eqCel(k, id), eqPessoaDe(id)), 0);
+            const fin = eqArredondar(Object.fromEntries(dist.map(s => [s.id, ex[s.id]])), dist.length ? totalC : 0, (a, b) => horas(b) - horas(a));
+            const res = {}; quem.forEach(s => res[s.id] = { exato: ex[s.id], dias: exDia[s.id].map(x => Math.round(x * 100) / 100), total: fin[s.id] || 0 });
+            return { res, porDia: porDia.map(x => Math.round(x * 100) / 100), total: Math.round(total * 100) / 100, avisos, cfg, ks };
         }
 
         // ---------- página
         function eqPintar() {
             const box = document.getElementById('eq-page'); if (!box) return;
             if (!hasPlan('pro')) {
-                box.innerHTML = `<div class="eq-card eq-vazio"><i class="fas fa-lock" style="font-size:28px;color:var(--brand)"></i><b class="mt-2">Equipe</b><p>Escala de folgas e divisão das tips, ao cêntimo. Disponível no plano PRO.</p><button type="button" class="eq-b p" onclick="openUpgrade('pro','A Equipe faz parte do plano PRO.')">Ver planos</button></div>`;
+                box.innerHTML = `<div class="eq-card eq-vazio"><i class="fas fa-lock" style="font-size:28px;color:var(--brand)"></i><b class="mt-2">Equipe</b><p>Escala de folgas, divisão das tips ao cêntimo e os documentos da equipa. Disponível no plano PRO.</p><button type="button" class="eq-b p" onclick="openUpgrade('pro','A Equipe faz parte do plano PRO.')">Ver planos</button></div>`;
                 return;
             }
-            const e = eqDados(); if (!eqSeg) eqSeg = eqSegunda(new Date());
-            const ed = eqPodeEditar();
+            eqDados(); if (!eqSeg) eqSeg = eqSegunda(new Date());
+            const ed = eqPodeEditar(), txt = { escala: 'Quem trabalha, em que turno e a que horas.', tips: 'As tips divididas por quem trabalhou, ao cêntimo.', docs: 'Manual, normas e regras da casa, sempre à mão.' }[eqVista];
             box.innerHTML = `<div class="eq-wrap">
-                <div class="eq-head"><div><h2>Equipe</h2><p>${eqVista === 'escala' ? 'Quem trabalha, em que turno e quem está de folga.' : 'As tips de cada turno divididas por quem trabalhou.'}</p></div>
-                    <div class="eq-seg" role="tablist"><button type="button" class="${eqVista === 'escala' ? 'on' : ''}" onclick="eqVer('escala')"><i class="fas fa-calendar-week"></i>Escala</button><button type="button" class="${eqVista === 'tips' ? 'on' : ''}" onclick="eqVer('tips')"><i class="fas fa-coins"></i>Tips</button></div></div>
-                <div class="eq-semana"><button type="button" class="nav" onclick="eqMudarSemana(-1)" aria-label="Semana anterior"><i class="fas fa-chevron-left"></i></button><b>${eqSemanaTxt(eqSeg)}</b><button type="button" class="nav" onclick="eqMudarSemana(1)" aria-label="Semana seguinte"><i class="fas fa-chevron-right"></i></button>${eqKey(eqSeg) !== eqKey(eqSegunda(new Date())) ? `<button type="button" class="hoje" onclick="eqSeg=null;eqPintar()">Esta semana</button>` : ''}</div>
+                <div class="eq-head"><div><h2>Equipe</h2><p>${txt}</p></div>
+                    <div class="eq-seg" role="tablist"><button type="button" class="${eqVista === 'escala' ? 'on' : ''}" onclick="eqVer('escala')"><i class="fas fa-calendar-week"></i>Escala</button><button type="button" class="${eqVista === 'tips' ? 'on' : ''}" onclick="eqVer('tips')"><i class="fas fa-coins"></i>Tips</button><button type="button" class="${eqVista === 'docs' ? 'on' : ''}" onclick="eqVer('docs')"><i class="fas fa-folder-open"></i>Documentos</button></div></div>
+                ${eqVista === 'docs' ? '' : `<div class="eq-semana"><button type="button" class="nav" onclick="eqMudarSemana(-1)" aria-label="Semana anterior"><i class="fas fa-chevron-left"></i></button><b>${eqSemanaTxt(eqSeg)}</b><button type="button" class="nav" onclick="eqMudarSemana(1)" aria-label="Semana seguinte"><i class="fas fa-chevron-right"></i></button>${eqKey(eqSeg) !== eqKey(eqSegunda(new Date())) ? `<button type="button" class="hoje" onclick="eqSeg=null;eqPintar()">Esta semana</button>` : ''}</div>`}
                 <div id="eq-corpo"></div>
-                ${ed ? '' : '<p class="eq-nota"><i class="fas fa-eye mr-1"></i>Só o responsável da conta altera a escala e as tips.</p>'}
+                ${ed ? '' : '<p class="eq-nota"><i class="fas fa-eye mr-1"></i>Pode ver. Só o responsável da conta (ou quem tem acesso "Tudo") altera a Equipe.</p>'}
             </div>`;
-            if (eqVista === 'tips') eqPintarTips(); else eqPintarEscala();
+            if (eqVista === 'tips') eqPintarTips(); else if (eqVista === 'docs') eqPintarDocs(); else eqPintarEscala();
         }
         function eqVer(v) { eqVista = v; eqPintar(); }
         function eqMudarSemana(n) { eqSeg = eqMais(eqSeg || eqSegunda(new Date()), 7 * n); eqPintar(); }
@@ -21726,94 +21796,134 @@ var qrcode = function() {
             const hoje = eqKey(new Date());
             return ks.map((k, i) => { const d = eqData(k); return `<th class="${k === hoje ? 'hj' : ''}">${EQ_DIAS[i]}<small>${d.getDate()} ${eqMes(d)}</small></th>`; }).join('');
         }
-        function eqCelHtml(c) {
+        // o que aparece em cada dia: turno + hora de entrada e saída (de cada pessoa)
+        function eqCelHtml(c, s) {
             if (!c) return `<i class="fas fa-plus" style="font-size:12px;opacity:.5"></i>`;
             if (c.folga) return 'Folga';
-            const ch = (c.t || []).map(id => eqTurnoNome(id)).filter(Boolean).map(n => `<span class="eq-chip">${escapeHtml(eqAbrev(n))}</span>`).join(' ');
-            const h = c.ini && c.fim ? `<span class="eq-hr">${c.ini}–${c.fim}</span>` : '';
-            return (ch || '') + (h ? (ch ? '' : '') + h : '') || '<span class="eq-hr">—</span>';
+            if (c.fd) return `<span class="eq-fl">Falta</span>${c.fm ? `<span class="eq-hr">${escapeHtml(c.fm.slice(0, 16))}</span>` : ''}`;
+            const ft = c.ft || [], t = (c.t || []).filter(id => eqTurno(id));
+            if (c.ini && c.fim) return `${t.map(id => `<span class="eq-chip ${ft.includes(id) ? 'x' : ''}">${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span>`).join(' ')}<span class="eq-hr">${c.ini}–${c.fim}</span>${ft.length ? '<span class="eq-fl">Falta</span>' : ''}`;
+            return t.map(id => { const h = eqTurnoH(s, id); return `<span class="eq-turno"><span class="eq-chip ${ft.includes(id) ? 'x' : ''}">${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span><span class="eq-hr">${ft.includes(id) ? 'falta' : `${h.ini}–${h.fim}`}</span></span>`; }).join('') || '<span class="eq-hr">—</span>';
         }
         function eqPintarEscala() {
             const el = document.getElementById('eq-corpo'), e = eqDados(), ks = eqSemanaKeys(eqSeg), ed = eqPodeEditar();
-            const barra = ed ? `<div class="eq-bar"><button type="button" class="eq-b p" onclick="eqPessoa()"><i class="fas fa-user-plus"></i>Pessoa</button><button type="button" class="eq-b" onclick="eqTurnos()"><i class="fas fa-clock"></i>Turnos</button>${e.staff.length ? `<button type="button" class="eq-b" onclick="eqPadraoAplicar()"><i class="fas fa-wand-magic-sparkles"></i>Preencher com o padrão</button><button type="button" class="eq-b" onclick="eqCopiarSemana()"><i class="fas fa-copy"></i>Copiar semana anterior</button><button type="button" class="eq-b" onclick="eqEnviarEscala()"><i class="fab fa-whatsapp"></i>Enviar escala</button>` : ''}</div>` : '';
-            if (!e.staff.length) { el.innerHTML = barra + `<div class="eq-card eq-vazio"><b>Ainda sem equipe</b><p>Junte as pessoas que trabalham consigo. Depois toque em cada dia para marcar o turno ou a folga.</p>${ed ? '<button type="button" class="eq-b p" onclick="eqPessoa()"><i class="fas fa-user-plus"></i>Juntar a primeira pessoa</button>' : ''}</div>`; return; }
-            const linhas = e.staff.map(s => {
-                let h = 0, f = 0, dt = 0;
-                const cels = ks.map((k, d) => { const c = eqCel(k, s.id); if (c && c.folga) f++; if (eqTrab(c)) { dt++; h += eqHorasCel(c); }
-                    return `<td class="c"><button type="button" class="${!c ? 'vazio' : c.folga ? 'folga' : ''}" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${eqCelHtml(c)}</button></td>`; }).join('');
-                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}${s.funcao ? `<small>${escapeHtml(s.funcao)}</small>` : ''}</span></button></td>${cels}<td class="tot">${eqHtxt(h)}<small>${dt} dia${dt === 1 ? '' : 's'} · ${f} folga${f === 1 ? '' : 's'}</small></td></tr>`;
-            }).join('');
-            const porDia = ks.map(k => e.staff.filter(s => eqTrab(eqCel(k, s.id))).length);
-            el.innerHTML = barra + `<div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">Pessoa</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
-                <tfoot><tr><td class="nm">A trabalhar</td>${porDia.map(n => `<td>${n}</td>`).join('')}<td></td></tr></tfoot></table></div></div>
-                <p class="eq-nota">Toque num dia para marcar turnos, horário ou folga. Turnos: ${e.turnos.map(t => `${escapeHtml(t.nome)} ${t.ini}–${t.fim}`).join(' · ')}.</p>`;
+            const barra = ed ? `<div class="eq-bar"><button type="button" class="eq-b p" onclick="eqPessoa()"><i class="fas fa-user-plus"></i>Pessoa</button><button type="button" class="eq-b" onclick="eqTurnos()"><i class="fas fa-clock"></i>Turnos</button>${e.staff.length ? `<button type="button" class="eq-b" onclick="eqPadraoAplicar()"><i class="fas fa-wand-magic-sparkles"></i>Preencher com o padrão</button><button type="button" class="eq-b" onclick="eqCopiarSemana()"><i class="fas fa-copy"></i>Copiar semana anterior</button>` : ''}</div>` : '';
+            const enviar = e.staff.length ? `<div class="eq-bar"><button type="button" class="eq-b" onclick="eqEnviarEscala()"><i class="fab fa-whatsapp"></i>Enviar escala</button></div>` : '';
+            if (!e.staff.length) { el.innerHTML = barra + `<div class="eq-card eq-vazio"><b>Ainda sem equipe</b><p>Junte as pessoas que trabalham consigo, com a área (sala, cozinha…). Depois toque em cada dia para marcar o turno, a folga ou uma falta.</p>${ed ? '<button type="button" class="eq-b p" onclick="eqPessoa()"><i class="fas fa-user-plus"></i>Juntar a primeira pessoa</button>' : ''}</div>`; return; }
+            const areas = eqAreas(), varias = areas.length > 1 || (areas[0] || '') !== '';
+            const linha = s => {
+                let h = 0, f = 0, dt = 0, fl = 0;
+                const cels = ks.map((k, d) => { const c = eqCel(k, s.id); if (c && c.folga) f++; fl += eqFaltas(c); if (eqTrab(c)) { dt++; h += eqHorasCel(c, s); }
+                    return `<td class="c"><button type="button" class="${!c ? 'vazio' : c.folga ? 'folga' : c.fd ? 'falta' : ''}" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${eqCelHtml(c, s)}</button></td>`; }).join('');
+                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}${s.funcao ? `<small>${escapeHtml(s.funcao)}</small>` : ''}</span></button></td>${cels}<td class="tot">${eqHtxt(h)}<small>${dt} dia${dt === 1 ? '' : 's'} · ${f} folga${f === 1 ? '' : 's'}</small>${fl ? `<small class="f">${fl} falta${fl === 1 ? '' : 's'}</small>` : ''}</td></tr>`;
+            };
+            const corpo = areas.map(a => { const l = e.staff.filter(s => eqArea(s) === a); return (varias ? `<tr class="area"><td class="nm">${escapeHtml(a || 'Sem área')}</td><td colspan="8"></td></tr>` : '') + l.map(linha).join(''); }).join('');
+            const pe = areas.map(a => { const l = e.staff.filter(s => eqArea(s) === a); return `<tr><td class="nm">A trabalhar${varias ? ` <small>· ${escapeHtml(a || 'Sem área')}</small>` : ''}</td>${ks.map(k => `<td>${l.filter(s => eqTrab(eqCel(k, s.id))).length}</td>`).join('')}<td></td></tr>`; }).join('');
+            el.innerHTML = barra + `<div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">Pessoa</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${corpo}</tbody><tfoot>${pe}</tfoot></table></div></div>
+                <p class="eq-nota">${ed ? 'Toque num dia para marcar turnos, horário, folga ou falta. ' : ''}Turnos: ${e.turnos.map(t => `${escapeHtml(t.nome)} ${t.ini}–${t.fim}`).join(' · ')}. Quem tem horário próprio aparece com as suas horas.</p>` + enviar;
         }
 
         // ---------- editar um dia de uma pessoa
         function eqCelula(k, sid) {
-            if (!eqPodeEditar()) return dsToast('Só o responsável da conta altera a escala.', true);
-            const e = eqDados(), s = e.staff.find(x => x.id === sid); if (!s) return;
-            const c = eqCel(k, sid) || {}, d = eqData(k), wd = (d.getDay() + 6) % 7;
-            dsModal('eq-cel', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(s.nome)}</h3><p class="sub">${EQ_DIAS_L[wd]}, ${d.getDate()} ${eqMes(d)}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-cel')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
-                <label class="ck folga"><input type="checkbox" id="eqc-folga" ${c.folga ? 'checked' : ''} onchange="eqCelVista()">Folga</label>
-                <div id="eqc-trab">${e.turnos.map(t => `<label class="ck"><input type="checkbox" class="eqc-t" value="${t.id}" ${(c.t || []).includes(t.id) ? 'checked' : ''} onchange="if(this.checked)document.getElementById('eqc-folga').checked=false">${escapeHtml(t.nome)}<small>${t.ini}–${t.fim}</small></label>`).join('')}
-                    <label class="ck"><input type="checkbox" id="eqc-hd" ${c.ini && c.fim ? 'checked' : ''} onchange="eqCelVista()">Horário diferente</label>
+            if (!eqPodeEditar()) return dsToast('Pode ver a escala. Só o responsável da conta a altera.', true);
+            const e = eqDados(), s = eqPessoaDe(sid); if (!s) return;
+            const c = eqCel(k, sid) || {}, d = eqData(k), wd = (d.getDay() + 6) % 7, ft = c.ft || [];
+            dsModal('eq-cel', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(s.nome)}</h3><p class="sub">${EQ_DIAS_L[wd]}, ${d.getDate()} ${eqMes(d)}${eqArea(s) ? ' · ' + escapeHtml(eqArea(s)) : ''}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-cel')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <label class="ck"><input type="checkbox" id="eqc-folga" ${c.folga ? 'checked' : ''} onchange="eqCelVista(this)">Folga</label>
+                <div id="eqc-trab">${e.turnos.map(t => { const h = eqTurnoH(s, t.id); return `<label class="ck"><input type="checkbox" class="eqc-t" value="${t.id}" ${(c.t || []).includes(t.id) ? 'checked' : ''} onchange="eqCelVista(this)">${escapeHtml(t.nome)}<small>${h.ini}–${h.fim}</small></label>`; }).join('')}
+                    <label class="ck"><input type="checkbox" id="eqc-hd" ${c.ini && c.fim ? 'checked' : ''} onchange="eqCelVista(this)">Horário diferente neste dia</label>
                     <div class="dois" id="eqc-h" style="${c.ini && c.fim ? '' : 'display:none'}"><label class="f">Entra<input type="time" id="eqc-ini" value="${c.ini || ''}"></label><label class="f">Sai<input type="time" id="eqc-fim" value="${c.fim || ''}"></label></div></div>
+                <div class="tit">Faltas <span>(se estava escalado e não veio)</span></div>
+                <div id="eqc-faltas">${e.turnos.map(t => `<label class="ck falta" data-t="${t.id}"><input type="checkbox" class="eqc-ft" value="${t.id}" ${ft.includes(t.id) ? 'checked' : ''}>Faltou ao ${escapeHtml(t.nome)}</label>`).join('')}
+                    <label class="ck falta" id="eqc-fd-l"><input type="checkbox" id="eqc-fd" ${c.fd ? 'checked' : ''} onchange="eqCelVista(this)">Faltou ao dia todo</label>
+                    <label class="f" id="eqc-fm-l">Motivo (opcional)<input id="eqc-fm" maxlength="60" value="${escapeHtml(c.fm || '')}" placeholder="Ex.: doente, sem aviso"></label></div>
                 <label class="ck"><input type="checkbox" id="eqc-rep">Repetir nos mesmos dias das próximas 3 semanas</label>
-                <div class="acoes"><button type="button" class="d" onclick="eqCelGravar('${k}','${sid}',true)"><i class="fas fa-eraser"></i></button><button type="button" onclick="dsModalFechar('eq-cel')">Cancelar</button><button type="button" class="p" onclick="eqCelGravar('${k}','${sid}')">Guardar</button></div></div>`);
+                <div class="acoes"><button type="button" class="d" onclick="eqCelGravar('${k}','${sid}',true)" aria-label="Limpar o dia"><i class="fas fa-eraser"></i></button><button type="button" onclick="dsModalFechar('eq-cel')">Cancelar</button><button type="button" class="p" onclick="eqCelGravar('${k}','${sid}')">Guardar</button></div></div>`);
             eqCelVista();
         }
-        function eqCelVista() {
-            const f = document.getElementById('eqc-folga').checked;
-            document.getElementById('eqc-trab').style.opacity = f ? '.45' : '';
-            if (f) document.querySelectorAll('.eqc-t').forEach(x => x.checked = false);
+        function eqCelVista(src) {
+            const fo = document.getElementById('eqc-folga'), fd = document.getElementById('eqc-fd');
+            if (src && src.classList && src.classList.contains('eqc-t') && src.checked) fo.checked = false;
+            if (src === fo && fo.checked) { document.querySelectorAll('.eqc-t,.eqc-ft').forEach(x => x.checked = false); fd.checked = false; document.getElementById('eqc-hd').checked = false; }
+            if (src === fd && fd.checked) fo.checked = false;
+            document.getElementById('eqc-trab').style.opacity = fo.checked ? '.45' : '';
             document.getElementById('eqc-h').style.display = document.getElementById('eqc-hd').checked ? '' : 'none';
+            const marcados = [...document.querySelectorAll('.eqc-t:checked')].map(x => x.value), temH = document.getElementById('eqc-hd').checked;
+            document.querySelectorAll('#eqc-faltas label[data-t]').forEach(l => { const on = marcados.includes(l.dataset.t) && !fd.checked; l.style.display = on ? '' : 'none'; if (!on) l.querySelector('input').checked = false; });
+            document.getElementById('eqc-fd-l').style.display = fo.checked ? 'none' : '';
+            document.getElementById('eqc-fm-l').style.display = fo.checked ? 'none' : '';
+            document.getElementById('eqc-faltas').previousElementSibling.style.display = fo.checked ? 'none' : '';
+            void temH;
         }
         function eqCelGravar(k, sid, limpar) {
             const e = eqDados(); let v = null;
             if (!limpar) {
-                const folga = document.getElementById('eqc-folga').checked;
-                const t = [...document.querySelectorAll('.eqc-t:checked')].map(x => x.value);
+                const folga = document.getElementById('eqc-folga').checked, t = [...document.querySelectorAll('.eqc-t:checked')].map(x => x.value);
                 const hd = document.getElementById('eqc-hd').checked, ini = document.getElementById('eqc-ini').value, fim = document.getElementById('eqc-fim').value;
+                const ft = [...document.querySelectorAll('.eqc-ft:checked')].map(x => x.value), fd = document.getElementById('eqc-fd').checked, fm = document.getElementById('eqc-fm').value.trim().slice(0, 60);
                 if (hd && !folga && (!ini || !fim)) return dsToast('Escreva a hora de entrada e de saída.', true);
                 if (folga) v = { folga: true };
-                else if (t.length || hd) { v = { t }; if (hd) { v.ini = ini; v.fim = fim; } }
+                else if (t.length || hd || fd) { v = { t }; if (hd) { v.ini = ini; v.fim = fim; } if (ft.length) v.ft = ft; if (fd) v.fd = true; if ((ft.length || fd) && fm) v.fm = fm; }
             }
             const rep = !limpar && document.getElementById('eqc-rep') && document.getElementById('eqc-rep').checked;
             const alvos = [k].concat(rep ? [1, 2, 3].map(n => eqKey(eqMais(eqData(k), 7 * n))) : []);
-            alvos.forEach(kk => { if (!e.escala[kk]) e.escala[kk] = {}; if (v) e.escala[kk][sid] = JSON.parse(JSON.stringify(v)); else delete e.escala[kk][sid]; if (!Object.keys(e.escala[kk]).length) delete e.escala[kk]; });
+            alvos.forEach((kk, i) => { if (!e.escala[kk]) e.escala[kk] = {};
+                let vv = v ? JSON.parse(JSON.stringify(v)) : null;
+                if (vv && i > 0) { delete vv.ft; delete vv.fd; delete vv.fm; }   // as faltas não se repetem
+                if (vv) e.escala[kk][sid] = vv; else delete e.escala[kk][sid];
+                if (!Object.keys(e.escala[kk]).length) delete e.escala[kk]; });
             eqGuardar(); dsModalFechar('eq-cel'); eqPintar();
         }
 
         // ---------- pessoas
         function eqPessoa(id) {
-            if (!eqPodeEditar()) return dsToast('Só o responsável da conta altera a equipe.', true);
-            const e = eqDados(), s = (id && e.staff.find(x => x.id === id)) || { nome: '', funcao: '', cor: EQ_CORES[e.staff.length % EQ_CORES.length], tips: true, padrao: {} };
-            const pd = s.padrao || {};
-            window._eqCor = s.cor;
+            if (!eqPodeEditar()) return dsToast('Pode ver a equipe. Só o responsável da conta a altera.', true);
+            const e = eqDados(), s = (id && eqPessoaDe(id)) || { nome: '', funcao: '', area: '', cor: EQ_CORES[e.staff.length % EQ_CORES.length], tipsModo: 'trabalha', padrao: {}, horas: {} };
+            const pd = s.padrao || {}, hs = s.horas || {}, areas = [...new Set(EQ_AREAS.concat(e.staff.map(eqArea).filter(Boolean)))];
+            window._eqCor = s.cor; window._eqArea = s.area || '';
+            const tm = s.tipsModo || 'trabalha';
             dsModal('eq-p', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><h3>${id ? 'Editar pessoa' : 'Nova pessoa'}</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-p')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 <label class="f">Nome<input id="eqp-n" maxlength="40" value="${escapeHtml(s.nome)}" placeholder="Ex.: Ana"></label>
-                <label class="f">Função (opcional)<input id="eqp-f" maxlength="40" value="${escapeHtml(s.funcao || '')}" placeholder="Ex.: Barista, Sala, Cozinha"></label>
-                <div class="f" style="margin-top:12px;font-size:13px;font-weight:700;color:#3A2A22">Cor<div class="cores" id="eqp-cores">${EQ_CORES.map(c => `<button type="button" style="background:${c}" class="${c === s.cor ? 'on' : ''}" onclick="window._eqCor='${c}';document.querySelectorAll('#eqp-cores button').forEach(b=>b.classList.toggle('on',b===this))" aria-label="Cor"></button>`).join('')}</div></div>
-                <label class="ck"><input type="checkbox" id="eqp-tips" ${s.tips !== false ? 'checked' : ''}>Recebe tips</label>
-                <div style="margin-top:14px;font-size:13px;font-weight:800;color:#231F20">Padrão da semana <span style="font-weight:600;color:#7A6A60">(opcional)</span></div>
-                <p class="sub">Os dias e turnos de sempre. Use "Preencher com o padrão" para montar a semana num toque.</p>
+                <label class="f">Função (opcional)<input id="eqp-f" maxlength="40" value="${escapeHtml(s.funcao || '')}" placeholder="Ex.: Barista, Chefe de sala"></label>
+                <div class="tit">Área <span>(a escala conta cada área à parte)</span></div>
+                <div class="pz" id="eqp-areas">${areas.map(a => `<button type="button" class="${s.area === a ? 'on' : ''}" onclick="eqAreaEscolher(this,'${escapeHtml(a)}')">${escapeHtml(a)}</button>`).join('')}<button type="button" onclick="eqAreaNova(this)"><i class="fas fa-plus"></i> Outra</button></div>
+                <div class="tit">Cor</div><div class="cores" id="eqp-cores">${EQ_CORES.map(c => `<button type="button" style="background:${c}" class="${c === s.cor ? 'on' : ''}" onclick="window._eqCor='${c}';document.querySelectorAll('#eqp-cores button').forEach(b=>b.classList.toggle('on',b===this))" aria-label="Cor"></button>`).join('')}</div>
+                <div class="tit">Tips</div>
+                <div class="opc">
+                    <label><input type="radio" name="eqp-tm" value="trabalha" ${tm === 'trabalha' ? 'checked' : ''}><span>Nos dias em que trabalha<small>Entra na divisão dos turnos em que está escalado.</small></span></label>
+                    <label><input type="radio" name="eqp-tm" value="sempre" ${tm === 'sempre' ? 'checked' : ''}><span>Todos os dias<small>Recebe a sua parte de todas as tips, mesmo nos dias em que não está escalado.</small></span></label>
+                    <label><input type="radio" name="eqp-tm" value="nao" ${tm === 'nao' ? 'checked' : ''}><span>Não recebe tips</span></label></div>
+                <div class="tit">Horário próprio <span>(opcional, se entra ou sai a horas diferentes do turno)</span></div>
+                ${e.turnos.map(t => `<div class="hp"><span>${escapeHtml(t.nome)}</span><input type="time" data-t="${t.id}" data-k="ini" value="${(hs[t.id] || {}).ini || ''}" placeholder="${t.ini}" aria-label="${escapeHtml(t.nome)}: entra"><input type="time" data-t="${t.id}" data-k="fim" value="${(hs[t.id] || {}).fim || ''}" placeholder="${t.fim}" aria-label="${escapeHtml(t.nome)}: sai"></div>`).join('')}
+                <p class="sub" style="margin-top:4px">Em branco, usa o horário do turno (${e.turnos.map(t => `${escapeHtml(t.nome)} ${t.ini}–${t.fim}`).join(', ')}).</p>
+                <div class="tit">Padrão da semana <span>(opcional)</span></div>
+                <p class="sub">Os dias e turnos de sempre. "Preencher com o padrão" monta a semana num toque.</p>
                 ${e.turnos.map(t => `<div style="margin-top:8px;font-size:12.5px;font-weight:700;color:#5B4A40">${escapeHtml(t.nome)}</div><div class="dias" data-t="${t.id}">${EQ_DIAS.map((d, i) => `<button type="button" class="${(pd[i] || []).includes(t.id) ? 'on' : ''}" onclick="this.classList.toggle('on')">${d}</button>`).join('')}</div>`).join('')}
-                <div class="acoes">${id ? `<button type="button" class="d" onclick="eqPessoaApagar('${id}')"><i class="fas fa-trash"></i></button>` : ''}<button type="button" onclick="dsModalFechar('eq-p')">Cancelar</button><button type="button" class="p" onclick="eqPessoaGravar('${id || ''}')">Guardar</button></div></div>`);
+                <div class="acoes">${id ? `<button type="button" class="d" onclick="eqPessoaApagar('${id}')" aria-label="Tirar da equipe"><i class="fas fa-trash"></i></button>` : ''}<button type="button" onclick="dsModalFechar('eq-p')">Cancelar</button><button type="button" class="p" onclick="eqPessoaGravar('${id || ''}')">Guardar</button></div></div>`);
             setTimeout(() => { const n = document.getElementById('eqp-n'); if (n && !id) n.focus(); }, 60);
+        }
+        function eqAreaEscolher(b, a) { const on = !b.classList.contains('on'); document.querySelectorAll('#eqp-areas button').forEach(x => x.classList.remove('on')); if (on) b.classList.add('on'); window._eqArea = on ? a : ''; }
+        async function eqAreaNova(b) {
+            const n = await dsPromptBox('Nova área', 'Ex.: Esplanada, Pastelaria', '', { ok: 'Juntar' }); const a = String(n || '').trim().slice(0, 24); if (!a) return;
+            b.insertAdjacentHTML('beforebegin', `<button type="button" onclick="eqAreaEscolher(this,'${escapeHtml(a).replace(/'/g, '&#39;')}')">${escapeHtml(a)}</button>`); eqAreaEscolher(b.previousElementSibling, a);
         }
         function eqPessoaGravar(id) {
             const e = eqDados(), nome = document.getElementById('eqp-n').value.trim().replace(/\s+/g, ' ');
             if (!nome) return dsToast('Escreva o nome.', true);
-            const padrao = {};
+            const padrao = {}, horas = {};
             document.querySelectorAll('#eq-p .dias').forEach(g => g.querySelectorAll('button').forEach((b, i) => { if (b.classList.contains('on')) (padrao[i] = padrao[i] || []).push(g.dataset.t); }));
-            const v = { nome: nome.slice(0, 40), funcao: document.getElementById('eqp-f').value.trim().slice(0, 40), cor: window._eqCor || '#983808', tips: document.getElementById('eqp-tips').checked, padrao };
-            if (id) Object.assign(e.staff.find(x => x.id === id) || {}, v); else e.staff.push(Object.assign({ id: eqId() }, v));
+            let mau = false;
+            e.turnos.forEach(t => { const ini = (document.querySelector(`#eq-p .hp input[data-t="${t.id}"][data-k="ini"]`) || {}).value || '', fim = (document.querySelector(`#eq-p .hp input[data-t="${t.id}"][data-k="fim"]`) || {}).value || '';
+                if (ini && fim) horas[t.id] = { ini, fim }; else if (ini || fim) mau = true; });
+            if (mau) return dsToast('No horário próprio, escreva a entrada e a saída (ou deixe as duas em branco).', true);
+            const tm = (document.querySelector('#eq-p input[name="eqp-tm"]:checked') || {}).value || 'trabalha';
+            const v = { nome: nome.slice(0, 40), funcao: document.getElementById('eqp-f').value.trim().slice(0, 40), area: (window._eqArea || '').slice(0, 24), cor: window._eqCor || '#983808', tipsModo: tm, tips: tm !== 'nao', padrao, horas };
+            if (id) Object.assign(eqPessoaDe(id) || {}, v); else e.staff.push(Object.assign({ id: eqId() }, v));
             eqGuardar(); dsModalFechar('eq-p'); eqPintar();
         }
         async function eqPessoaApagar(id) {
-            const e = eqDados(), s = e.staff.find(x => x.id === id); if (!s) return;
-            if (!(await dsConfirm(`Tirar ${s.nome} da equipe?`, 'A escala desta pessoa também sai. As tips já divididas mudam se voltar a calcular semanas antigas.', { ok: 'Tirar', danger: true }))) return;
+            const e = eqDados(), s = eqPessoaDe(id); if (!s) return;
+            if (!(await dsConfirm(`Tirar ${s.nome} da equipe?`, 'A escala desta pessoa também sai, e as tips das semanas já feitas voltam a ser divididas sem ela.', { ok: 'Tirar', danger: true }))) return;
             e.staff = e.staff.filter(x => x.id !== id);
             Object.keys(e.escala).forEach(k => { delete e.escala[k][id]; if (!Object.keys(e.escala[k]).length) delete e.escala[k]; });
             eqGuardar(); dsModalFechar('eq-p'); eqPintar();
@@ -21829,34 +21939,39 @@ var qrcode = function() {
         async function eqCopiarSemana() {
             const e = eqDados(), ks = eqSemanaKeys(eqSeg), ant = eqSemanaKeys(eqMais(eqSeg, -7));
             if (!ant.some(k => e.escala[k] && Object.keys(e.escala[k]).length)) return dsToast('A semana anterior está vazia.', true);
-            if (ks.some(k => e.escala[k] && Object.keys(e.escala[k]).length) && !(await dsConfirm('Substituir esta semana?', 'A escala desta semana fica igual à da semana anterior.', { ok: 'Substituir' }))) return;
-            ks.forEach((k, i) => { if (e.escala[ant[i]]) e.escala[k] = JSON.parse(JSON.stringify(e.escala[ant[i]])); else delete e.escala[k]; });
+            if (ks.some(k => e.escala[k] && Object.keys(e.escala[k]).length) && !(await dsConfirm('Substituir esta semana?', 'A escala desta semana fica igual à da semana anterior (sem as faltas).', { ok: 'Substituir' }))) return;
+            ks.forEach((k, i) => { if (e.escala[ant[i]]) { const c = JSON.parse(JSON.stringify(e.escala[ant[i]])); Object.values(c).forEach(x => { delete x.ft; delete x.fd; delete x.fm; }); e.escala[k] = c; } else delete e.escala[k]; });
             eqGuardar(); eqPintar(); dsToast('Escala copiada da semana anterior.');
         }
         function eqEnviarEscala() {
             const e = eqDados(), ks = eqSemanaKeys(eqSeg);
             let t = `*Escala ${eqSemanaTxt(eqSeg)}*${currentEmpresa ? ' · ' + currentEmpresa : ''}\n`;
-            e.staff.forEach(s => {
-                const dias = ks.map((k, i) => { const c = eqCel(k, s.id); if (!c) return null; if (c.folga) return `${EQ_DIAS[i]} folga`;
-                    const tt = (c.t || []).map(eqTurnoNome).filter(Boolean).join('+'); return `${EQ_DIAS[i]} ${tt}${c.ini && c.fim ? ` ${c.ini}-${c.fim}` : ''}`.trim(); }).filter(Boolean);
-                if (dias.length) t += `\n*${s.nome}:* ${dias.join(' · ')}`;
+            eqAreas().forEach(a => {
+                const l = e.staff.filter(s => eqArea(s) === a); if (!l.length) return;
+                if (a) t += `\n_${a}_`;
+                l.forEach(s => {
+                    const dias = ks.map((k, i) => { const c = eqCel(k, s.id); if (!c) return null; if (c.folga) return `${EQ_DIAS[i]} folga`;
+                        if (c.ini && c.fim) return `${EQ_DIAS[i]} ${c.ini}-${c.fim}`;
+                        return `${EQ_DIAS[i]} ` + (c.t || []).filter(eqTurno).map(id => { const h = eqTurnoH(s, id); return `${h.ini}-${h.fim}`; }).join(' e '); }).filter(Boolean);
+                    if (dias.length) t += `\n*${s.nome}:* ${dias.join(' · ')}`;
+                });
+                t += '\n';
             });
-            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t.trim()), '_blank');
         }
 
         // ---------- turnos
         function eqTurnos() {
             if (!eqPodeEditar()) return;
             window._eqTl = JSON.parse(JSON.stringify(eqDados().turnos));
-            const pintar = () => {
+            window.eqTurnosPintar = () => {
                 document.getElementById('eqt-l').innerHTML = window._eqTl.map((t, i) => `<div class="tl"><input value="${escapeHtml(t.nome)}" maxlength="20" oninput="_eqTl[${i}].nome=this.value" aria-label="Nome do turno"><input type="time" value="${t.ini}" oninput="_eqTl[${i}].ini=this.value" aria-label="Início"><input type="time" value="${t.fim}" oninput="_eqTl[${i}].fim=this.value" aria-label="Fim"><button type="button" onclick="_eqTl.splice(${i},1);eqTurnosPintar()" ${window._eqTl.length <= 1 ? 'disabled style="opacity:.3"' : ''} aria-label="Tirar"><i class="fas fa-trash"></i></button></div>`).join('');
             };
-            window.eqTurnosPintar = pintar;
-            dsModal('eq-t', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>Turnos</h3><p class="sub">Os turnos que aparecem na escala e nas tips (ex.: Almoço e Jantar).</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-t')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+            dsModal('eq-t', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>Turnos</h3><p class="sub">Os turnos da escala e das tips. Cada pessoa pode ter o seu horário próprio (toque no nome).</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-t')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 <div class="tl" style="margin-top:12px;font-size:12px;font-weight:700;color:#7A6A60"><span>Nome</span><span>Começa</span><span>Acaba</span><span></span></div><div id="eqt-l"></div>
                 <button type="button" class="eq-b" style="margin-top:10px" onclick="if(_eqTl.length>=5)return dsToast('No máximo 5 turnos.',true);_eqTl.push({id:'t'+Date.now().toString(36),nome:'',ini:'09:00',fim:'17:00'});eqTurnosPintar()"><i class="fas fa-plus"></i>Turno</button>
                 <div class="acoes"><button type="button" onclick="dsModalFechar('eq-t')">Cancelar</button><button type="button" class="p" onclick="eqTurnosGravar()">Guardar</button></div></div>`);
-            pintar();
+            window.eqTurnosPintar();
         }
         function eqTurnosGravar() {
             const l = window._eqTl.map(t => ({ id: t.id, nome: String(t.nome || '').trim().slice(0, 20), ini: t.ini, fim: t.fim }));
@@ -21880,13 +21995,17 @@ var qrcode = function() {
             else if (cfg.modo === 'dia') entrada = `<div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">Tips recebidas</th>${eqCabecalho(ks)}</tr></thead><tbody>
                     <tr><td class="nm lbl">Total do dia</td>${ks.map((k, d) => `<td class="in">${din((e.tips[k] || {}).d, `eqTipSet('${k}','d','',this.value)`, EQ_DIAS_L[d])}</td>`).join('')}</tr></tbody></table></div></div>`;
             else entrada = `<div class="eq-box" style="margin-top:14px"><b>Tips da semana</b><div class="eq-sem">${din(e.tipsSemana[segK], `eqTipSet('${segK}','s','',this.value)`, 'Tips da semana')}<span class="eq-nota" style="margin:0">Total recebido de ${eqSemanaTxt(eqSeg)}.</span></div></div>`;
-            const quem = e.staff.filter(s => s.tips !== false), fora = e.staff.filter(s => s.tips === false);
+            const quem = e.staff.filter(s => s.tipsModo !== 'nao'), fora = e.staff.filter(s => s.tipsModo === 'nao'), sempre = e.staff.filter(s => s.tipsModo === 'sempre');
             const linhas = quem.map(s => {
                 const x = r.res[s.id];
-                const cels = ks.map((k, d) => { const c = eqCel(k, s.id); const m = eqTrab(c) ? (c.t || []).map(id => `<span>${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span>`).join('') || `<span>${c.ini}–${c.fim}</span>` : c && c.folga ? '<span style="background:transparent;color:inherit;opacity:.6">folga</span>' : '';
+                const cels = ks.map((k, d) => { const c = eqCel(k, s.id);
+                    let m = '';
+                    if (c && c.folga) m = '<span style="background:transparent;color:inherit;opacity:.6">folga</span>';
+                    else if (c && c.fd) m = '<span class="x">falta</span>';
+                    else if (c) m = (c.t || []).filter(eqTurno).map(id => `<span class="${(c.ft || []).includes(id) ? 'x' : ''}">${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span>`).join('') || (c.ini ? `<span>${c.ini}–${c.fim}</span>` : '');
                     const v = cfg.modo === 'semana' ? '' : (x.dias[d] ? eqEur(x.dias[d]) : `<span class="zero">${eqTrab(c) ? '0,00 €' : '—'}</span>`);
                     return `<td class="v"><button type="button" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${v}<span class="m">${m}</span></button></td>`; }).join('');
-                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}</span></button></td>${cels}<td class="rec">${eqEur(x.total)}</td></tr>`;
+                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}${s.tipsModo === 'sempre' ? '<small>todos os dias</small>' : ''}</span></button></td>${cels}<td class="rec">${eqEur(x.total)}</td></tr>`;
             }).join('');
             const soma = Math.round(Object.values(r.res).reduce((a, x) => a + x.total, 0) * 100) / 100;
             el.innerHTML = `<div class="eq-opc">
@@ -21898,7 +22017,7 @@ var qrcode = function() {
                 ${r.avisos.map(a => `<div class="eq-aviso"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(a)} Marque quem trabalhou na escala.</div>`).join('')}
                 <div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">A receber</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
                     <tfoot><tr><td class="nm">Tips</td>${ks.map((k, d) => `<td>${cfg.modo === 'semana' ? '' : eqEur(r.porDia[d])}</td>`).join('')}<td>${eqEur(r.total)}</td></tr></tfoot></table></div></div>
-                <p class="eq-nota">Quem trabalhou vem da Escala: toque num dia para corrigir. A divisão é feita ao cêntimo e a soma bate certo com o total (${eqEur(soma)} de ${eqEur(r.total)}).${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
+                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. As partes de cada dia são exatas e só o total da semana é arredondado ao cêntimo: quem fez os mesmos turnos recebe o mesmo e a soma bate com o total (${eqEur(soma)} de ${eqEur(r.total)}). Os valores de cada dia são aproximados ao cêntimo.${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
                 <div class="eq-bar"><button type="button" class="eq-b" onclick="eqEnviarTips()"><i class="fab fa-whatsapp"></i>Enviar resumo</button></div>`;
         }
         function eqTipSet(k, tipo, tid, val) {
@@ -21921,8 +22040,111 @@ var qrcode = function() {
         function eqEnviarTips() {
             const r = eqCalcular(eqSeg), e = eqDados();
             let t = `*Tips ${eqSemanaTxt(eqSeg)}*${currentEmpresa ? ' · ' + currentEmpresa : ''}\nTotal: ${eqEur(r.total)}\n`;
-            e.staff.filter(s => s.tips !== false && r.res[s.id] && r.res[s.id].total > 0).forEach(s => { t += `\n${s.nome}: ${eqEur(r.res[s.id].total)}`; });
+            e.staff.filter(s => r.res[s.id] && r.res[s.id].total > 0).forEach(s => { t += `\n${s.nome}: ${eqEur(r.res[s.id].total)}`; });
             window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
+        }
+
+        // ---------- documentos (manual, normas, regras…)
+        const eqDocIcon = d => d.tipo === 'texto' ? 'fa-file-lines' : /pdf/.test(d.mime) ? 'fa-file-pdf' : /^image\//.test(d.mime) ? 'fa-file-image' : /word/.test(d.mime) ? 'fa-file-word' : /sheet|excel/.test(d.mime) ? 'fa-file-excel' : /presentation/.test(d.mime) ? 'fa-file-powerpoint' : 'fa-file';
+        const eqTam = b => b > 1048576 ? (b / 1048576).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+        let eqUrls = {};
+        async function eqDocUrl(d) {
+            const c = eqUrls[d.path]; if (c && c.ate > Date.now()) return c.url;
+            const { data, error } = await sb.storage.from('documentos').createSignedUrl(d.path, 3600);
+            if (error) throw error; eqUrls[d.path] = { url: data.signedUrl, ate: Date.now() + 3000e3 }; return data.signedUrl;
+        }
+        function eqPintarDocs() {
+            const el = document.getElementById('eq-corpo'), e = eqDados(), ed = eqPodeEditar();
+            const cats = EQ_CATS.filter(c => e.docs.some(d => d.cat === c));
+            const l = e.docs.filter(d => !eqDocCat || d.cat === eqDocCat).sort((a, b) => (EQ_CATS.indexOf(a.cat) - EQ_CATS.indexOf(b.cat)) || String(b.em).localeCompare(String(a.em)));
+            const barra = ed ? `<div class="eq-bar"><button type="button" class="eq-b p" onclick="eqDocNovo()"><i class="fas fa-upload"></i>Juntar documento</button><button type="button" class="eq-b" onclick="eqDocTexto()"><i class="fas fa-pen"></i>Escrever documento</button></div>` : '';
+            if (!e.docs.length) { el.innerHTML = barra + `<div class="eq-card eq-vazio"><b>Ainda sem documentos</b><p>Junte o manual da empresa, as normas e as regras da casa (PDF, Word ou fotos), ou escreva-os aqui. Toda a equipa os pode abrir no telemóvel.</p>${ed ? '<button type="button" class="eq-b p" onclick="eqDocNovo()"><i class="fas fa-upload"></i>Juntar o primeiro documento</button>' : ''}</div>`; return; }
+            el.innerHTML = barra + (cats.length > 1 ? `<div class="eq-pills" style="margin-top:14px"><button type="button" class="${!eqDocCat ? 'on' : ''}" onclick="eqDocCat='';eqPintarDocs()">Todos</button>${cats.map(c => `<button type="button" class="${eqDocCat === c ? 'on' : ''}" onclick="eqDocCat='${c}';eqPintarDocs()">${c}</button>`).join('')}</div>` : '')
+                + `<div class="eq-docs">${l.map(d => `<button type="button" class="eq-doc" onclick="eqDocAbrir('${d.id}')"><span class="cap ${/pdf/.test(d.mime || '') ? 'pdf' : d.tipo === 'texto' ? 'txt' : ''}" data-img="${/^image\//.test(d.mime || '') ? d.id : ''}"><i class="fas ${eqDocIcon(d)}"></i></span><span class="inf"><b>${escapeHtml(d.nome)}</b><small>${new Date(d.em).toLocaleDateString('pt-PT')}${d.tam ? ' · ' + eqTam(d.tam) : ''}</small><span class="cat">${escapeHtml(d.cat || 'Outros')}</span></span></button>`).join('')}</div>`;
+            // miniaturas das fotos
+            l.filter(d => /^image\//.test(d.mime || '')).forEach(async d => { try { const u = await eqDocUrl(d); const c = el.querySelector(`[data-img="${d.id}"]`); if (c) { c.style.backgroundImage = `url('${u}')`; c.innerHTML = ''; } } catch (_) {} });
+        }
+        function eqDocNovo() {
+            if (!eqPodeEditar()) return;
+            dsModal('eq-d', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>Juntar documento</h3><p class="sub">PDF, Word, Excel, PowerPoint ou fotos. Até 20 MB.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-d')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <label class="drop"><i class="fas fa-cloud-arrow-up"></i><span id="eqd-fn">Escolher ficheiro</span><small>ou tirar uma foto</small><input type="file" id="eqd-file" class="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,image/*" onchange="eqDocEscolhido(this)"></label>
+                <label class="f">Nome<input id="eqd-n" maxlength="60" placeholder="Ex.: Manual da empresa"></label>
+                <div class="tit">Tipo</div><div class="pz" id="eqd-cat">${EQ_CATS.map((c, i) => `<button type="button" class="${i === 0 ? 'on' : ''}" onclick="document.querySelectorAll('#eqd-cat button').forEach(b=>b.classList.toggle('on',b===this))">${c}</button>`).join('')}</div>
+                <div class="acoes"><button type="button" onclick="dsModalFechar('eq-d')">Cancelar</button><button type="button" class="p" id="eqd-ok" onclick="eqDocEnviar()">Guardar</button></div></div>`);
+        }
+        function eqDocEscolhido(inp) {
+            const f = inp.files && inp.files[0]; if (!f) return;
+            document.getElementById('eqd-fn').textContent = f.name + ' · ' + eqTam(f.size);
+            const n = document.getElementById('eqd-n'); if (!n.value) n.value = f.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 60);
+        }
+        const EQ_MIME = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', xls: 'application/vnd.ms-excel', xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', txt: 'text/plain', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic' };
+        async function eqDocEnviar() {
+            const f = (document.getElementById('eqd-file').files || [])[0], nome = document.getElementById('eqd-n').value.trim();
+            if (!f) return dsToast('Escolha o ficheiro.', true);
+            if (f.size > 20 * 1048576) return dsToast('O ficheiro passa de 20 MB. Reduza-o ou divida-o.', true);
+            const ext = (f.name.split('.').pop() || '').toLowerCase(), mime = f.type || EQ_MIME[ext] || '';
+            if (!Object.values(EQ_MIME).includes(mime)) return dsToast('Este tipo de ficheiro não é aceite. Use PDF, Word, Excel, PowerPoint ou fotos.', true);
+            const cat = (document.querySelector('#eqd-cat button.on') || {}).textContent || 'Outros', id = eqId();
+            const path = `${dataOwnerId}/${id}.${ext || 'bin'}`, bt = document.getElementById('eqd-ok');
+            bt.disabled = true; bt.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> A enviar…';
+            try {
+                const { error } = await sb.storage.from('documentos').upload(path, f, { contentType: mime, upsert: false });
+                if (error) throw error;
+                eqDados().docs.push({ id, nome: (nome || f.name).slice(0, 60), cat, tipo: 'ficheiro', path, mime, tam: f.size, em: new Date().toISOString(), por: (currentUser && currentUser.email) || '' });
+                eqGuardar(); dsModalFechar('eq-d'); eqPintarDocs(); dsToast('Documento guardado.');
+            } catch (e) { console.warn(e); bt.disabled = false; bt.textContent = 'Guardar'; dsToast('Não foi possível enviar o documento. Verifique a ligação e tente de novo.', true); }
+        }
+        function eqDocTexto(id) {
+            if (!eqPodeEditar()) return;
+            const d = (id && eqDados().docs.find(x => x.id === id)) || { nome: '', cat: 'Regras', texto: '' };
+            dsModal('eq-d', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><h3>${id ? 'Editar documento' : 'Escrever documento'}</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-d')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <label class="f">Título<input id="eqd-n" maxlength="60" value="${escapeHtml(d.nome)}" placeholder="Ex.: Regras da casa"></label>
+                <div class="tit">Tipo</div><div class="pz" id="eqd-cat">${EQ_CATS.map(c => `<button type="button" class="${d.cat === c ? 'on' : ''}" onclick="document.querySelectorAll('#eqd-cat button').forEach(b=>b.classList.toggle('on',b===this))">${c}</button>`).join('')}</div>
+                <label class="f">Texto<textarea id="eqd-t" rows="12" maxlength="20000" placeholder="Escreva aqui. Cada linha fica como está.">${escapeHtml(d.texto || '')}</textarea></label>
+                <div class="acoes"><button type="button" onclick="dsModalFechar('eq-d')">Cancelar</button><button type="button" class="p" onclick="eqDocTextoGravar('${id || ''}')">Guardar</button></div></div>`);
+        }
+        function eqDocTextoGravar(id) {
+            const nome = document.getElementById('eqd-n').value.trim(), texto = document.getElementById('eqd-t').value;
+            if (!nome) return dsToast('Escreva o título.', true);
+            if (!texto.trim()) return dsToast('Escreva o texto do documento.', true);
+            const cat = (document.querySelector('#eqd-cat button.on') || {}).textContent || 'Outros', e = eqDados();
+            const d = id && e.docs.find(x => x.id === id);
+            if (d) Object.assign(d, { nome: nome.slice(0, 60), cat, texto: texto.slice(0, 20000), em: new Date().toISOString() });
+            else e.docs.push({ id: eqId(), nome: nome.slice(0, 60), cat, tipo: 'texto', texto: texto.slice(0, 20000), em: new Date().toISOString(), por: (currentUser && currentUser.email) || '' });
+            eqGuardar(); dsModalFechar('eq-d'); eqPintarDocs(); if (d) eqDocAbrir(d.id);
+        }
+        async function eqDocAbrir(id) {
+            const d = eqDados().docs.find(x => x.id === id); if (!d) return;
+            let v = document.getElementById('eq-ver');
+            if (!v) { document.body.insertAdjacentHTML('beforeend', '<div id="eq-ver" role="dialog" aria-modal="true"></div>'); v = document.getElementById('eq-ver'); }
+            const ed = eqPodeEditar();
+            const topo = (extra) => `<div class="top"><button type="button" onclick="eqDocFechar()" aria-label="Fechar"><i class="fas fa-arrow-left"></i></button><b>${escapeHtml(d.nome)}</b>${extra || ''}${ed ? `<button type="button" onclick="${d.tipo === 'texto' ? `eqDocFechar();eqDocTexto('${d.id}')` : `eqDocRenomear('${d.id}')`}" aria-label="Editar"><i class="fas fa-pen"></i></button><button type="button" onclick="eqDocApagar('${d.id}')" aria-label="Apagar"><i class="fas fa-trash"></i></button>` : ''}</div>`;
+            v.classList.add('on'); document.documentElement.style.overflow = 'hidden';
+            if (d.tipo === 'texto') { v.innerHTML = topo() + `<div class="area"><div class="texto"><h1>${escapeHtml(d.nome)}</h1>${escapeHtml(d.texto || '')}</div></div>`; return; }
+            v.innerHTML = topo() + '<div class="area" style="align-items:center;color:#fff"><i class="fas fa-circle-notch fa-spin" style="font-size:28px"></i></div>';
+            try {
+                const u = await eqDocUrl(d), baixar = `<a href="${u}" target="_blank" rel="noopener" download="${escapeHtml(d.nome)}"><i class="fas fa-download"></i><span class="hidden sm:inline">Descarregar</span></a>`;
+                let corpo;
+                if (/^image\//.test(d.mime)) corpo = `<div class="area" id="eqv-a"><img src="${u}" alt="${escapeHtml(d.nome)}" onclick="document.getElementById('eqv-a').classList.toggle('zoom')"></div>`;
+                else if (/pdf/.test(d.mime)) corpo = `<div class="area"><iframe src="${u}#view=FitH" title="${escapeHtml(d.nome)}"></iframe></div>`;
+                else if (/officedocument|msword|ms-excel/.test(d.mime)) corpo = `<div class="area"><iframe src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(u)}" title="${escapeHtml(d.nome)}"></iframe></div>`;
+                else if (/text\/plain/.test(d.mime)) { const t = await (await fetch(u)).text(); corpo = `<div class="area"><div class="texto">${escapeHtml(t)}</div></div>`; }
+                else corpo = `<div class="area" style="align-items:center;color:#fff;text-align:center">Este documento não abre aqui. Use "Descarregar".</div>`;
+                if (document.getElementById('eq-ver').classList.contains('on')) v.innerHTML = topo(baixar) + corpo;
+            } catch (e) { console.warn(e); v.innerHTML = topo() + '<div class="area" style="align-items:center;color:#fff;text-align:center">Não foi possível abrir o documento. Verifique a ligação e tente de novo.</div>'; }
+        }
+        function eqDocFechar() { const v = document.getElementById('eq-ver'); if (v) { v.classList.remove('on'); v.innerHTML = ''; } document.documentElement.style.overflow = ''; }
+        document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document.getElementById('eq-ver') && document.getElementById('eq-ver').classList.contains('on')) eqDocFechar(); });
+        async function eqDocRenomear(id) {
+            const d = eqDados().docs.find(x => x.id === id); if (!d) return;
+            const n = await dsPromptBox('Nome do documento', '', d.nome, { ok: 'Guardar' }); if (n == null || !String(n).trim()) return;
+            d.nome = String(n).trim().slice(0, 60); eqGuardar(); eqDocAbrir(id); eqPintarDocs();
+        }
+        async function eqDocApagar(id) {
+            const e = eqDados(), d = e.docs.find(x => x.id === id); if (!d) return;
+            if (!(await dsConfirm(`Apagar "${d.nome}"?`, 'A equipa deixa de o ver. Não dá para desfazer.', { ok: 'Apagar', danger: true }))) return;
+            if (d.path) { const { error } = await sb.storage.from('documentos').remove([d.path]); if (error) { console.warn(error); return dsToast('Não foi possível apagar o ficheiro. Tente de novo.', true); } }
+            e.docs = e.docs.filter(x => x.id !== id); eqGuardar(); eqDocFechar(); eqPintarDocs(); dsToast('Documento apagado.');
         }
 
         // ---------- aba própria (depois da Fidelidade) e no menu de baixo
@@ -21936,15 +22158,81 @@ var qrcode = function() {
             const oT = switchTab;
             switchTab = function (t) {
                 const r = oT.apply(this, arguments);
-                if (t === 'equipa') {
-                    // a Equipe mostra o cadeado e os planos dentro da própria página
-                    try { document.querySelectorAll('#ds-bottom-nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === 'equipa')); eqPintar(); } catch (e) { console.error(e); }
-                }
+                if (t === 'equipa') { try { document.querySelectorAll('#ds-bottom-nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === 'equipa')); eqPintar(); } catch (e) { console.error(e); } }
                 return r;
             };
-            const lk = () => { const b = document.getElementById('nav-equipa'); if (b && typeof hasPlan === 'function') b.classList.toggle('locked', !hasPlan('pro')); };
-            try { lk(); } catch (_) {}
         })();
+
+        // ======================================================= PERMISSÕES DOS COLABORADORES (ver · alterar · tudo)
+        const PERM_TXT = { ver: 'Só ver', editar: 'Alterar', tudo: 'Tudo' };
+        const TIPO_TXT = { socio: 'Sócio', gerente: 'Gerente', funcionario: 'Funcionário' };
+        async function dsPermCarregar() {
+            dsPerm = currentRole === 'dono' ? 'dono' : 'editar';
+            if (currentRole !== 'dono') { try { const { data } = await sb.rpc('minha_permissao', { dono: dataOwnerId }); if (data) dsPerm = data; } catch (e) { console.warn(e); } }
+            document.body.classList.toggle('ds-so-ver', dsPerm === 'ver');
+        }
+        (function () {
+            // quem só pode ver não grava: o que mudar volta atrás e aparece o aviso
+            const oS = saveStorage;
+            saveStorage = function () {
+                if (typeof dsPerm !== 'undefined' && dsPerm === 'ver' && currentUser) {
+                    let g = null; try { g = localStorage.getItem(STORAGE_KEY); } catch (_) {}
+                    if (g && g === JSON.stringify(appState)) return;   // nada mudou
+                    try { if (g) { appState = JSON.parse(g); normalizeState(); } } catch (_) {}
+                    dsToast('Tem acesso só para ver. Peça ao responsável da conta para mudar o seu acesso.', true);
+                    try { const t = document.querySelector('.tab-content:not(.hidden)'); if (t) switchTab(t.id.replace('tab-', '')); } catch (_) {}
+                    return;
+                }
+                return oS.apply(this, arguments);
+            };
+            // colaboradores com permissões
+            loadCollaborators = async function () {
+                const box = document.getElementById('set-colab-list');
+                box.innerHTML = '<p class="text-xs text-slate-400 py-3">A carregar…</p>';
+                const { data, error } = await sb.from('membros').select('id, email, membro_id, criado_em, permissao, tipo').eq('dono_id', currentUser.id).order('criado_em');
+                if (error) { box.innerHTML = '<p class="text-xs text-red-600 py-3">Não foi possível carregar os colaboradores.</p>'; return; }
+                box.innerHTML = (data || []).map(m => `
+                    <div class="py-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="min-w-0"><p class="text-sm font-bold text-slate-800 truncate">${escapeHtml(m.email)}</p>
+                                <p class="text-[11px] ${m.membro_id ? 'text-emerald-600' : 'text-amber-600'} font-semibold">${m.membro_id ? 'Ativo' : 'À espera do primeiro acesso'}</p></div>
+                            <button type="button" onclick="removeCollaborator('${m.id}', '${escapeHtml(m.email)}')" class="text-xs font-bold text-slate-400 hover:text-red-600 px-2 py-1"><i class="fas fa-user-minus mr-1"></i>Remover</button>
+                        </div>
+                        <div class="cb-perm"><select onchange="colabMudar('${m.id}','tipo',this.value)" aria-label="Quem é">${Object.entries(TIPO_TXT).map(([v, l]) => `<option value="${v}" ${(m.tipo || 'funcionario') === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+                            <select onchange="colabMudar('${m.id}','permissao',this.value)" aria-label="O que pode fazer">${Object.entries(PERM_TXT).map(([v, l]) => `<option value="${v}" ${(m.permissao || 'editar') === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+                    </div>`).join('') || '<p class="text-xs text-slate-400 py-3">Ainda não adicionou colaboradores.</p>';
+                if (!document.getElementById('cb-leg')) box.insertAdjacentHTML('afterend', '<p class="cb-leg" id="cb-leg"><b>Só ver:</b> abre tudo mas não muda nada. <b>Alterar:</b> trabalha no dia a dia (fichas, stock, vendas, balcão, fidelidade), sem mexer na Equipe nem nos acessos. <b>Tudo:</b> igual ao responsável, incluindo a escala, as tips e os documentos.</p>');
+            };
+            addCollaborator = async function (e) {
+                if (e) e.preventDefault();
+                const email = document.getElementById('set-colab-email').value.trim().toLowerCase();
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return settingsMsg('Escreva um e-mail válido.');
+                if (email === (currentUser.email || '').toLowerCase()) return settingsMsg('Esse é o seu próprio e-mail.');
+                const permissao = (document.getElementById('set-colab-perm') || {}).value || 'editar', tipo = (document.getElementById('set-colab-tipo') || {}).value || 'funcionario';
+                const { error } = await sb.from('membros').insert({ dono_id: currentUser.id, email, permissao, tipo });
+                if (error) return settingsMsg(/duplicate|unique/i.test(error.message) ? 'Esse e-mail já é colaborador.' : authError(error));
+                document.getElementById('set-colab-email').value = '';
+                settingsMsg(`${TIPO_TXT[tipo]} adicionado com acesso "${PERM_TXT[permissao]}". Peça-lhe para abrir o Dio'Stock → "Primeiro acesso" → "Fui convidado por uma empresa" e usar ${email}.`, 'ok');
+                loadCollaborators();
+            };
+            removeCollaborator = async function (id, email) {
+                if (!(await dsConfirm('Retirar o acesso?', email + ' deixa de entrar nesta empresa.', { ok: 'Retirar', danger: true }))) return;
+                const { error } = await sb.from('membros').delete().eq('id', id);
+                if (error) return settingsMsg(authError(error));
+                settingsMsg('Acesso retirado.', 'ok'); loadCollaborators();
+            };
+            // escolher quem é e o que pode fazer, logo ao convidar
+            const f = document.querySelector('form[onsubmit="addCollaborator(event)"]');
+            if (f && !document.getElementById('set-colab-perm')) {
+                const inp = document.getElementById('set-colab-email');
+                inp.insertAdjacentHTML('afterend', `<select id="set-colab-tipo" class="text-sm" aria-label="Quem é">${Object.entries(TIPO_TXT).map(([v, l]) => `<option value="${v}" ${v === 'funcionario' ? 'selected' : ''}>${l}</option>`).join('')}</select><select id="set-colab-perm" class="text-sm" aria-label="O que pode fazer">${Object.entries(PERM_TXT).map(([v, l]) => `<option value="${v}" ${v === 'editar' ? 'selected' : ''}>${l}</option>`).join('')}</select>`);
+            }
+        })();
+        async function colabMudar(id, campo, v) {
+            const { error } = await sb.from('membros').update({ [campo]: v }).eq('id', id).eq('dono_id', currentUser.id);
+            if (error) { console.warn(error); settingsMsg('Não foi possível mudar. Tente de novo.'); return loadCollaborators(); }
+            settingsMsg(campo === 'permissao' ? `Acesso mudado para "${PERM_TXT[v]}". Vale a partir da próxima vez que a pessoa abrir o Dio'Stock.` : 'Guardado.', 'ok');
+        }
     </script>
 </body>
 </html>
