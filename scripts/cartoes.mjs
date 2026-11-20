@@ -36,9 +36,9 @@ const pasta = path.resolve('n');
 const feitos = new Set();
 for (const p of lista) {
   const dir = path.join(pasta, p.curto); fs.mkdirSync(dir, { recursive: true });
-  // imagem da pré-visualização: SEMPRE a cartao-og.png (a imagem aprovada pelo Giovani). Não trocar.
-  for (const v of ['og.png', 'og.jpg']) { const f = path.join(dir, v); if (fs.existsSync(f)) fs.rmSync(f); }
-  const local = '';
+  // imagem da pré-visualização: o cartão real da loja (1200×630), guardada aqui ao lado da página.
+  // Se ainda não existir, fica a cartao-og.png. As meta og:* e twitter:card são obrigatórias: não apagar.
+  const local = await copiarImagem(p.imagem, dir);
   const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : BASE + 'cartao-og.png', url = BASE + 'n/' + p.curto + '/';
   const html = `<!doctype html>
 <html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -50,7 +50,7 @@ for (const p of lista) {
 <meta property="og:description" content="${esc(p.descricao)}">
 <meta property="og:image" content="${esc(img)}">
 <meta property="og:image:secure_url" content="${esc(img)}">
-<meta property="og:image:type" content="image/png">
+<meta property="og:image:type" content="${local ? 'image/jpeg' : 'image/png'}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${esc(titulo)}">
@@ -79,6 +79,58 @@ for (const p of lista) {
 // cartões apagados ou em pausa: a página deixa de existir (o link antigo com ?código continua a funcionar)
 for (const d of fs.readdirSync(pasta, { withFileTypes: true })) {
   if (d.isDirectory() && /^[A-Za-z0-9]{6}$/.test(d.name) && !feitos.has(d.name)) { fs.rmSync(path.join(pasta, d.name), { recursive: true }); console.log('removido', d.name); }
+}
+
+// ---------- cartão de cada cliente: k/<token>/ com a imagem REAL do cartão dele (1200×630), para a pré-visualização grande do WhatsApp
+// O token não é o código do cartão: o link enviado leva ?c=<código>, que nunca fica escrito na página.
+{
+  let ks = [];
+  if (process.env.K_JSON) ks = JSON.parse(fs.readFileSync(process.env.K_JSON, 'utf8'));
+  else {
+    const r = await fetch(URL_SB + '/rest/v1/rpc/fid_cartoes_og', { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: '{}' });
+    if (r.ok) ks = await r.json(); else console.error('Erro ao ler os cartões dos clientes', r.status, await r.text());
+  }
+  const pk = path.resolve('k'); fs.mkdirSync(pk, { recursive: true });
+  const vivos = new Set();
+  for (const c of ks) {
+    if (!/^[A-Za-z0-9]{12}$/.test(c.tok || '') || !/^[a-z0-9]{1,16}$/.test(c.v || '')) continue;
+    const dir = path.join(pk, c.tok); fs.mkdirSync(dir, { recursive: true }); vivos.add(c.tok);
+    const f = path.join(dir, 'index.html');
+    // só volta a copiar a imagem quando o cartão mudou (a versão vem na página)
+    let local = fs.existsSync(f) && fs.readFileSync(f, 'utf8').includes('og.jpg?v=' + c.v + '"') ? 'og.jpg?v=' + c.v : '';
+    if (!local) { const l = await copiarImagem(c.imagem + '?v=' + c.v, dir); local = l ? 'og.jpg?v=' + c.v : ''; }
+    if (!local) continue;   // sem imagem não se publica (o WhatsApp mostraria a miniatura)
+    const titulo = `O seu cartão de fidelidade${c.loja ? ' · ' + c.loja : ''}`, desc = 'Toque para ver os seus carimbos e quanto falta para o prémio.';
+    const img = BASE + 'k/' + c.tok + '/' + local, url = BASE + 'k/' + c.tok + '/';
+    const html = `<!doctype html>
+<html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(titulo)}</title>
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${esc(c.loja || "Dio'Stock")}">
+<meta property="og:title" content="${esc(titulo)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${esc(img)}">
+<meta property="og:image:secure_url" content="${esc(img)}">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(titulo)}">
+<meta property="og:locale" content="pt_PT">
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${esc(url)}">
+<meta property="og:url" content="${esc(url)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${esc(img)}">
+<script>var c=(new URLSearchParams(location.search).get('c')||'').replace(/[^A-Za-z0-9]/g,'');location.replace('../../cartao.html'+(c?'?k='+c:''));</script>
+<style>body{font-family:system-ui,sans-serif;background:#F6F3F0;color:#231F20;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center}</style>
+</head><body><p>A abrir o seu cartão…</p></body></html>
+`;
+    if (!fs.existsSync(f) || fs.readFileSync(f, 'utf8') !== html) { fs.writeFileSync(f, html); console.log('cliente', c.tok); }
+  }
+  for (const d of fs.readdirSync(pk, { withFileTypes: true })) {
+    if (d.isDirectory() && /^[A-Za-z0-9]{12}$/.test(d.name) && !vivos.has(d.name)) { fs.rmSync(path.join(pk, d.name), { recursive: true }); console.log('removido k', d.name); }
+  }
 }
 
 // ---------- mensagens aos clientes (eventos, promoções): uma página por mensagem, com a imagem para a pré-visualização do WhatsApp

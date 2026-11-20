@@ -17923,7 +17923,7 @@ var qrcode = function() {
             if (!sb || !currentUser || !fidDono()) return;
             const [{ data: cfg }, { data: cs }] = await Promise.all([
                 sb.from('fidelidade_cfg').select('*').eq('dono_id', fidDono()).maybeSingle(),
-                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
+                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate, og_tok, og_v').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
             ]);
             fidCfg = cfg || null; fidCartoes = cs || []; fidCarregado = true;
         }
@@ -22675,6 +22675,141 @@ fidWhats = function (id) {
     let tel = ''; if (k.telefone) { tel = k.telefone.replace(/\D/g, ''); if (tel.length === 9) tel = '351' + tel; }
     const l = fidLinkCartao(k); fidAbrirWhats(l + (l.indexOf('/c/?') >= 0 ? '&v=novo1' : ''), tel);
 };
+</script>
+
+<script>
+// ======================================================= PRÉ-VISUALIZAÇÃO DO CARTÃO DE CADA CLIENTE NO WHATSAPP
+// Imagem: o cartão REAL do cliente (carimbos, cores, fundo, selo da loja), em 1200×630 (1,91:1), JPEG < 300 KB,
+// gerada aqui (fidOgCliente) e guardada no Storage em fotos/<dono>/fid-k-<token>.jpg.
+// Página: k/<token>/ no site (criada pelo GitHub Actions, scripts/cartoes.mjs), com og:image estática e dimensões declaradas.
+// Link enviado: k/<token>/?c=<código>&v=<versão>  → imagem grande em cima, título e texto por baixo, numa só mensagem.
+function fidOgVersao(k) { return fidHash(['k1', k.id, k.carimbos, k.premios, fidCfgDe(k).alvo, fidCfgDe(k).premio, fidCor(), fidCfg && fidCfg.carimbo, fidCfg && fidCfg.fundo, fidCfg && fidCfg.logo, currentEmpresa, (k.nome || '').split(' ')[0]].join('|')).slice(0, 16); }
+async function fidOgCliente(k) {
+    const W = 1200, H = 630, cor = fidCor();
+    // o cartão real, sem o código do balcão (a imagem fica pública)
+    const cartao = await fidCarregarImg(URL.createObjectURL(await fidImagem(Object.assign({}, k, { codigo: '••••' }))));
+    const [fundo, logo] = await Promise.all([fidFundoCarregar(), fidCarregarImg((fidCfg && fidCfg.logo) || (appState.perfil && appState.perfil.logo) || '')]);
+    try { await document.fonts.load('800 80px "Bricolage Grotesque"'); await document.fonts.load('700 40px "Schibsted Grotesk"'); } catch (_) {}
+    const T = "'Bricolage Grotesque', 'Schibsted Grotesk', system-ui, sans-serif", B = "'Schibsted Grotesk', system-ui, sans-serif";
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
+    x.fillStyle = cor; x.fillRect(0, 0, W, H);
+    if (fundo) { const s = Math.max(W / fundo.width, H / fundo.height); x.drawImage(fundo, (W - fundo.width * s) / 2, (H - fundo.height * s) / 2, fundo.width * s, fundo.height * s); x.fillStyle = 'rgba(20,10,5,.62)'; x.fillRect(0, 0, W, H); }
+    else { x.fillStyle = 'rgba(255,255,255,.10)'; x.beginPath(); x.arc(W - 40, -40, 360, 0, 7); x.fill(); x.fillStyle = 'rgba(0,0,0,.12)'; x.beginPath(); x.arc(-60, H + 40, 260, 0, 7); x.fill(); }
+    // margem de segurança: 40 px em volta; o cartão inteiro à esquerda, o texto à direita
+    const M = 40, ch = H - 2 * M, cw = ch * cartao.width / cartao.height, cx0 = M + 10, cy0 = M;
+    x.save(); x.shadowColor = 'rgba(0,0,0,.4)'; x.shadowBlur = 30; x.shadowOffsetY = 12;
+    const rr = 26; x.beginPath(); x.moveTo(cx0 + rr, cy0); x.arcTo(cx0 + cw, cy0, cx0 + cw, cy0 + ch, rr); x.arcTo(cx0 + cw, cy0 + ch, cx0, cy0 + ch, rr); x.arcTo(cx0, cy0 + ch, cx0, cy0, rr); x.arcTo(cx0, cy0, cx0 + cw, cy0, rr); x.closePath();
+    x.fillStyle = cor; x.fill(); x.shadowColor = 'transparent'; x.clip(); x.drawImage(cartao, cx0, cy0, cw, ch); x.restore();
+    x.lineWidth = 4; x.strokeStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.moveTo(cx0 + rr, cy0); x.arcTo(cx0 + cw, cy0, cx0 + cw, cy0 + ch, rr); x.arcTo(cx0 + cw, cy0 + ch, cx0, cy0 + ch, rr); x.arcTo(cx0, cy0 + ch, cx0, cy0, rr); x.arcTo(cx0, cy0, cx0 + cw, cy0, rr); x.closePath(); x.stroke();
+    // texto
+    const tx = cx0 + cw + 56, tw = W - tx - M; let y = 92;
+    x.fillStyle = '#fff'; x.textBaseline = 'alphabetic';
+    if (logo) { x.save(); x.beginPath(); x.arc(tx + 30, y - 22, 30, 0, 7); x.fillStyle = '#fff'; x.fill(); x.clip(); const sc = Math.max(60 / logo.width, 60 / logo.height); x.drawImage(logo, tx + 30 - logo.width * sc / 2, y - 22 - logo.height * sc / 2, logo.width * sc, logo.height * sc); x.restore(); }
+    x.font = `800 30px ${B}`; x.globalAlpha = .9; x.fillText((currentEmpresa || '').slice(0, 26), tx + (logo ? 76 : 0), y - 12); x.globalAlpha = 1;
+    y += 70;
+    const prog = fidProgDe ? fidProgDe(k) : null, carimbos = !prog || prog.tipo === 'carimbos';
+    const alvo = fidCfgDe(k).alvo, n = Math.min(k.carimbos, alvo), falta = Math.max(0, alvo - k.carimbos);
+    const primeiro = (k.nome || '').split(' ')[0].slice(0, 16);
+    x.font = `800 58px ${T}`; fidLinhas(x, 'Olá ' + primeiro + '!', tw).slice(0, 1).forEach(l => { x.fillText(l, tx, y); y += 66; });
+    x.font = `700 30px ${B}`; x.globalAlpha = .92; x.fillText('O seu cartão de fidelidade', tx, y); x.globalAlpha = 1; y += 78;
+    if (carimbos) {
+        x.font = `800 84px ${T}`; x.fillText(`${n} de ${alvo}`, tx, y); y += 46;
+        x.font = `700 32px ${B}`; x.fillText('carimbos', tx, y); y += 70;
+        x.font = `800 34px ${T}`; fidLinhas(x, falta ? `Faltam ${falta} para ${String(fidCfgDe(k).premio || 'o prémio').toLowerCase()}` : `${fidCfgDe(k).premio || 'Prémio'} à sua espera`, tw).slice(0, 2).forEach(l => { x.fillText(l, tx, y); y += 42; });
+    } else {
+        x.font = `800 60px ${T}`; fidLinhas(x, fidVantagem(prog), tw).slice(0, 2).forEach(l => { x.fillText(l, tx, y); y += 66; });
+    }
+    x.font = `700 26px ${B}`; x.globalAlpha = .8; x.fillText('Toque para ver o seu cartão', tx, H - M - 6); x.globalAlpha = 1;
+    // < 300 KB para o WhatsApp mostrar em grande
+    let q = .88, b = null; for (let i = 0; i < 5; i++) { b = await new Promise(r => c.toBlob(r, 'image/jpeg', q)); if (b.size < 290000) break; q -= .1; }
+    return b;
+}
+const fidOgClienteEmCurso = {};
+async function fidOgClienteAtualizar(k) {
+    const v = fidOgVersao(k);
+    if (k.og_tok && k.og_v === v) return k;
+    if (fidOgClienteEmCurso[k.id]) return fidOgClienteEmCurso[k.id];
+    return fidOgClienteEmCurso[k.id] = (async () => {
+        try {
+            let tok = k.og_tok;
+            if (!tok) { const a = new Uint8Array(12); crypto.getRandomValues(a); const L = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; tok = Array.from(a, n => L[n % L.length]).join(''); }
+            const blob = await fidOgCliente(k);
+            const { error: e1 } = await sb.storage.from(PHOTO_BUCKET).upload(`${fidDono()}/fid-k-${tok}.jpg`, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '60' });
+            if (e1) throw e1;
+            const { error } = await sb.from('fidelidade_cartoes').update({ og_tok: tok, og_v: v, og_em: new Date().toISOString() }).eq('id', k.id);
+            if (error) throw error;
+            k.og_tok = tok; k.og_v = v; k.og_em = new Date().toISOString();
+        } catch (e) { console.warn('pré-visualização do cliente', e); }
+        finally { delete fidOgClienteEmCurso[k.id]; }
+        return k;
+    })();
+}
+function fidLinkClienteOg(k) { return fidBase() + 'k/' + k.og_tok + '/?c=' + encodeURIComponent(k.curto || '') + '&v=' + k.og_v; }
+async function fidPaginaClientePronta(k) {
+    if (!k.og_tok || !k.og_v) return false;
+    try { const r = await fetch(fidBase() + 'k/' + k.og_tok + '/?t=' + Date.now(), { cache: 'no-store' }); return r.ok && (await r.text()).indexOf('og.jpg?v=' + k.og_v + '"') >= 0; } catch (_) { return false; }
+}
+let fidKEspera = null;
+fidWhats = async function (id) {
+    const k = fidCartoes.find(x => x.id === id); if (!k) return;
+    let tel = ''; if (k.telefone) { tel = k.telefone.replace(/\D/g, ''); if (tel.length === 9) tel = '351' + tel; }
+    const enviar = () => { clearInterval(fidKEspera); dsModalFechar('fid-k'); fidAbrirWhats(fidLinkClienteOg(k), tel); };
+    const tela = (msg, extra = '') => dsModal('fid-k', `<div class="flex items-start justify-between gap-3"><div><h3>Cartão de ${escapeHtml((k.nome || '').split(' ')[0])}</h3><p class="text-sm text-slate-500 mt-1">${msg}</p></div><button type="button" class="p-2 text-slate-400" onclick="clearInterval(fidKEspera);dsModalFechar('fid-k')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>${extra}`);
+    tela('<i class="fas fa-circle-notch fa-spin mr-1"></i>A preparar a imagem do cartão…');
+    await fidOgClienteAtualizar(k);
+    if (!k.og_tok || k.og_v !== fidOgVersao(k)) { tela('Não foi possível preparar a imagem. Verifique a ligação e tente de novo.'); return; }
+    let url = ''; try { url = URL.createObjectURL(await fidOgCliente(k)); } catch (_) {}
+    const prev = url ? `<img src="${url}" alt="" style="width:100%;aspect-ratio:1200/630;object-fit:cover;border-radius:12px;margin-top:12px;border:1px solid #E4DCCF">` : '';
+    const pronto = await fidPaginaClientePronta(k);
+    const bt = `<button type="button" class="bp" style="width:100%;margin-top:12px;background:#25D366" id="fid-k-env"><i class="fab fa-whatsapp mr-1"></i>Enviar no WhatsApp</button>`;
+    if (pronto) { tela('Vai assim, numa só mensagem: a imagem grande em cima e o texto com o link por baixo.', prev + bt); document.getElementById('fid-k-env').onclick = enviar; return; }
+    // a página da imagem nova é publicada no site (costuma levar 2 a 6 minutos); avança sozinho
+    let seg = 0;
+    const espera = () => { tela(`A publicar a imagem nova do cartão para o WhatsApp a mostrar em grande. Costuma levar <b>2 a 6 minutos</b>; pode deixar esta janela aberta, avançamos sozinhos.`, prev + `<p class="text-xs text-slate-500 mt-2"><i class="fas fa-circle-notch fa-spin mr-1"></i>${Math.floor(seg / 60)} min ${seg % 60} s</p>`); };
+    espera(); clearInterval(fidKEspera);
+    fidKEspera = setInterval(async () => {
+        seg += 15; const m = document.getElementById('fid-k'); if (!m || !m.classList.contains('on')) return clearInterval(fidKEspera);
+        if (await fidPaginaClientePronta(k)) { clearInterval(fidKEspera); tela('Pronto. Vai assim, numa só mensagem: a imagem grande em cima e o texto com o link por baixo.', prev + bt); document.getElementById('fid-k-env').onclick = enviar; return; }
+        if (seg >= 900) { clearInterval(fidKEspera); tela('A publicação está a demorar mais do que o normal. Tente de novo daqui a uns minutos.'); return; }
+        espera();
+    }, 15000);
+};
+// prepara a imagem do cliente assim que o cartão muda, para no envio já estar publicada
+(function () {
+    let t = null;
+    const agendar = () => { clearTimeout(t); t = setTimeout(() => { try { (fidCartoes || []).filter(k => k.og_tok && k.og_v !== fidOgVersao(k)).slice(0, 5).forEach(k => fidOgClienteAtualizar(k)); } catch (_) {} }, 4000); };
+    const oP = fidPintar; fidPintar = function () { const r = oP.apply(this, arguments); agendar(); return r; };
+})();
+</script>
+
+<script>
+// cartão da loja (n/<código>/): também a imagem real do cartão, com a versão no link para o WhatsApp não usar a antiga
+function fidProgV(p) { return ((p && p.og_img) || '').match(/[?&]v=([\w-]+)/)?.[1] || ''; }
+fidLinkProg = function (p) { const v = fidProgV(p); return fidBase() + 'n/' + p.curto + '/' + (v ? '?v=' + v : ''); };
+async function fidPaginaProgPronta(p) {
+    const v = fidProgV(p); if (!v) return false;
+    try { const r = await fetch(fidBase() + 'n/' + p.curto + '/?t=' + Date.now(), { cache: 'no-store' }); return r.ok && (await r.text()).indexOf('og.jpg?v=' + v + '"') >= 0; } catch (_) { return false; }
+}
+let fidNEspera = null;
+fidShWhats = async function (pid) {
+    const p = fidProgPorId(pid); if (!p) return;
+    const tela = (msg, extra = '') => dsModal('fid-sh', `<div class="flex items-start justify-between gap-3"><div><h3>Partilhar o cartão</h3><p class="text-sm text-slate-500 mt-1">${msg}</p></div><button type="button" class="p-2 text-slate-400" onclick="clearInterval(fidNEspera);dsModalFechar('fid-sh')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>${extra}`);
+    const bt = `<button type="button" class="bp" style="width:100%;margin-top:12px;background:#25D366" id="fid-n-env"><i class="fab fa-whatsapp mr-1"></i>Enviar no WhatsApp</button>`;
+    const ok = () => { const prev = p.og_img ? `<img src="${escapeHtml(p.og_img)}" alt="" style="width:100%;aspect-ratio:1200/630;object-fit:cover;border-radius:12px;margin-top:12px;border:1px solid #E4DCCF">` : ''; tela('Vai assim, numa só mensagem: a imagem grande em cima e o texto com o link por baixo.', prev + bt); document.getElementById('fid-n-env').onclick = () => { clearInterval(fidNEspera); dsModalFechar('fid-sh'); fidAbrirWhats(fidLinkProg(p), ''); }; };
+    tela('<i class="fas fa-circle-notch fa-spin mr-1"></i>A preparar a imagem do cartão…');
+    try { await fidOgAtualizar(p); } catch (_) {}
+    if (await fidPaginaProgPronta(p)) return ok();
+    let seg = 0; clearInterval(fidNEspera);
+    const espera = () => tela(`A publicar a imagem do cartão para o WhatsApp a mostrar em grande. Costuma levar <b>2 a 6 minutos</b>; pode deixar esta janela aberta, avançamos sozinhos.<br><span class="text-xs"><i class="fas fa-circle-notch fa-spin mr-1"></i>${Math.floor(seg / 60)} min ${seg % 60} s</span>`);
+    espera();
+    fidNEspera = setInterval(async () => {
+        seg += 15; const m = document.getElementById('fid-sh'); if (!m || !m.classList.contains('on')) return clearInterval(fidNEspera);
+        if (await fidPaginaProgPronta(p)) { clearInterval(fidNEspera); return ok(); }
+        if (seg >= 900) { clearInterval(fidNEspera); return tela('A publicação está a demorar mais do que o normal. Tente de novo daqui a uns minutos.'); }
+        espera();
+    }, 15000);
+};
+fidShOutras = fidShWhats;
 </script>
 </body>
 </html>
