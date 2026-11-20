@@ -22243,12 +22243,15 @@ var qrcode = function() {
         async function dsEnviarImagem(blob, nome, texto, tel) {
             const f = new File([blob], nome, { type: blob.type || 'image/png' });
             if (blob.type === 'image/jpeg') try { dsToast('No WhatsApp, toque em HD antes de enviar para a foto seguir nítida.'); } catch (_) {}
+            // iPhone/iPad: o WhatsApp manda o texto ANTES da foto quando seguem juntos; aí vai primeiro a foto e depois o link
+            const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const dados = ios || !texto ? { files: [f] } : { files: [f], text: texto };
             if (navigator.canShare && navigator.canShare({ files: [f] })) {
-                try { await navigator.share({ files: [f], text: texto }); return; }
+                try { await navigator.share(dados); if (ios && texto) dsEnvioLink(texto, tel); return; }
                 catch (e) {
                     if (e && e.name === 'AbortError') return;
                     // o aparelho pediu um toque novo (a imagem demorou a ficar pronta): mais um toque e segue
-                    if (e && e.name === 'NotAllowedError') { dsEnvioPendente = { f, texto }; dsModal('ds-envio', `<div style="text-align:center"><h3>Imagem pronta</h3><p class="text-sm text-slate-500 mt-1">Toque para escolher a conversa. A foto vai em cima e o texto com o link por baixo.</p><img src="${URL.createObjectURL(blob)}" alt="" style="width:100%;max-height:46vh;object-fit:contain;border-radius:14px;margin-top:12px"><button type="button" class="bp" style="width:100%;margin-top:12px" onclick="dsEnviarPendente()"><i class="fab fa-whatsapp mr-1"></i>Enviar</button></div>`); return; }
+                    if (e && e.name === 'NotAllowedError') { dsEnvioPendente = { dados, texto, tel, ios }; dsModal('ds-envio', `<div style="text-align:center"><h3>Imagem pronta</h3><p class="text-sm text-slate-500 mt-1">Toque para escolher a conversa. A foto vai em cima e o texto com o link por baixo.</p><img src="${URL.createObjectURL(blob)}" alt="" style="width:100%;max-height:46vh;object-fit:contain;border-radius:14px;margin-top:12px"><button type="button" class="bp" style="width:100%;margin-top:12px" onclick="dsEnviarPendente()"><i class="fab fa-whatsapp mr-1"></i>Enviar</button></div>`); return; }
                     console.warn(e);
                 }
             }
@@ -22264,8 +22267,22 @@ var qrcode = function() {
         }
         async function dsEnviarPendente() {
             const p = dsEnvioPendente; if (!p) return; dsModalFechar('ds-envio');
-            try { await navigator.share({ files: [p.f], text: p.texto }); } catch (e) { if (!e || e.name !== 'AbortError') console.warn(e); }
             dsEnvioPendente = null;
+            try { await navigator.share(p.dados); if (p.ios && p.texto) dsEnvioLink(p.texto, p.tel); } catch (e) { if (!e || e.name !== 'AbortError') console.warn(e); }
+        }
+        // segundo passo no iPhone: a foto já foi, agora o texto com o link (fica por baixo da foto na conversa)
+        let dsLinkPendente = '';
+        function dsEnvioLink(texto, tel) {
+            dsLinkPendente = texto;
+            const wa = `https://api.whatsapp.com/send?${tel ? 'phone=' + tel + '&' : ''}text=${encodeURIComponent(texto)}`;
+            const bt = tel
+                ? `<a class="bp" style="display:block;text-align:center;margin-top:14px;background:#25D366" href="${wa}" target="_blank" rel="noopener" onclick="setTimeout(()=>dsModalFechar('ds-link'),400)"><i class="fab fa-whatsapp mr-1"></i>Enviar o link</a>`
+                : `<button type="button" class="bp" style="width:100%;margin-top:14px;background:#25D366" onclick="dsEnviarLink()"><i class="fab fa-whatsapp mr-1"></i>Enviar o link</button>`;
+            setTimeout(() => dsModal('ds-link', `<div style="text-align:center"><h3>Foto enviada</h3><p class="text-sm text-slate-500 mt-1">Agora envie o link${tel ? '' : ' para a mesma conversa'}. Fica por baixo da foto.</p>${bt}<button type="button" style="width:100%;margin-top:8px;padding:12px;font-weight:700;color:#7A6A60" onclick="dsModalFechar('ds-link')">Agora não</button></div>`), 350);
+        }
+        async function dsEnviarLink() {
+            const t = dsLinkPendente; dsModalFechar('ds-link');
+            try { await navigator.share({ text: t }); } catch (e) { if (!e || e.name !== 'AbortError') location.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t); }
         }
         function dsParaPng(blob) {
             return new Promise((ok, ko) => { const i = new Image(); i.onload = () => { const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight; c.getContext('2d').drawImage(i, 0, 0); c.toBlob(b => b ? ok(b) : ko(new Error('png')), 'image/png'); }; i.onerror = ko; i.src = URL.createObjectURL(blob); });
