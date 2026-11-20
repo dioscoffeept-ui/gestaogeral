@@ -23028,5 +23028,28 @@ impLer = async function () {
     } finally { if (document.getElementById('imp-ler')) { bt.disabled = false; bt.innerHTML = '<i class="fas fa-wand-magic-sparkles mr-1.5"></i>Ler as receitas'; } }
 };
 </script>
+
+<style>
+#ds-nova { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 90; display: none; align-items: center; gap: 12px; background: #231F20; color: #fff; padding: 10px 10px 10px 16px; border-radius: 16px; box-shadow: 0 18px 40px -14px rgba(0,0,0,.5); font-weight: 700; font-size: 14px; max-width: calc(100vw - 24px); }
+#ds-nova.on { display: flex; }
+#ds-nova button { background: #983808; color: #fff; font-weight: 900; padding: 9px 14px; border-radius: 12px; white-space: nowrap; }
+@media (min-width: 768px) { #ds-nova { bottom: 24px; } }
+</style>
+<script>
+// ======================================================= VERSÃO NOVA: avisa e atualiza com um toque (a app aberta não fica presa na versão antiga)
+(function () {
+    if (location.protocol !== 'https:') return;
+    let atual = null;
+    const ler = async () => { try { const t = await fetch('sw.js?v=' + Date.now(), { cache: 'no-store' }).then(r => r.text()); return (t.match(/diostock-\d+/) || [])[0] || null; } catch (_) { return null; } };
+    const aviso = () => {
+        if (document.getElementById('ds-nova')) return document.getElementById('ds-nova').classList.add('on');
+        document.body.insertAdjacentHTML('beforeend', `<div id="ds-nova" class="on" role="status"><span><i class="fas fa-rotate mr-1.5"></i>Há uma versão nova do Dio'Stock.</span><button type="button" onclick="dsAtualizarApp()">Atualizar</button></div>`);
+    };
+    window.dsAtualizarApp = async () => { try { const rg = await navigator.serviceWorker?.getRegistration(); await rg?.update(); } catch (_) {} location.reload(); };
+    const ver = async () => { const v = await ler(); if (!v) return; if (!atual) { atual = v; return; } if (v !== atual) aviso(); };
+    ver(); setInterval(ver, 5 * 60e3);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(); });
+})();
+</script>
 </body>
 </html>
