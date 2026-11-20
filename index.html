@@ -21435,16 +21435,16 @@ var qrcode = function() {
         }
         function rlEcra() {
             const b = document.getElementById('fid-roleta'); if (!b) return;
-            b.classList.toggle('cheio'); rlPintar();
+            b.classList.toggle('cheio'); document.body.classList.toggle('rl-cheio', b.classList.contains('cheio')); rlPintar();
             if (b.classList.contains('cheio')) { try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(() => {}); } catch (_) {} }
             else { try { document.fullscreenElement && document.exitFullscreen(); } catch (_) {} }
         }
-        document.addEventListener('fullscreenchange', () => { const b = document.getElementById('fid-roleta'); if (!document.fullscreenElement && b && b.classList.contains('cheio')) { b.classList.remove('cheio'); rlPintar(); } });
+        document.addEventListener('fullscreenchange', () => { const b = document.getElementById('fid-roleta'); if (!document.fullscreenElement && b && b.classList.contains('cheio')) { b.classList.remove('cheio'); document.body.classList.remove('rl-cheio'); rlPintar(); } });
         function fidSub(qual) {
             rlAberta = qual;
             const pg = document.getElementById('fid-page'), rl = document.getElementById('fid-roleta');
             if (pg) pg.style.display = qual === 'roleta' ? 'none' : '';
-            if (rl) { rl.style.display = qual === 'roleta' ? '' : 'none'; if (qual !== 'roleta') rl.classList.remove('cheio'); }
+            if (rl) { rl.style.display = qual === 'roleta' ? '' : 'none'; if (qual !== 'roleta') { rl.classList.remove('cheio'); document.body.classList.remove('rl-cheio'); } }
             document.querySelectorAll('#fid-sub button').forEach(b => b.classList.toggle('on', b.dataset.s === qual));
             if (qual === 'roleta') { rlRascunho = null; rlDefAberta = false; rlPintar(); }
         }
@@ -21464,6 +21464,486 @@ var qrcode = function() {
                 try { fidSubMontar(); if (rlAberta === 'roleta' && !rlAGirar && !document.querySelector('#fid-roleta :focus')) rlPintar(); } catch (e) { console.warn(e); }
                 return r;
             };
+        })();
+    </script>
+
+    <style>
+        /* Balcão: mais espaço entre botões (as sombras sólidas encostavam umas às outras) */
+        #tab-balcao #pos-head-tools { flex-wrap: wrap; justify-content: flex-end; gap: 12px 10px !important; padding-bottom: 4px; }
+        #tab-balcao #bal-ferr { gap: 12px 10px !important; padding: 4px 2px 6px; margin-top: 12px !important; }
+        #tab-balcao .flex.gap-2, #tab-balcao .flex.gap-1, #tab-balcao .grid.gap-2 { gap: 10px !important; }
+        #tab-balcao .flex-wrap { row-gap: 12px !important; }
+        #tab-balcao .grid { row-gap: 12px; }
+        @media (max-width: 1023px) { #tab-balcao { padding-bottom: 120px; } }
+        @media (max-width: 639px) { #tab-balcao #pos-head-tools { justify-content: stretch; } #tab-balcao #bal-ferr { margin-top: 14px !important; } }
+    </style>
+
+    <style>
+        /* Roleta · ecrã do cliente: tudo cabe no ecrã (sem cortar o título nem os textos) e o resultado aparece por cima */
+        #fid-roleta.cheio { z-index: 66 !important; display: block !important; padding: 12px 16px 16px !important; }
+        #fid-roleta.cheio .rl-card { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 !important; }
+        #fid-roleta.cheio .rl-topo { width: 100%; justify-content: center; text-align: center; }
+        #fid-roleta.cheio .rl-topo h3 { font-size: clamp(22px, 4vh, 36px); }
+        #fid-roleta.cheio .rl-cena { width: auto; margin-top: 8px; }
+        #fid-roleta.cheio .rl-palco { width: min(88vw, calc(100vh - 230px), 720px) !important; width: min(88vw, calc(100dvh - 230px), 720px) !important; margin-top: 4px; }
+        #fid-roleta.cheio .rl-girar { width: min(88vw, 520px) !important; margin-top: 14px; }
+        #fid-roleta.cheio .rl-cli { display: none; }
+        #fid-roleta.cheio .rl-acoes { position: fixed; top: 10px; right: 12px; margin: 0; z-index: 2; }
+        #fid-roleta.cheio .rl-acoes button { padding: 7px 11px; font-size: 12.5px; opacity: .85; }
+        body.rl-cheio #ds-bottom-nav, body.rl-cheio header { visibility: hidden; }
+    </style>
+
+    <style>
+        /* ======================================================= EQUIPE: escala de folgas + tips */
+        #tab-equipa { --eq-cafe: var(--brand, #983808); --eq-linha: #E4DCCF; --eq-txt: #231F20; --eq-txt2: #5B4A40; --eq-txt3: #7A6A60; --eq-card: #fff; --eq-suave: #FBEDE6; --eq-fundo: #F6F3F0; }
+        html.dark #tab-equipa { --eq-linha: #44332A; --eq-txt: #F2ECE4; --eq-txt2: #C9BBAF; --eq-txt3: #A8998D; --eq-card: #2A1B14; --eq-suave: rgba(152,56,8,.22); --eq-fundo: #1F130E; }
+        .eq-wrap { max-width: 1180px; margin: 0 auto; }
+        .eq-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+        .eq-head h2 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: var(--eq-txt); line-height: 1.1; }
+        .eq-head p { font-size: 13.5px; color: var(--eq-txt2); margin-top: 4px; }
+        .eq-seg { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 14px; background: #EFE8DF; }
+        html.dark .eq-seg { background: #2A1B14; }
+        .eq-seg button { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 16px; border-radius: 11px; font-weight: 800; font-size: 14px; color: var(--eq-txt2); }
+        .eq-seg button.on { background: var(--eq-card); color: var(--eq-txt); box-shadow: 0 1px 2px rgba(35,31,32,.12); }
+        .eq-seg button.on i { color: var(--eq-cafe); }
+        .eq-semana { display: flex; align-items: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+        .eq-semana .nav { width: 40px; height: 40px; border-radius: 12px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); color: var(--eq-txt); }
+        .eq-semana b { font-size: 16px; font-weight: 800; color: var(--eq-txt); min-width: 170px; text-align: center; }
+        .eq-semana .hoje { padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; color: var(--eq-cafe); }
+        .eq-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .eq-b { display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border-radius: 12px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); font-size: 13.5px; font-weight: 800; color: var(--eq-txt); }
+        .eq-b i { color: var(--eq-cafe); }
+        .eq-b.p { background: var(--eq-cafe); border-color: var(--eq-cafe); color: #fff; } .eq-b.p i { color: #fff; }
+        .eq-card { margin-top: 14px; background: var(--eq-card); border: 1px solid var(--eq-linha); border-radius: 18px; overflow: hidden; }
+        .eq-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table.eq-t { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 760px; }
+        .eq-t th, .eq-t td { border-bottom: 1px solid var(--eq-linha); padding: 0; text-align: center; vertical-align: middle; }
+        .eq-t thead th { font-size: 12px; font-weight: 800; color: var(--eq-txt2); padding: 10px 6px; background: var(--eq-fundo); white-space: nowrap; }
+        .eq-t thead th small { display: block; font-weight: 600; color: var(--eq-txt3); font-size: 11.5px; }
+        .eq-t thead th.hj { color: var(--eq-cafe); }
+        .eq-t .nm { position: sticky; left: 0; z-index: 1; background: var(--eq-card); text-align: left; min-width: 132px; max-width: 170px; border-right: 1px solid var(--eq-linha); }
+        .eq-t thead .nm { background: var(--eq-fundo); }
+        .eq-t .nm button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; text-align: left; }
+        .eq-t .nm .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+        .eq-t .nm span { min-width: 0; font-size: 14px; font-weight: 800; color: var(--eq-txt); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .eq-t .nm small { display: block; font-size: 11.5px; font-weight: 600; color: var(--eq-txt3); }
+        .eq-t td.c { min-width: 92px; padding: 5px 4px; }
+        .eq-t td.c > button { width: 100%; min-height: 54px; border-radius: 12px; padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: 1.5px dashed transparent; }
+        .eq-t td.c > button:hover { border-color: var(--eq-linha); }
+        .eq-t td.c > button.vazio { color: var(--eq-txt3); }
+        .eq-t td.c > button.folga { background: var(--eq-fundo); color: var(--eq-txt3); font-weight: 800; font-size: 12.5px; }
+        .eq-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 800; background: var(--eq-suave); color: var(--eq-cafe); white-space: nowrap; }
+        html.dark .eq-chip { color: #E0794F; }
+        .eq-hr { font-size: 11px; font-weight: 700; color: var(--eq-txt3); white-space: nowrap; }
+        .eq-t td.tot { min-width: 84px; font-size: 13px; font-weight: 800; color: var(--eq-txt); padding: 6px; white-space: nowrap; }
+        .eq-t td.tot small { display: block; font-weight: 600; color: var(--eq-txt3); font-size: 11.5px; }
+        .eq-t tfoot td { background: var(--eq-fundo); font-size: 13px; font-weight: 800; color: var(--eq-txt); padding: 10px 6px; }
+        .eq-t tfoot td.nm { background: var(--eq-fundo); padding: 10px 12px; }
+        .eq-vazio { padding: 36px 16px; text-align: center; }
+        .eq-vazio b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; color: var(--eq-txt); }
+        .eq-vazio p { font-size: 14px; color: var(--eq-txt2); margin: 6px auto 14px; max-width: 420px; }
+        .eq-nota { font-size: 12.5px; color: var(--eq-txt3); margin-top: 10px; line-height: 1.5; }
+        /* tips */
+        .eq-opc { margin-top: 14px; display: grid; gap: 12px; }
+        @media (min-width: 900px) { .eq-opc { grid-template-columns: 1fr 1fr; } }
+        .eq-box { background: var(--eq-card); border: 1px solid var(--eq-linha); border-radius: 18px; padding: 14px; }
+        .eq-box > b { font-size: 14px; font-weight: 800; color: var(--eq-txt); }
+        .eq-box > p { font-size: 12.5px; color: var(--eq-txt3); margin-top: 2px; }
+        .eq-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .eq-pills button { padding: 8px 12px; border-radius: 999px; border: 1.5px solid var(--eq-linha); background: var(--eq-card); font-size: 13px; font-weight: 800; color: var(--eq-txt2); }
+        .eq-pills button.on { background: var(--eq-txt); border-color: var(--eq-txt); color: var(--eq-card); }
+        .eq-pills button:disabled { opacity: .45; }
+        .eq-din { position: relative; display: block; }
+        .eq-din input { width: 100%; min-width: 0; border: 1px solid var(--eq-linha); border-radius: 10px; padding: 8px 22px 8px 8px; font-size: 16px; font-weight: 700; text-align: right; background: var(--eq-card); color: var(--eq-txt); }
+        .eq-din span { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--eq-txt3); pointer-events: none; }
+        .eq-t td.in { padding: 6px 4px; min-width: 92px; }
+        .eq-t td.lbl { text-align: left; padding: 8px 12px; font-size: 13px; font-weight: 800; color: var(--eq-txt); }
+        .eq-t td.lbl small { display: block; font-weight: 600; color: var(--eq-txt3); }
+        .eq-t td.v { font-size: 13.5px; font-weight: 700; color: var(--eq-txt); padding: 6px; }
+        .eq-t td.v button { width: 100%; min-height: 50px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+        .eq-t td.v button:hover { background: var(--eq-fundo); }
+        .eq-t td.v .m { display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; }
+        .eq-t td.v .m span { font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 999px; background: var(--eq-suave); color: var(--eq-cafe); }
+        html.dark .eq-t td.v .m span { color: #E0794F; }
+        .eq-t td.v .zero { color: var(--eq-txt3); font-weight: 600; }
+        .eq-t td.rec { background: var(--eq-suave); font-size: 15px; font-weight: 900; color: var(--eq-txt); min-width: 96px; }
+        .eq-aviso { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #FEF3C7; color: #92400E; font-size: 13px; font-weight: 600; }
+        .eq-aviso i { margin-right: 6px; }
+        html.dark .eq-aviso { background: rgba(245,158,11,.14); color: #FBBF24; }
+        .eq-res { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 14px; margin-top: 8px; }
+        .eq-res div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--eq-linha); font-size: 14px; }
+        .eq-res span { display: flex; align-items: center; gap: 7px; min-width: 0; color: var(--eq-txt); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .eq-res span i { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+        .eq-res b { color: var(--eq-txt); font-weight: 900; white-space: nowrap; }
+        .eq-sem { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .eq-sem .eq-din { width: 160px; }
+        /* modais */
+        .eq-m h3 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 800; color: #231F20; }
+        .eq-m .sub { font-size: 13px; color: #7A6A60; margin-top: 2px; }
+        .eq-m label.f { display: block; margin-top: 12px; font-size: 13px; font-weight: 700; color: #3A2A22; }
+        .eq-m label.f input, .eq-m label.f select { display: block; width: 100%; margin-top: 4px; border: 1px solid #E4DCCF; border-radius: 12px; padding: 10px 12px; font-size: 16px; background: #fff; }
+        .eq-m .dois { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .eq-m .ck { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 11px 12px; border: 1.5px solid #E4DCCF; border-radius: 14px; font-size: 14px; font-weight: 700; color: #231F20; cursor: pointer; }
+        .eq-m .ck input { width: 20px; height: 20px; margin: 0; accent-color: var(--brand); flex: none; }
+        .eq-m .ck small { margin-left: auto; font-weight: 600; color: #7A6A60; }
+        .eq-m .ck.folga:has(input:checked) { background: #F6F3F0; }
+        .eq-m .cores { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .eq-m .cores button { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px #E4DCCF; }
+        .eq-m .cores button.on { box-shadow: 0 0 0 3px #231F20; }
+        .eq-m .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+        .eq-m .acoes button { flex: 1; min-width: 110px; padding: 12px; border-radius: 14px; font-weight: 900; border: 1.5px solid #E4DCCF; background: #fff; color: #24150E; }
+        .eq-m .acoes button.p { background: var(--brand); border-color: var(--brand); color: #fff; flex: 2; }
+        .eq-m .acoes button.d { color: #B91C1C; flex: none; }
+        .eq-m .tl { display: grid; grid-template-columns: 1fr 96px 96px 40px; gap: 6px; align-items: center; margin-top: 8px; }
+        .eq-m .tl input { width: 100%; min-width: 0; border: 1px solid #E4DCCF; border-radius: 12px; padding: 9px 10px; font-size: 16px; background: #fff; }
+        .eq-m .tl button { height: 40px; color: #B91C1C; }
+        .eq-m .dias { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 6px; }
+        .eq-m .dias button { padding: 9px 0; border-radius: 10px; border: 1.5px solid #E4DCCF; font-size: 12.5px; font-weight: 800; color: #5B4A40; background: #fff; }
+        .eq-m .dias button.on { background: #231F20; border-color: #231F20; color: #fff; }
+        @media (max-width: 639px) { .eq-head h2 { font-size: 22px; } .eq-semana b { min-width: 0; flex: 1; } .eq-t td.c { min-width: 80px; } .eq-t .nm { min-width: 112px; } }
+        #ds-bottom-nav#ds-bottom-nav#ds-bottom-nav { grid-template-columns: none !important; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+    </style>
+    <script>
+        // ======================================================= EQUIPE: escala de folgas e tips
+        // Tudo fica em appState.equipa (vai para a nuvem com o resto dos dados da empresa).
+        const EQ_DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+        const EQ_DIAS_L = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+        const EQ_CORES = ['#983808', '#231F20', '#B45309', '#1E3A8A', '#14532D', '#9D174D', '#5B4A40', '#0E7490'];
+        let eqVista = 'escala', eqSeg = null;
+        const eqPodeEditar = () => typeof currentRole === 'undefined' || currentRole === 'dono';
+        function eqDados() {
+            if (!appState.equipa || typeof appState.equipa !== 'object') appState.equipa = {};
+            const e = appState.equipa;
+            if (!Array.isArray(e.staff)) e.staff = [];
+            if (!Array.isArray(e.turnos) || !e.turnos.length) e.turnos = [{ id: 'alm', nome: 'Almoço', ini: '11:00', fim: '16:00' }, { id: 'jan', nome: 'Jantar', ini: '18:00', fim: '23:00' }];
+            if (!e.escala || typeof e.escala !== 'object') e.escala = {};
+            if (!e.tips || typeof e.tips !== 'object') e.tips = {};
+            if (!e.tipsSemana || typeof e.tipsSemana !== 'object') e.tipsSemana = {};
+            if (!e.tipsCfg || typeof e.tipsCfg !== 'object') e.tipsCfg = {};
+            return e;
+        }
+        function eqGuardar() { try { saveStorage(); } catch (e) { console.error(e); } }
+        // datas (sempre no fuso do aparelho)
+        const eqKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const eqData = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+        function eqSegunda(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return x; }
+        const eqMais = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+        const eqSemanaKeys = seg => [0, 1, 2, 3, 4, 5, 6].map(i => eqKey(eqMais(seg, i)));
+        const eqMes = d => d.toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '');
+        function eqSemanaTxt(seg) { const f = eqMais(seg, 6); return seg.getMonth() === f.getMonth() ? `${seg.getDate()}–${f.getDate()} ${eqMes(f)} ${f.getFullYear()}` : `${seg.getDate()} ${eqMes(seg)} – ${f.getDate()} ${eqMes(f)} ${f.getFullYear()}`; }
+        const eqEur = v => (Math.round(v * 100) / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+        const eqNum = v => { const n = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; };
+        const eqId = () => 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        // horas
+        const eqMin = h => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(h || '')); return m ? (+m[1]) * 60 + (+m[2]) : null; };
+        function eqDur(ini, fim) { const a = eqMin(ini), b = eqMin(fim); if (a == null || b == null) return 0; let d = b - a; if (d <= 0) d += 1440; return d / 60; }
+        const eqHtxt = h => { const t = Math.round(h * 60), hh = Math.floor(t / 60), mm = t % 60; return mm ? `${hh}h${String(mm).padStart(2, '0')}` : `${hh}h`; };
+        // célula da escala: { t: ['alm'], ini, fim } | { folga: true } | undefined
+        const eqCel = (k, sid) => ((eqDados().escala[k] || {})[sid]) || null;
+        const eqTrab = c => !!c && !c.folga && ((Array.isArray(c.t) && c.t.length) || (c.ini && c.fim));
+        function eqHorasCel(c) {
+            if (!eqTrab(c)) return 0;
+            if (c.ini && c.fim) return eqDur(c.ini, c.fim);
+            return (c.t || []).reduce((s, id) => { const t = eqDados().turnos.find(x => x.id === id); return s + (t ? eqDur(t.ini, t.fim) : 0); }, 0);
+        }
+        const eqNTurnos = c => !eqTrab(c) ? 0 : Math.max(1, (c.t || []).filter(id => eqDados().turnos.some(x => x.id === id)).length);
+        const eqTurnoNome = id => (eqDados().turnos.find(x => x.id === id) || {}).nome || '';
+        const eqAbrev = n => { const s = String(n || '').trim(); return s.length <= 4 ? s : s.slice(0, 3) + '.'; };
+
+        // ---------- divisão justa ao cêntimo: a soma das partes é sempre igual ao total
+        function eqDividir(total, pesos) {
+            const C = Math.round(total * 100), W = pesos.reduce((s, w) => s + w, 0);
+            if (!(C > 0) || !(W > 0)) return pesos.map(() => 0);
+            const raw = pesos.map(w => C * w / W), base = raw.map(Math.floor);
+            let sobra = C - base.reduce((s, x) => s + x, 0);
+            raw.map((r, i) => ({ i, f: r - base[i], w: pesos[i] })).filter(x => x.w > 0).sort((a, b) => b.f - a.f || b.w - a.w || a.i - b.i)
+                .forEach(x => { if (sobra > 0) { base[x.i]++; sobra--; } });
+            return base.map(c => c / 100);
+        }
+        const eqTipsCfg = segK => { const e = eqDados(), c = e.tipsCfg[segK] || e.tipsCfg._ultimo || {}; return { modo: ['turno', 'dia', 'semana'].includes(c.modo) ? c.modo : 'turno', divisao: ['iguais', 'turnos', 'horas'].includes(c.divisao) ? c.divisao : 'iguais' }; };
+        // calcula a semana inteira: quanto recebe cada pessoa em cada dia
+        function eqCalcular(seg) {
+            const e = eqDados(), ks = eqSemanaKeys(seg), segK = ks[0], cfg = eqTipsCfg(segK);
+            const quem = e.staff.filter(s => s.tips !== false);
+            const res = {}; quem.forEach(s => res[s.id] = { dias: [0, 0, 0, 0, 0, 0, 0], total: 0 });
+            const porDia = [0, 0, 0, 0, 0, 0, 0], avisos = []; let total = 0;
+            const peso = (c, modo) => cfg.divisao === 'horas' ? eqHorasCel(c) : cfg.divisao === 'turnos' ? eqNTurnos(c) : 1;
+            if (cfg.modo === 'turno') {
+                ks.forEach((k, d) => {
+                    const td = (e.tips[k] && e.tips[k].t) || {};
+                    e.turnos.forEach(t => {
+                        const v = eqNum(td[t.id]); if (!v) return;
+                        porDia[d] += v; total += v;
+                        const l = quem.filter(s => { const c = eqCel(k, s.id); return eqTrab(c) && (c.t || []).includes(t.id); });
+                        if (!l.length) { avisos.push(`${EQ_DIAS_L[d]}, ${t.nome}: ${eqEur(v)} de tips mas ninguém escalado neste turno.`); return; }
+                        eqDividir(v, l.map(() => 1)).forEach((x, i) => { res[l[i].id].dias[d] += x; });
+                    });
+                });
+            } else if (cfg.modo === 'dia') {
+                ks.forEach((k, d) => {
+                    const v = eqNum(e.tips[k] && e.tips[k].d); if (!v) return;
+                    porDia[d] += v; total += v;
+                    const l = quem.filter(s => eqTrab(eqCel(k, s.id)));
+                    const w = l.map(s => peso(eqCel(k, s.id)));
+                    if (!l.length || !w.some(x => x > 0)) { avisos.push(`${EQ_DIAS_L[d]}: ${eqEur(v)} de tips mas ninguém escalado neste dia.`); return; }
+                    eqDividir(v, w).forEach((x, i) => { res[l[i].id].dias[d] += x; });
+                });
+            } else {
+                const v = eqNum(e.tipsSemana[segK]);
+                if (v) {
+                    total = v;
+                    const w = quem.map(s => ks.reduce((acc, k) => { const c = eqCel(k, s.id); return acc + (eqTrab(c) ? (cfg.divisao === 'iguais' ? 1 : peso(c)) : 0); }, 0));
+                    const ww = cfg.divisao === 'iguais' ? w.map(x => x > 0 ? 1 : 0) : w;
+                    if (!ww.some(x => x > 0)) avisos.push(`${eqEur(v)} de tips da semana mas ninguém escalado.`);
+                    else eqDividir(v, ww).forEach((x, i) => { res[quem[i].id].total += x; });
+                }
+            }
+            Object.values(res).forEach(r => { r.dias = r.dias.map(x => Math.round(x * 100) / 100); if (cfg.modo !== 'semana') r.total = Math.round(r.dias.reduce((s, x) => s + x, 0) * 100) / 100; });
+            return { res, porDia, total: Math.round(total * 100) / 100, avisos, cfg, ks };
+        }
+
+        // ---------- página
+        function eqPintar() {
+            const box = document.getElementById('eq-page'); if (!box) return;
+            if (!hasPlan('pro')) {
+                box.innerHTML = `<div class="eq-card eq-vazio"><i class="fas fa-lock" style="font-size:28px;color:var(--brand)"></i><b class="mt-2">Equipe</b><p>Escala de folgas e divisão das tips, ao cêntimo. Disponível no plano PRO.</p><button type="button" class="eq-b p" onclick="openUpgrade('pro','A Equipe faz parte do plano PRO.')">Ver planos</button></div>`;
+                return;
+            }
+            const e = eqDados(); if (!eqSeg) eqSeg = eqSegunda(new Date());
+            const ed = eqPodeEditar();
+            box.innerHTML = `<div class="eq-wrap">
+                <div class="eq-head"><div><h2>Equipe</h2><p>${eqVista === 'escala' ? 'Quem trabalha, em que turno e quem está de folga.' : 'As tips de cada turno divididas por quem trabalhou.'}</p></div>
+                    <div class="eq-seg" role="tablist"><button type="button" class="${eqVista === 'escala' ? 'on' : ''}" onclick="eqVer('escala')"><i class="fas fa-calendar-week"></i>Escala</button><button type="button" class="${eqVista === 'tips' ? 'on' : ''}" onclick="eqVer('tips')"><i class="fas fa-coins"></i>Tips</button></div></div>
+                <div class="eq-semana"><button type="button" class="nav" onclick="eqMudarSemana(-1)" aria-label="Semana anterior"><i class="fas fa-chevron-left"></i></button><b>${eqSemanaTxt(eqSeg)}</b><button type="button" class="nav" onclick="eqMudarSemana(1)" aria-label="Semana seguinte"><i class="fas fa-chevron-right"></i></button>${eqKey(eqSeg) !== eqKey(eqSegunda(new Date())) ? `<button type="button" class="hoje" onclick="eqSeg=null;eqPintar()">Esta semana</button>` : ''}</div>
+                <div id="eq-corpo"></div>
+                ${ed ? '' : '<p class="eq-nota"><i class="fas fa-eye mr-1"></i>Só o responsável da conta altera a escala e as tips.</p>'}
+            </div>`;
+            if (eqVista === 'tips') eqPintarTips(); else eqPintarEscala();
+        }
+        function eqVer(v) { eqVista = v; eqPintar(); }
+        function eqMudarSemana(n) { eqSeg = eqMais(eqSeg || eqSegunda(new Date()), 7 * n); eqPintar(); }
+        function eqCabecalho(ks) {
+            const hoje = eqKey(new Date());
+            return ks.map((k, i) => { const d = eqData(k); return `<th class="${k === hoje ? 'hj' : ''}">${EQ_DIAS[i]}<small>${d.getDate()} ${eqMes(d)}</small></th>`; }).join('');
+        }
+        function eqCelHtml(c) {
+            if (!c) return `<i class="fas fa-plus" style="font-size:12px;opacity:.5"></i>`;
+            if (c.folga) return 'Folga';
+            const ch = (c.t || []).map(id => eqTurnoNome(id)).filter(Boolean).map(n => `<span class="eq-chip">${escapeHtml(eqAbrev(n))}</span>`).join(' ');
+            const h = c.ini && c.fim ? `<span class="eq-hr">${c.ini}–${c.fim}</span>` : '';
+            return (ch || '') + (h ? (ch ? '' : '') + h : '') || '<span class="eq-hr">—</span>';
+        }
+        function eqPintarEscala() {
+            const el = document.getElementById('eq-corpo'), e = eqDados(), ks = eqSemanaKeys(eqSeg), ed = eqPodeEditar();
+            const barra = ed ? `<div class="eq-bar"><button type="button" class="eq-b p" onclick="eqPessoa()"><i class="fas fa-user-plus"></i>Pessoa</button><button type="button" class="eq-b" onclick="eqTurnos()"><i class="fas fa-clock"></i>Turnos</button>${e.staff.length ? `<button type="button" class="eq-b" onclick="eqPadraoAplicar()"><i class="fas fa-wand-magic-sparkles"></i>Preencher com o padrão</button><button type="button" class="eq-b" onclick="eqCopiarSemana()"><i class="fas fa-copy"></i>Copiar semana anterior</button><button type="button" class="eq-b" onclick="eqEnviarEscala()"><i class="fab fa-whatsapp"></i>Enviar escala</button>` : ''}</div>` : '';
+            if (!e.staff.length) { el.innerHTML = barra + `<div class="eq-card eq-vazio"><b>Ainda sem equipe</b><p>Junte as pessoas que trabalham consigo. Depois toque em cada dia para marcar o turno ou a folga.</p>${ed ? '<button type="button" class="eq-b p" onclick="eqPessoa()"><i class="fas fa-user-plus"></i>Juntar a primeira pessoa</button>' : ''}</div>`; return; }
+            const linhas = e.staff.map(s => {
+                let h = 0, f = 0, dt = 0;
+                const cels = ks.map((k, d) => { const c = eqCel(k, s.id); if (c && c.folga) f++; if (eqTrab(c)) { dt++; h += eqHorasCel(c); }
+                    return `<td class="c"><button type="button" class="${!c ? 'vazio' : c.folga ? 'folga' : ''}" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${eqCelHtml(c)}</button></td>`; }).join('');
+                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}${s.funcao ? `<small>${escapeHtml(s.funcao)}</small>` : ''}</span></button></td>${cels}<td class="tot">${eqHtxt(h)}<small>${dt} dia${dt === 1 ? '' : 's'} · ${f} folga${f === 1 ? '' : 's'}</small></td></tr>`;
+            }).join('');
+            const porDia = ks.map(k => e.staff.filter(s => eqTrab(eqCel(k, s.id))).length);
+            el.innerHTML = barra + `<div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">Pessoa</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
+                <tfoot><tr><td class="nm">A trabalhar</td>${porDia.map(n => `<td>${n}</td>`).join('')}<td></td></tr></tfoot></table></div></div>
+                <p class="eq-nota">Toque num dia para marcar turnos, horário ou folga. Turnos: ${e.turnos.map(t => `${escapeHtml(t.nome)} ${t.ini}–${t.fim}`).join(' · ')}.</p>`;
+        }
+
+        // ---------- editar um dia de uma pessoa
+        function eqCelula(k, sid) {
+            if (!eqPodeEditar()) return dsToast('Só o responsável da conta altera a escala.', true);
+            const e = eqDados(), s = e.staff.find(x => x.id === sid); if (!s) return;
+            const c = eqCel(k, sid) || {}, d = eqData(k), wd = (d.getDay() + 6) % 7;
+            dsModal('eq-cel', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(s.nome)}</h3><p class="sub">${EQ_DIAS_L[wd]}, ${d.getDate()} ${eqMes(d)}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-cel')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <label class="ck folga"><input type="checkbox" id="eqc-folga" ${c.folga ? 'checked' : ''} onchange="eqCelVista()">Folga</label>
+                <div id="eqc-trab">${e.turnos.map(t => `<label class="ck"><input type="checkbox" class="eqc-t" value="${t.id}" ${(c.t || []).includes(t.id) ? 'checked' : ''} onchange="if(this.checked)document.getElementById('eqc-folga').checked=false">${escapeHtml(t.nome)}<small>${t.ini}–${t.fim}</small></label>`).join('')}
+                    <label class="ck"><input type="checkbox" id="eqc-hd" ${c.ini && c.fim ? 'checked' : ''} onchange="eqCelVista()">Horário diferente</label>
+                    <div class="dois" id="eqc-h" style="${c.ini && c.fim ? '' : 'display:none'}"><label class="f">Entra<input type="time" id="eqc-ini" value="${c.ini || ''}"></label><label class="f">Sai<input type="time" id="eqc-fim" value="${c.fim || ''}"></label></div></div>
+                <label class="ck"><input type="checkbox" id="eqc-rep">Repetir nos mesmos dias das próximas 3 semanas</label>
+                <div class="acoes"><button type="button" class="d" onclick="eqCelGravar('${k}','${sid}',true)"><i class="fas fa-eraser"></i></button><button type="button" onclick="dsModalFechar('eq-cel')">Cancelar</button><button type="button" class="p" onclick="eqCelGravar('${k}','${sid}')">Guardar</button></div></div>`);
+            eqCelVista();
+        }
+        function eqCelVista() {
+            const f = document.getElementById('eqc-folga').checked;
+            document.getElementById('eqc-trab').style.opacity = f ? '.45' : '';
+            if (f) document.querySelectorAll('.eqc-t').forEach(x => x.checked = false);
+            document.getElementById('eqc-h').style.display = document.getElementById('eqc-hd').checked ? '' : 'none';
+        }
+        function eqCelGravar(k, sid, limpar) {
+            const e = eqDados(); let v = null;
+            if (!limpar) {
+                const folga = document.getElementById('eqc-folga').checked;
+                const t = [...document.querySelectorAll('.eqc-t:checked')].map(x => x.value);
+                const hd = document.getElementById('eqc-hd').checked, ini = document.getElementById('eqc-ini').value, fim = document.getElementById('eqc-fim').value;
+                if (hd && !folga && (!ini || !fim)) return dsToast('Escreva a hora de entrada e de saída.', true);
+                if (folga) v = { folga: true };
+                else if (t.length || hd) { v = { t }; if (hd) { v.ini = ini; v.fim = fim; } }
+            }
+            const rep = !limpar && document.getElementById('eqc-rep') && document.getElementById('eqc-rep').checked;
+            const alvos = [k].concat(rep ? [1, 2, 3].map(n => eqKey(eqMais(eqData(k), 7 * n))) : []);
+            alvos.forEach(kk => { if (!e.escala[kk]) e.escala[kk] = {}; if (v) e.escala[kk][sid] = JSON.parse(JSON.stringify(v)); else delete e.escala[kk][sid]; if (!Object.keys(e.escala[kk]).length) delete e.escala[kk]; });
+            eqGuardar(); dsModalFechar('eq-cel'); eqPintar();
+        }
+
+        // ---------- pessoas
+        function eqPessoa(id) {
+            if (!eqPodeEditar()) return dsToast('Só o responsável da conta altera a equipe.', true);
+            const e = eqDados(), s = (id && e.staff.find(x => x.id === id)) || { nome: '', funcao: '', cor: EQ_CORES[e.staff.length % EQ_CORES.length], tips: true, padrao: {} };
+            const pd = s.padrao || {};
+            window._eqCor = s.cor;
+            dsModal('eq-p', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><h3>${id ? 'Editar pessoa' : 'Nova pessoa'}</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-p')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <label class="f">Nome<input id="eqp-n" maxlength="40" value="${escapeHtml(s.nome)}" placeholder="Ex.: Ana"></label>
+                <label class="f">Função (opcional)<input id="eqp-f" maxlength="40" value="${escapeHtml(s.funcao || '')}" placeholder="Ex.: Barista, Sala, Cozinha"></label>
+                <div class="f" style="margin-top:12px;font-size:13px;font-weight:700;color:#3A2A22">Cor<div class="cores" id="eqp-cores">${EQ_CORES.map(c => `<button type="button" style="background:${c}" class="${c === s.cor ? 'on' : ''}" onclick="window._eqCor='${c}';document.querySelectorAll('#eqp-cores button').forEach(b=>b.classList.toggle('on',b===this))" aria-label="Cor"></button>`).join('')}</div></div>
+                <label class="ck"><input type="checkbox" id="eqp-tips" ${s.tips !== false ? 'checked' : ''}>Recebe tips</label>
+                <div style="margin-top:14px;font-size:13px;font-weight:800;color:#231F20">Padrão da semana <span style="font-weight:600;color:#7A6A60">(opcional)</span></div>
+                <p class="sub">Os dias e turnos de sempre. Use "Preencher com o padrão" para montar a semana num toque.</p>
+                ${e.turnos.map(t => `<div style="margin-top:8px;font-size:12.5px;font-weight:700;color:#5B4A40">${escapeHtml(t.nome)}</div><div class="dias" data-t="${t.id}">${EQ_DIAS.map((d, i) => `<button type="button" class="${(pd[i] || []).includes(t.id) ? 'on' : ''}" onclick="this.classList.toggle('on')">${d}</button>`).join('')}</div>`).join('')}
+                <div class="acoes">${id ? `<button type="button" class="d" onclick="eqPessoaApagar('${id}')"><i class="fas fa-trash"></i></button>` : ''}<button type="button" onclick="dsModalFechar('eq-p')">Cancelar</button><button type="button" class="p" onclick="eqPessoaGravar('${id || ''}')">Guardar</button></div></div>`);
+            setTimeout(() => { const n = document.getElementById('eqp-n'); if (n && !id) n.focus(); }, 60);
+        }
+        function eqPessoaGravar(id) {
+            const e = eqDados(), nome = document.getElementById('eqp-n').value.trim().replace(/\s+/g, ' ');
+            if (!nome) return dsToast('Escreva o nome.', true);
+            const padrao = {};
+            document.querySelectorAll('#eq-p .dias').forEach(g => g.querySelectorAll('button').forEach((b, i) => { if (b.classList.contains('on')) (padrao[i] = padrao[i] || []).push(g.dataset.t); }));
+            const v = { nome: nome.slice(0, 40), funcao: document.getElementById('eqp-f').value.trim().slice(0, 40), cor: window._eqCor || '#983808', tips: document.getElementById('eqp-tips').checked, padrao };
+            if (id) Object.assign(e.staff.find(x => x.id === id) || {}, v); else e.staff.push(Object.assign({ id: eqId() }, v));
+            eqGuardar(); dsModalFechar('eq-p'); eqPintar();
+        }
+        async function eqPessoaApagar(id) {
+            const e = eqDados(), s = e.staff.find(x => x.id === id); if (!s) return;
+            if (!(await dsConfirm(`Tirar ${s.nome} da equipe?`, 'A escala desta pessoa também sai. As tips já divididas mudam se voltar a calcular semanas antigas.', { ok: 'Tirar', danger: true }))) return;
+            e.staff = e.staff.filter(x => x.id !== id);
+            Object.keys(e.escala).forEach(k => { delete e.escala[k][id]; if (!Object.keys(e.escala[k]).length) delete e.escala[k]; });
+            eqGuardar(); dsModalFechar('eq-p'); eqPintar();
+        }
+        function eqPadraoAplicar() {
+            const e = eqDados(), ks = eqSemanaKeys(eqSeg); let n = 0;
+            e.staff.forEach(s => { const pd = s.padrao || {}; if (!Object.keys(pd).length) return;
+                ks.forEach((k, i) => { if (eqCel(k, s.id)) return; if (!e.escala[k]) e.escala[k] = {};
+                    e.escala[k][s.id] = (pd[i] || []).length ? { t: pd[i].slice() } : { folga: true }; n++; }); });
+            if (!n) return dsToast('Nada para preencher. Defina o padrão de cada pessoa (toque no nome) ou a semana já está preenchida.', true);
+            eqGuardar(); eqPintar(); dsToast(`Preenchidos ${n} dias com o padrão. Os dias já marcados ficaram como estavam.`);
+        }
+        async function eqCopiarSemana() {
+            const e = eqDados(), ks = eqSemanaKeys(eqSeg), ant = eqSemanaKeys(eqMais(eqSeg, -7));
+            if (!ant.some(k => e.escala[k] && Object.keys(e.escala[k]).length)) return dsToast('A semana anterior está vazia.', true);
+            if (ks.some(k => e.escala[k] && Object.keys(e.escala[k]).length) && !(await dsConfirm('Substituir esta semana?', 'A escala desta semana fica igual à da semana anterior.', { ok: 'Substituir' }))) return;
+            ks.forEach((k, i) => { if (e.escala[ant[i]]) e.escala[k] = JSON.parse(JSON.stringify(e.escala[ant[i]])); else delete e.escala[k]; });
+            eqGuardar(); eqPintar(); dsToast('Escala copiada da semana anterior.');
+        }
+        function eqEnviarEscala() {
+            const e = eqDados(), ks = eqSemanaKeys(eqSeg);
+            let t = `*Escala ${eqSemanaTxt(eqSeg)}*${currentEmpresa ? ' · ' + currentEmpresa : ''}\n`;
+            e.staff.forEach(s => {
+                const dias = ks.map((k, i) => { const c = eqCel(k, s.id); if (!c) return null; if (c.folga) return `${EQ_DIAS[i]} folga`;
+                    const tt = (c.t || []).map(eqTurnoNome).filter(Boolean).join('+'); return `${EQ_DIAS[i]} ${tt}${c.ini && c.fim ? ` ${c.ini}-${c.fim}` : ''}`.trim(); }).filter(Boolean);
+                if (dias.length) t += `\n*${s.nome}:* ${dias.join(' · ')}`;
+            });
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
+        }
+
+        // ---------- turnos
+        function eqTurnos() {
+            if (!eqPodeEditar()) return;
+            window._eqTl = JSON.parse(JSON.stringify(eqDados().turnos));
+            const pintar = () => {
+                document.getElementById('eqt-l').innerHTML = window._eqTl.map((t, i) => `<div class="tl"><input value="${escapeHtml(t.nome)}" maxlength="20" oninput="_eqTl[${i}].nome=this.value" aria-label="Nome do turno"><input type="time" value="${t.ini}" oninput="_eqTl[${i}].ini=this.value" aria-label="Início"><input type="time" value="${t.fim}" oninput="_eqTl[${i}].fim=this.value" aria-label="Fim"><button type="button" onclick="_eqTl.splice(${i},1);eqTurnosPintar()" ${window._eqTl.length <= 1 ? 'disabled style="opacity:.3"' : ''} aria-label="Tirar"><i class="fas fa-trash"></i></button></div>`).join('');
+            };
+            window.eqTurnosPintar = pintar;
+            dsModal('eq-t', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>Turnos</h3><p class="sub">Os turnos que aparecem na escala e nas tips (ex.: Almoço e Jantar).</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-t')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+                <div class="tl" style="margin-top:12px;font-size:12px;font-weight:700;color:#7A6A60"><span>Nome</span><span>Começa</span><span>Acaba</span><span></span></div><div id="eqt-l"></div>
+                <button type="button" class="eq-b" style="margin-top:10px" onclick="if(_eqTl.length>=5)return dsToast('No máximo 5 turnos.',true);_eqTl.push({id:'t'+Date.now().toString(36),nome:'',ini:'09:00',fim:'17:00'});eqTurnosPintar()"><i class="fas fa-plus"></i>Turno</button>
+                <div class="acoes"><button type="button" onclick="dsModalFechar('eq-t')">Cancelar</button><button type="button" class="p" onclick="eqTurnosGravar()">Guardar</button></div></div>`);
+            pintar();
+        }
+        function eqTurnosGravar() {
+            const l = window._eqTl.map(t => ({ id: t.id, nome: String(t.nome || '').trim().slice(0, 20), ini: t.ini, fim: t.fim }));
+            if (l.some(t => !t.nome)) return dsToast('Dê um nome a todos os turnos.', true);
+            if (l.some(t => eqMin(t.ini) == null || eqMin(t.fim) == null)) return dsToast('Escreva a hora de início e de fim de cada turno.', true);
+            eqDados().turnos = l; eqGuardar(); dsModalFechar('eq-t'); eqPintar();
+        }
+
+        // ---------- tips
+        function eqPintarTips() {
+            const el = document.getElementById('eq-corpo'), e = eqDados(), ks = eqSemanaKeys(eqSeg), segK = ks[0], ed = eqPodeEditar();
+            if (!e.staff.length) { el.innerHTML = `<div class="eq-card eq-vazio"><b>Primeiro, a equipe</b><p>As tips são divididas por quem trabalhou. Junte as pessoas e marque a escala no separador Escala.</p><button type="button" class="eq-b p" onclick="eqVer('escala')"><i class="fas fa-calendar-week"></i>Ir para a Escala</button></div>`; return; }
+            const r = eqCalcular(eqSeg), cfg = r.cfg, dis = ed ? '' : 'disabled';
+            const modos = [['turno', 'Por turno'], ['dia', 'Por dia'], ['semana', 'Por semana']];
+            const divs = [['iguais', 'Partes iguais'], ['turnos', 'Pelos turnos trabalhados'], ['horas', 'Pelas horas']];
+            const din = (val, on, lbl) => `<label class="eq-din"><input type="text" inputmode="decimal" value="${val ? (+val).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false }) : ''}" placeholder="0,00" ${dis} onchange="${on}" aria-label="${escapeHtml(lbl)}"><span>€</span></label>`;
+            let entrada = '';
+            if (cfg.modo === 'turno') entrada = `<div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">Tips recebidas</th>${eqCabecalho(ks)}</tr></thead><tbody>
+                    ${e.turnos.map(t => `<tr><td class="nm lbl">${escapeHtml(t.nome)}<small>${t.ini}–${t.fim}</small></td>${ks.map((k, d) => `<td class="in">${din(((e.tips[k] || {}).t || {})[t.id], `eqTipSet('${k}','t','${t.id}',this.value)`, `${t.nome}, ${EQ_DIAS_L[d]}`)}</td>`).join('')}</tr>`).join('')}
+                </tbody></table></div></div>`;
+            else if (cfg.modo === 'dia') entrada = `<div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">Tips recebidas</th>${eqCabecalho(ks)}</tr></thead><tbody>
+                    <tr><td class="nm lbl">Total do dia</td>${ks.map((k, d) => `<td class="in">${din((e.tips[k] || {}).d, `eqTipSet('${k}','d','',this.value)`, EQ_DIAS_L[d])}</td>`).join('')}</tr></tbody></table></div></div>`;
+            else entrada = `<div class="eq-box" style="margin-top:14px"><b>Tips da semana</b><div class="eq-sem">${din(e.tipsSemana[segK], `eqTipSet('${segK}','s','',this.value)`, 'Tips da semana')}<span class="eq-nota" style="margin:0">Total recebido de ${eqSemanaTxt(eqSeg)}.</span></div></div>`;
+            const quem = e.staff.filter(s => s.tips !== false), fora = e.staff.filter(s => s.tips === false);
+            const linhas = quem.map(s => {
+                const x = r.res[s.id];
+                const cels = ks.map((k, d) => { const c = eqCel(k, s.id); const m = eqTrab(c) ? (c.t || []).map(id => `<span>${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span>`).join('') || `<span>${c.ini}–${c.fim}</span>` : c && c.folga ? '<span style="background:transparent;color:inherit;opacity:.6">folga</span>' : '';
+                    const v = cfg.modo === 'semana' ? '' : (x.dias[d] ? eqEur(x.dias[d]) : `<span class="zero">${eqTrab(c) ? '0,00 €' : '—'}</span>`);
+                    return `<td class="v"><button type="button" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${v}<span class="m">${m}</span></button></td>`; }).join('');
+                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}</span></button></td>${cels}<td class="rec">${eqEur(x.total)}</td></tr>`;
+            }).join('');
+            const soma = Math.round(Object.values(r.res).reduce((a, x) => a + x.total, 0) * 100) / 100;
+            el.innerHTML = `<div class="eq-opc">
+                    <div class="eq-box"><b>Como entram as tips</b><p>Escolha como regista o dinheiro das tips nesta semana.</p><div class="eq-pills">${modos.map(([v, l]) => `<button type="button" ${dis} class="${cfg.modo === v ? 'on' : ''}" onclick="eqTipCfg('modo','${v}')">${l}</button>`).join('')}</div></div>
+                    <div class="eq-box"><b>Como dividir</b><p>${cfg.modo === 'turno' ? 'Cada turno é dividido em partes iguais por quem trabalhou nesse turno.' : 'Entre quem trabalhou' + (cfg.modo === 'dia' ? ' nesse dia.' : ' na semana.')}</p><div class="eq-pills">${divs.map(([v, l]) => `<button type="button" ${dis || (cfg.modo === 'turno' ? 'disabled' : '')} class="${cfg.modo !== 'turno' && cfg.divisao === v ? 'on' : ''}" onclick="eqTipCfg('divisao','${v}')">${l}</button>`).join('')}</div></div>
+                </div>
+                ${entrada}
+                ${quem.some(s => r.res[s.id].total > 0) ? `<div class="eq-box" style="margin-top:14px"><b>A receber esta semana</b><div class="eq-res">${quem.filter(s => r.res[s.id].total > 0).map(s => `<div><span><i style="background:${s.cor || '#983808'}"></i>${escapeHtml(s.nome)}</span><b>${eqEur(r.res[s.id].total)}</b></div>`).join('')}</div></div>` : ''}
+                ${r.avisos.map(a => `<div class="eq-aviso"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(a)} Marque quem trabalhou na escala.</div>`).join('')}
+                <div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">A receber</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
+                    <tfoot><tr><td class="nm">Tips</td>${ks.map((k, d) => `<td>${cfg.modo === 'semana' ? '' : eqEur(r.porDia[d])}</td>`).join('')}<td>${eqEur(r.total)}</td></tr></tfoot></table></div></div>
+                <p class="eq-nota">Quem trabalhou vem da Escala: toque num dia para corrigir. A divisão é feita ao cêntimo e a soma bate certo com o total (${eqEur(soma)} de ${eqEur(r.total)}).${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
+                <div class="eq-bar"><button type="button" class="eq-b" onclick="eqEnviarTips()"><i class="fab fa-whatsapp"></i>Enviar resumo</button></div>`;
+        }
+        function eqTipSet(k, tipo, tid, val) {
+            if (!eqPodeEditar()) return;
+            const e = eqDados(), v = eqNum(val);
+            if (tipo === 's') { if (v) e.tipsSemana[k] = v; else delete e.tipsSemana[k]; }
+            else {
+                if (!e.tips[k]) e.tips[k] = {};
+                if (tipo === 'd') { if (v) e.tips[k].d = v; else delete e.tips[k].d; }
+                else { e.tips[k].t = e.tips[k].t || {}; if (v) e.tips[k].t[tid] = v; else delete e.tips[k].t[tid]; if (!Object.keys(e.tips[k].t).length) delete e.tips[k].t; }
+                if (!Object.keys(e.tips[k]).length) delete e.tips[k];
+            }
+            eqGuardar(); eqPintarTips();
+        }
+        function eqTipCfg(campo, v) {
+            if (!eqPodeEditar()) return;
+            const e = eqDados(), segK = eqKey(eqSeg), c = Object.assign({}, eqTipsCfg(segK)); c[campo] = v;
+            e.tipsCfg[segK] = c; e.tipsCfg._ultimo = c; eqGuardar(); eqPintarTips();
+        }
+        function eqEnviarTips() {
+            const r = eqCalcular(eqSeg), e = eqDados();
+            let t = `*Tips ${eqSemanaTxt(eqSeg)}*${currentEmpresa ? ' · ' + currentEmpresa : ''}\nTotal: ${eqEur(r.total)}\n`;
+            e.staff.filter(s => s.tips !== false && r.res[s.id] && r.res[s.id].total > 0).forEach(s => { t += `\n${s.nome}: ${eqEur(r.res[s.id].total)}`; });
+            window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
+        }
+
+        // ---------- aba própria (depois da Fidelidade) e no menu de baixo
+        (function () {
+            const ref = document.getElementById('tab-fidelidade') || document.getElementById('tab-sales');
+            if (ref && !document.getElementById('tab-equipa')) ref.insertAdjacentHTML('afterend', '<div id="tab-equipa" class="tab-content hidden"><div id="eq-page"></div></div>');
+            const nf = document.getElementById('nav-fidelidade') || document.getElementById('nav-sales');
+            if (nf && !document.getElementById('nav-equipa')) nf.insertAdjacentHTML('afterend', '<button onclick="switchTab(\'equipa\')" id="nav-equipa" class="tab-btn ds-tab shrink-0 text-xs sm:text-sm font-bold flex items-center gap-2 whitespace-nowrap transition"><i class="fas fa-people-group"></i> Equipe</button>');
+            const bf = document.querySelector('#ds-bottom-nav button[data-tab=fidelidade]') || [...document.querySelectorAll('#ds-bottom-nav button')].pop();
+            if (bf && !document.querySelector('#ds-bottom-nav button[data-tab=equipa]')) bf.insertAdjacentHTML('afterend', '<button type="button" data-tab="equipa" onclick="switchTab(\'equipa\')"><i class="fas fa-people-group"></i><span>Equipe</span></button>');
+            const oT = switchTab;
+            switchTab = function (t) {
+                const r = oT.apply(this, arguments);
+                if (t === 'equipa') {
+                    // a Equipe mostra o cadeado e os planos dentro da própria página
+                    try { document.querySelectorAll('#ds-bottom-nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === 'equipa')); eqPintar(); } catch (e) { console.error(e); }
+                }
+                return r;
+            };
+            const lk = () => { const b = document.getElementById('nav-equipa'); if (b && typeof hasPlan === 'function') b.classList.toggle('locked', !hasPlan('pro')); };
+            try { lk(); } catch (_) {}
         })();
     </script>
 </body>
