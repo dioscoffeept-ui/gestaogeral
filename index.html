@@ -2286,7 +2286,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
                 <div>
                     <div class="flex justify-between items-center mb-2">
-                        <label class="block text-xs font-bold text-slate-600 uppercase">Ingredientes da Receita *</label>
+                        <label class="block text-xs font-bold text-slate-600 uppercase">Ingredientes da Receita <span class="normal-case font-semibold text-slate-400">(opcional)</span></label>
                         <button type="button" onclick="addRecipeIngredientRow()" class="text-xs text-rose-600 font-bold hover:underline">+ Adicionar Ingrediente</button>
                     </div>
                     <div id="recipe-ingredients-list" class="space-y-2"></div>
@@ -5801,7 +5801,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const unitOpts = units.map(u => `<option value="${u}" ${unit === u ? 'selected' : ''}>${u}</option>`).join('') +
                 `<option value="" ${unit === '' ? 'selected' : ''}>—</option>`;
             row.innerHTML = `
-                <input type="text" placeholder="Ingrediente" value="${escapeHtml(name)}" required class="ing-name flex-1 text-xs font-semibold rounded-xl border-slate-300">
+                <input type="text" placeholder="Ingrediente" value="${escapeHtml(name)}" class="ing-name flex-1 text-xs font-semibold rounded-xl border-slate-300">
                 <input type="number" step="0.01" placeholder="Qtd" value="${qtyVal}" class="ing-qty w-20 text-xs font-semibold rounded-xl border-slate-300">
                 <select class="ing-unit w-28 text-xs font-semibold rounded-xl border-slate-300">${unitOpts}</select>
                 <button type="button" onclick="this.parentElement.remove()" class="p-2 text-slate-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
@@ -5831,10 +5831,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 }
             });
 
-            if (ingredients.length === 0) {
-                alert("Adicione pelo menos 1 ingrediente à receita.");
-                return;
-            }
+            // os ingredientes são opcionais: há quem use as fichas só para a preparação, sem estoque nem custos
 
             const recipeObj = { id: id || 'rec_' + Date.now(), type, name, category, icon, size, ingredients, steps };
             if (recipePhotoData === '') recipeObj.image = '';                       // removida
@@ -8566,7 +8563,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const item = v && appState.inventory.find(i => normTxt(i.name) === normTxt(v));
             if (!v) { st.innerHTML = ''; inp.style.borderColor = ''; return; }
             if (item) { st.innerHTML = `<span class="text-emerald-600"><i class="fas fa-check-circle mr-1"></i>No estoque · ${escapeHtml(item.category || '')}</span>`; inp.style.borderColor = '#34d399'; }
-            else { st.innerHTML = `<span class="text-amber-700"><i class="fas fa-triangle-exclamation mr-1"></i>Não está no estoque — escolha da lista para ligar ao custo e ao estoque</span>`; inp.style.borderColor = '#f59e0b'; }
+            else { st.innerHTML = appState.inventory.length ? `<span class="text-slate-500"><i class="fas fa-pen mr-1"></i>Escrito à mão, sem ligação ao estoque (opcional). Para contar custos e estoque, escolha da lista.</span>` : ''; inp.style.borderColor = ''; }
         }
         function ingPick(row, item) {
             row.querySelector('.ing-name').value = item.name;
@@ -8584,7 +8581,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         function ingRender(row) {
             const d = row.querySelector('.ing-drop'), list = row._ingList || [];
             const q = row.querySelector('.ing-name').value.trim();
-            if (!list.length) { d.innerHTML = `<div class="px-3 py-2 text-[11px] text-slate-400">${appState.inventory.length ? 'Nada no estoque com "' + escapeHtml(q) + '". Pode escrever à mão ou criar o item no Estoque.' : 'O estoque está vazio.'}</div>`; d.classList.remove('hidden'); return; }
+            if (!list.length) { d.innerHTML = `<div class="px-3 py-2 text-[11px] text-slate-400">${appState.inventory.length ? 'Nada no estoque com "' + escapeHtml(q) + '". Pode deixar escrito assim: a ligação ao estoque é opcional.' : 'Escreva o ingrediente. Ligar ao estoque é opcional.'}</div>`; d.classList.remove('hidden'); return; }
             d.innerHTML = list.map((i, k) => `<button type="button" data-k="${k}" class="w-full text-left px-3 py-1.5 flex items-center justify-between gap-2 text-xs ${k === row._ingSel ? 'bg-slate-100' : 'hover:bg-slate-50'}">
                     <span class="font-semibold text-slate-800 truncate">${escapeHtml(i.name)}</span>
                     <span class="text-[10px] text-slate-400 whitespace-nowrap">${escapeHtml(i.category || '')} · ${escapeHtml(i.unit || '')}</span></button>`).join('');
@@ -8597,9 +8594,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const wrap = document.createElement('div'); wrap.className = 'relative flex-1 min-w-0';
             inp.parentNode.insertBefore(wrap, inp); wrap.appendChild(inp);
             inp.classList.add('w-full'); inp.setAttribute('autocomplete', 'off');
-            inp.placeholder = 'Procurar no estoque…';
+            inp.placeholder = appState.inventory.length ? 'Ingrediente (ou procure no estoque)' : 'Ingrediente (ex.: leite)';
             wrap.insertAdjacentHTML('beforeend', '<div class="ing-drop hidden absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-xl shadow-lg max-h-64 overflow-y-auto py-1"></div><p class="ing-status text-[10px] mt-0.5 leading-tight"></p>');
-            const open = () => { row._ingList = ingSearch(inp.value); row._ingSel = inp.value.trim() ? 0 : -1; ingRender(row); };
+            const open = () => { row._ingList = ingSearch(inp.value); row._ingSel = -1; ingRender(row); };
             inp.addEventListener('input', () => { open(); const st = row.querySelector('.ing-status'); if (st) st.innerHTML = ''; inp.style.borderColor = ''; });
             inp.addEventListener('focus', open);
             inp.addEventListener('blur', () => setTimeout(() => { ingClose(row); ingStatus(row); }, 180));
@@ -22873,5 +22870,23 @@ html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(.text-slate-
 html.dark :is(#tab-fidelidade .fid-wrap, .bal-card, .dsm > div) :is(input, select, textarea) { background-color: #fff; color: #231F20; }
 html.dark #tab-sales .text-slate-500, html.dark #tab-suppliers .text-slate-500, html.dark #tab-inventory .text-slate-500, html.dark #tab-sales .text-slate-400, html.dark #tab-suppliers .text-slate-400, html.dark #tab-inventory .text-slate-400 { color: #BDB0A4 !important; }
 </style>
+
+<script>
+// ======================================================= EXCLUIR FICHA: confirma, apaga, fecha e some logo da lista
+async function dsApagarFicha(id) {
+    const r = appState.recipes.find(x => x.id === id); if (!r) return false;
+    const ok = await dsConfirmar(`Excluir a ficha "${r.name}"? Esta ação não se pode desfazer.`); if (!ok) return false;
+    if (typeof gerPedir === 'function' && !(await gerPedir('Apagar uma ficha técnica'))) return false;
+    appState.recipes = appState.recipes.filter(x => x.id !== id);
+    saveStorage();
+    try { closeRecipeViewModal(); } catch (_) {}
+    try { const m = document.getElementById('recipe-modal'); if (m && !m.classList.contains('hidden') && (document.getElementById('recipe-id') || {}).value === id) closeRecipeModal(); } catch (_) {}
+    try { renderBarRecipes(); renderKitchenRecipes(); } catch (_) {}
+    dsToast(`Ficha "${r.name}" excluída.`);
+    return true;
+}
+deleteRecipe = function (id) { return dsApagarFicha(id); };
+viewRecipeDelete = function () { const id = viewRecipeId; if (id) return dsApagarFicha(id); };
+</script>
 </body>
 </html>
