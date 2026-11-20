@@ -22456,8 +22456,8 @@ var qrcode = function() {
                 const { data, error } = await sb.functions.invoke('convidar', { body: { email, redirect: location.origin + location.pathname } });
                 let msg = data && data.erro;
                 if (error) { try { const j = await error.context.json(); msg = j.erro || msg; } catch (_) {} }
-                if (error || !data || !data.ok) { if (!silencioso) settingsMsg(msg || 'Não foi possível enviar o convite agora. Tente de novo daqui a pouco.'); return false; }
-                return data.modo || 'convite';
+                if (error || !data || !data.ok) { if (!silencioso) settingsMsg(msg || 'Não foi possível enviar o convite agora. Tente de novo daqui a pouco.'); window._dsConvErro = msg || ''; return false; }
+                return data.ja ? 'ja' : (data.modo || 'convite');
             } catch (e) { console.warn(e); if (!silencioso) settingsMsg('Não foi possível enviar o convite agora. Verifique a ligação.'); return false; }
         }
         (function () {
@@ -22471,8 +22471,9 @@ var qrcode = function() {
                 if (document.getElementById('set-colab-email').value) return;
                 const modo = await colabConvidar(email, true);
                 if (modo === 'convite') settingsMsg(`Convite enviado para ${email}. A pessoa abre o e-mail, toca no link e cria a palavra-passe. Se não o encontrar, que veja em Spam ou Promoções.`, 'ok');
-                else if (modo === 'entrar') settingsMsg(`${email} já tem conta no Dio'Stock: enviámos um link para entrar. Ao entrar já vê esta empresa.`, 'ok');
-                else settingsMsg(`Colaborador adicionado, mas o e-mail não seguiu. Use "Reenviar convite" ou peça-lhe para abrir o Dio'Stock → "Primeiro acesso" → "Fui convidado por uma empresa".`);
+                else if (modo === 'entrar') settingsMsg(`${email} já tem conta no Dio'Stock: enviámos-lhe um e-mail para entrar. Ao entrar já vê esta empresa.`, 'ok');
+                else if (modo === 'ja') settingsMsg(`Colaborador adicionado. Já tinha seguido um e-mail para ${email} há instantes; peça-lhe que veja a caixa de entrada, Spam ou Promoções.`, 'ok');
+                else settingsMsg(`Colaborador adicionado, mas o e-mail não seguiu${window._dsConvErro ? ' (' + window._dsConvErro + ')' : ''}. Use "Reenviar convite" ou peça-lhe para abrir o Dio'Stock → "Primeiro acesso" → "Fui convidado por uma empresa".`);
             };
             const oLoad = loadCollaborators;
             loadCollaborators = async function () {
@@ -22492,7 +22493,7 @@ var qrcode = function() {
             bt.disabled = true; const t = bt.innerHTML; bt.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i>A enviar…';
             const modo = await colabConvidar(email);
             bt.disabled = false; bt.innerHTML = t;
-            if (modo) settingsMsg(modo === 'entrar' ? `Enviámos a ${email} um link para entrar.` : `Convite reenviado para ${email}.`, 'ok');
+            if (modo) settingsMsg(modo === 'ja' ? `O e-mail para ${email} seguiu há instantes. Espere 2 minutos antes de reenviar.` : modo === 'entrar' ? `Enviámos a ${email} um e-mail para entrar.` : `Convite reenviado para ${email}.`, 'ok');
         }
         // quem abre o link do convite: cria logo a palavra-passe e entra
         (function () {
