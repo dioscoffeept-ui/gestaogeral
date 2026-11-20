@@ -22666,12 +22666,14 @@ function fidAbrirWhats(link, tel) {
     const url = 'https://api.whatsapp.com/send?' + (tel ? 'phone=' + tel + '&' : '') + 'text=' + encodeURIComponent(link);
     const w = window.open(url, '_blank', 'noopener'); if (!w) location.href = url;
 }
+// o formato aprovado: a página n/<código>/ (imagem grande da cartao-og.png com o título e o texto por baixo). Nunca cartao.html?n=
+fidLinkProg = function (p) { return fidBase() + 'n/' + p.curto + '/?v=novo1'; };
 fidShWhats = function (pid) { const p = fidProgPorId(pid); if (!p) return; dsModalFechar('fid-sh'); fidAbrirWhats(fidLinkProg(p), ''); };
 fidShOutras = async function (pid) { const p = fidProgPorId(pid); if (!p) return; try { await navigator.share({ url: fidLinkProg(p) }); dsModalFechar('fid-sh'); } catch (e) { if (!e || e.name !== 'AbortError') fidShWhats(pid); } };
 fidWhats = function (id) {
     const k = fidCartoes.find(x => x.id === id); if (!k) return;
     let tel = ''; if (k.telefone) { tel = k.telefone.replace(/\D/g, ''); if (tel.length === 9) tel = '351' + tel; }
-    fidAbrirWhats(fidLinkCartao(k), tel);
+    const l = fidLinkCartao(k); fidAbrirWhats(l + (l.indexOf('/c/?') >= 0 ? '&v=novo1' : ''), tel);
 };
 </script>
 </body>
