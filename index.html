@@ -22540,5 +22540,64 @@ var qrcode = function() {
         .cb-reenv:disabled { opacity: .6; }
         html.dark .cb-reenv { background: #1F130E; border-color: #44332A; color: #F2ECE4; }
     </style>
+
+<script>
+// ======================================================= SÓ VER: bloqueio real (acesso atualizado sem sair da conta)
+(function () {
+    const ESCRITA = /(^edit|^delete|^remove|^rename|^add|^purchase(Apply|AddRow|Set)|^sales(Apply|AddRow)|^prep(Produce|Remove|VarAdd|VarDel)|^reset|^invoiceDeleteConfirm|^trash|Guardar|Gravar|Apagar|Remover|Save|Delete|Remove|Add|Adicionar|Criar|^new|Nov[oa]|Apply|Aplicar|Confirm|Tirar|Mover|Move|Restore|Purge|Rename|Produce|Pagar|PayNow|Checkout|Aceitar|Recusar|Pronto|Cobrar|Chegou|Iguais|Juntar|Girar|Descartar|Suspender|Associar|FidDescontar|Mudar|Trocar|CopiarSemana|Desligar|Ligar|Usar|Oferecer|Desfazer|Reabrir|LimparVelhos|Generate|Edit|Form$|^eqCelula$|^eqPessoa$|^eqTurnos$|^eqDocNovo$|^eqTipCfg$|^cxAbrir$|^cxMov$|^cxFechar$|^caixaAbrir$|^posAdd$|^posTap$|^setBrand$|^settingsSaveLogo$|^settingsLogoRemove$|^fidProgEditar$|^rlDefAbrir$|^msEditor$|^openInventoryModal$|^openSupplierModal$|^openPurchase$|^openFixedCosts$|^purchaseManual$|^despForm$)/;
+    const LIVRE = /^(dsModalFechar|switchTab|openSettings|closeSettings|settingsTab|logout|authShow|toggleTheme|setTheme|dsLangSet|toggleAccountMenu|closeAccountMenu|colabReenviar)$/;
+    let avisado = 0;
+    function avisar() { const t = Date.now(); if (t - avisado < 1500) return; avisado = t; dsToast('Tem acesso só para ver. Peça ao responsável da conta para mudar o seu acesso.', true); }
+    function soVer() { return typeof dsPerm !== 'undefined' && dsPerm === 'ver' && typeof currentRole !== 'undefined' && currentRole !== 'dono'; }
+    window.dsSoVer = soVer;
+    document.addEventListener('click', ev => {
+        if (!soVer()) return;
+        const el = ev.target.closest && ev.target.closest('[onclick]'); if (!el) return;
+        if (el.closest('#auth-screen')) return;
+        if (el.closest('#settings-modal') && !/setBrand|settingsSaveLogo|settingsLogoRemove/.test(el.getAttribute('onclick') || '')) return;
+        const fns = (el.getAttribute('onclick') || '').match(/[A-Za-z_]\w*(?=\s*\()/g) || [];
+        const alvo = fns.filter(f => !/^(event|setTimeout|if|this|document|window|encodeURIComponent)$/.test(f));
+        if (!alvo.length || alvo.every(f => LIVRE.test(f))) return;
+        if (alvo.some(f => ESCRITA.test(f))) { ev.preventDefault(); ev.stopImmediatePropagation(); avisar(); }
+    }, true);
+    document.addEventListener('submit', ev => {
+        if (!soVer()) return;
+        const f = ev.target; if (!f || f.closest('#auth-screen')) return;
+        if (f.closest('#settings-modal') && !/Collaborator|Brand|Logo/i.test(f.getAttribute('onsubmit') || '')) return;   // a própria palavra-passe/e-mail
+        ev.preventDefault(); ev.stopImmediatePropagation(); avisar();
+    }, true);
+    document.addEventListener('change', ev => {
+        if (!soVer()) return;
+        const i = ev.target; if (!i || i.closest('#auth-screen') || i.closest('#settings-modal')) return;
+        if (i.type === 'file' || i.type === 'checkbox' || i.tagName === 'SELECT' && /(Guardar|Mudar|Set|set)/.test(i.getAttribute('onchange') || '')) { ev.stopImmediatePropagation(); if (i.type === 'file') i.value = ''; avisar(); }
+    }, true);
+    // nunca grava na nuvem com acesso só para ver
+    const oP = pushCloud;
+    pushCloud = async function () { if (soVer()) return; return oP.apply(this, arguments); };
+    // o acesso muda sem ter de sair: confere a cada 30 s e ao voltar à app
+    async function reconferir() {
+        try {
+            if (!currentUser || currentRole === 'dono' || !dataOwnerId) return;
+            const antes = dsPerm;
+            const { data } = await sb.rpc('minha_permissao', { dono: dataOwnerId });
+            if (!data) return;
+            if (data !== antes) {
+                dsPerm = data; document.body.classList.toggle('ds-so-ver', dsPerm === 'ver');
+                try { const t = document.querySelector('.tab-content:not(.hidden)'); if (t) switchTab(t.id.replace('tab-', '')); } catch (_) {}
+                dsToast(data === 'ver' ? 'O seu acesso mudou para só ver.' : 'O seu acesso foi atualizado: ' + (PERM_TXT[data] || data) + '.');
+            }
+        } catch (e) { console.warn(e); }
+    }
+    setInterval(reconferir, 30000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reconferir(); });
+    window.addEventListener('focus', reconferir);
+})();
+</script>
+
+<style>
+/* fundo de uma só cor, mesmo ao puxar a página para lá do fim */
+html:not(.dark) { background-color: #F4EEE6 !important; }
+html.dark { background-color: #0b1120 !important; }
+</style>
 </body>
 </html>
