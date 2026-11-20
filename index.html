@@ -23111,5 +23111,106 @@ impLer = async function () {
     };
 })();
 </script>
+
+<style>
+#ds-selbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom)); z-index: 75; display: none; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;
+    background: #231F20; color: #fff; padding: 10px; border-radius: 18px; box-shadow: 0 18px 40px -14px rgba(0,0,0,.55); width: max-content; max-width: calc(100vw - 20px); }
+#ds-selbar.on { display: flex; }
+#ds-selbar b { padding: 0 6px; font-size: 14.5px; white-space: nowrap; }
+#ds-selbar button { padding: 9px 13px; border-radius: 12px; font-weight: 800; font-size: 13.5px; background: rgba(255,255,255,.12); color: #fff; white-space: nowrap; }
+#ds-selbar button.mv { background: #983808; } #ds-selbar button.del { background: #B91C1C; }
+#ds-selbar button:disabled { opacity: .45; }
+@media (min-width: 768px) { #ds-selbar { bottom: 22px; } }
+body.ds-sel [onclick^="openRecipeViewModal("] { position: relative; outline: 2px dashed rgba(152,56,8,.35); outline-offset: 2px; }
+body.ds-sel [onclick^="openRecipeViewModal("]::after { content: "''"; position: absolute; top: -9px; right: -9px; width: 28px; height: 28px; border-radius: 9px; background: #fff; border: 2px solid #983808; z-index: 5; }
+body.ds-sel [onclick^="openRecipeViewModal("].ds-on { outline: 3px solid #983808; }
+body.ds-sel [onclick^="openRecipeViewModal("].ds-on::after { background: #983808 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round' d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/18px no-repeat; }
+.ds-selcat { display: none; margin-left: auto; font-size: 12.5px; font-weight: 800; color: #983808; padding: 6px 10px; border-radius: 10px; background: #FBEDE6; }
+body.ds-sel .ds-selcat { display: inline-block; }
+html.dark .ds-selcat { background: rgba(152,56,8,.25); color: #F2B79A; }
+.ds-selbt { display: inline-flex; align-items: center; gap: 7px; }
+</style>
+<script>
+// ======================================================= FICHAS: selecionar várias (mover de categoria, mudar Bar/Cozinha, excluir)
+let dsSel = new Set(), dsSelTipo = 'BAR';
+function dsSelTab() { const t = document.querySelector('#tab-kitchen:not(.hidden)') ? 'KITCHEN' : 'BAR'; return t; }
+function dsSelCards() { const t = dsSelTipo === 'KITCHEN' ? '#tab-kitchen' : '#tab-bar'; return [...document.querySelectorAll(t + ' [onclick^="openRecipeViewModal("]')]; }
+function dsSelId(el) { return ((el.getAttribute('onclick') || '').match(/openRecipeViewModal\('([^']+)'\)/) || [])[1]; }
+function dsSelPintar() {
+    dsSelCards().forEach(c => c.classList.toggle('ds-on', dsSel.has(dsSelId(c))));
+    let bar = document.getElementById('ds-selbar');
+    if (!bar) { document.body.insertAdjacentHTML('beforeend', '<div id="ds-selbar" role="toolbar" aria-label="Fichas selecionadas"></div>'); bar = document.getElementById('ds-selbar'); }
+    const n = dsSel.size, outro = dsSelTipo === 'KITCHEN' ? 'Bar' : 'Cozinha';
+    bar.innerHTML = `<b>${n} ${n === 1 ? 'selecionada' : 'selecionadas'}</b>
+        <button type="button" onclick="dsSelTodas()">${dsSelCards().every(c => dsSel.has(dsSelId(c))) && n ? 'Nenhuma' : 'Todas'}</button>
+        <button type="button" class="mv" onclick="dsSelMover()" ${n ? '' : 'disabled'}><i class="fas fa-folder-open mr-1"></i>Mover</button>
+        <button type="button" onclick="dsSelTrocarTipo()" ${n ? '' : 'disabled'}><i class="fas fa-right-left mr-1"></i>Para ${outro}</button>
+        <button type="button" class="del" onclick="dsSelExcluir()" ${n ? '' : 'disabled'}><i class="fas fa-trash mr-1"></i>Excluir</button>
+        <button type="button" onclick="dsSelSair()" aria-label="Sair da seleção"><i class="fas fa-xmark"></i></button>`;
+    bar.classList.toggle('on', document.body.classList.contains('ds-sel'));
+    // "Selecionar a categoria" ao lado de cada título
+    const tab = document.querySelector(dsSelTipo === 'KITCHEN' ? '#tab-kitchen' : '#tab-bar');
+    tab && tab.querySelectorAll('h3').forEach(h => {
+        const grid = h.parentElement && h.parentElement.nextElementSibling; if (!grid || !grid.querySelector('[onclick^="openRecipeViewModal("]')) return;
+        if (!h.parentElement.querySelector('.ds-selcat')) h.parentElement.insertAdjacentHTML('beforeend', '<button type="button" class="ds-selcat" onclick="dsSelCat(this)">Selecionar a categoria</button>');
+    });
+}
+function dsSelEntrar(tipo) {
+    if (typeof dsSoVer === 'function' && dsSoVer()) return dsToast('Tem acesso só para ver.', true);
+    dsSelTipo = tipo || dsSelTab(); dsSel = new Set(); document.body.classList.add('ds-sel'); dsSelPintar();
+    dsToast('Toque nas fichas para as selecionar.');
+}
+function dsSelSair() { document.body.classList.remove('ds-sel'); dsSel = new Set(); const b = document.getElementById('ds-selbar'); if (b) b.classList.remove('on'); dsSelCards().forEach(c => c.classList.remove('ds-on')); }
+function dsSelTodas() { const cs = dsSelCards(), todas = cs.length && cs.every(c => dsSel.has(dsSelId(c))); cs.forEach(c => todas ? dsSel.delete(dsSelId(c)) : dsSel.add(dsSelId(c))); dsSelPintar(); }
+function dsSelCat(b) { const cs = [...b.parentElement.nextElementSibling.querySelectorAll('[onclick^="openRecipeViewModal("]')], todas = cs.every(c => dsSel.has(dsSelId(c))); cs.forEach(c => todas ? dsSel.delete(dsSelId(c)) : dsSel.add(dsSelId(c))); dsSelPintar(); }
+document.addEventListener('click', ev => {
+    if (!document.body.classList.contains('ds-sel')) return;
+    const c = ev.target.closest && ev.target.closest('[onclick^="openRecipeViewModal("]'); if (!c) return;
+    ev.preventDefault(); ev.stopImmediatePropagation();
+    const id = dsSelId(c); if (!id) return; dsSel.has(id) ? dsSel.delete(id) : dsSel.add(id); dsSelPintar();
+}, true);
+function dsSelGuardar(msg) { saveStorage(); try { renderBarRecipes(); renderKitchenRecipes(); } catch (_) {} dsSel = new Set(); dsSelPintar(); dsToast(msg); }
+function dsSelMover() {
+    const cats = (dsSelTipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories) || [];
+    dsModal('ds-selmv', `<div class="flex items-start justify-between gap-3"><div><h3>Mover ${dsSel.size} ${dsSel.size === 1 ? 'ficha' : 'fichas'}</h3><p class="text-sm text-slate-500 mt-1">Escolha a categoria.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('ds-selmv')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+        <div class="chs" style="margin-top:12px">${cats.map((c, i) => `<button type="button" onclick="dsSelMoverPara(${i})">${escapeHtml(c)}</button>`).join('')}</div>
+        <p class="sec">Ou uma categoria nova</p><input type="text" id="ds-selnova" maxlength="40" placeholder="Ex.: Pizzas">
+        <button type="button" class="bp" onclick="dsSelMoverPara(-1)">Mover para a categoria nova</button>`);
+}
+function dsSelMoverPara(i) {
+    const cats = dsSelTipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories;
+    let cat = i >= 0 ? cats[i] : ((document.getElementById('ds-selnova') || {}).value || '').trim();
+    if (!cat) return dsToast('Escreva o nome da categoria.', true);
+    if (!cats.includes(cat)) cats.push(cat);
+    appState.recipes.forEach(r => { if (dsSel.has(r.id)) r.category = cat; });
+    const n = dsSel.size; dsModalFechar('ds-selmv'); dsSelGuardar(`${n} ${n === 1 ? 'ficha movida' : 'fichas movidas'} para ${cat}.`);
+}
+async function dsSelTrocarTipo() {
+    const para = dsSelTipo === 'KITCHEN' ? 'BAR' : 'KITCHEN';
+    if (para === 'KITCHEN' && typeof isPro === 'function' && !isPro()) return dsToast('As fichas da Cozinha fazem parte do plano PRO.', true);
+    const n = dsSel.size; if (!(await dsConfirmar(`Passar ${n} ${n === 1 ? 'ficha' : 'fichas'} para ${para === 'KITCHEN' ? 'a Cozinha' : 'o Bar'}?`))) return;
+    const cats = para === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories;
+    appState.recipes.forEach(r => { if (dsSel.has(r.id)) { r.type = para; if (!cats.includes(r.category)) cats.push(r.category || (cats[0] || 'Geral')); } });
+    dsSelGuardar(`${n} ${n === 1 ? 'ficha passou' : 'fichas passaram'} para ${para === 'KITCHEN' ? 'a Cozinha' : 'o Bar'}.`);
+}
+async function dsSelExcluir() {
+    const n = dsSel.size; if (!n) return;
+    if (!(await dsConfirmar(`Excluir ${n} ${n === 1 ? 'ficha' : 'fichas'}? Esta ação não se pode desfazer.`))) return;
+    if (typeof gerPedir === 'function' && !(await gerPedir('Apagar ' + n + ' fichas técnicas'))) return;
+    appState.recipes = appState.recipes.filter(r => !dsSel.has(r.id));
+    dsSelGuardar(`${n} ${n === 1 ? 'ficha excluída' : 'fichas excluídas'}.`);
+}
+// botão "Selecionar" ao lado de "Importar receitas"; a seleção acompanha os redesenhos e sai ao mudar de aba
+(function () {
+    const por = () => document.querySelectorAll('.imp-bt').forEach(b => {
+        if (b.parentElement.querySelector('.ds-selbt')) return;
+        const t = (b.getAttribute('onclick') || '').includes('KITCHEN') ? 'KITCHEN' : 'BAR';
+        b.insertAdjacentHTML('beforebegin', `<button type="button" onclick="dsSelEntrar('${t}')" class="ds-selbt px-4 py-2.5 text-xs bg-white border-2 font-bold rounded-xl transition shadow-sm" style="border-color:#E4DCCF;color:#3F3229"><i class="fas fa-square-check"></i> Selecionar</button>`);
+    });
+    por(); setTimeout(por, 1500);
+    ['renderBarRecipes', 'renderKitchenRecipes'].forEach(nm => { const o = window[nm]; if (typeof o !== 'function') return; window[nm] = function () { const r = o.apply(this, arguments); por(); if (document.body.classList.contains('ds-sel')) dsSelPintar(); return r; }; });
+    const oT = switchTab; switchTab = function (t) { if (document.body.classList.contains('ds-sel') && !((t === 'bar' && dsSelTipo === 'BAR') || (t === 'kitchen' && dsSelTipo === 'KITCHEN'))) dsSelSair(); return oT.apply(this, arguments); };
+})();
+</script>
 </body>
 </html>
