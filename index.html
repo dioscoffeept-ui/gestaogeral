@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-PT" class="h-full" style="background:var(--app-bg)">
 <script>try{if(localStorage.getItem("diostock-tema")==="escuro")document.documentElement.classList.add("dark")}catch(e){}</script>
+<script>try{window._dsConvite=/type=invite/.test(location.hash)}catch(e){}</script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22446,6 +22447,77 @@ var qrcode = function() {
             #settings-modal nav.no-scrollbar .settings-tab { width: 100%; text-align: center; padding: 9px 6px; white-space: nowrap; }
             #settings-modal nav.no-scrollbar .settings-tab i { width: auto; margin-right: 4px; }
         }
+    </style>
+
+    <script>
+        // ======================================================= CONVITE POR E-MAIL AOS COLABORADORES
+        async function colabConvidar(email, silencioso) {
+            try {
+                const { data, error } = await sb.functions.invoke('convidar', { body: { email, redirect: location.origin + location.pathname } });
+                let msg = data && data.erro;
+                if (error) { try { const j = await error.context.json(); msg = j.erro || msg; } catch (_) {} }
+                if (error || !data || !data.ok) { if (!silencioso) settingsMsg(msg || 'Não foi possível enviar o convite agora. Tente de novo daqui a pouco.'); return false; }
+                return data.modo || 'convite';
+            } catch (e) { console.warn(e); if (!silencioso) settingsMsg('Não foi possível enviar o convite agora. Verifique a ligação.'); return false; }
+        }
+        (function () {
+            const oAdd = addCollaborator;
+            addCollaborator = async function (e) {
+                if (e) e.preventDefault();
+                const email = document.getElementById('set-colab-email').value.trim().toLowerCase();
+                if (!email) return oAdd.call(this, null);
+                await oAdd.call(this, null);
+                // só envia se ficou na lista (o campo é limpo quando corre bem)
+                if (document.getElementById('set-colab-email').value) return;
+                const modo = await colabConvidar(email, true);
+                if (modo === 'convite') settingsMsg(`Convite enviado para ${email}. A pessoa abre o e-mail, toca no link e cria a palavra-passe. Se não o encontrar, que veja em Spam ou Promoções.`, 'ok');
+                else if (modo === 'entrar') settingsMsg(`${email} já tem conta no Dio'Stock: enviámos um link para entrar. Ao entrar já vê esta empresa.`, 'ok');
+                else settingsMsg(`Colaborador adicionado, mas o e-mail não seguiu. Use "Reenviar convite" ou peça-lhe para abrir o Dio'Stock → "Primeiro acesso" → "Fui convidado por uma empresa".`);
+            };
+            const oLoad = loadCollaborators;
+            loadCollaborators = async function () {
+                const r = await oLoad.apply(this, arguments);
+                try {
+                    document.querySelectorAll('#set-colab-list > div').forEach(row => {
+                        const est = row.querySelector('p.text-amber-600'), rm = row.querySelector('button[onclick^="removeCollaborator"]');
+                        if (!est || !rm || row.querySelector('.cb-reenv')) return;
+                        const email = (/removeCollaborator\('[^']+',\s*'([^']+)'\)/.exec(rm.getAttribute('onclick')) || [])[1]; if (!email) return;
+                        est.insertAdjacentHTML('afterend', `<button type="button" class="cb-reenv" onclick="colabReenviar(this,'${email}')"><i class="fas fa-paper-plane mr-1"></i>Reenviar convite</button>`);
+                    });
+                } catch (_) {}
+                return r;
+            };
+        })();
+        async function colabReenviar(bt, email) {
+            bt.disabled = true; const t = bt.innerHTML; bt.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-1"></i>A enviar…';
+            const modo = await colabConvidar(email);
+            bt.disabled = false; bt.innerHTML = t;
+            if (modo) settingsMsg(modo === 'entrar' ? `Enviámos a ${email} um link para entrar.` : `Convite reenviado para ${email}.`, 'ok');
+        }
+        // quem abre o link do convite: cria logo a palavra-passe e entra
+        (function () {
+            const oE = enterApp;
+            enterApp = async function (user) {
+                if (window._dsConvite && user) {
+                    window._dsConvite = false;
+                    try { history.replaceState(null, '', location.pathname); } catch (_) {}
+                    authEmail = (user.email || '').toLowerCase();
+                    const scr = document.getElementById('auth-screen'); if (scr) { scr.classList.remove('hidden'); scr.style.display = ''; }
+                    ['auth-form-login', 'auth-form-first', 'auth-form-code'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+                    const f = document.getElementById('auth-form-password'); if (f) f.classList.remove('hidden');
+                    const md = user.user_metadata || {};
+                    authMsg(`Bem-vindo${md.convite_empresa ? ' à ' + md.convite_empresa : ''}. Crie a sua palavra-passe (mínimo 8 caracteres) para entrar.`, 'ok');
+                    setTimeout(() => { const i = document.getElementById('new-password'); if (i) i.focus(); }, 80);
+                    return;
+                }
+                return oE.apply(this, arguments);
+            };
+        })();
+    </script>
+    <style>
+        .cb-reenv { display: inline-flex; align-items: center; margin-top: 4px; padding: 4px 10px; border-radius: 999px; border: 1.5px solid #E4DCCF; background: #fff; font-size: 11.5px; font-weight: 800; color: #24150E; }
+        .cb-reenv:disabled { opacity: .6; }
+        html.dark .cb-reenv { background: #1F130E; border-color: #44332A; color: #F2ECE4; }
     </style>
 </body>
 </html>
