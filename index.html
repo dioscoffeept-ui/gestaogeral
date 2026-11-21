@@ -2267,6 +2267,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                                 <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-center transition"><i class="fas fa-camera mr-1"></i> Tirar foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="recipePhotoChosen(this)"></label>
                                 <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-center transition"><i class="fas fa-image mr-1"></i> Escolher da galeria<input type="file" accept="image/*" class="hidden" onchange="recipePhotoChosen(this)"></label>
                                 <button type="button" onclick="freePhotosToggle()" class="px-3 py-2 text-xs font-bold text-white rounded-xl text-center transition" style="background:var(--brand)"><i class="fas fa-images mr-1"></i> Fotos gratuitas</button>
+                                <button type="button" id="recipe-photo-ajustar" onclick="recipePhotoAjustar()" class="hidden px-3 py-2 text-xs font-bold rounded-xl text-center transition" style="background:#FBEDE6;color:#983808"><i class="fas fa-crop-simple mr-1"></i> Ajustar foto</button>
                                 <button type="button" id="recipe-photo-remove" onclick="recipePhotoRemove()" class="hidden px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl transition"><i class="fas fa-trash mr-1"></i> Remover foto</button>
                             </div>
                         </div>
@@ -2297,7 +2298,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Modo de Preparo / Observações (uma por linha)</label>
+                    <div class="flex items-end justify-between gap-2 mb-1 flex-wrap"><label class="block text-xs font-bold text-slate-600 uppercase">Modo de Preparo / Observações (uma por linha)</label>
+                    <button type="button" onclick="dsGerarPreparo()" class="px-3 py-1.5 text-xs font-black rounded-xl" style="background:#FBEDE6;color:#983808"><i class="fas fa-wand-magic-sparkles mr-1"></i>Gerar automaticamente</button></div>
                     <textarea id="recipe-steps" rows="4" placeholder="1. Misture os ingredientes&#10;2. Sirva na temperatura ideal" class="w-full rounded-xl border-slate-300 text-sm"></textarea>
                 </div>
 
@@ -5742,6 +5744,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
 
         let recipePhotoData = null;   // foto mostrada no formulário ('' = removida)
+        let recipePhotoOrig = null;   // ficheiro original da última foto escolhida (para voltar a ajustar)
 
         function renderRecipePhotoPreview() {
             const box = document.getElementById('recipe-photo-preview');
@@ -6940,15 +6943,13 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             input.value = '';
             if (!file) return;
             try {
-                const img = await loadImageFile(file);
-                const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height;
-                const k = Math.min(1, 1000 / Math.max(w0, h0));
-                const c = document.createElement('canvas');
-                c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
-                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                recipePhotoData = c.toDataURL('image/jpeg', 0.8);
+                // ajustar antes de usar: arrastar para enquadrar e aproximar (o original fica guardado para voltar a ajustar)
+                const url = await dsRecortar(file, { aspeto: 4 / 3, saida: 1000, inicio: 'cobrir', titulo: 'Ajustar a foto da ficha' });
+                if (!url) return;
+                recipePhotoOrig = file;
+                recipePhotoData = url;
                 renderRecipePhotoPreview();
-            } catch (e) { console.error(e); alert(PHOTO_ERR); }
+            } catch (e) { console.error(e); dsToast(PHOTO_ERR, true); }
         }
         async function settingsLogoChosen(input) {
             const file = input.files && input.files[0];
@@ -23211,6 +23212,89 @@ async function dsSelExcluir() {
     ['renderBarRecipes', 'renderKitchenRecipes'].forEach(nm => { const o = window[nm]; if (typeof o !== 'function') return; window[nm] = function () { const r = o.apply(this, arguments); por(); if (document.body.classList.contains('ds-sel')) dsSelPintar(); return r; }; });
     const oT = switchTab; switchTab = function (t) { if (document.body.classList.contains('ds-sel') && !((t === 'bar' && dsSelTipo === 'BAR') || (t === 'kitchen' && dsSelTipo === 'KITCHEN'))) dsSelSair(); return oT.apply(this, arguments); };
 })();
+</script>
+
+<script>
+// ======================================================= FOTO DA FICHA: botão "Ajustar foto" (enquadrar e aproximar a foto que já lá está)
+async function recipePhotoAjustar() {
+    try {
+        let f = recipePhotoOrig;
+        if (!f) {
+            const src = recipePhotoData; if (!src) return;
+            let b;
+            try { b = await (await fetch(src)).blob(); } catch (_) { b = await (await fotosCall('img=' + encodeURIComponent(src))).blob(); }
+            f = new File([b], 'foto.jpg', { type: b.type || 'image/jpeg' });
+        }
+        const url = await dsRecortar(f, { aspeto: 4 / 3, saida: 1000, inicio: 'cobrir', titulo: 'Ajustar a foto da ficha' });
+        if (!url) return;
+        recipePhotoOrig = f; recipePhotoData = url; renderRecipePhotoPreview();
+    } catch (e) { console.warn(e); dsToast('Não foi possível abrir esta foto para ajustar. Escolha-a de novo.', true); }
+}
+(function () {
+    const o = renderRecipePhotoPreview;
+    renderRecipePhotoPreview = function () { const r = o.apply(this, arguments); const b = document.getElementById('recipe-photo-ajustar'); if (b) b.classList.toggle('hidden', !recipePhotoData); return r; };
+    const oA = openRecipeModal; openRecipeModal = function () { recipePhotoOrig = null; return oA.apply(this, arguments); };
+    const oE = editRecipe; editRecipe = function () { recipePhotoOrig = null; return oE.apply(this, arguments); };
+})();
+</script>
+
+<script>
+// ======================================================= MODO DE PREPARO AUTOMÁTICO: escrito a partir do nome, da categoria e dos ingredientes da ficha (na hora, sem IA)
+function dsPreparoTexto(f) {
+    const N = (f.nome || '').toLowerCase(), C = (f.cat || '').toLowerCase(), T = N + ' ' + C;
+    const ings = f.ings.filter(g => g.nome);
+    const fmtQ = g => g.qtd ? `${String(g.qtd).replace('.', ',')} ${g.un === 'un' ? (g.qtd == 1 ? 'unidade' : 'unidades') : g.un}`.trim() : '';
+    const com = g => (fmtQ(g) ? fmtQ(g) + ' de ' : '') + g.nome.toLowerCase();
+    const acha = re => ings.find(g => re.test(g.nome));
+    const lista = arr => arr.length > 1 ? arr.slice(0, -1).join(', ') + ' e ' + arr[arr.length - 1] : (arr[0] || '');
+    const resto = (...usados) => ings.filter(g => !usados.includes(g));
+    const mise = ings.length ? [`Separe os ingredientes: ${lista(ings.map(com))}.`] : [];
+    const copo = f.tam ? ` (${f.tam})` : '';
+    const alc = acha(/cacha|vodka|rum\b|gin\b|tequila|whisk|licor|aperol|campari|martini|vermute|cinzano|amaretto|midori|limoncello|villa massa/i);
+    const gas = acha(/t[oó]nic|g[aá]s|soda|espumante|prosecco|ginger|sprite|7 ?up|cola/i);
+    const citr = acha(/lim[aã]o|lima\b|laranja/i);
+    const leite = acha(/leite|bebida (de )?(aveia|soja|am[eê]ndoa|coco)/i);
+    const caf = acha(/caf[eé]|expresso|espresso/i);
+    let p = null;
+    if (/caipir/.test(T)) p = [...mise, `Corte ${citr && /lim[aã]o/i.test(citr.nome) ? 'o limão' : 'a lima'} em gomos e coloque no copo baixo.`, `Junte o açúcar e esmague com o pilão até soltar bem o sumo.`, `Encha o copo com gelo picado.`, `Junte ${alc ? com(alc) : 'a bebida'} e mexa de baixo para cima com a colher de bar.`, `Decore com um gomo de lima e sirva com palhinha.`];
+    else if (/mojito/.test(T)) p = [...mise, `No copo alto, macere levemente a hortelã com a lima e o açúcar (sem desfazer as folhas).`, `Encha o copo com gelo picado.`, `Junte ${alc ? com(alc) : 'o rum'} e complete com ${gas ? gas.nome.toLowerCase() : 'água com gás'}.`, `Mexa de baixo para cima e decore com um raminho de hortelã.`];
+    else if (/spritz/.test(T)) p = [`Encha o copo de vinho com gelo.`, `Junte ${alc ? com(alc) : 'o aperitivo'}.`, `Complete com ${gas ? com(gas) : 'espumante'} e um toque de água com gás.`, ...resto(alc, gas).length ? [`Junte ${lista(resto(alc, gas).map(com))}.`] : [], `Mexa uma vez, com cuidado, e decore com uma rodela de laranja${/limoncello/.test(T) ? ' ou limão' : ''}.`];
+    else if (/gin|t[oó]nic/.test(T) && gas) p = [`Encha o copo de balão com gelo e mexa para o arrefecer; deite fora a água.`, `Junte ${alc ? com(alc) : 'o gin'}.`, `Verta ${com(gas)} devagar, pela colher de bar, para manter o gás.`, `Junte os botânicos (casca de citrino, especiarias) e mexa uma só vez.`];
+    else if (/sour/.test(T)) p = [...mise, `Na coqueteleira, junte ${lista(ings.map(g => g.nome.toLowerCase()))}.`, `Agite sem gelo durante 10 segundos para fazer espuma (dry shake).`, `Junte gelo e agite com força mais 15 segundos.`, `Coe duas vezes para o copo baixo com gelo e decore com casca de limão.`];
+    else if (/negroni/.test(T)) p = [`Encha o copo baixo com gelo.`, `Junte ${lista(ings.map(com))}.`, `Mexa durante 20 segundos com a colher de bar.`, `Esprema a casca de laranja por cima e decore com ela.`];
+    else if (/mimosa/.test(T)) p = [`Use a flute bem fria.`, `Encha até metade com ${acha(/laranja|sumo|maracuj/i) ? com(acha(/laranja|sumo|maracuj/i)) : 'sumo de laranja'}.`, `Complete devagar com ${gas ? com(gas) : 'espumante'}.`, `Sirva de imediato.`];
+    else if (/sangria/.test(T)) p = [`Corte a fruta em pedaços e coloque no jarro.`, `Junte ${lista(ings.filter(g => g !== gas).map(com))} e deixe repousar 10 minutos para a fruta largar sabor.`, `Encha com gelo${gas ? ' e complete com ' + gas.nome.toLowerCase() : ''} no momento de servir.`, `Mexa e sirva com fruta no copo.`];
+    else if (/smoothie|batido/.test(T)) p = [...mise, `Coloque primeiro os líquidos no copo da liquidificadora${leite ? ' (' + leite.nome.toLowerCase() + ')' : ''}.`, `Junte a fruta e, por fim, o gelo.`, `Bata 45 a 60 segundos até ficar liso.`, `Sirva de imediato no copo${copo} e decore com fruta.`];
+    else if (/sumo|limonada|detox/.test(T)) p = [...mise, `Lave e corte a fruta.`, `Bata ou esprema e coe para tirar a polpa.`, `Sirva no copo${copo} com gelo${gas ? ', completando com ' + gas.nome.toLowerCase() + ' no fim' : ''}.`];
+    else if (/matcha/.test(T)) p = [`Peneire ${acha(/matcha/i) ? com(acha(/matcha/i)) : 'o matcha'} para a taça.`, `Junte um pouco de água a 70 °C e bata com o batedor de bambu em "W" até fazer espuma.`, `${/gelad|iced|frio/.test(T) ? 'Encha o copo com gelo e ' + (leite ? leite.nome.toLowerCase() : 'leite') : 'Vaporize ' + (leite ? leite.nome.toLowerCase() : 'o leite') + ' a 60–65 °C'}.`, `Verta o matcha sobre o leite e sirva.`];
+    else if (/cappuc|galão|galao|latte|flat white|macchiato|mocha|meia de leite/.test(T) || (caf && leite)) {
+        const esp = /cappuc/.test(T) ? 'com espuma cremosa (um terço do copo)' : /flat/.test(T) ? 'com microespuma fina e pouca' : 'com microespuma fina';
+        p = [`Moa o café na hora e tire o expresso (18 g de café, 25–30 segundos de extração).`, ...(/mocha/.test(T) ? [`Dissolva o chocolate/ganache no expresso ainda quente.`] : []), `Vaporize ${leite ? leite.nome.toLowerCase() : 'o leite'} a 60–65 °C, ${esp}.`, `Verta o leite sobre o expresso${/galão|galao/.test(T) ? ' no copo alto' : ''}, fazendo latte art se quiser.`, `Sirva de imediato${/cappuc/.test(T) ? ', com cacau por cima se o cliente quiser' : ''}.`];
+    }
+    else if (/expresso|espresso|abatanado|americano|caf[eé]\b|descafeinado|carioca/.test(T) && f.tipo === 'BAR') p = [`Purgue o grupo da máquina e limpe o porta-filtro.`, `Moa ${/duplo/.test(T) ? '18 g' : '9 a 18 g'} de café na hora, distribua e calque de forma uniforme.`, `Extraia ${/duplo/.test(T) ? 'cerca de 60 ml' : 'cerca de 30 ml'} em 25–30 segundos.`, ...(/abatanado|americano/.test(T) ? [`Complete com água quente.`] : []), `Sirva de imediato, com a crema intacta.`];
+    else if (/ch[aá]\b|infus/.test(T)) p = [`Aqueça a água à temperatura certa (verde 75–80 °C, preto 95 °C, infusões 100 °C).`, `Deixe em infusão 3 a 5 minutos e retire o chá.`, `Sirva${/gelad|iced/.test(T) ? ' em copo com bastante gelo' : ' quente'}.`];
+    else if (/pizza|marinara|margherita|calabresa|pepperoni|funghi|formagg|prosciutto/.test(T) && f.tipo === 'KITCHEN') { const fresco = ings.filter(g => /r[uú]cula|manjeric|presunto|prosciutto|parma|speck|burrata|stracciat|mel|azeite|pesto/i.test(g.nome)); const forno = resto(...fresco);
+        p = [`Estenda a massa à mão, do centro para fora, deixando a borda.`, `Espalhe o molho${/bianca|frontin/.test(T) ? ' branco' : ' de tomate'} e o queijo.`, ...(forno.length ? [`Distribua ${lista(forno.map(g => g.nome.toLowerCase()))}.`] : []), `Leve ao forno bem quente (300 °C+) até a borda ficar dourada: 90 segundos em forno a lenha, 6 a 8 minutos em forno elétrico.`, ...(fresco.length ? [`À saída do forno, finalize com ${lista(fresco.map(g => g.nome.toLowerCase()))}.`] : []), `Corte e sirva de imediato.`]; }
+    else if (/massa|pasta|linguin|gnocchi|rigaton|spaghet|esparguete|carbonara|bolognes|lasanha/.test(T) && f.tipo === 'KITCHEN') p = [`Coza a massa em bastante água a ferver com sal até ficar al dente; guarde uma concha da água da cozedura.`, `Numa frigideira, prepare o molho com ${ings.length ? lista(ings.map(g => g.nome.toLowerCase())) : 'os ingredientes'}.`, `Junte a massa escorrida ao molho e envolva com um pouco da água da cozedura até ficar cremoso.`, `Emprate e finalize com queijo ralado ou ervas frescas.`];
+    else if (/tosta|sand[eu]|focaccia|bagel|croissant|brioche|wrap/.test(T)) p = [...mise, `Corte e toste o pão.`, `Monte por camadas: ${ings.length ? lista(ings.map(g => g.nome.toLowerCase())) : 'recheio por ordem'}.`, `${/tosta/.test(T) ? 'Leve à prensa ou ao grelhador até o queijo derreter.' : 'Feche e corte ao meio.'}`, `Sirva de imediato.`];
+    else if (/salada/.test(T)) p = [`Lave e seque bem as folhas.`, `Corte os restantes ingredientes${ings.length ? ' (' + lista(ings.map(g => g.nome.toLowerCase())) + ')' : ''}.`, `Monte no prato: folhas por baixo, o resto por cima.`, `Tempere só no momento de servir.`];
+    else if (/ovo|benedict|omelete/.test(T)) p = [...mise, `${/benedict/.test(T) ? 'Escalfe os ovos 3 minutos em água a ferver baixinho com um fio de vinagre.' : /omelete/.test(T) ? 'Bata os ovos com uma pitada de sal e cozinhe em lume médio, dobrando no fim.' : 'Cozinhe os ovos em lume brando, mexendo até ficarem cremosos.'}`, `Monte no prato com os restantes ingredientes.`, `Sirva de imediato.`];
+    else if (/waffle|panqueca|crepe/.test(T)) p = [`Aqueça bem a máquina/frigideira e unte levemente.`, `Cozinhe a massa até ficar dourada dos dois lados.`, `Cubra com ${ings.length ? lista(ings.map(g => g.nome.toLowerCase())) : 'as coberturas'}.`, `Sirva quente.`];
+    else if (f.tipo === 'BAR') p = [...mise, `Encha o copo${copo} com gelo.`, ...(ings.length ? [`Junte ${lista(ings.filter(g => g !== gas).map(com))}${gas ? ' e complete com ' + gas.nome.toLowerCase() : ''}.`] : [`Junte os ingredientes pela ordem da ficha.`]), `Mexa com a colher de bar e prove.`, `Decore e sirva de imediato.`];
+    else p = [...mise, `Prepare e corte os ingredientes (mise en place).`, ...(ings.length ? [`Cozinhe e monte: ${lista(ings.map(g => g.nome.toLowerCase()))}.`] : []), `Emprate${f.tam ? ' a porção (' + f.tam + ')' : ''} e sirva de imediato.`];
+    return p.map((x, i) => (i + 1) + '. ' + x.replace(/\s+/g, ' ').replace(/ \./g, '.'));
+}
+async function dsGerarPreparo() {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const nome = v('recipe-name').trim();
+    if (!nome) return dsToast('Escreva primeiro o nome da ficha.', true);
+    const ings = [...document.querySelectorAll('#recipe-ingredients-list .ingredient-row')].map(r => ({ nome: ((r.querySelector('.ing-name') || {}).value || '').trim(), qtd: parseFloat(((r.querySelector('.ing-qty') || {}).value || '').replace(',', '.')) || 0, un: (r.querySelector('.ing-unit') || {}).value || '' }));
+    const ta = document.getElementById('recipe-steps');
+    if (ta.value.trim() && !(await dsConfirmar('Substituir o modo de preparo que já está escrito?'))) return;
+    ta.value = dsPreparoTexto({ nome, cat: v('recipe-category'), tipo: v('recipe-type') || 'BAR', tam: v('recipe-size').trim(), ings }).join('\n');
+    ta.rows = Math.max(4, ta.value.split('\n').length + 1);
+    dsToast('Modo de preparo escrito. Reveja e ajuste à sua casa.');
+}
 </script>
 </body>
 </html>
