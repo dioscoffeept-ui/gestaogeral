@@ -23518,5 +23518,90 @@ function dsFrasesPintar() {
     ['openRecipeModal', 'editRecipe'].forEach(nm => { const o = window[nm]; window[nm] = function () { const r = o.apply(this, arguments); setTimeout(dsFrasesPintar, 50); return r; }; });
 })();
 </script>
+
+<script>
+// ======================================================= GERAR AUTOMATICAMENTE "inteligente": aprende o seu estilo (frases, copos, decoração) e adapta as suas fichas parecidas à receita atual
+const DS_INTENT = [
+    ['bater', /bat(er|a)\b.*(liquidific|blender)|liquidific/i],
+    ['gas', /por [uú]ltimo|complet(e|ar) com|top\b/i],
+    ['coq', /coqueteleira|agit(e|ar)|shake/i],
+    ['macerar', /macer|amass|esmag|pil[aã]o/i],
+    ['decorar', /decor|guarn/i],
+    ['servir', /servir|sirva|servido/i],
+    ['gelo', /gelo/i],
+];
+const DS_COPOS = /(copo alto com al[cç]a|copo com al[cç]a|copo alto|copo baixo|ta[cç]a de vinho|ta[cç]a fina|ta[cç]a de martini|flute|coupe|caneca|jarro|copo de balão|copo balão|ta[cç]a)/i;
+function dsIntent(t) { const x = String(t); for (const [k, re] of DS_INTENT) if (re.test(x)) return k; return ''; }
+function dsClasse(n) { n = String(n || ''); return /t[oó]nic|g[aá]s|soda|espumante|prosecco|ginger|sprite|7 ?up|cola/i.test(n) ? 'gas' : /cacha|vodka|rum\b|gin\b|tequila|whisk|licor|aperol|campari|martini|vermute|amaretto|midori|limoncello/i.test(n) ? 'alc' : /lim[aã]o|lima\b|laranja/i.test(n) ? 'citr' : /leite|bebida de/i.test(n) ? 'leite' : /polpa|fruta|morango|manga|maracuj|banana|abacaxi|frutos/i.test(n) ? 'fruta' : /xarope|mel\b|a[cç][uú]car|calda/i.test(n) ? 'doce' : 'outro'; }
+function dsEstilo(tipo, cat, excluir) {
+    const fr = {}, copos = {};
+    appState.recipes.forEach(r => {
+        if (r.id === excluir || (tipo && (r.type || 'BAR') !== tipo)) return;
+        const peso = r.category === cat ? 3 : 1;
+        (r.steps || []).forEach(x => {
+            const f = String(x).replace(/^\s*\d+[.)]\s*/, '').trim(); if (!f) return;
+            const it = dsIntent(f); if (it) { const k = it + '|' + normTxt(f); (fr[k] = fr[k] || { it, f, w: 0, r }).w += peso; }
+            const m = f.match(DS_COPOS); if (m) copos[m[1].toLowerCase()] = (copos[m[1].toLowerCase()] || 0) + peso;
+        });
+    });
+    const melhor = it => Object.values(fr).filter(x => x.it === it).sort((a, b) => b.w - a.w)[0];
+    const copo = Object.entries(copos).sort((a, b) => b[1] - a[1])[0];
+    return { melhor, copo: copo ? copo[0] : '' };
+}
+// troca os ingredientes da ficha de origem pelos da ficha atual (mesmo papel: gás, álcool, citrino, fruta…)
+function dsAdaptar(frase, origem, atuais) {
+    let f = frase;
+    (origem.ingredients || []).forEach(g => {
+        const nome = g.name || ''; if (nome.length < 3 || atuais.some(a => normTxt(a.nome) === normTxt(nome))) return;
+        const re = new RegExp(nome.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'); if (!re.test(f)) return;
+        const par = atuais.find(a => dsClasse(a.nome) === dsClasse(nome) && dsClasse(nome) !== 'outro');
+        if (par) f = f.replace(re, par.nome.toLowerCase());
+    });
+    return f;
+}
+function dsPreparoInteligente(f) {
+    const est = dsEstilo(f.tipo, f.cat, f.id);
+    let passos = dsPreparoTexto(f).map(x => x.replace(/^\d+\.\s*/, ''));
+    // se nas suas fichas desta categoria nunca usa coqueteleira, e não há clara nem álcool, monta no copo como costuma fazer
+    const temClara = f.ings.some(g => /clara|aquafaba/i.test(g.nome)), temAlc = f.ings.some(g => dsClasse(g.nome) === 'alc');
+    if (f.tipo === 'BAR' && passos.some(x => /coqueteleira/i.test(x)) && !temClara && !temAlc && !est.melhor('coq')) {
+        const gas = f.ings.find(g => dsClasse(g.nome) === 'gas'), resto = f.ings.filter(g => g !== gas);
+        const q = g => (g.qtd ? String(g.qtd).replace('.', ',') + ' ' + g.un + ' de ' : '') + g.nome.toLowerCase();
+        const L = a => a.length > 1 ? a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1] : (a[0] || '');
+        passos = [`Encha o copo${f.tam ? ' (' + f.tam + ')' : ''} com bastante gelo.`, ...(resto.length ? [`Junte ${L(resto.map(q))} e mexa.`] : []), ...(gas ? [`Complete com ${q(gas)} por último.`] : []), `Decore e sirva de imediato.`];
+    }
+    const gasAtual = f.ings.find(g => dsClasse(g.nome) === 'gas');
+    passos = passos.map(x => {
+        const it = dsIntent(x);
+        if (!it || it === 'coq' || it === 'gelo') return x;               // a técnica fica a do sistema (coqueteleira, gelo)
+        const m = est.melhor(it); if (!m) return x;
+        if (it === 'gas' && !gasAtual) return x;
+        return dsAdaptar(m.f, m.r, f.ings);                                // a sua frase, com os ingredientes desta receita
+    });
+    if (est.copo) passos = passos.map(x => x.replace(/\bo copo( de vinho| baixo| alto)?(?! de mistura)/i, (all) => /mistura/.test(all) ? all : 'o ' + est.copo).replace(/\bno copo( de vinho| baixo| alto)?(?! de mistura)/i, (all) => 'no ' + est.copo));
+    const vistos = new Set();
+    passos = passos.filter(x => { const k = normTxt(x).replace(/[.!]+$/, ''); if (vistos.has(k)) return false; vistos.add(k); return true; });
+    return passos.map((x, i) => (i + 1) + '. ' + x);
+}
+dsGerarPreparo = async function () {
+    const v = id => (document.getElementById(id) || {}).value || '';
+    const nome = v('recipe-name').trim(); if (!nome) return dsToast('Escreva primeiro o nome da ficha.', true);
+    const ings = [...document.querySelectorAll('#recipe-ingredients-list .ingredient-row')].map(r => ({ nome: ((r.querySelector('.ing-name') || {}).value || '').trim(), qtd: parseFloat(((r.querySelector('.ing-qty') || {}).value || '').replace(',', '.')) || 0, un: (r.querySelector('.ing-unit') || {}).value || '' })).filter(g => g.nome);
+    const f = { nome, cat: v('recipe-category'), tipo: v('recipe-type') || 'BAR', tam: v('recipe-size').trim(), ings, id: v('recipe-id') };
+    const ta = document.getElementById('recipe-steps');
+    const escrever = linhas => { ta.value = linhas.join('\n'); ta.rows = Math.max(4, linhas.length + 1); try { dsFrasesPintar(); } catch (_) {} };
+    const novo = dsPreparoInteligente(f);
+    const base = dsParecidas(nome, f.tipo, f.id).find(r => (r.steps || []).length);
+    if (!base && !ta.value.trim()) { escrever(novo); return dsToast('Modo de preparo escrito no seu estilo. Reveja e ajuste.'); }
+    const adaptado = base ? (base.steps || []).map(x => dsAdaptar(String(x).replace(/^\s*\d+[.)]\s*/, ''), base, ings)).map((x, i) => (i + 1) + '. ' + x) : null;
+    const lista = arr => `<ol style="margin:8px 0 0;padding-left:18px;font-size:13px;color:#5B4A40">${arr.map(x => `<li>${escapeHtml(x.replace(/^\d+\.\s*/, ''))}</li>`).join('')}</ol>`;
+    dsModal('ds-prep', `<div class="flex items-start justify-between gap-3"><h3>Modo de preparo</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('ds-prep')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+        ${adaptado ? `<p class="sec">Adaptado da sua ficha "${escapeHtml(base.name)}"</p>${lista(adaptado)}<button type="button" class="bp" id="ds-prep-a"><i class="fas fa-copy mr-1"></i>Usar este</button>` : ''}
+        <p class="sec">Escrito pela receita, no seu estilo</p>${lista(novo)}<button type="button" class="${adaptado ? 'w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700' : 'bp'}" id="ds-prep-n"><i class="fas fa-wand-magic-sparkles mr-1"></i>Usar este</button>
+        ${ta.value.trim() ? '<p class="text-xs text-slate-500 mt-2">O texto que já está escrito vai ser substituído.</p>' : ''}`);
+    if (adaptado) document.getElementById('ds-prep-a').onclick = () => { escrever(adaptado); dsModalFechar('ds-prep'); };
+    document.getElementById('ds-prep-n').onclick = () => { escrever(novo); dsModalFechar('ds-prep'); };
+};
+</script>
 </body>
 </html>
