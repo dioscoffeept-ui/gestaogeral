@@ -23315,5 +23315,142 @@ async function dsGerarPreparo() {
     dsToast('Modo de preparo escrito. Reveja e ajuste à sua casa.');
 }
 </script>
+
+<style>
+#ds-sug-ficha { margin-top: 8px; display: none; gap: 8px; flex-wrap: wrap; align-items: center; background: #FBEDE6; border: 1px solid #F1D3C2; border-radius: 12px; padding: 8px 10px; font-size: 12.5px; color: #5B4A40; }
+#ds-sug-ficha.on { display: flex; }
+#ds-sug-ficha button { background: #fff; border: 1px solid #E4DCCF; border-radius: 10px; padding: 5px 9px; font-weight: 800; color: #983808; }
+html.dark #ds-sug-ficha { background: rgba(152,56,8,.18); border-color: #44332A; color: #E2D7CC; } html.dark #ds-sug-ficha button { background: #1B2433; border-color: #44332A; color: #F2B79A; }
+.eq-sug { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #FBEDE6; border: 1px solid #F1D3C2; color: #5B4A40; border-radius: 14px; padding: 10px 12px; margin: 0 0 12px; font-size: 13.5px; font-weight: 600; }
+.eq-sug button { background: #983808; color: #fff; font-weight: 800; border-radius: 10px; padding: 7px 11px; font-size: 13px; }
+.eq-sug button.s { background: #fff; color: #983808; border: 1px solid #E4DCCF; }
+html.dark .eq-sug { background: rgba(152,56,8,.18); border-color: #44332A; color: #E2D7CC; }
+</style>
+<script>
+// ======================================================= ASSISTENTE: o Dio'Stock aprende com o que já fez na conta e sugere (tudo local, sem IA)
+// ---------- fichas parecidas
+function dsTok(t) { return normTxt(t || '').replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !/^(com|sem|de|da|do|dos|das|the|and|para|ml|cl)$/.test(w)); }
+function dsParecidas(nome, tipo, excluir) {
+    const a = dsTok(nome); if (!a.length) return [];
+    return appState.recipes.filter(r => r.id !== excluir && (!tipo || (r.type || 'BAR') === tipo)).map(r => {
+        const b = dsTok(r.name); let sc = 0;
+        a.forEach(w => { if (b.includes(w)) sc += 2; else if (b.some(x => w.length >= 4 && x.length >= 4 && (x.startsWith(w.slice(0, 5)) || w.startsWith(x.slice(0, 5))))) sc += 1.4; });
+        return [r, b.length ? sc / Math.min(a.length, b.length) : 0];
+    }).filter(x => x[1] >= 0.9).sort((x, y) => y[1] - x[1]).slice(0, 3).map(x => x[0]);
+}
+function dsFichaUsarBase(id) {
+    const r = appState.recipes.find(x => x.id === id); if (!r) return;
+    const list = document.getElementById('recipe-ingredients-list');
+    const tem = [...list.querySelectorAll('.ing-name')].some(i => i.value.trim());
+    const aplicar = () => {
+        list.innerHTML = '';
+        (r.ingredients || []).forEach(g => addRecipeIngredientRow(g.name || '', g.quantity == null ? '' : g.quantity, g.unit || 'g'));
+        if (!(r.ingredients || []).length) addRecipeIngredientRow();
+        const v = (id2, val) => { const el = document.getElementById(id2); if (el && val != null && val !== '' && !el.value) el.value = val; };
+        const cat = document.getElementById('recipe-category'); if (cat && [...cat.options].some(o => o.value === r.category)) cat.value = r.category;
+        v('recipe-size', r.size); const st = document.getElementById('recipe-steps'); if (st && !st.value.trim()) st.value = (r.steps || []).join('\n');
+        const ic = document.getElementById('recipe-icon'); if (ic && r.icon && (!ic.value || ic.value === '🍹' || ic.value === '🍽️')) ic.value = r.icon;
+        try { document.querySelectorAll('#recipe-ingredients-list .ingredient-row').forEach(rw => ingStatus(rw)); recipeYieldUpdate(false); } catch (_) {}
+        document.getElementById('ds-sug-ficha').classList.remove('on');
+        dsToast(`Copiei os ingredientes e o preparo de "${r.name}". Ajuste o que for diferente.`);
+    };
+    if (tem) dsConfirmar('Substituir os ingredientes já escritos pelos de "' + r.name + '"?').then(ok => ok && aplicar()); else aplicar();
+}
+(function () {
+    const nome = () => document.getElementById('recipe-name');
+    let t = null;
+    document.addEventListener('input', ev => {
+        if (ev.target !== nome()) return;
+        clearTimeout(t); t = setTimeout(() => {
+            const n = nome(), editar = (document.getElementById('recipe-id') || {}).value;
+            let box = document.getElementById('ds-sug-ficha');
+            if (!box) { n.insertAdjacentHTML('afterend', '<div id="ds-sug-ficha" role="status"></div>'); box = document.getElementById('ds-sug-ficha'); }
+            if (editar || n.value.trim().length < 3) return box.classList.remove('on');
+            const ps = dsParecidas(n.value, (document.getElementById('recipe-type') || {}).value || '', editar);
+            if (!ps.length) return box.classList.remove('on');
+            box.innerHTML = '<span><i class="fas fa-lightbulb mr-1"></i>Parecida com:</span>' + ps.map(r => `<button type="button" onclick="dsFichaUsarBase('${r.id}')" title="Usar como base">${escapeHtml(r.name)} · usar como base</button>`).join('');
+            box.classList.add('on');
+        }, 350);
+    });
+    const oA = openRecipeModal; openRecipeModal = function () { const r = oA.apply(this, arguments); const b = document.getElementById('ds-sug-ficha'); if (b) b.classList.remove('on'); return r; };
+})();
+// ---------- ingredientes: lembra os que já usou (mesmo sem estoque) e a quantidade habitual
+function dsIngHabito(nome) {
+    const n = normTxt(nome || '').trim(); if (!n) return null;
+    const c = {};
+    appState.recipes.forEach(r => (r.ingredients || []).forEach(g => { if (normTxt(g.name) === n && g.quantity) { const k = g.quantity + '|' + (g.unit || ''); c[k] = (c[k] || 0) + 1; } }));
+    const best = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; if (!best) return null;
+    const [q, u] = best[0].split('|'); return { q, u, n: best[1] };
+}
+(function () {
+    const oS = ingSearch;
+    ingSearch = function (q) {
+        const inv = oS.apply(this, arguments), n = normTxt(q || '').trim(); if (n.length < 2) return inv;
+        const vistos = new Set(inv.map(i => normTxt(i.name))), cont = {};
+        appState.recipes.forEach(r => (r.ingredients || []).forEach(g => { const k = normTxt(g.name || ''); if (!k || vistos.has(k) || appState.inventory.some(i => normTxt(i.name) === k)) return; if (!k.includes(n) && !n.split(/\s+/).every(w => k.includes(w))) return; (cont[k] = cont[k] || { name: g.name, unit: g.unit || '', category: 'Usado nas suas fichas', _aprendido: true, c: 0 }).c++; }));
+        const apr = Object.values(cont).sort((a, b) => b.c - a.c || (normTxt(a.name).startsWith(n) ? -1 : 1)).slice(0, 4);
+        return inv.concat(apr).slice(0, 10);
+    };
+    const oP = ingPick;
+    ingPick = function (row, item) {
+        if (item && item._aprendido) { row.querySelector('.ing-name').value = item.name; const sel = row.querySelector('.ing-unit'); if (item.unit && [...sel.options].some(o => o.value === item.unit)) sel.value = item.unit; ingClose(row); ingStatus(row); }
+        else oP.apply(this, arguments);
+        const h = dsIngHabito(row.querySelector('.ing-name').value), q = row.querySelector('.ing-qty');
+        if (h && q && !q.value) { q.value = h.q; const sel = row.querySelector('.ing-unit'); if (h.u && [...sel.options].some(o => o.value === h.u)) sel.value = h.u; q.title = 'Quantidade que costuma usar nas suas fichas'; try { recipeYieldUpdate(false); } catch (_) {} }
+    };
+})();
+// ---------- modo de preparo: primeiro o seu próprio preparo de uma ficha parecida
+(function () {
+    const oG = dsGerarPreparo;
+    dsGerarPreparo = async function () {
+        const n = (document.getElementById('recipe-name') || {}).value || '', id = (document.getElementById('recipe-id') || {}).value;
+        const base = dsParecidas(n, (document.getElementById('recipe-type') || {}).value || '', id).find(r => (r.steps || []).length);
+        if (!base) return oG.apply(this, arguments);
+        dsModal('ds-prep', `<div class="flex items-start justify-between gap-3"><div><h3>Modo de preparo</h3><p class="text-sm text-slate-500 mt-1">Encontrei uma ficha sua parecida: <b>${escapeHtml(base.name)}</b>.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('ds-prep')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
+            <ol style="margin:12px 0 0;padding-left:18px;font-size:13px;color:#5B4A40">${base.steps.slice(0, 6).map(x => `<li>${escapeHtml(String(x).replace(/^\d+[.)]\s*/, ''))}</li>`).join('')}</ol>
+            <button type="button" class="bp" id="ds-prep-meu"><i class="fas fa-copy mr-1"></i>Usar o meu preparo de ${escapeHtml(base.name)}</button>
+            <button type="button" class="w-full mt-2 py-3 rounded-xl font-black bg-slate-100 text-slate-700" id="ds-prep-novo">Escrever um novo pela receita</button>`);
+        document.getElementById('ds-prep-meu').onclick = () => { const ta = document.getElementById('recipe-steps'); ta.value = base.steps.join('\n'); ta.rows = Math.max(4, base.steps.length + 1); dsModalFechar('ds-prep'); dsToast('Preparo copiado. Ajuste o que for diferente.'); };
+        document.getElementById('ds-prep-novo').onclick = () => { dsModalFechar('ds-prep'); oG(); };
+    };
+})();
+// ---------- escala: semana vazia → sugerir copiar a anterior; aprender o padrão de cada pessoa com as últimas semanas
+function eqAprenderPadrao() {
+    const e = eqDados(); let mud = 0;
+    e.staff.forEach(s => {
+        const pad = {};
+        for (let d = 0; d < 7; d++) {
+            const cont = {};
+            for (let w = 1; w <= 6; w++) { const ks = eqSemanaKeys(eqMais(eqSeg, -7 * w)); const c = e.escala[ks[d]] && e.escala[ks[d]][s.id]; if (!c) continue; const k = c.folga ? 'folga' : (c.t || []).slice().sort().join('+'); if (k) cont[k] = (cont[k] || 0) + 1; }
+            const best = Object.entries(cont).sort((a, b) => b[1] - a[1])[0];
+            if (best && best[1] >= 2 && best[0] !== 'folga') pad[d] = best[0].split('+');
+        }
+        if (Object.keys(pad).length && JSON.stringify(pad) !== JSON.stringify(s.padrao || {})) { s.padrao = pad; mud++; }
+    });
+    if (!mud) return dsToast('Ainda não há semanas suficientes para aprender um padrão (são precisas pelo menos 2 iguais).', true);
+    eqGuardar(); eqPintar(); dsToast(`Padrão atualizado para ${mud} ${mud === 1 ? 'pessoa' : 'pessoas'} com base nas últimas semanas.`);
+}
+(function () {
+    const oP = eqPintarEscala;
+    eqPintarEscala = function () {
+        const r = oP.apply(this, arguments);
+        try {
+            if (!eqPodeEditar()) return r;
+            const e = eqDados(), ks = eqSemanaKeys(eqSeg), ant = eqSemanaKeys(eqMais(eqSeg, -7));
+            const vazia = !ks.some(k => e.escala[k] && Object.keys(e.escala[k]).length), antTem = ant.some(k => e.escala[k] && Object.keys(e.escala[k]).length);
+            const temPadrao = e.staff.some(s => s.padrao && Object.keys(s.padrao).length);
+            const el = document.getElementById('eq-corpo'); if (!el || !e.staff.length) return r;
+            let h = '';
+            if (vazia && antTem) h = `<div class="eq-sug"><span><i class="fas fa-lightbulb mr-1"></i>Esta semana ainda está vazia.</span><button type="button" onclick="eqCopiarSemana()">Copiar a semana anterior</button>${temPadrao ? '<button type="button" class="s" onclick="eqPadraoAplicar()">Usar o padrão</button>' : ''}</div>`;
+            else if (vazia && temPadrao) h = `<div class="eq-sug"><span><i class="fas fa-lightbulb mr-1"></i>Esta semana ainda está vazia.</span><button type="button" onclick="eqPadraoAplicar()">Preencher com o padrão</button></div>`;
+            const semPadrao = e.staff.filter(s => !s.padrao || !Object.keys(s.padrao).length).length;
+            const semanas = [1, 2, 3].filter(w => eqSemanaKeys(eqMais(eqSeg, -7 * w)).some(k => e.escala[k] && Object.keys(e.escala[k]).length)).length;
+            if (!h && semPadrao && semanas >= 2) h = `<div class="eq-sug"><span><i class="fas fa-lightbulb mr-1"></i>${semPadrao} ${semPadrao === 1 ? 'pessoa ainda não tem' : 'pessoas ainda não têm'} horário-padrão. Posso aprendê-lo com as últimas semanas.</span><button type="button" onclick="eqAprenderPadrao()">Aprender o padrão</button></div>`;
+            if (h) el.insertAdjacentHTML('afterbegin', h);
+        } catch (err) { console.warn(err); }
+        return r;
+    };
+})();
+</script>
 </body>
 </html>
