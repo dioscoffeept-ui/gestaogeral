@@ -13811,7 +13811,7 @@ var qrcode = function() {
         async function dsTrcToken() { try { const { data } = await sb.auth.getSession(); return data && data.session && data.session.access_token; } catch (_) { return null; } }
         async function dsTrcCarregar() {
             const chave = dsLang + currentUser.id; dsTrcCarregado = chave;
-            try { DS_TRC = JSON.parse(localStorage.getItem('ds_trc_' + chave) || '{}') || {}; } catch (_) { DS_TRC = {}; } Object.values(DS_TRC).forEach(dsSaida);
+            try { DS_TRC = JSON.parse(localStorage.getItem('ds_trc_' + chave) || '{}') || {}; } catch (_) { DS_TRC = {}; } Object.keys(DS_TRC).forEach(k => { if (DS_TRC[k] === k && (k.match(/\p{L}{2,}/gu) || []).length >= 3) delete DS_TRC[k]; }); Object.values(DS_TRC).forEach(dsSaida);
             const tk = await dsTrcToken(); if (!tk) return;
             try {
                 const j = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', Authorization: 'Bearer ' + tk }, body: JSON.stringify({ acao: 'conta_tudo', lang: dsLang }) }).then(r => r.json());
