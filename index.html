@@ -13780,6 +13780,19 @@ var qrcode = function() {
                 if (m.t in DS_TR) return DS_TR[m.t].replace(/\{(\d+)\}/g, (_, n) => x[+n + 1] != null ? x[+n + 1] : '');
                 dsTrPedir(m.t); return null;
             }
+            // frase montada com números e separadores ("4 clientes · dar carimbos", "margem líquida 69,4%")
+            const partes = k.split(/(\s*[·•|—–]\s*|\s*\d[\d.,:%€\/]*\s*)/);
+            if (partes.length > 1) {
+                let falta = false, alguma = false;
+                const tr = partes.map((x, i) => {
+                    if (i % 2 === 1 || !/[A-Za-zÀ-ú]{2}/.test(x)) return x;
+                    const lead = x.match(/^\s*/)[0], trail = x.match(/\s*$/)[0], y = x.trim();
+                    if (y in DS_TR && DS_TR[y] != null) { alguma = true; return lead + DS_TR[y] + trail; }
+                    if (DS_FONTES.has(y)) { dsTrPedir(y); falta = true; return x; }
+                    falta = true; return x;
+                });
+                if (!falta && alguma) return tr.join('');
+            }
             return null;
         }
         function dsTrPedir(k) { dsTrFila.add(k); clearTimeout(dsTrT); dsTrT = setTimeout(dsTrEnviar, 700); }
