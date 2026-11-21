@@ -13831,14 +13831,15 @@ var qrcode = function() {
             } catch (e) { lote.forEach(k => dsTrcFila.add(k)); dsTrcPausa = Date.now() + 30000; setTimeout(dsTrcEnviar, 30500); }
             if (dsTrcFila.size) setTimeout(dsTrcEnviar, 500);
         }
-        function dsTrPedir(k) { dsTrFila.add(k); clearTimeout(dsTrT); dsTrT = setTimeout(dsTrEnviar, 700); }
+        const dsTrTent = new Map();
+        function dsTrPedir(k) { const n = dsTrTent.get(k) || 0; if (n >= 4) return; dsTrTent.set(k, n + 1); dsTrFila.add(k); clearTimeout(dsTrT); dsTrT = setTimeout(dsTrEnviar, 700); }
         async function dsTrEnviar() {
             if (!dsTrFila.size || Date.now() < dsTrPausa) return;
             const lote = [...dsTrFila].slice(0, 120); lote.forEach(k => dsTrFila.delete(k));
             try {
                 const r = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs' }, body: JSON.stringify({ acao: 'traduzir', lang: dsLang, textos: lote }) });
                 const j = await r.json(); const novos = j.map || {};
-                Object.assign(DS_TR, novos); Object.values(novos).forEach(dsSaida); lote.forEach(k => { if (!(k in novos)) DS_TR[k] = DS_TR[k]; });
+                Object.assign(DS_TR, novos); Object.values(novos).forEach(dsSaida); lote.forEach(k => { if (!(k in novos) && (dsTrTent.get(k) || 0) < 4) setTimeout(() => dsTrPedir(k), 15000); });
                 try { localStorage.setItem('ds_tr_' + dsLang, JSON.stringify(DS_TR)); } catch (_) {}
                 if (Object.keys(novos).length && window.dsTrReaplicar) window.dsTrReaplicar();
                 if (j.faltam) { dsTrPausa = Date.now() + 20000; lote.forEach(k => { if (!(k in DS_TR)) dsTrFila.add(k); }); setTimeout(dsTrEnviar, 20500); }
@@ -13904,7 +13905,7 @@ var qrcode = function() {
                 if (n.classList && n.classList.contains('notranslate')) return;
                 trAttrs(n);
                 const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
-                let x; while ((x = w.nextNode())) { if (x.nodeType === 1) { trAttrs(x); continue; } if (x.parentElement && SKIP[x.parentElement.tagName]) continue; const r = trTxt(x.data); if (r != null && r !== x.data) x.data = r; }
+                let x; while ((x = w.nextNode())) { if (x.nodeType === 1) { trAttrs(x); continue; } if (x.parentElement && (SKIP[x.parentElement.tagName] || x.parentElement.closest('.notranslate'))) continue; const r = trTxt(x.data); if (r != null && r !== x.data) x.data = r; }
             }
             function trAttrs(el) { for (const a of ['placeholder', 'title', 'aria-label', 'data-label']) { const v = el.getAttribute && el.getAttribute(a); if (v) { const r = trTxt(v); if (r != null && r !== v) el.setAttribute(a, r); } } if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit') && el.value) { const r = trTxt(el.value); if (r != null) el.value = r; } }
             const go = () => {
