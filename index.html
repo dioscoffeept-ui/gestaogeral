@@ -23452,5 +23452,71 @@ function eqAprenderPadrao() {
     };
 })();
 </script>
+
+<style>
+#ds-frases { margin-top: 8px; display: none; }
+#ds-frases.on { display: block; }
+#ds-frases .t { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: #7A6A60; margin-bottom: 6px; }
+#ds-frases .l { display: flex; flex-wrap: wrap; gap: 6px; }
+#ds-frases button { text-align: left; background: #fff; border: 1px solid #E4DCCF; border-radius: 10px; padding: 6px 9px; font-size: 12.5px; font-weight: 600; color: #3F3229; max-width: 100%; }
+#ds-frases button:hover { border-color: #983808; }
+#ds-frases button b { color: #983808; margin-right: 4px; }
+#ds-frases button small { color: #7A6A60; font-weight: 700; margin-left: 4px; }
+html.dark #ds-frases button { background: #1B2433; border-color: #2C3A4F; color: #E2E8F0; }
+</style>
+<script>
+// ======================================================= MODO DE PREPARO: reconhece as frases que repete nas suas fichas e sugere-as (e completa a linha que está a escrever)
+function dsFrasesTodas(tipo, excluirId) {
+    const c = {};
+    appState.recipes.forEach(r => {
+        if (r.id === excluirId) return;
+        const mesmoTipo = !tipo || (r.type || 'BAR') === tipo;
+        (r.steps || []).forEach(x => {
+            const f = String(x).replace(/^\s*\d+[.)]\s*/, '').trim(); if (f.length < 6) return;
+            const k = normTxt(f).replace(/[.!]+$/, '');
+            (c[k] = c[k] || { f, n: 0, tipo: 0, cats: new Set() }).n++; if (mesmoTipo) c[k].tipo++; c[k].cats.add(r.category || '');
+        });
+    });
+    return Object.values(c);
+}
+function dsFrasesPintar() {
+    const ta = document.getElementById('recipe-steps'); if (!ta) return;
+    let box = document.getElementById('ds-frases');
+    if (!box) { ta.insertAdjacentHTML('afterend', '<div id="ds-frases" aria-live="polite"></div>'); box = document.getElementById('ds-frases'); }
+    const tipo = (document.getElementById('recipe-type') || {}).value || '', cat = (document.getElementById('recipe-category') || {}).value || '', id = (document.getElementById('recipe-id') || {}).value || '';
+    const linhas = ta.value.split('\n'), pos = ta.value.slice(0, ta.selectionStart).split('\n').length - 1;
+    const atual = (linhas[pos] || '').replace(/^\s*\d+[.)]\s*/, '').trim(), na = normTxt(atual);
+    const ja = new Set(linhas.map(l => normTxt(l.replace(/^\s*\d+[.)]\s*/, '').trim()).replace(/[.!]+$/, '')));
+    let fr = dsFrasesTodas(tipo, id).filter(x => !ja.has(normTxt(x.f).replace(/[.!]+$/, '')));
+    let modo = 'sugerir';
+    // a frase que costuma vir a seguir à última que escreveu
+    const prev = linhas.slice(0, (na.length >= 3 && !/[.!]$/.test(atual) ? pos : pos + 1)).map(l => normTxt(l.replace(/^\s*\d+[.)]\s*/, '').trim()).replace(/[.!]+$/, '')).filter(Boolean).pop() || '';
+    const seg = {};
+    if (prev) appState.recipes.forEach(r => { const st = (r.steps || []).map(x => normTxt(String(x).replace(/^\s*\d+[.)]\s*/, '').trim()).replace(/[.!]+$/, '')); st.forEach((x, i) => { if (x === prev && st[i + 1]) seg[st[i + 1]] = (seg[st[i + 1]] || 0) + 1; }); });
+    const sg = x => seg[normTxt(x.f).replace(/[.!]+$/, '')] || 0;
+    if (na.length >= 3 && !/[.!]$/.test(atual)) { const m = fr.filter(x => normTxt(x.f).includes(na)); if (m.length) { fr = m; modo = 'completar'; } else fr = []; }
+    else fr = fr.filter(x => x.n >= 2 || sg(x));   // só o que já repetiu (ou costuma vir a seguir)
+    fr.sort((a, b) => (sg(b) - sg(a)) || (b.cats.has(cat) - a.cats.has(cat)) || (b.tipo - a.tipo) || (b.n - a.n)).splice(6);
+    if (!fr.length) { box.classList.remove('on'); return; }
+    box.innerHTML = `<div class="t"><i class="fas fa-repeat mr-1"></i>${modo === 'completar' ? 'Completar com uma frase sua' : 'Frases que costuma repetir'}</div><div class="l">${fr.map((x, i) => `<button type="button" data-i="${i}"><b>+</b>${escapeHtml(x.f)}<small>${x.n}×</small></button>`).join('')}</div>`;
+    box.querySelectorAll('button').forEach(b => b.onclick = () => {
+        const f = fr[+b.dataset.i].f, ls = ta.value.split('\n'), p2 = ta.value.slice(0, ta.selectionStart).split('\n').length - 1;
+        const numerado = ls.some(l => /^\s*\d+[.)]/.test(l));
+        if (modo === 'completar') { const pre = (ls[p2].match(/^\s*\d+[.)]\s*/) || [''])[0]; ls[p2] = pre + f; }
+        else { while (ls.length && !ls[ls.length - 1].trim()) ls.pop(); ls.push((numerado ? (ls.filter(l => l.trim()).length + 1) + '. ' : '') + f); }
+        ta.value = ls.join('\n'); ta.rows = Math.max(4, ls.length + 1); ta.focus(); ta.selectionStart = ta.selectionEnd = ta.value.length; dsFrasesPintar();
+    });
+    box.classList.add('on');
+}
+(function () {
+    let t = null;
+    const ag = () => { clearTimeout(t); t = setTimeout(dsFrasesPintar, 200); };
+    document.addEventListener('input', ev => { if (ev.target && (ev.target.id === 'recipe-steps' || ev.target.id === 'recipe-name')) ag(); });
+    document.addEventListener('focusin', ev => { if (ev.target && ev.target.id === 'recipe-steps') ag(); });
+    document.addEventListener('click', ev => { if (ev.target && ev.target.id === 'recipe-steps') ag(); });
+    document.addEventListener('change', ev => { if (ev.target && ev.target.id === 'recipe-category') ag(); });
+    ['openRecipeModal', 'editRecipe'].forEach(nm => { const o = window[nm]; window[nm] = function () { const r = o.apply(this, arguments); setTimeout(dsFrasesPintar, 50); return r; }; });
+})();
+</script>
 </body>
 </html>
