@@ -23256,9 +23256,28 @@ function dsPreparoTexto(f) {
     const leite = acha(/leite|bebida (de )?(aveia|soja|am[eê]ndoa|coco)/i);
     const caf = acha(/caf[eé]|expresso|espresso/i);
     let p = null;
-    if (/caipir/.test(T)) p = [...mise, `Corte ${citr && /lim[aã]o/i.test(citr.nome) ? 'o limão' : 'a lima'} em gomos e coloque no copo baixo.`, `Junte o açúcar e esmague com o pilão até soltar bem o sumo.`, `Encha o copo com gelo picado.`, `Junte ${alc ? com(alc) : 'a bebida'} e mexa de baixo para cima com a colher de bar.`, `Decore com um gomo de lima e sirva com palhinha.`];
+    // ---- técnica do bar: coqueteleira (clara, citrinos, polpas, xaropes, natas), mexido (só destilados) ou montado no copo (com gás)
+    const semGas = ings.filter(g => g !== gas && !/gelo|hortel|manjeric|alecrim|canela|decora|guarni|casca|zest/i.test(g.nome));
+    const clara = acha(/clara|egg white|aquafaba/i);
+    const agita = semGas.filter(g => /polpa|pur[eé]|sumo|lim[aã]o|lima\b|laranja|toranja|xarope|calda|natas?\b|cream|leite|ovo|maracuj|frutos? vermelh|frutas? vermelh|framboes|morango|amora|geleia|mel\b|gengibre|abacaxi|anan[aá]s|manga|p[eê]ssego|ma[cç][aã]/i.test(g.nome));
+    const soDestil = semGas.length >= 2 && semGas.every(g => /cacha|vodka|rum\b|gin\b|tequila|whisk|bourbon|licor|aperol|campari|martini|vermute|cinzano|amaretto|midori|limoncello|villa massa|bitter|angostura|porto|conhaque|brandy/i.test(g.nome));
+    const naoCocktail = /smoothie|batido|sumo|limonada|detox|matcha|caf[eé]|expresso|cappuc|gal[aã]o|latte|ch[aá]\b|infus|sangria/.test(T) && !alc;
+    const coq = f.tipo === 'BAR' && !naoCocktail && (clara || (agita.length && (alc || semGas.length >= 2)) || /\b(sour|fizz|daiquiri|margarita|cosmopolitan|bramble|espresso martini|pisco|clover|gimlet|whisky sour|shake)\b/.test(T)) && (clara || !/caipir|mojito|sangria/.test(T));
+    const mexido = f.tipo === 'BAR' && !coq && soDestil && !gas && !/negroni/.test(T);
+    if (coq) {
+        const copoTxt = clara ? `para o copo${copo} frio (coupe ou copo baixo, sem gelo)` : `para o copo${copo} com gelo novo`;
+        p = [...mise,
+            ...(clara ? [`Use clara de ovo pasteurizada (segurança alimentar).`] : []),
+            `Na coqueteleira, junte ${lista(semGas.map(com))}.`,
+            ...(clara ? [`Agite sem gelo durante 10 a 15 segundos (dry shake) para montar a espuma da clara.`] : []),
+            `Encha a coqueteleira com gelo até 2/3 e agite com força 12 a 15 segundos, até ficar bem gelada por fora.`,
+            `Coe com coador duplo ${copoTxt}.`,
+            ...(gas ? [`Complete com ${com(gas)} devagar, já no copo (bebidas com gás nunca vão à coqueteleira).`] : []),
+            clara ? `Deixe a espuma assentar e decore com gotas de angostura ou casca de citrino por cima.` : `Decore e sirva de imediato.`];
+    } else if (mexido) p = [...mise, `No copo de mistura com bastante gelo, junte ${lista(semGas.map(com))}.`, `Mexa com a colher de bar 20 a 30 segundos (não agite: fica turvo e aguado).`, `Coe para o copo${copo} ${/martini|manhattan/.test(T) ? 'frio, sem gelo' : 'com gelo novo'}.`, `Esprema a casca de citrino por cima e decore.`];
+    else if (/caipir/.test(T)) p = [...mise, `Corte ${citr && /lim[aã]o/i.test(citr.nome) ? 'o limão' : 'a lima'} em gomos e coloque no copo baixo.`, `Junte o açúcar e esmague com o pilão até soltar bem o sumo.`, `Encha o copo com gelo picado.`, `Junte ${alc ? com(alc) : 'a bebida'} e mexa de baixo para cima com a colher de bar.`, `Decore com um gomo de lima e sirva com palhinha.`];
     else if (/mojito/.test(T)) p = [...mise, `No copo alto, macere levemente a hortelã com a lima e o açúcar (sem desfazer as folhas).`, `Encha o copo com gelo picado.`, `Junte ${alc ? com(alc) : 'o rum'} e complete com ${gas ? gas.nome.toLowerCase() : 'água com gás'}.`, `Mexa de baixo para cima e decore com um raminho de hortelã.`];
-    else if (/spritz/.test(T)) p = [`Encha o copo de vinho com gelo.`, `Junte ${alc ? com(alc) : 'o aperitivo'}.`, `Complete com ${gas ? com(gas) : 'espumante'} e um toque de água com gás.`, ...resto(alc, gas).length ? [`Junte ${lista(resto(alc, gas).map(com))}.`] : [], `Mexa uma vez, com cuidado, e decore com uma rodela de laranja${/limoncello/.test(T) ? ' ou limão' : ''}.`];
+    else if (/spritz/.test(T)) p = [`Encha o copo de vinho com gelo.`, `Junte ${alc ? com(alc) : 'o aperitivo'}.`, (() => { const gs = ings.filter(g => /t[oó]nic|g[aá]s|soda|espumante|prosecco|ginger|sprite|7 ?up|cola/i.test(g.nome)); return gs.length ? `Complete com ${lista(gs.map(com))}.` : `Complete com espumante e um toque de água com gás.`; })(), ...ings.filter(g => g !== alc && !/t[oó]nic|g[aá]s|soda|espumante|prosecco|ginger|sprite|7 ?up|cola/i.test(g.nome)).length ? [`Junte ${lista(ings.filter(g => g !== alc && !/t[oó]nic|g[aá]s|soda|espumante|prosecco|ginger|sprite|7 ?up|cola/i.test(g.nome)).map(com))}.`] : [], `Mexa uma vez, com cuidado, e decore com uma rodela de laranja${/limoncello/.test(T) ? ' ou limão' : ''}.`];
     else if (/gin|t[oó]nic/.test(T) && gas) p = [`Encha o copo de balão com gelo e mexa para o arrefecer; deite fora a água.`, `Junte ${alc ? com(alc) : 'o gin'}.`, `Verta ${com(gas)} devagar, pela colher de bar, para manter o gás.`, `Junte os botânicos (casca de citrino, especiarias) e mexa uma só vez.`];
     else if (/sour/.test(T)) p = [...mise, `Na coqueteleira, junte ${lista(ings.map(g => g.nome.toLowerCase()))}.`, `Agite sem gelo durante 10 segundos para fazer espuma (dry shake).`, `Junte gelo e agite com força mais 15 segundos.`, `Coe duas vezes para o copo baixo com gelo e decore com casca de limão.`];
     else if (/negroni/.test(T)) p = [`Encha o copo baixo com gelo.`, `Junte ${lista(ings.map(com))}.`, `Mexa durante 20 segundos com a colher de bar.`, `Esprema a casca de laranja por cima e decore com ela.`];
