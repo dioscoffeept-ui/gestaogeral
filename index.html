@@ -21817,6 +21817,12 @@ var qrcode = function() {
             if (c.ini && c.fim) { const tot = (c.t || []).length; const ef = eqTurnosEf(c).length; return eqDur(c.ini, c.fim) * (tot ? ef / tot : 1); }
             return eqTurnosEf(c).reduce((a, id) => { const h = eqTurnoH(s, id); return a + eqDur(h.ini, h.fim); }, 0);
         }
+        // as horas da pessoa cruzam o horário do turno? (sem horas de um dos lados, conta como sim)
+        function eqCruza(i1, f1, i2, f2) {
+            const a = eqMin(i1), b = eqMin(f1), c = eqMin(i2), d = eqMin(f2); if (a == null || b == null || c == null || d == null) return true;
+            const iv = (x, y) => y > x ? [[x, y], [x + 1440, y + 1440]] : [[x, y + 1440]];
+            return iv(a, b).some(p => iv(c, d).some(q => p[0] < q[1] && q[0] < p[1]));
+        }
         const eqNTurnos = c => !eqTrab(c) ? 0 : Math.max(1, eqTurnosEf(c).length);
         const eqArea = s => (s && s.area) || '';
         function eqAreas() { const l = []; eqDados().staff.forEach(s => { const a = eqArea(s); if (!l.includes(a)) l.push(a); }); return l.sort((a, b) => (a ? 0 : 1) - (b ? 0 : 1) || (EQ_AREAS.indexOf(a) + 1 || 99) - (EQ_AREAS.indexOf(b) + 1 || 99) || a.localeCompare(b)); }
@@ -21838,6 +21844,7 @@ var qrcode = function() {
             const quem = e.staff.filter(s => s.tipsModo !== 'nao'), sempre = s => s.tipsModo === 'sempre';
             const ex = {}, exDia = {}; quem.forEach(s => { ex[s.id] = 0; exDia[s.id] = [0, 0, 0, 0, 0, 0, 0]; });
             const porDia = [0, 0, 0, 0, 0, 0, 0], avisos = []; let total = 0;
+            const semDias = {}, semNinguem = (d, v) => { semDias[d] = (semDias[d] || 0) + v; };
             const peso = (c, s) => cfg.divisao === 'horas' ? eqHorasCel(c, s) : cfg.divisao === 'turnos' ? eqNTurnos(c) : 1;
             const juntar = (v, l, w, d) => { const W = w.reduce((a, x) => a + x, 0); l.forEach((s, i) => { const x = v * w[i] / W; ex[s.id] += x; if (d != null) exDia[s.id][d] += x; }); };
             if (cfg.modo === 'turno') {
@@ -21845,8 +21852,12 @@ var qrcode = function() {
                     const td = (e.tips[k] && e.tips[k].t) || {};
                     e.turnos.forEach(t => {
                         const v = eqNum(td[t.id]); if (!v) return; porDia[d] += v; total += v;
-                        const l = quem.filter(s => sempre(s) || eqTurnosEf(eqCel(k, s.id)).includes(t.id));
-                        if (!l.some(s => !sempre(s))) avisos.push(`${EQ_DIAS_L[d]}, ${t.nome}: ${eqEur(v)} de tips mas ninguém escalado neste turno.`);
+                        // quem fez este turno; quem tem só horas (sem turno marcado) conta se as horas cruzam o turno
+                        const noTurno = s => { const c = eqCel(k, s.id); if (!eqTrab(c)) return false; if (eqTurnosEf(c).includes(t.id)) return true; if ((c.t || []).length) return false; return eqCruza(c.ini, c.fim, t.ini, t.fim); };
+                        let l = quem.filter(s => sempre(s) || noTurno(s));
+                        // ninguém neste turno mas alguém trabalhou no dia: vai para quem trabalhou nesse dia
+                        if (!l.some(s => !sempre(s))) { const dia = quem.filter(s => !sempre(s) && eqTrab(eqCel(k, s.id))); if (dia.length) l = dia.concat(quem.filter(sempre)); }
+                        if (!l.some(s => !sempre(s))) semNinguem(d, v);
                         if (l.length) juntar(v, l, l.map(() => 1), d);
                     });
                 });
@@ -21856,7 +21867,7 @@ var qrcode = function() {
                     const trab = quem.filter(s => !sempre(s) && eqTrab(eqCel(k, s.id))), w = trab.map(s => peso(eqCel(k, s.id), s));
                     const mx = w.length ? Math.max(...w) : 1, sp = quem.filter(s => sempre(s) && !trab.includes(s));
                     const l = trab.concat(sp), ww = w.concat(sp.map(() => mx));
-                    if (!trab.length) avisos.push(`${EQ_DIAS_L[d]}: ${eqEur(v)} de tips mas ninguém escalado neste dia.`);
+                    if (!trab.length) semNinguem(d, v);
                     if (l.length && ww.some(x => x > 0)) juntar(v, l, ww, d);
                 });
             } else {
@@ -21869,6 +21880,8 @@ var qrcode = function() {
                     if (w.some(x => x > 0)) juntar(v, quem, w, null);
                 }
             }
+            const dsN = Object.keys(semDias).map(Number).sort((a, b) => a - b);
+            if (dsN.length) { const soma = dsN.reduce((a, d) => a + semDias[d], 0), nomes = dsN.map(d => EQ_DIAS_L[d]); avisos.unshift(`${eqEur(soma)} de tips ${dsN.length === 1 ? 'em ' + nomes[0] : 'em ' + nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1]} sem ninguém a trabalhar ${dsN.length === 1 ? 'nesse dia' : 'nesses dias'}.`); }
             const totalC = Math.round(total * 100), dist = quem.filter(s => ex[s.id] > 0);
             const horas = id => ks.reduce((a, k) => a + eqHorasCel(eqCel(k, id), eqPessoaDe(id)), 0);
             const fin = eqArredondar(Object.fromEntries(dist.map(s => [s.id, ex[s.id]])), dist.length ? totalC : 0, (a, b) => horas(b) - horas(a));
