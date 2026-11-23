@@ -24383,5 +24383,18 @@ async function dsTrPreparar() {
             }
         })();
     </script>
+    <style>
+        /* barras de abas (Estoque · Produções · Fornecedores) cabem sempre no ecrã; a página nunca anda para os lados */
+        html, body { overflow-x: hidden; overflow-x: clip; max-width: 100%; }
+        .ds-seg2 { box-sizing: border-box; max-width: 100% !important; min-width: 0; }
+        .ds-seg2 button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        @media (max-width: 767px) {
+            .ds-seg2 { width: 100% !important; }
+            .ds-seg2 button { padding: .55rem .35rem !important; font-size: 13px !important; gap: .3rem !important; letter-spacing: -.01em; }
+            .ds-seg2:has(> button:nth-child(3)) button > i:not(.ds-seg-lock) { display: none !important; }
+            .ds-seg2:has(> button:nth-child(3)) button { white-space: normal !important; line-height: 1.15; text-align: center; padding-left: .25rem !important; padding-right: .25rem !important; }
+        }
+        @media (max-width: 359px) { .ds-seg2 button { font-size: 11px !important; white-space: normal !important; line-height: 1.15; text-align: center; } }
+    </style>
 </body>
 </html>
