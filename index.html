@@ -1569,6 +1569,68 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         </div>
 
         <!-- ABA 3: ESTOQUE & INSUMOS -->
+        <div id="tab-mep" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 text-white rounded-xl shadow-sm" style="background:var(--brand)"><i class="fas fa-blender text-lg"></i></div>
+                    <div>
+                        <h2 class="text-xl font-black text-slate-900">Mise en place</h2>
+                        <p class="text-xs text-slate-500 font-medium">Pré-produções: packs de smoothie, molhos, caldas, massas… com rendimento, validade e custo</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <div class="relative"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input id="mep-search" type="search" oninput="mepFiltro.q=this.value;renderMep()" placeholder="Procurar…" autocomplete="off" class="text-xs font-semibold rounded-xl border-slate-200 bg-white py-2.5 pl-8 pr-3" style="min-width:180px"></div>
+                    <select id="mep-area-filter" onchange="mepFiltro.area=this.value;renderMep()" class="text-xs font-bold rounded-xl border-slate-200 bg-slate-50 py-2.5 px-3"><option value="ALL">Bar e Cozinha</option><option value="BAR">Bar</option><option value="KITCHEN">Cozinha</option></select>
+                    <button onclick="mepOpen()" class="px-4 py-2.5 text-xs text-white font-bold rounded-xl flex items-center gap-2 shadow-sm" style="background:var(--brand)"><i class="fas fa-plus"></i> Nova mise en place</button>
+                </div>
+            </div>
+            <div id="mep-list"></div>
+        </div>
+
+        <div id="tab-producoes" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <div class="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <div class="p-2.5 text-white rounded-xl shadow-sm shrink-0" style="background:var(--brand)"><i class="fas fa-layer-group"></i></div>
+                        <div>
+                            <h3 class="font-extrabold text-slate-800 text-base">Produções · mise en place</h3>
+                            <p class="text-xs text-slate-500 leading-relaxed max-w-2xl">O que está pronto (congelado, no frio ou na despensa). <b>Produzi</b> soma ao pronto e tira os ingredientes do estoque; cada venda de uma ficha que a usa gasta o pronto (o mais antigo primeiro). Se acabar, saem os ingredientes crus.</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="switchTab('mep')" class="px-4 py-2.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 whitespace-nowrap self-start sm:self-auto"><i class="fas fa-book-open mr-1"></i> Fichas de mise en place</button>
+                </div>
+                <div id="mep-stock-table"></div>
+                <div id="mep-log"></div>
+            </div>
+
+            <!-- Porções prontas (produção) -->
+            <div id="prep-section" class="bg-white rounded-2xl border border-amber-200 shadow-sm">
+                <div class="px-5 py-4 bg-amber-50/40 border-b border-amber-200 rounded-t-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    <div class="flex items-start gap-3">
+                        <div class="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm shrink-0"><i class="fas fa-box"></i></div>
+                        <div>
+                            <h3 class="font-extrabold text-slate-800 text-base">Porções prontas (produção)</h3>
+                            <p class="text-xs text-slate-500 leading-relaxed max-w-2xl">Ex.: sacos de smoothie já porcionados. Diga quantas unidades tem e quantas quer ter: o sistema calcula, pela ficha técnica, quantos gramas/kg de cada ingrediente precisa para repor.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                        <div class="relative sm:w-48"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i><input id="prep-search" type="search" oninput="prepFilter.q=this.value;renderPrep()" placeholder="Procurar porção…" class="w-full text-xs" style="padding-left:2rem"></div>
+                        <select id="prep-cat-filter" onchange="prepFilter.cat=this.value;renderPrep()" class="sm:w-44 text-xs font-semibold"></select>
+                        <div class="relative"><select id="prep-add-select" class="hidden"></select>
+                        <button type="button" onclick="prepPickerToggle(event)" class="w-full sm:w-auto px-4 py-2 text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl whitespace-nowrap transition"><i class="fas fa-plus mr-1"></i> Adicionar ficha técnica <i class="fas fa-chevron-down ml-1 text-[10px]"></i></button>
+                        <div id="prep-picker" class="hidden absolute right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 overflow-hidden" style="width:min(92vw,380px)" onclick="event.stopPropagation()">
+                            <div class="p-2 border-b border-slate-100"><input id="prep-picker-q" type="search" oninput="renderPrepPicker()" placeholder="Procurar ficha…" class="w-full text-xs"></div>
+                            <div id="prep-picker-list" class="overflow-y-auto" style="max-height:min(60vh,420px)"></div>
+                        </div></div>
+                    </div>
+                </div>
+                <div id="prep-table"></div>
+                <div id="prep-summary"></div>
+            </div>
+
+        </div>
+
         <div id="tab-inventory" class="tab-content hidden space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                 <div class="flex items-center gap-3">
@@ -1598,31 +1660,6 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 </div>
             </div>
 
-
-            <!-- Porções prontas (produção) -->
-            <div id="prep-section" class="bg-white rounded-2xl border border-amber-200 shadow-sm">
-                <div class="px-5 py-4 bg-amber-50/40 border-b border-amber-200 rounded-t-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    <div class="flex items-start gap-3">
-                        <div class="p-2.5 bg-amber-500 text-white rounded-xl shadow-sm shrink-0"><i class="fas fa-box"></i></div>
-                        <div>
-                            <h3 class="font-extrabold text-slate-800 text-base">Porções prontas (produção)</h3>
-                            <p class="text-xs text-slate-500 leading-relaxed max-w-2xl">Ex.: sacos de smoothie já porcionados. Diga quantas unidades tem e quantas quer ter: o sistema calcula, pela ficha técnica, quantos gramas/kg de cada ingrediente precisa para repor.</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                        <div class="relative sm:w-48"><i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i><input id="prep-search" type="search" oninput="prepFilter.q=this.value;renderPrep()" placeholder="Procurar porção…" class="w-full text-xs" style="padding-left:2rem"></div>
-                        <select id="prep-cat-filter" onchange="prepFilter.cat=this.value;renderPrep()" class="sm:w-44 text-xs font-semibold"></select>
-                        <div class="relative"><select id="prep-add-select" class="hidden"></select>
-                        <button type="button" onclick="prepPickerToggle(event)" class="w-full sm:w-auto px-4 py-2 text-xs bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl whitespace-nowrap transition"><i class="fas fa-plus mr-1"></i> Adicionar ficha técnica <i class="fas fa-chevron-down ml-1 text-[10px]"></i></button>
-                        <div id="prep-picker" class="hidden absolute right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 overflow-hidden" style="width:min(92vw,380px)" onclick="event.stopPropagation()">
-                            <div class="p-2 border-b border-slate-100"><input id="prep-picker-q" type="search" oninput="renderPrepPicker()" placeholder="Procurar ficha…" class="w-full text-xs"></div>
-                            <div id="prep-picker-list" class="overflow-y-auto" style="max-height:min(60vh,420px)"></div>
-                        </div></div>
-                    </div>
-                </div>
-                <div id="prep-table"></div>
-                <div id="prep-summary"></div>
-            </div>
 
             <!-- Pedidos aos fornecedores (antes na aba Produção & Pedidos) -->
             <div id="orders-section" class="bg-white rounded-2xl border border-slate-200 shadow-sm">
@@ -4030,6 +4067,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (!appState.productionQuantities || typeof appState.productionQuantities !== 'object') appState.productionQuantities = {};
             if (!Array.isArray(appState.salesHistory)) appState.salesHistory = [];
             if (!appState.prepStock || typeof appState.prepStock !== 'object') appState.prepStock = {};
+            if (!Array.isArray(appState.meps)) appState.meps = [];
             if (!appState.salesAliases || typeof appState.salesAliases !== 'object') appState.salesAliases = {};
             if (!appState._mod || typeof appState._mod !== 'object') appState._mod = {};
             if (!appState.prepDel || typeof appState.prepDel !== 'object') appState.prepDel = {};
@@ -5260,6 +5298,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     const iq = Number(ing.quantity);
                     if (ing.quantity === null || ing.quantity === undefined || ing.quantity === '' || isNaN(iq)) return;
                     any = true;
+                    // ingrediente que é uma mise en place: sai das produções prontas (e, se faltar, dos ingredientes dela)
+                    const mm = (typeof mepMatch === 'function') ? mepMatch(ing.name, ing.unit) : null;
+                    if (mm) { mepConsume(mm.m, iq * mm.f * qRaw, moves, missing, prepMoves, 0); return; }
                     let inv = findInvForIngredient(ing.name, ing.unit), amt = iq;
                     if (!inv && typeof invFindConv === 'function') { const cv = invFindConv(ing.name, ing.unit, iq); if (cv) { inv = cv.inv; amt = cv.q; } }
                     if (inv) moves[inv.id] = (moves[inv.id] || 0) + amt * qRaw;
@@ -5282,7 +5323,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 return `<tr class="border-b border-slate-100"><td class="px-4 py-2 font-bold text-slate-800">${escapeHtml(inv.name)}</td><td class="px-4 py-2 text-slate-500">${fmtNum(inv.stock)} ${escapeHtml(inv.unit)}</td><td class="px-4 py-2 font-bold text-rose-600">− ${fmtNum(amt)}</td><td class="px-4 py-2 ${low ? 'text-red-600 font-black' : 'text-slate-800 font-bold'}">${fmtNum(after)} ${escapeHtml(inv.unit)}</td></tr>`;
             }).join('');
             const prepRows = Object.entries(c.prepMoves || {}).map(([rid, n]) => {
-                const rec = appState.recipes.find(r => r.id === rid); const p = appState.prepStock[rid];
+                const rec = appState.recipes.find(r => r.id === rid) || (appState.meps || []).find(m => m.id === rid); const p = appState.prepStock[rid];
                 const before = Number(p.tenho) || 0, after = Math.max(0, before - n);
                 return `<tr class="border-b border-slate-100"><td class="px-4 py-2 font-bold text-slate-800"><i class="fas fa-box text-amber-500 mr-1"></i>${escapeHtml(rec ? rec.name : rid)} <span class="text-[10px] text-slate-400 font-semibold">porções prontas</span></td><td class="px-4 py-2 text-slate-500">${fmtNum(before)} un</td><td class="px-4 py-2 font-bold text-rose-600">− ${fmtNum(n)}</td><td class="px-4 py-2 ${after <= (Number(p.minimo) || 0) ? 'text-red-600 font-black' : 'text-slate-800 font-bold'}">${fmtNum(after)} un</td></tr>`;
             }).join('');
@@ -6134,7 +6175,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
             // porções prontas: o que falta produzir também entra no pedido
             Object.entries(appState.prepStock || {}).forEach(([rid, p]) => {
-                const falta = Math.max(0, (Number(p.meta) || 0) - (Number(p.tenho) || 0));
+                const falta0 = Math.max(0, (Number(p.meta) || 0) - (Number(p.tenho) || 0));
+                const mepR = (appState.meps || []).find(m => m.id === rid);
+                if (mepR) { if (falta0 > 0) mepRawNeeds(mepR, falta0).forEach(n => { const inv = n.inv; const key = (inv ? inv.name : n.name) + '||' + (n.unit || ''); neededIngs[key] = (neededIngs[key] || 0) + n.qty; }); return; }
+                const falta = falta0;
                 const recipe = appState.recipes.find(r => r.id === rid);
                 if (!falta || !recipe) return;
                 recipe.ingredients.forEach(ing => {
@@ -6419,9 +6463,20 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 (r.ingredients || []).forEach(ing => {
                     const iq = Number(ing.quantity);
                     if (ing.quantity === null || ing.quantity === undefined || ing.quantity === '' || isNaN(iq)) return;
+                    const mm = (typeof mepMatch === 'function') ? mepMatch(ing.name, ing.unit) : null;
+                    if (mm) { const mp = appState.prepStock[mm.m.id]; const extra = iq * falta * mm.f - (mp ? Number(mp.tenho) || 0 : 0); if (extra > 0) mepRawNeeds(mm.m, extra).forEach(x => { const kk = normTxt(x.name) + '||' + (x.unit || ''); if (!need[kk]) need[kk] = { name: x.name, unit: x.unit, qty: 0, inv: x.inv }; need[kk].qty += x.qty; }); return; }
                     const k = normTxt(ing.name) + '||' + (ing.unit || '');
                     if (!need[k]) need[k] = { name: ing.name, unit: ing.unit || '', qty: 0, inv: (typeof findInvForIngredient === 'function') ? findInvForIngredient(ing.name, ing.unit) : null };
                     need[k].qty += iq * falta;
+                });
+            });
+            (appState.meps || []).forEach(m => {
+                const p = appState.prepStock[m.id]; if (!p) return;
+                const falta = prepFalta(p); if (!falta) return;
+                mepRawNeeds(m, falta).forEach(n => {
+                    const k = normTxt(n.name) + '||' + (n.unit || '');
+                    if (!need[k]) need[k] = { name: n.name, unit: n.unit || '', qty: 0, inv: n.inv };
+                    need[k].qty += n.qty;
                 });
             });
             return Object.values(need).sort((a, b) => a.name.localeCompare(b.name));
@@ -6519,8 +6574,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
             if (!all.length) {
                 tbl.innerHTML = '<p class="px-5 py-5 text-xs text-slate-400">Ainda não há porções prontas. Escolha uma ficha técnica acima (ex.: Smoothie Tropical) e clique em <b>Adicionar</b>.</p>';
-                document.getElementById('prep-summary').innerHTML = '';
-                return;
+                if (!prepNeeds().length) { document.getElementById('prep-summary').innerHTML = ''; return; }
             }
             const q = normTxt(prepFilter.q || '');
             const list = all.filter(x => (!q || normTxt(x.r.name).includes(q) || normTxt(prepCat(x.r)).includes(q)) &&
@@ -6549,7 +6603,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <div class="overflow-x-auto"><table class="w-full text-left text-xs table-fixed" style="min-width:760px"><colgroup><col style="width:28%"><col style="width:18%"><col style="width:14%"><col style="width:12%"><col style="width:14%"><col style="width:14%"></colgroup>${head}<tbody>${byCat[c].map(prepRow).join('')}</tbody></table></div>`;
                 });
             });
-            tbl.innerHTML = html || '<p class="px-5 py-5 text-xs text-slate-400">Nenhuma porção encontrada com esse filtro.</p>';
+            if (all.length) tbl.innerHTML = html || '<p class="px-5 py-5 text-xs text-slate-400">Nenhuma porção encontrada com esse filtro.</p>';
 
             const needs = prepNeeds();
             const sum = document.getElementById('prep-summary');
@@ -6662,6 +6716,17 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             (r.ingredients || []).forEach(ing => {
                 const iq = Number(ing.quantity);
                 if (ing.quantity === null || ing.quantity === undefined || ing.quantity === '' || isNaN(iq)) return;
+                const mm = (typeof mepMatch === 'function') ? mepMatch(ing.name, ing.unit) : null;
+                if (mm) {
+                    const mp = mepStockOf(mm.m), b0 = Number(mp.tenho) || 0, need = iq * n * mm.f, take = Math.min(b0, need);
+                    mp.tenho = Math.round((b0 - take) * 1000) / 1000;
+                    if (take) used.push(mm.m.name + ' −' + fmtQty(take, mm.m.yieldUnit));
+                    if (need - take > 1e-9) { const mv = {}, ms = {}, pm = {}; mepExplode(mm.m, need - take, mv, ms, pm, 1);
+                        Object.entries(mv).forEach(([iid, a]) => { const it = appState.inventory.find(i => i.id === iid); if (it) { const b = Number(it.stock) || 0; it.stock = Math.max(0, Math.round((b - a) * 100) / 100); used.push(it.name + ' −' + fmtQty(b - it.stock, it.unit)); } });
+                        Object.entries(pm).forEach(([sid, a]) => { const sp = appState.prepStock[sid]; if (sp) sp.tenho = Math.max(0, (Number(sp.tenho) || 0) - a); }); }
+                    if (typeof mepSync === 'function') mepSync(mm.m);
+                    return;
+                }
                 const inv = findInvForIngredient(ing.name, ing.unit);
                 if (!inv) return;
                 const before = Number(inv.stock) || 0;
@@ -7028,6 +7093,14 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const lines = (r.ingredients || []).map(g => {
                 const q = Number(g.quantity);
                 if (g.quantity === null || g.quantity === undefined || g.quantity === '' || isNaN(q)) return { g, cost: null, item: null, skip: true };
+                const mm = (typeof mepMatch === 'function' && !(r && r._mepDepth > 3)) ? mepMatch(g.name, g.unit) : null;
+                if (mm && mm.m !== r) {
+                    const uc = mepUnitCost(mm.m, (r && r._mepDepth) || 0);
+                    if (uc === null) { missing++; return { g, cost: null, item: null, mep: mm.m }; }
+                    const cost = uc.net * q * mm.f, costG = uc.gross * q * mm.f;
+                    total += cost; gross += costG;
+                    return { g, cost, costG, item: null, mep: mm.m };
+                }
                 const item = invForCost(g), uc = item ? itemUnitCost(item) : null;
                 const qq = item ? convertQty(q, g.unit, item.unit) : null;
                 if (uc === null || qq === null) { missing++; return { g, cost: null, item }; }
@@ -13720,13 +13793,13 @@ var qrcode = function() {
     <script>
         // ======================================================= NAVEGAÇÃO: FICHAS e ESTOQUE agrupados
         function fichasAbrir() { let t = 'bar'; try { t = localStorage.getItem('ds_fichas') || 'bar'; } catch (_) {} if (t === 'kitchen' && !isPro()) t = 'bar'; switchTab(t); }
-        function estoqueAbrir() { let t = 'inventory'; try { t = localStorage.getItem('ds_estoque') || 'inventory'; } catch (_) {} if (t === 'suppliers' && !hasPlan('cafe')) t = 'inventory'; switchTab(t); }
+        function estoqueAbrir() { let t = 'inventory'; try { t = localStorage.getItem('ds_estoque') || 'inventory'; } catch (_) {} if ((t === 'suppliers' || t === 'producoes') && !hasPlan('cafe')) t = 'inventory'; switchTab(t); }
         (function () {
             const seg = (grupo, opts) => `<div class="ds-seg2" data-grupo="${grupo}">${opts.map(([t, ic, l]) => `<button type="button" data-t="${t}" onclick="switchTab('${t}')"><i class="fas ${ic}"></i> ${l}<i class="fas fa-lock text-[10px] opacity-60 ds-seg-lock" style="display:none"></i></button>`).join('')}</div>`;
-            const F = seg('fichas', [['bar', 'fa-martini-glass-citrus', 'Bebidas'], ['kitchen', 'fa-utensils', 'Comidas']]);
-            const E = seg('estoque', [['inventory', 'fa-boxes-stacked', 'Estoque'], ['suppliers', 'fa-truck', 'Fornecedores']]);
-            ['bar', 'kitchen'].forEach(t => { const el = document.getElementById('tab-' + t); if (el) el.insertAdjacentHTML('afterbegin', F); });
-            ['inventory', 'suppliers'].forEach(t => { const el = document.getElementById('tab-' + t); if (el) el.insertAdjacentHTML('afterbegin', E); });
+            const F = seg('fichas', [['bar', 'fa-martini-glass-citrus', 'Bebidas'], ['kitchen', 'fa-utensils', 'Comidas'], ['mep', 'fa-blender', 'Mise en place']]);
+            const E = seg('estoque', [['inventory', 'fa-boxes-stacked', 'Estoque'], ['producoes', 'fa-layer-group', 'Produções'], ['suppliers', 'fa-truck', 'Fornecedores']]);
+            ['bar', 'kitchen', 'mep'].forEach(t => { const el = document.getElementById('tab-' + t); if (el) el.insertAdjacentHTML('afterbegin', F); });
+            ['inventory', 'producoes', 'suppliers'].forEach(t => { const el = document.getElementById('tab-' + t); if (el) el.insertAdjacentHTML('afterbegin', E); });
             // barra de baixo
             const bb = document.querySelector('#ds-bottom-nav button[data-tab=bar]');
             if (bb) { bb.setAttribute('onclick', 'fichasAbrir()'); bb.innerHTML = '<i class="fas fa-book-open"></i><span>Fichas</span>'; }
@@ -13735,7 +13808,7 @@ var qrcode = function() {
             const oTab = switchTab;
             switchTab = function (t) {
                 const r = oTab.apply(this, arguments);
-                const g = (t === 'bar' || t === 'kitchen') ? 'bar' : (t === 'inventory' || t === 'suppliers') ? 'inventory' : null;
+                const g = (t === 'bar' || t === 'kitchen' || t === 'mep') ? 'bar' : (t === 'inventory' || t === 'suppliers' || t === 'producoes') ? 'inventory' : null;
                 const visivel = document.getElementById('tab-' + t) && !document.getElementById('tab-' + t).classList.contains('hidden');
                 if (g && visivel) {
                     try { localStorage.setItem(g === 'bar' ? 'ds_fichas' : 'ds_estoque', t); } catch (_) {}
@@ -23791,5 +23864,391 @@ async function dsTrPreparar() {
     if (typeof saveStorage === 'function') { const oS = saveStorage; let t = null; saveStorage = function () { const r = oS.apply(this, arguments); if (dsLang !== 'pt' && currentUser) { clearTimeout(t); t = setTimeout(() => { dsTrTextosConta().filter(k => !(k in DS_TRC)).forEach(k => { dsTrcFila.add(k); }); if (dsTrcFila.size) dsTrcEnviar(); }, 1500); } return r; }; }
 })();
 </script>
+    <script>
+        // ======================================================= MISE EN PLACE (pré-produções) + ESTOQUE › PRODUÇÕES
+        // Fichas próprias (appState.meps) que rendem uma quantidade (ex.: 10 packs, 2 kg, 1,5 L).
+        // O estoque pronto fica em appState.prepStock[mep.id] (mesmo esquema das porções: tenho/meta) + lotes com validade.
+        // Uma ficha de bebida/comida que usa o nome da mise en place como ingrediente gasta primeiro o pronto; se faltar, os ingredientes crus.
+        const MEP_CONS = { congelado: ['Congelado', 'fa-snowflake', '#2563eb'], refrigerado: ['Refrigerado', 'fa-temperature-low', '#0891b2'], ambiente: ['Ambiente', 'fa-box', '#a16207'] };
+        const MEP_YU = ['un', 'g', 'kg', 'ml', 'l'];
+        const MEP_ING_U = ['g', 'kg', 'ml', 'l', 'un', 'doses', 'gotas', 'pitadas', 'pedaços', 'punhado'];
+        let mepFiltro = { q: '', area: 'ALL' };
+        function mepList() { if (!Array.isArray(appState.meps)) appState.meps = []; return appState.meps; }
+        function mepFindByName(n) { const k = normTxt(String(n || '').trim()); return k ? mepList().find(m => normTxt(m.name) === k) || null : null; }
+        function mepMatch(name, unit) {
+            if (!appState || !Array.isArray(appState.meps) || !appState.meps.length) return null;
+            const m = mepFindByName(name); if (!m) return null;
+            const yu = m.yieldUnit || 'un';
+            if (!unit || unit === yu) return { m, f: 1 };
+            const f = convertQty(1, unit, yu);
+            return f === null ? null : { m, f };
+        }
+        function mepYield(m) { return Number(m && m.yieldQty) > 0 ? Number(m.yieldQty) : 1; }
+        function mepStockOf(m) {
+            appState.prepStock = appState.prepStock || {};
+            let p = appState.prepStock[m.id];
+            if (!p) p = appState.prepStock[m.id] = { tenho: 0, meta: mepYield(m), lotes: [] };
+            if (!Array.isArray(p.lotes)) p.lotes = [];
+            return p;
+        }
+        function mepIngQty(ing) { const q = Number(ing.quantity); return (ing.quantity === null || ing.quantity === undefined || ing.quantity === '' || isNaN(q)) ? null : q; }
+        // gasta "amt" (na unidade do rendimento): primeiro o que está pronto, depois os ingredientes
+        function mepConsume(m, amt, moves, missing, prepMoves, depth) {
+            let rest = amt;
+            const p = appState.prepStock && appState.prepStock[m.id];
+            if (p) {
+                const avail = (Number(p.tenho) || 0) - (prepMoves[m.id] || 0);
+                const take = Math.max(0, Math.min(rest, avail));
+                if (take > 0) { prepMoves[m.id] = (prepMoves[m.id] || 0) + take; rest -= take; }
+            }
+            if (rest > 1e-9) mepExplode(m, rest, moves, missing, prepMoves, depth);
+        }
+        // tira dos ingredientes da ficha o necessário para fazer "amt" da mise en place
+        function mepExplode(m, amt, moves, missing, prepMoves, depth) {
+            const scale = amt / mepYield(m);
+            (m.ingredients || []).forEach(ing => {
+                const iq = mepIngQty(ing); if (iq === null) return;
+                const need = iq * scale;
+                const sub = (depth || 0) < 3 ? mepMatch(ing.name, ing.unit) : null;
+                if (sub && sub.m !== m) { mepConsume(sub.m, need * sub.f, moves, missing, prepMoves, (depth || 0) + 1); return; }
+                let inv = findInvForIngredient(ing.name, ing.unit), a = need;
+                if (!inv && typeof invFindConv === 'function') { const cv = invFindConv(ing.name, ing.unit, need); if (cv) { inv = cv.inv; a = cv.q; } }
+                if (inv) moves[inv.id] = (moves[inv.id] || 0) + a;
+                else { const k = ing.name + ' (' + (ing.unit || '—') + ')'; missing[k] = (missing[k] || 0) + need; }
+            });
+        }
+        // ingredientes crus para produzir "qty" (desce às mises en place usadas dentro, só o que lhes faltar)
+        function mepRawNeeds(m, qty, depth) {
+            const out = [], scale = qty / mepYield(m);
+            (m.ingredients || []).forEach(ing => {
+                const iq = mepIngQty(ing); if (iq === null) return;
+                const need = iq * scale;
+                const sub = (depth || 0) < 3 ? mepMatch(ing.name, ing.unit) : null;
+                if (sub && sub.m !== m) {
+                    const p = appState.prepStock && appState.prepStock[sub.m.id];
+                    const extra = need * sub.f - (p ? Number(p.tenho) || 0 : 0);
+                    if (extra > 0) out.push(...mepRawNeeds(sub.m, extra, (depth || 0) + 1));
+                    return;
+                }
+                out.push({ name: ing.name, unit: ing.unit || '', qty: need, inv: findInvForIngredient(ing.name, ing.unit) });
+            });
+            return out;
+        }
+        // custo por unidade do rendimento
+        function mepUnitCost(m, depth) {
+            if ((depth || 0) > 3) return null;
+            const c = recipeCost({ ingredients: m.ingredients || [], _mepDepth: (depth || 0) + 1 });
+            if (!c.known) return null;
+            const y = mepYield(m);
+            return { net: c.total / y, gross: c.gross / y, missing: c.missing, batchNet: c.total, batchGross: c.gross };
+        }
+        function mepUsedIn(m) {
+            const k = normTxt(m.name), uses = ings => (ings || []).some(i => normTxt(i.name) === k);
+            return [...appState.recipes.filter(r => uses(r.ingredients)).map(r => ({ id: r.id, name: r.name, icon: r.icon, tipo: r.type === 'KITCHEN' ? 'kitchen' : 'bar' })),
+                ...mepList().filter(x => x !== m && uses(x.ingredients)).map(x => ({ id: x.id, name: x.name, icon: x.icon, tipo: 'mep' }))];
+        }
+        function mepHoje() { return new Date().toISOString().slice(0, 10); }
+        function mepMaisDias(d, n) { const t = new Date(d + 'T12:00:00'); t.setDate(t.getDate() + n); return t.toISOString().slice(0, 10); }
+        // lotes (o mais antigo sai primeiro) sempre iguais ao total "tenho"
+        function mepSync(m) {
+            const p = mepStockOf(m), tenho = Math.max(0, Number(p.tenho) || 0);
+            p.lotes = p.lotes.filter(l => Number(l.q) > 1e-9).sort((a, b) => String(a.d).localeCompare(String(b.d)));
+            let soma = p.lotes.reduce((a, l) => a + Number(l.q), 0);
+            if (soma > tenho + 1e-9) {
+                let tirar = soma - tenho;
+                for (const l of p.lotes) { const t = Math.min(tirar, Number(l.q)); l.q = Math.round((Number(l.q) - t) * 1000) / 1000; tirar -= t; if (tirar <= 1e-9) break; }
+                p.lotes = p.lotes.filter(l => l.q > 1e-9);
+            } else if (soma < tenho - 1e-9) {
+                const d = mepHoje(), dias = Number(m.shelfDays) || 0;
+                p.lotes.push({ q: Math.round((tenho - soma) * 1000) / 1000, d, v: dias ? mepMaisDias(d, dias) : '' });
+            }
+            return p;
+        }
+        function mepValidade(m) {
+            const p = mepSync(m), vs = p.lotes.filter(l => l.v).map(l => l.v).sort();
+            if (!vs.length) return { html: '<span class="text-[11px] text-slate-400">—</span>', dias: null };
+            const dias = Math.round((new Date(vs[0] + 'T12:00:00') - new Date(mepHoje() + 'T12:00:00')) / 864e5);
+            const qv = p.lotes.filter(l => l.v === vs[0]).reduce((a, l) => a + Number(l.q), 0);
+            const [bg, fg, txt] = dias < 0 ? ['#fee2e2', '#b91c1c', 'Vencido'] : dias === 0 ? ['#fee2e2', '#b91c1c', 'Vence hoje'] : dias <= 2 ? ['#fef3c7', '#92400e', 'Vence em ' + dias + ' d'] : ['#dcfce7', '#166534', 'até ' + dmyMep(vs[0])];
+            return { html: `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" style="background:${bg};color:${fg}" title="Lote mais antigo: ${fmtQty(qv, m.yieldUnit)} · validade ${dmyMep(vs[0])}"><i class="fas fa-calendar-day"></i>${txt}</span>`, dias };
+        }
+        function dmyMep(d) { return d ? d.split('-').reverse().join('/') : ''; }
+        function mepConsBadge(m) { const c = MEP_CONS[m.storage] || MEP_CONS.refrigerado; return `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap" style="background:${c[2]}1a;color:${c[2]}"><i class="fas ${c[1]}"></i>${c[0]}</span>`; }
+
+        // ---------- produzir / desfazer ----------
+        async function mepProduce(id) {
+            const m = mepList().find(x => x.id === id); if (!m) return;
+            const p = mepStockOf(m), yu = m.yieldUnit || 'un';
+            const sug = prepFalta(p) || mepYield(m);
+            const v = await dsPerguntar('Quanto de "' + m.name + '" produziu agora? (em ' + yu + ')\n\nUma receita rende ' + fmtQty(mepYield(m), yu) + '. Os ingredientes saem do estoque pela ficha da mise en place.\n(Para só corrigir a contagem, escreva o número direto em "Tenho".)', String(Math.round(sug * 100) / 100));
+            if (v === null) return;
+            const n = parseFloat(String(v).replace(',', '.'));
+            if (!(n > 0)) return dsCartao({ tipo: 'alert', msg: 'Indique um número maior que zero.' });
+            const moves = {}, missing = {}, pm = {};
+            mepExplode(m, n, moves, missing, pm, 0);
+            const log = { id: 'mp_' + Date.now(), mepId: m.id, q: n, at: new Date().toISOString(), moves: [], prepMoves: [] }, used = [];
+            Object.entries(moves).forEach(([iid, a]) => {
+                const inv = appState.inventory.find(i => i.id === iid); if (!inv) return;
+                const b = Number(inv.stock) || 0; inv.stock = Math.max(0, Math.round((b - a) * 100) / 100);
+                log.moves.push({ invId: iid, amount: b - inv.stock }); used.push(inv.name + ' −' + fmtQty(b - inv.stock, inv.unit));
+            });
+            Object.entries(pm).forEach(([sid, a]) => {
+                const sp = appState.prepStock[sid]; if (!sp) return;
+                const b = Number(sp.tenho) || 0; sp.tenho = Math.max(0, Math.round((b - a) * 1000) / 1000);
+                const sm = mepList().find(x => x.id === sid);
+                log.prepMoves.push({ recipeId: sid, amount: b - sp.tenho }); used.push((sm ? sm.name : sid) + ' −' + fmtQty(b - sp.tenho, sm ? sm.yieldUnit : 'un'));
+            });
+            mepSync(m);
+            const d = mepHoje(), dias = Number(m.shelfDays) || 0;
+            p.lotes.push({ q: n, d, v: dias ? mepMaisDias(d, dias) : '' });
+            p.tenho = Math.round(((Number(p.tenho) || 0) + n) * 1000) / 1000;
+            appState.mepLog = [log, ...(appState.mepLog || [])].slice(0, 60);
+            saveStorage(); mepRefresh();
+            const falta = Object.keys(missing);
+            prepToast('✓ +' + fmtQty(n, yu) + ' de ' + m.name + ' · agora tem ' + fmtQty(p.tenho, yu) + (used.length ? '\nDescontado: ' + used.join(', ') : '') + (falta.length ? '\nSem item no estoque: ' + falta.join(', ') : ''));
+        }
+        async function mepUndo(logId) {
+            const log = (appState.mepLog || []).find(l => l.id === logId); if (!log) return;
+            const m = mepList().find(x => x.id === log.mepId);
+            if (!(await dsConfirmar('Desfazer a produção de ' + fmtQty(log.q, m ? m.yieldUnit : 'un') + ' de "' + (m ? m.name : '?') + '"?\n\nOs ingredientes voltam ao estoque e o pronto é retirado.'))) return;
+            (log.moves || []).forEach(x => { const inv = appState.inventory.find(i => i.id === x.invId); if (inv) inv.stock = Math.round(((Number(inv.stock) || 0) + x.amount) * 100) / 100; });
+            (log.prepMoves || []).forEach(x => { const sp = appState.prepStock[x.recipeId]; if (sp) sp.tenho = (Number(sp.tenho) || 0) + x.amount; });
+            if (m) {
+                const p = mepStockOf(m); p.tenho = Math.max(0, Math.round(((Number(p.tenho) || 0) - log.q) * 1000) / 1000);
+                // tira do lote mais recente
+                let tirar = log.q; p.lotes.sort((a, b) => String(b.d).localeCompare(String(a.d)));
+                for (const l of p.lotes) { const t = Math.min(tirar, Number(l.q)); l.q -= t; tirar -= t; if (tirar <= 1e-9) break; }
+                mepSync(m);
+            }
+            appState.mepLog = appState.mepLog.filter(l => l.id !== logId);
+            saveStorage(); mepRefresh(); prepToast('Produção desfeita.');
+        }
+        function mepSet(id, campo, v) {
+            const m = mepList().find(x => x.id === id); if (!m) return;
+            const p = mepStockOf(m), n = parseFloat(String(v).replace(',', '.'));
+            p[campo] = isFinite(n) && n >= 0 ? n : 0;
+            if (campo === 'tenho') mepSync(m);
+            saveStorage(); mepRefresh();
+        }
+        function mepRefresh() {
+            const vis = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); };
+            if (vis('tab-mep')) renderMep();
+            if (vis('tab-producoes')) renderProducoes();
+            if (vis('tab-inventory') && typeof renderInventory === 'function') renderInventory();
+        }
+
+        // ---------- editor da ficha ----------
+        function mepModalHtml() {
+            return `<div id="mep-modal" class="fixed inset-0 z-[80] hidden items-center justify-center p-3 sm:p-6" style="background:rgba(15,23,42,.55)" onclick="if(event.target===this)mepClose()">
+              <form onsubmit="mepSave(event)" class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[94vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white z-10 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+                  <h3 id="mep-modal-title" class="text-lg font-black text-slate-900">Ficha de mise en place</h3>
+                  <button type="button" onclick="mepClose()" class="p-2 text-slate-400 hover:text-slate-700" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button>
+                </div>
+                <div class="p-5 space-y-4">
+                  <input type="hidden" id="mep-id">
+                  <div class="grid gap-3" style="grid-template-columns:72px 1fr">
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Ícone</label><input id="mep-icon" maxlength="4" class="w-full text-center text-xl rounded-xl border-slate-300" placeholder="🥣"></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Nome *</label><input id="mep-name" required class="w-full text-sm font-bold rounded-xl border-slate-300" placeholder="Ex.: Pack Bali Green congelado"></div>
+                  </div>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Área</label><select id="mep-area" class="w-full text-xs font-bold rounded-xl border-slate-300"><option value="BAR">Bar</option><option value="KITCHEN">Cozinha</option></select></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Uma receita rende *</label><div class="flex gap-1"><input id="mep-yq" type="number" step="0.01" min="0.01" required class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="10"><select id="mep-yu" class="w-20 text-xs font-bold rounded-xl border-slate-300">${MEP_YU.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Conservação</label><select id="mep-cons" class="w-full text-xs font-bold rounded-xl border-slate-300">${Object.entries(MEP_CONS).map(([k, c]) => `<option value="${k}">${c[0]}</option>`).join('')}</select></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Validade (dias)</label><input id="mep-days" type="number" min="0" step="1" class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="Ex.: 30"></div>
+                  </div>
+                  <div>
+                    <div class="flex items-center justify-between mb-2"><label class="text-[11px] font-bold text-slate-500">Ingredientes de uma receita</label>
+                      <button type="button" onclick="mepAddIng()" class="text-xs font-bold" style="color:var(--brand)"><i class="fas fa-plus mr-1"></i>Ingrediente</button></div>
+                    <div id="mep-ings-list" class="space-y-2"></div>
+                    <p class="text-[10px] text-slate-400 mt-2">Escolha da lista para ligar ao estoque (e ao custo). Também pode usar outra mise en place como ingrediente.</p>
+                  </div>
+                  <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Modo de preparo</label><textarea id="mep-steps" rows="4" class="w-full text-xs rounded-xl border-slate-300" placeholder="Um passo por linha. Ex.: Pesar a fruta, embalar em sacos de vácuo, etiquetar com data."></textarea></div>
+                  <p class="text-[11px] text-slate-500 rounded-xl p-3" style="background:var(--brand-soft)"><i class="fas fa-lightbulb mr-1"></i>Para ligar às fichas de bebida/comida, use <b>exatamente este nome</b> como ingrediente nelas (ex.: Bali Green → 1 un de "Pack Bali Green congelado"). As vendas passam a gastar o pronto.</p>
+                </div>
+                <div class="sticky bottom-0 bg-white px-5 py-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <button type="button" id="mep-del" onclick="mepDelete()" class="px-3 py-2.5 text-xs font-bold text-rose-600 rounded-xl hover:bg-rose-50"><i class="fas fa-trash mr-1"></i>Apagar</button>
+                  <div class="flex gap-2"><button type="button" onclick="mepClose()" class="px-4 py-2.5 text-xs font-bold text-slate-600 rounded-xl bg-slate-100">Cancelar</button>
+                  <button type="submit" class="px-5 py-2.5 text-xs font-bold text-white rounded-xl" style="background:var(--brand)"><i class="fas fa-check mr-1"></i>Guardar</button></div>
+                </div>
+              </form></div>`;
+        }
+        function mepAddIng(name = '', quantity = '', unit = 'g') {
+            const list = document.getElementById('mep-ings-list');
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center ingredient-row';
+            const qv = (quantity === null || quantity === undefined) ? '' : quantity;
+            const opts = MEP_ING_U.map(u => `<option value="${u}" ${unit === u ? 'selected' : ''}>${u}</option>`).join('') + `<option value="" ${unit === '' ? 'selected' : ''}>—</option>`;
+            row.innerHTML = `<input type="text" placeholder="Ingrediente" value="${escapeHtml(name)}" class="ing-name flex-1 text-xs font-semibold rounded-xl border-slate-300">
+                <input type="number" step="0.01" placeholder="Qtd" value="${qv}" class="ing-qty w-20 text-xs font-semibold rounded-xl border-slate-300">
+                <select class="ing-unit w-24 text-xs font-semibold rounded-xl border-slate-300">${opts}</select>
+                <button type="button" onclick="this.closest('.ingredient-row').remove()" class="p-2 text-slate-400 hover:text-red-600" aria-label="Remover"><i class="fas fa-trash"></i></button>`;
+            list.appendChild(row);
+            try { ingEnhance(row); } catch (_) {}
+            return row;
+        }
+        function mepOpen(id) {
+            if (!document.getElementById('mep-modal')) document.body.insertAdjacentHTML('beforeend', mepModalHtml());
+            const m = id ? mepList().find(x => x.id === id) : null;
+            const g = k => document.getElementById(k);
+            g('mep-modal-title').textContent = m ? 'Editar mise en place' : 'Nova mise en place';
+            g('mep-id').value = m ? m.id : '';
+            g('mep-name').value = m ? m.name : '';
+            g('mep-icon').value = m ? (m.icon || '') : '';
+            g('mep-area').value = m ? (m.area || 'BAR') : (mepFiltro.area === 'KITCHEN' ? 'KITCHEN' : 'BAR');
+            g('mep-yq').value = m ? mepYield(m) : '';
+            g('mep-yu').value = m ? (m.yieldUnit || 'un') : 'un';
+            g('mep-cons').value = m ? (m.storage || 'refrigerado') : 'congelado';
+            g('mep-days').value = m && m.shelfDays ? m.shelfDays : '';
+            g('mep-steps').value = m ? (m.steps || []).join('\n') : '';
+            g('mep-del').style.visibility = m ? '' : 'hidden';
+            g('mep-ings-list').innerHTML = '';
+            ((m && m.ingredients && m.ingredients.length) ? m.ingredients : [{ name: '', quantity: '', unit: 'g' }]).forEach(i => mepAddIng(i.name, i.quantity, i.unit ?? 'g'));
+            const md = g('mep-modal'); md.classList.remove('hidden'); md.classList.add('flex');
+            setTimeout(() => g('mep-name').focus(), 50);
+        }
+        function mepClose() { const md = document.getElementById('mep-modal'); if (md) { md.classList.add('hidden'); md.classList.remove('flex'); } }
+        function mepSave(e) {
+            e.preventDefault();
+            const g = k => document.getElementById(k);
+            const id = g('mep-id').value, name = g('mep-name').value.trim();
+            if (!name) return;
+            const dup = mepList().find(x => normTxt(x.name) === normTxt(name) && x.id !== id);
+            if (dup) return dsCartao({ tipo: 'alert', msg: 'Já existe uma mise en place com o nome "' + dup.name + '".' });
+            const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
+            const ingredients = [...document.querySelectorAll('#mep-ings-list .ingredient-row')].map(r => ({
+                name: r.querySelector('.ing-name').value.trim(), quantity: num(r.querySelector('.ing-qty').value), unit: r.querySelector('.ing-unit').value
+            })).filter(i => i.name);
+            if (ingredients.some(i => normTxt(i.name) === normTxt(name))) return dsCartao({ tipo: 'alert', msg: 'A mise en place não pode ser ingrediente dela própria.' });
+            const old = id ? mepList().find(x => x.id === id) : null;
+            const obj = Object.assign({}, old || {}, {
+                id: id || 'mep_' + Date.now(), name, icon: g('mep-icon').value.trim() || '🥣', area: g('mep-area').value,
+                yieldQty: num(g('mep-yq').value) || 1, yieldUnit: g('mep-yu').value, storage: g('mep-cons').value,
+                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients,
+                steps: g('mep-steps').value.split('\n').map(s => s.trim()).filter(Boolean)
+            });
+            if (old) {
+                // trocou o nome: as fichas que a usavam continuam ligadas
+                if (normTxt(old.name) !== normTxt(name)) {
+                    const k = normTxt(old.name);
+                    [...appState.recipes, ...mepList()].forEach(r => (r.ingredients || []).forEach(i => { if (normTxt(i.name) === k) i.name = name; }));
+                }
+                Object.assign(old, obj);
+            } else {
+                mepList().push(obj);
+                const p = mepStockOf(obj); p.meta = obj.yieldQty;
+            }
+            saveStorage(); mepClose(); mepRefresh();
+            prepToast('✓ Mise en place "' + name + '" guardada.');
+        }
+        async function mepDelete() {
+            const id = document.getElementById('mep-id').value, m = mepList().find(x => x.id === id); if (!m) return;
+            const us = mepUsedIn(m);
+            const msg = 'Apagar a mise en place "' + m.name + '"?' + (us.length ? '\n\nEstá a ser usada em: ' + us.map(u => u.name).join(', ') + '. Nessas fichas o ingrediente fica escrito, mas deixa de gastar o pronto.' : '') + '\n\nO estoque pronto dela também é apagado.';
+            if (!(await dsConfirmar(msg))) return;
+            appState.meps = mepList().filter(x => x.id !== id);
+            if (appState.prepStock) delete appState.prepStock[id];
+            saveStorage(); mepClose(); mepRefresh();
+        }
+
+        // ---------- aba Fichas › Mise en place ----------
+        function renderMep() {
+            const box = document.getElementById('mep-list'); if (!box) return;
+            const q = normTxt(mepFiltro.q || '');
+            const all = mepList().slice().sort((a, b) => a.name.localeCompare(b.name));
+            const list = all.filter(m => (mepFiltro.area === 'ALL' || (m.area || 'BAR') === mepFiltro.area) && (!q || normTxt(m.name + ' ' + (m.ingredients || []).map(i => i.name).join(' ')).includes(q)));
+            if (!all.length) {
+                box.innerHTML = `<div class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center">
+                    <div class="text-4xl mb-2">🥣</div><h3 class="font-extrabold text-slate-800">Ainda não há fichas de mise en place</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">São as pré-produções: packs de smoothie congelados, molhos, massas, caldas, frutas cortadas… Diga quanto rende cada receita e o sistema controla o pronto em <b>Estoque › Produções</b>.</p>
+                    <button onclick="mepOpen()" class="mt-4 px-4 py-2.5 text-xs text-white font-bold rounded-xl" style="background:var(--brand)"><i class="fas fa-plus mr-1"></i>Criar a primeira</button></div>`;
+                return;
+            }
+            if (!list.length) { box.innerHTML = '<p class="text-xs text-slate-400 px-2 py-6">Nada encontrado com esse filtro.</p>'; return; }
+            box.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">${list.map(m => {
+                const p = mepStockOf(m), yu = m.yieldUnit || 'un', uc = mepUnitCost(m, 0), us = mepUsedIn(m), val = mepValidade(m);
+                const baixo = (Number(p.tenho) || 0) < (Number(p.meta) || 0);
+                return `<div class="recipe-card-bar rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex items-start gap-3"><div class="text-3xl leading-none">${escapeHtml(m.icon || '🥣')}</div>
+                        <div class="min-w-0 flex-1"><h4 class="font-extrabold text-slate-900 leading-tight">${escapeHtml(m.name)}</h4>
+                        <div class="flex flex-wrap items-center gap-1.5 mt-1">${mepConsBadge(m)}<span class="text-[10px] font-bold text-slate-500">${(m.area || 'BAR') === 'KITCHEN' ? 'Cozinha' : 'Bar'}</span>${m.shelfDays ? `<span class="text-[10px] text-slate-500">· validade ${m.shelfDays} d</span>` : ''}</div></div></div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-white/70 rounded-xl p-2"><p class="text-[10px] font-bold text-slate-400 uppercase">Rende</p><p class="font-extrabold text-slate-800">${fmtQty(mepYield(m), yu)}</p></div>
+                        <div class="bg-white/70 rounded-xl p-2"><p class="text-[10px] font-bold text-slate-400 uppercase">Custo</p><p class="font-extrabold text-slate-800">${uc ? eur2(uc.net) + '<span class="text-[10px] font-semibold text-slate-400">/' + escapeHtml(yu) + '</span>' : '<span class="text-amber-600 text-[11px]">sem preço</span>'}</p>${uc ? `<p class="text-[10px] text-slate-400">receita ${eur2(uc.batchNet)} s/IVA${uc.missing ? '*' : ''}</p>` : ''}</div>
+                    </div>
+                    <div class="flex items-center justify-between gap-2 bg-white/70 rounded-xl px-3 py-2">
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Pronto agora</p><p class="font-black ${baixo ? 'text-amber-600' : 'text-emerald-700'}">${fmtQty(Number(p.tenho) || 0, yu)} <span class="text-[10px] font-semibold text-slate-400">/ quero ${fmtQty(Number(p.meta) || 0, yu)}</span></p></div>${val.html}</div>
+                    <div class="text-[11px] text-slate-500"><span class="font-bold">Ingredientes:</span> ${(m.ingredients || []).map(i => escapeHtml(i.name) + (mepIngQty(i) !== null ? ' ' + i.quantity + ' ' + escapeHtml(i.unit || '') : '')).join(' · ') || '—'}</div>
+                    <div class="flex flex-wrap gap-1">${us.length ? us.map(u => `<span class="px-2 py-0.5 rounded-full bg-white text-[10px] font-bold text-slate-600 border border-slate-200">${escapeHtml(u.icon || '')} ${escapeHtml(u.name)}</span>`).join('') : '<span class="text-[10px] text-slate-400"><i class="fas fa-link-slash mr-1"></i>Ainda não usada em nenhuma ficha</span>'}</div>
+                    ${(m.steps || []).length ? `<details class="text-[11px] text-slate-600"><summary class="font-bold cursor-pointer">Modo de preparo</summary><ol class="list-decimal pl-4 mt-1 space-y-0.5">${m.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol></details>` : ''}
+                    <div class="flex gap-2 mt-auto"><button onclick="mepProduce('${m.id}')" class="flex-1 px-3 py-2 text-xs text-white font-bold rounded-xl" style="background:var(--brand)"><i class="fas fa-plus mr-1"></i>Produzi</button>
+                        <button onclick="mepOpen('${m.id}')" class="px-3 py-2 text-xs font-bold rounded-xl bg-white border border-slate-200 text-slate-700"><i class="fas fa-pen mr-1"></i>Editar</button></div>
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        // ---------- aba Estoque › Produções ----------
+        function renderProducoes() {
+            const box = document.getElementById('mep-stock-table'); if (!box) return;
+            const ms = mepList().slice().sort((a, b) => a.name.localeCompare(b.name));
+            if (!ms.length) {
+                box.innerHTML = `<p class="px-5 py-5 text-xs text-slate-400">Ainda não há fichas de mise en place. Crie em <button class="font-bold underline" style="color:var(--brand)" onclick="switchTab('mep')">Fichas › Mise en place</button> (ex.: packs de smoothie congelados, molhos, caldas).</p>`;
+            } else {
+                const rows = ms.map(m => {
+                    const p = mepStockOf(m), yu = m.yieldUnit || 'un', falta = prepFalta(p), val = mepValidade(m);
+                    const receitas = falta ? Math.ceil(falta / mepYield(m) * 10) / 10 : 0;
+                    return `<tr class="border-b border-slate-100">
+                        <td class="px-4 py-3"><div class="flex items-center gap-2"><span class="text-xl">${escapeHtml(m.icon || '🥣')}</span><div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
+                        <td class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
+                        <td class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
+                        <td class="px-4 py-3">${val.html}</td>
+                        <td class="px-4 py-3">${falta ? `<span class="font-black text-amber-600">${fmtQty(falta, yu)}</span><span class="block text-[10px] text-slate-400">≈ ${String(receitas).replace('.', ',')} receita(s)</span>` : '<span class="text-emerald-600 font-bold text-xs"><i class="fas fa-check mr-1"></i>OK</span>'}</td>
+                        <td class="px-4 py-3"><div class="flex gap-1.5 justify-end"><button onclick="mepProduce('${m.id}')" class="px-3 py-1.5 text-[11px] text-white font-bold rounded-lg whitespace-nowrap" style="background:var(--brand)"><i class="fas fa-plus mr-1"></i>Produzi</button><button onclick="mepOpen('${m.id}')" class="px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600" aria-label="Editar ficha"><i class="fas fa-pen"></i></button></div></td></tr>`;
+                }).join('');
+                box.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-xs ds-mtable"><thead class="bg-slate-50/60 uppercase text-[10px] text-slate-500 border-b border-slate-200"><tr><th class="px-4 py-2 font-bold">Produto</th><th class="px-4 py-2 font-bold">Tenho</th><th class="px-4 py-2 font-bold">Quero ter</th><th class="px-4 py-2 font-bold">Validade</th><th class="px-4 py-2 font-bold">Falta</th><th class="px-4 py-2"></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+            }
+            const lg = document.getElementById('mep-log');
+            if (lg) {
+                const logs = (appState.mepLog || []).slice(0, 8);
+                lg.innerHTML = logs.length ? `<div class="px-5 py-3 border-t border-slate-100"><p class="text-[11px] font-bold text-slate-500 uppercase mb-2">Últimas produções</p><div class="space-y-1.5">${logs.map(l => {
+                    const m = mepList().find(x => x.id === l.mepId), d = new Date(l.at);
+                    return `<div class="flex items-center justify-between gap-2 text-xs"><span class="text-slate-700"><b>+${fmtQty(l.q, m ? m.yieldUnit : 'un')}</b> ${escapeHtml(m ? m.name : '(apagada)')} <span class="text-slate-400">· ${d.toLocaleDateString('pt-PT')} ${d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span></span><button onclick="mepUndo('${l.id}')" class="text-[11px] font-bold text-slate-500 hover:text-rose-600"><i class="fas fa-rotate-left mr-1"></i>Desfazer</button></div>`;
+                }).join('')}</div></div>` : '';
+            }
+            try { renderPrep(); } catch (e) { console.error(e); }
+        }
+
+        (function () {
+            // planos e navegação
+            TAB_PLAN.producoes = 'cafe';
+            const oTab = switchTab;
+            switchTab = function (t) {
+                const r = oTab.apply(this, arguments);
+                const el = document.getElementById('tab-' + t);
+                if (el && !el.classList.contains('hidden')) {
+                    if (t === 'mep') renderMep();
+                    if (t === 'producoes') renderProducoes();
+                }
+                return r;
+            };
+            // autocomplete dos ingredientes: as mises en place aparecem na lista
+            const oSearch = ingSearch;
+            ingSearch = function (q) {
+                const base = oSearch.apply(this, arguments);
+                const n = normTxt(q || '').trim();
+                const ms = mepList().filter(m => !n || normTxt(m.name).includes(n) || n.split(/\s+/).every(w => normTxt(m.name).includes(w)))
+                    .map(m => ({ name: m.name, category: 'Mise en place', unit: m.yieldUnit || 'un', _mep: true }));
+                return [...ms, ...base].slice(0, 10);
+            };
+            const oStatus = ingStatus;
+            ingStatus = function (row) {
+                const r = oStatus.apply(this, arguments);
+                const inp = row.querySelector('.ing-name'), st = row.querySelector('.ing-status');
+                const m = inp && st && mepFindByName(inp.value);
+                if (m) { st.innerHTML = `<span style="color:var(--brand)"><i class="fas fa-blender mr-1"></i>Mise en place · gasta o pronto em Produções (${escapeHtml(m.yieldUnit || 'un')})</span>`; inp.style.borderColor = 'var(--brand)'; }
+                return r;
+            };
+        })();
+    </script>
 </body>
 </html>
