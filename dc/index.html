@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dio's Coffee · Café de especialidade em Cascais</title>
+<meta name="description" content="Dio's Coffee: carrinho de café de especialidade em feiras, mercados e eventos em Cascais e arredores. Expresso, latte, flat white, cold brew e bolo de banana.">
+<meta property="og:title" content="Dio's Coffee · Café de especialidade">
+<meta property="og:description" content="Carrinho de café de especialidade em feiras, mercados e eventos.">
+<meta property="og:image" content="https://dioscoffee.diostock.pt/icon.png">
+<meta property="og:url" content="https://dioscoffee.diostock.pt/">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Montserrat:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#111; --soft:#6b6b6b; --line:#111; --bg:#fff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'IBM Plex Sans',system-ui,sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
+  .wrap { max-width:760px; margin:0 auto; padding:48px 24px 40px; }
+  header { text-align:center; }
+  header img { width:min(300px,70vw); height:auto; }
+  .tag { margin-top:18px; font-size:12px; font-weight:700; letter-spacing:.18em; color:#444; }
+  .lead { margin:22px auto 0; max-width:520px; color:var(--soft); font-size:16px; }
+  hr { border:0; border-top:2px solid var(--line); margin:36px 0; }
+  .cols { display:grid; grid-template-columns:1fr 1fr; gap:24px 48px; }
+  h2 { font-family:'Montserrat',sans-serif; font-weight:400; font-size:24px; letter-spacing:.12em; display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px; }
+  h2 small { font-family:'IBM Plex Sans'; font-size:11px; font-weight:700; letter-spacing:.18em; color:#555; }
+  .item { display:flex; align-items:baseline; gap:8px; margin-bottom:14px; font-weight:700; font-size:18px; }
+  .item .dots { flex:1; border-bottom:1px dotted #999; transform:translateY(-4px); }
+  .l { display:inline-grid; place-items:center; width:16px; height:16px; border:1.5px solid var(--ink); border-radius:50%; font-size:9px; font-weight:700; margin-left:4px; vertical-align:2px; }
+  .bolo { margin-top:28px; background:var(--ink); color:#fff; border-radius:16px; padding:22px 28px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .bolo b { font-family:'Montserrat'; font-weight:400; font-size:24px; letter-spacing:.1em; display:block; }
+  .bolo span { font-size:13px; color:#ddd; }
+  .bolo .p { font-family:'Montserrat'; font-size:32px; letter-spacing:.06em; white-space:nowrap; }
+  .legend { margin-top:18px; font-size:13px; color:#444; }
+  .info { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .info h3 { font-size:12px; letter-spacing:.18em; margin-bottom:8px; }
+  .info p { color:#333; font-size:15px; }
+  .info a { color:var(--ink); font-weight:600; }
+  footer { margin-top:36px; font-size:12px; color:#777; text-align:center; }
+  footer a { color:#555; }
+  @media (max-width:620px) { .cols, .info { grid-template-columns:1fr; } .bolo { flex-direction:column; align-items:flex-start; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="logo-dios.png" alt="Dio's Coffee" width="360" height="190">
+    <p class="tag">CAFÉ DE ESPECIALIDADE</p>
+    <p class="lead">Um carrinho de café de especialidade que anda por feiras, mercados e eventos em Cascais e arredores. Café tirado na hora, com leite ou bebida de aveia sem custo extra.</p>
+  </header>
+
+  <hr>
+
+  <section class="cols" aria-label="Menu">
+    <div>
+      <h2>Café quente <small>HOT</small></h2>
+      <div class="item">Expresso<span class="dots"></span>2,00 €</div>
+      <div class="item">Macchiato <span class="l">L</span><span class="dots"></span>2,20 €</div>
+      <div class="item">Americano<span class="dots"></span>3,00 €</div>
+      <div class="item">Cappuccino <span class="l">L</span><span class="dots"></span>3,50 €</div>
+      <div class="item">Flat White <span class="l">L</span><span class="dots"></span>3,80 €</div>
+      <div class="item">Latte <span class="l">L</span><span class="dots"></span>3,80 €</div>
+    </div>
+    <div>
+      <h2>Café frio <small>COLD</small></h2>
+      <div class="item">Iced Americano<span class="dots"></span>3,20 €</div>
+      <div class="item">Iced Matcha <span class="l">L</span><span class="dots"></span>4,00 €</div>
+      <div class="item">Iced Latte <span class="l">L</span><span class="dots"></span>4,00 €</div>
+      <div class="item">Nitro Cold Brew<span class="dots"></span>4,00 €</div>
+    </div>
+  </section>
+
+  <div class="bolo">
+    <div><b>Bolo de banana</b><span>com chocolate 64% · a fatia · banana bread slice <span class="l" style="border-color:#fff">G</span></span></div>
+    <div class="p">2,00 €</div>
+  </div>
+  <p class="legend"><span class="l">L</span> contém leite (pode trocar por aveia) · <span class="l">G</span> contém glúten. Tem alguma alergia ou intolerância? Fale connosco.</p>
+
+  <hr>
+
+  <section class="info">
+    <div>
+      <h3>ONDE NOS ENCONTRAR</h3>
+      <p>Estamos em feiras, mercados e eventos. Quer o carrinho da Dio's Coffee no seu evento? Escreva-nos.</p>
+    </div>
+    <div>
+      <h3>CONTACTO</h3>
+      <p><a href="mailto:dioscoffeept@gmail.com">dioscoffeept@gmail.com</a><br>Cascais, Portugal</p>
+    </div>
+  </section>
+
+  <footer>
+    IVA – regime de isenção (art. 53.º do CIVA) · Livro de Reclamações disponível em <a href="https://www.livroreclamacoes.pt">livroreclamacoes.pt</a><br>
+    © 2026 Dio's Coffee
+  </footer>
+</div>
+</body>
+</html>
