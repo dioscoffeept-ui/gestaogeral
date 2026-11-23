@@ -4,4 +4,4 @@ Disallow: /pagar.html
 Disallow: /pago.html
 Disallow: /estado.html
 Disallow: /gestor/
-Sitemap: https://dioscoffeept-ui.github.io/gestaogeral/sitemap.xml
+Sitemap: https://diostock.pt/sitemap.xml

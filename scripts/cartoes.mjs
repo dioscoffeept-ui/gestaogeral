@@ -6,7 +6,7 @@ import crypto from 'node:crypto';
 
 const URL_SB = 'https://brisrzuvvxkkzhmhsgro.supabase.co';
 const KEY = 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs';
-const BASE = 'https://dioscoffeept-ui.github.io/gestaogeral/';
+const BASE = 'https://diostock.pt/';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let dados;
