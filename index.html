@@ -24385,7 +24385,8 @@ async function dsTrPreparar() {
     </script>
     <style>
         /* barras de abas (Estoque · Produções · Fornecedores) cabem sempre no ecrã; a página nunca anda para os lados */
-        html, body { overflow-x: hidden; overflow-x: clip; max-width: 100%; }
+        /* só o conteúdo corta o que sobra: html/body com overflow faz as barras fixas 'flutuarem' no iPhone */
+        main { overflow-x: clip; max-width: 100%; }
         .ds-seg2 { box-sizing: border-box; max-width: 100% !important; min-width: 0; }
         .ds-seg2 button { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
         @media (max-width: 767px) {
@@ -24396,5 +24397,27 @@ async function dsTrPreparar() {
         }
         @media (max-width: 359px) { .ds-seg2 button { font-size: 11px !important; white-space: normal !important; line-height: 1.15; text-align: center; } }
     </style>
+    <style>
+        /* barra Pagar do Balcão (telemóvel): presa à barra de baixo, de ponta a ponta, sem ficar a "flutuar" */
+        @media (max-width: 767px) {
+            #pos-paybar { left: 0 !important; right: 0 !important; padding: 8px 10px; background: var(--app-bg, #F6F1EA); border-top: 1px solid rgba(36,21,14,.10); box-shadow: 0 -10px 24px -18px rgba(36,21,14,.45); }
+        }
+    </style>
+    <script>
+        (function () {
+            function dock() {
+                const n = document.getElementById('ds-bottom-nav'), pb = document.getElementById('pos-paybar');
+                if (!n || !pb) return;
+                if (innerWidth >= 768) { pb.style.bottom = ''; return; }
+                const h = getComputedStyle(n).display === 'none' ? 0 : n.getBoundingClientRect().height;
+                pb.style.bottom = Math.max(0, Math.round(h) - 1) + 'px';
+            }
+            window.posBarDock = dock;
+            addEventListener('resize', dock); addEventListener('orientationchange', () => setTimeout(dock, 300));
+            if (window.visualViewport) visualViewport.addEventListener('resize', dock);
+            const o = switchTab; switchTab = function () { const r = o.apply(this, arguments); setTimeout(dock, 0); return r; };
+            setTimeout(dock, 0);
+        })();
+    </script>
 </body>
 </html>
