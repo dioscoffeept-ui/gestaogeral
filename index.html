@@ -24105,7 +24105,7 @@ async function dsTrPreparar() {
             g('mep-ings-list').innerHTML = '';
             ((m && m.ingredients && m.ingredients.length) ? m.ingredients : [{ name: '', quantity: '', unit: 'g' }]).forEach(i => mepAddIng(i.name, i.quantity, i.unit ?? 'g'));
             const md = g('mep-modal'); md.classList.remove('hidden'); md.classList.add('flex');
-            setTimeout(() => g('mep-name').focus(), 50);
+            if (window.matchMedia('(hover: hover)').matches) g('mep-name').focus();
         }
         function mepClose() { const md = document.getElementById('mep-modal'); if (md) { md.classList.add('hidden'); md.classList.remove('flex'); } }
         function mepSave(e) {
@@ -24199,10 +24199,10 @@ async function dsTrPreparar() {
                     const receitas = falta ? Math.ceil(falta / mepYield(m) * 10) / 10 : 0;
                     return `<tr class="border-b border-slate-100">
                         <td class="px-4 py-3"><div class="flex items-center gap-2"><span class="text-xl">${escapeHtml(m.icon || '🥣')}</span><div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
-                        <td class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
-                        <td class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
-                        <td class="px-4 py-3">${val.html}</td>
-                        <td class="px-4 py-3">${falta ? `<span class="font-black text-amber-600">${fmtQty(falta, yu)}</span><span class="block text-[10px] text-slate-400">≈ ${String(receitas).replace('.', ',')} receita(s)</span>` : '<span class="text-emerald-600 font-bold text-xs"><i class="fas fa-check mr-1"></i>OK</span>'}</td>
+                        <td data-label="Tenho" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
+                        <td data-label="Quero ter" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
+                        <td data-label="Validade" class="px-4 py-3">${val.html}</td>
+                        <td data-label="Falta" class="px-4 py-3">${falta ? `<span class="font-black text-amber-600">${fmtQty(falta, yu)}</span><span class="block text-[10px] text-slate-400">≈ ${String(receitas).replace('.', ',')} receita(s)</span>` : '<span class="text-emerald-600 font-bold text-xs"><i class="fas fa-check mr-1"></i>OK</span>'}</td>
                         <td class="px-4 py-3"><div class="flex gap-1.5 justify-end"><button onclick="mepProduce('${m.id}')" class="px-3 py-1.5 text-[11px] text-white font-bold rounded-lg whitespace-nowrap" style="background:var(--brand)"><i class="fas fa-plus mr-1"></i>Produzi</button><button onclick="mepOpen('${m.id}')" class="px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600" aria-label="Editar ficha"><i class="fas fa-pen"></i></button></div></td></tr>`;
                 }).join('');
                 box.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-xs ds-mtable"><thead class="bg-slate-50/60 uppercase text-[10px] text-slate-500 border-b border-slate-200"><tr><th class="px-4 py-2 font-bold">Produto</th><th class="px-4 py-2 font-bold">Tenho</th><th class="px-4 py-2 font-bold">Quero ter</th><th class="px-4 py-2 font-bold">Validade</th><th class="px-4 py-2 font-bold">Falta</th><th class="px-4 py-2"></th></tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -24250,5 +24250,31 @@ async function dsTrPreparar() {
             };
         })();
     </script>
+    <style>
+        /* utilitários que faltavam no CSS compilado */
+        .bg-white\/70 { background-color: rgba(255,255,255,.7); } .bg-slate-50\/60 { background-color: rgba(248,250,252,.6); }
+        .bottom-0 { bottom: 0; } .leading-none { line-height: 1; } .mt-auto { margin-top: auto; } .pl-5 { padding-left: 1.25rem; }
+        .break-all { word-break: break-all; } .order-last { order: 9999; } .z-\[80\] { z-index: 80; } .max-h-\[94vh\] { max-height: 94vh; }
+        @media (min-width: 640px) { .sm\:col-span-3 { grid-column: span 3 / span 3; } }
+        @media (min-width: 1280px) { .xl\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        /* mise en place */
+        #mep-modal { position: fixed; inset: 0; z-index: 80; }
+        #mep-modal > form { max-height: 94vh; }
+        #mep-list .recipe-card-bar { min-width: 0; }
+        @media (max-width: 767px) {
+            #mep-modal { padding: 0 !important; align-items: stretch !important; }
+            #mep-modal > form { max-height: none; height: 100%; height: 100dvh; border-radius: 0 !important; max-width: none; display: flex; flex-direction: column; }
+            #mep-modal > form > div:first-child { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+            #mep-modal > form > div:nth-child(2) { flex: 1 0 auto; }
+            #mep-modal > form > div:last-child { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+            #mep-ings-list .ingredient-row { flex-wrap: wrap; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
+            #mep-ings-list .ingredient-row > .relative { flex: 1 1 100%; }
+            #mep-ings-list .ingredient-row .ing-qty, #mep-ings-list .ingredient-row .ing-unit { flex: 1 1 0 !important; width: auto !important; min-width: 0 !important; }
+            #mep-ings-list .ingredient-row > button { flex: 0 0 auto; }
+            #mep-modal input, #mep-modal select, #mep-modal textarea { font-size: 16px !important; } /* iPhone não faz zoom ao escrever */
+            #mep-stock-table .ds-mtable td input { width: 5.5rem; }
+            #mep-yu { width: 6rem !important; flex: 0 0 6rem; padding-right: 1.6rem; }
+        }
+    </style>
 </body>
 </html>
