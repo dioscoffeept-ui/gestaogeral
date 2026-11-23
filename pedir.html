@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Menu</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fontes/fontes.css">
 <style>
   :root { --brand: #9C3815; --brand-soft: #fbeee8; --ink: #0f172a; --mut: #64748b; --line: #e2e8f0; --bg: #F6F3F0; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -145,6 +144,7 @@
         ${linha ? `<p>${linha}</p>` : ''}
         <p>${esc(T('privacyTx').replace('{loja}', loja))}</p>
         <p><a href="https://www.livroreclamacoes.pt/Inicio/" target="_blank" rel="noopener">📕 ${T('complaints')}</a> · ${T('disputes')}</p>
+        <p><a href="termos.html#privacidade" target="_blank" rel="noopener">${T('privPol')}</a></p>
       </div>`;
     }
     function total() { return Math.round(cart.reduce((a, c) => a + c.preco * c.qty, 0) * 100) / 100; }

@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Pagamento</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fontes/fontes.css">
 <style>
   :root { --brand: #9C3815; --brand-soft: #fbeee8; --ink: #0f172a; --mut: #64748b; --line: #e2e8f0; --bg: #F6F3F0; }
   * { box-sizing: border-box; }
@@ -143,7 +142,7 @@
         <button class="pay" id="pay" disabled>${T('payX')} ${eur(info.valor_cent)}</button><div class="err" id="err">${erroMsg ? esc(erroMsg) : ''}</div>`;
       const brand = (info.marca && info.marca.brand) || '#9C3815';
       stripe = stripe || Stripe(info.pk, { stripeAccount: info.conta, locale: LANG });
-      elements = stripe.elements({ clientSecret: info.client_secret, fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap' }],
+      elements = stripe.elements({ clientSecret: info.client_secret, fonts: [{ cssSrc: new URL('fontes/fontes.css', location.href).href }],
         appearance: { theme: 'stripe', variables: { colorPrimary: brand, colorText: '#0f172a', borderRadius: '12px', fontFamily: 'Inter, -apple-system, Segoe UI, Roboto, sans-serif', spacingUnit: '4px' },
           rules: { '.AccordionItem': { boxShadow: 'none', borderColor: '#e2e8f0' } } } });
       const pe = elements.create('payment', {
@@ -258,5 +257,6 @@
     setInterval(outro, 1500);
     start();
   </script>
+<p style="text-align:center;font-size:12px;margin:18px 0 24px;opacity:.75"><a href="termos.html#privacidade" target="_blank" rel="noopener" style="color:inherit">Privacidade e cookies</a> · <a href="https://www.livroreclamacoes.pt/" target="_blank" rel="noopener" style="color:inherit">Livro de Reclamações</a></p>
 </body>
 </html>

@@ -171,7 +171,7 @@ for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
 <meta name="description" content="${esc(desc)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="${br}">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Schibsted+Grotesk:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="${BASE}fontes/fontes.css">
 <style>
 :root{--b:${br}}*{box-sizing:border-box}body{margin:0;background:#F6F3F0;color:#231F20;font:16px/1.55 'Schibsted Grotesk',system-ui,sans-serif}
 main{max-width:520px;margin:0 auto;padding:16px 16px 40px}

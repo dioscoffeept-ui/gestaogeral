@@ -20,8 +20,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cartão">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fontes/fontes.css">
 <style>
   :root { --brand: #6B625C; --ink: #231F20; --mut: #6B5A50; --line: #E9E1D6; --bg: #F6F3F0; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -575,5 +574,6 @@
     else { let lj = null; try { lj = JSON.parse(localStorage.getItem('ds_cartao_loja') || 'null'); } catch (_) {} if (lj && lj.loja) { window._loja = lj; marca(lj); } else topoNeutro(); encontrarPintar(); }
   }
 </script>
+<p style="text-align:center;font-size:12px;margin:18px 0 24px;opacity:.75"><a href="termos.html#privacidade" target="_blank" rel="noopener" style="color:inherit">Privacidade e cookies</a> · <a href="https://www.livroreclamacoes.pt/" target="_blank" rel="noopener" style="color:inherit">Livro de Reclamações</a></p>
 </body>
 </html>

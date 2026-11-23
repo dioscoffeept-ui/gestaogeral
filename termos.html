@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Termos e Condições · Dio’Stock</title>
-<meta name="description" content="Termos e Condições, Política de Pagamento e Cancelamento e Política de Privacidade do Dio’Stock.">
-<meta name="theme-color" content="#9C3815">
+<title>Termos, privacidade e cookies · Dio'Stock</title>
+<meta name="description" content="Termos e Condições, pagamentos, cancelamento, Política de Privacidade, cookies, acordo de tratamento de dados, segurança e acessibilidade do Dio'Stock.">
+<meta name="theme-color" content="#983808">
 <link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="fontes/fontes.css">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <style>
-  :root { --brand:#9C3815; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; --card:#fff; }
+  :root { --brand:#983808; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; --card:#fff; }
   @media (prefers-color-scheme: dark) { :root { --ink:#e2e8f0; --muted:#94a3b8; --line:#1e293b; --bg:#0b1120; --card:#0f172a; --brand:#e0794f; } }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.65 "Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
   header { background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
   .wrap { max-width:860px; margin:0 auto; padding:0 16px; }
   .top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; }
@@ -34,6 +36,9 @@
   th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
   .box { background:color-mix(in srgb, var(--brand) 8%, transparent); border-left:3px solid var(--brand); border-radius:8px; padding:10px 14px; margin:6px 0 14px; }
   a { color:var(--brand); }
+  h1, h2 { font-family:"Bricolage Grotesque","Schibsted Grotesk",sans-serif; letter-spacing:-.02em; }
+  .form { border:1px dashed var(--line); border-radius:12px; padding:12px 14px; margin:6px 0 14px; font-size:14px; }
+  .tw { overflow-x:auto; }
   footer { color:var(--muted); font-size:12.5px; text-align:center; padding:10px 0 40px; }
   @media (max-width:520px) { section { padding:18px 16px 6px; } h1 { font-size:22px; } }
 </style>
@@ -42,53 +47,80 @@
 <header>
   <div class="wrap">
     <div class="top">
-      <a class="logo" href="./"><img src="icon-192.png" alt=""> Dio’Stock</a>
-      <a class="back" href="./">← Voltar ao app</a>
+      <a class="logo" href="./"><img src="icon-192.png" alt=""> Dio'Stock</a>
+      <a class="back" href="./">← Voltar à app</a>
     </div>
-    <nav class="toc">
-      <a href="#termos">Termos e Condições</a>
+    <nav class="toc" aria-label="Secções">
+      <a href="#termos">Termos</a>
       <a href="#planos">Planos e preços</a>
       <a href="#pagamento">Pagamento</a>
-      <a href="#cancelamento">Cancelamento e reembolsos</a>
+      <a href="#cancelamento">Cancelamento</a>
       <a href="#privacidade">Privacidade</a>
-      <a href="#reclamacoes">Reclamações</a>
+      <a href="#cookies">Cookies</a>
+      <a href="#tratamento">Acordo de tratamento de dados</a>
+      <a href="#seguranca">Segurança</a>
+      <a href="#acessibilidade">Acessibilidade</a>
+      <a href="#reclamacoes">Reclamações e contactos</a>
+      <a href="ajuda.html">Perguntas frequentes</a>
     </nav>
   </div>
 </header>
 
 <main class="wrap">
-  <h1>Termos, pagamentos e privacidade</h1>
-  <p class="upd">Última atualização: 15 de novembro de 2026</p>
+  <h1>Termos, privacidade e cookies</h1>
+  <p class="upd">Versão 2026-11-23 · Última atualização: 23 de novembro de 2026</p>
+  <div class="box">Resumo: os dados de cada empresa são só dela. Não vendemos dados, não fazemos publicidade e não usamos cookies de rastreio. Pode exportar tudo com <b>Baixar backup</b> e apagar a conta na própria app, em <b>Configurações → Empresa</b>.</div>
 
   <section id="termos">
     <h2>1. Termos e Condições de utilização</h2>
     <h3>1.1 Quem somos</h3>
-    <p>O Dio’Stock é um serviço online de gestão para cafés, bares, restaurantes e brunch (fichas técnicas, estoque, produção, pedidos a fornecedores e vendas), disponibilizado em <a href="https://diostock.pt/">diostock.pt</a>.</p>
+    <p>O Dio'Stock é um serviço online de gestão para cafés, bares, restaurantes e brunch: fichas técnicas, stock, produção, pedidos a fornecedores, vendas, balcão, cartões de fidelidade e equipa. Está disponível em <a href="https://diostock.pt/">diostock.pt</a>.</p>
     <table>
-      <tr><th style="width:38%">Marca</th><td>Dio’Stock</td></tr>
-      <tr><th style="width:38%">Prestador do serviço</th><td>Giovani Caetano Coelho Machado (empresário em nome individual)</td></tr>
+      <tr><th style="width:38%">Marca</th><td>Dio'Stock</td></tr>
+      <tr><th>Prestador do serviço</th><td>Giovani Caetano Coelho Machado (empresário em nome individual)</td></tr>
       <tr><th>NIF</th><td>325 410 062</td></tr>
       <tr><th>Morada</th><td>Rua de Santana, n.º 1634 B, Cobre, 2750-833 Cascais, Portugal</td></tr>
-      <tr><th>Contacto</th><td><a href="mailto:geral@diostock.pt">geral@diostock.pt</a></td></tr>
+      <tr><th>Contacto</th><td><a href="mailto:geral@diostock.pt">geral@diostock.pt</a> (respondemos em português e em inglês)</td></tr>
     </table>
     <h3>1.2 Conta e acesso</h3>
     <ul>
-      <li>Cada empresa cria uma conta com um e-mail e um nome de empresa. O titular da conta é responsável pelos dados que introduz e pelos colaboradores que convida.</li>
-      <li>A senha é pessoal. Deve mantê-la em segurança e avisar-nos se suspeitar de uso indevido.</li>
-      <li>Os dados de cada empresa (fichas, fotos, estoque, vendas, fornecedores) são visíveis apenas para essa empresa e para os colaboradores que ela autorizar.</li>
+      <li>Cada empresa cria uma conta com um e-mail e um nome de empresa. Quem cria a conta é o <b>titular</b>: é responsável pelos dados que introduz e pelos colaboradores que convida, e escolhe o acesso de cada um (só ver, alterar ou tudo).</li>
+      <li>A conta destina-se a empresas e profissionais, e a pessoas com pelo menos 16 anos.</li>
+      <li>A senha e os códigos de acesso são pessoais. Guarde-os em segurança e avise-nos logo se suspeitar de uso indevido.</li>
+      <li>Os dados de cada empresa (fichas, fotos, stock, vendas, fornecedores, equipa, clientes do cartão) só são visíveis para essa empresa e para os colaboradores que ela autorizar.</li>
+      <li>Ao criar a conta, aceita estes Termos e o Acordo de tratamento de dados (ponto 7) e confirma que leu a Política de Privacidade (ponto 5). Guardamos a data e a versão que aceitou.</li>
     </ul>
-    <h3>1.3 Utilização aceitável</h3>
-    <p>Não é permitido usar o serviço para fins ilegais, tentar aceder a dados de outras empresas, contornar os limites dos planos ou perturbar o funcionamento do serviço. Em caso de violação grave, podemos suspender a conta, após aviso por e-mail sempre que possível.</p>
-    <h3>1.4 Disponibilidade e responsabilidade</h3>
+    <h3>1.3 Utilização aceitável e conteúdos</h3>
     <ul>
-      <li>Fazemos o possível para manter o serviço disponível e os dados guardados com cópias de segurança, mas podem ocorrer interrupções para manutenção ou por falhas de terceiros (alojamento, internet).</li>
-      <li>Os cálculos do app (custos, margens, quantidades a encomendar, leitura automática de talões) são uma ajuda à gestão. Recomendamos confirmar os valores antes de decisões importantes. Não somos responsáveis por perdas indiretas resultantes dessas decisões, sem prejuízo dos direitos que a lei garante aos consumidores.</li>
-      <li>Pode exportar os seus dados a qualquer momento em <b>Menu da conta → Baixar backup</b>.</li>
+      <li>Não é permitido usar o serviço para fins ilegais, tentar aceder a dados de outras empresas, contornar os limites dos planos, enviar mensagens a quem não deu autorização, nem perturbar o funcionamento do serviço.</li>
+      <li>Os conteúdos públicos que cria (menu online, cartões de fidelidade, campanhas e as suas imagens e textos) são da sua responsabilidade. Não podem ser ilegais, enganosos, ofensivos nem violar direitos de autor ou de marca de terceiros.</li>
+      <li>Qualquer pessoa pode denunciar um conteúdo que considere ilegal através de <a href="mailto:geral@diostock.pt?subject=Den%C3%BAncia%20de%20conte%C3%BAdo">geral@diostock.pt</a>. Indique o link, porque considera o conteúdo ilegal, e o seu nome e e-mail. Analisamos cada denúncia com cuidado e sem demora e respondemos a quem a fez.</li>
+      <li>Se removermos um conteúdo ou suspendermos uma conta, explicamos por escrito o motivo, a regra aplicada e como contestar a decisão. Não usamos meios automáticos para decidir remoções. Em caso de violação grave, podemos suspender a conta, com aviso prévio por e-mail sempre que possível.</li>
     </ul>
-    <h3>1.5 Alterações</h3>
-    <p>Podemos atualizar estes termos ou os preços. As alterações de preço não afetam períodos já pagos e são comunicadas por e-mail com pelo menos 30 dias de antecedência. Se não concordar, pode cancelar antes da renovação.</p>
-    <h3>1.6 Lei aplicável</h3>
-    <p>Aplica-se a lei portuguesa. Os consumidores mantêm sempre os direitos que a lei do seu país de residência lhes garante.</p>
+    <h3>1.4 Funções automáticas e inteligência artificial</h3>
+    <ul>
+      <li>Algumas funções usam inteligência artificial (Google Gemini): a leitura de faturas e talões, a importação de fichas a partir de foto ou PDF e a tradução automática da app e do seu conteúdo. Essas funções só correm quando as usa ou quando escolhe um idioma diferente do português.</li>
+      <li>Os resultados automáticos (valores lidos, quantidades sugeridas, modo de preparo gerado, traduções) são sugestões e podem ter erros. Confirme-os antes de os usar. A app não toma decisões com efeitos jurídicos sobre pessoas.</li>
+      <li>A app não tem assistente de conversa com IA. As respostas das <a href="ajuda.html">Perguntas frequentes</a> são textos escritos por nós.</li>
+    </ul>
+    <h3>1.5 Disponibilidade e responsabilidade</h3>
+    <ul>
+      <li>Fazemos o possível para manter o serviço disponível e os dados guardados com cópias de segurança. Podem ocorrer interrupções para manutenção ou por falhas de terceiros (alojamento, internet).</li>
+      <li>Os cálculos da app (custos, margens, quantidades a encomendar, divisão de tips, leitura automática de talões) são uma ajuda à gestão. Confirme os valores antes de decisões importantes. Não somos responsáveis por perdas indiretas resultantes dessas decisões, sem prejuízo dos direitos que a lei garante aos consumidores e da responsabilidade por dolo ou culpa grave, que nunca é excluída.</li>
+      <li>O Dio'Stock <b>não é um programa de faturação certificado</b>. As faturas das suas vendas são emitidas no seu programa de faturação certificado, ao qual a app se pode ligar.</li>
+    </ul>
+    <h3>1.6 Os seus dados são seus: exportar e mudar de serviço</h3>
+    <ul>
+      <li>Pode exportar todos os dados da empresa a qualquer momento em <b>Menu da conta → Baixar backup</b>, num ficheiro JSON (formato aberto e legível por máquina). As fotos ficam acessíveis pelos links incluídos no ficheiro.</li>
+      <li>Se quiser mudar para outro serviço, basta pedir por e-mail. O aviso prévio nunca é superior a 2 meses. Ajudamos na transferência durante até 30 dias, os dados continuam disponíveis para exportar durante pelo menos mais 30 dias, e depois são apagados por completo. Não cobramos qualquer custo pela mudança nem pela exportação.</li>
+      <li>Os servidores da base de dados ficam na União Europeia (Irlanda). Os outros prestadores estão indicados no ponto 5.4.</li>
+    </ul>
+    <h3>1.7 Garantia legal (consumidores)</h3>
+    <p>Se usar o serviço como consumidor, tem direito a um serviço conforme com o contrato, nos termos do Decreto-Lei n.º 84/2021. Se o serviço não estiver conforme, pode pedir que o ponhamos em conformidade, a redução do preço ou a resolução do contrato.</p>
+    <h3>1.8 Alterações</h3>
+    <p>Podemos atualizar estes termos ou os preços. As alterações relevantes e as de preço são comunicadas por e-mail e na app com pelo menos 30 dias de antecedência e não afetam períodos já pagos. Se não concordar, pode cancelar antes da renovação, sem custos.</p>
+    <h3>1.9 Lei aplicável</h3>
+    <p>Aplica-se a lei portuguesa. Os consumidores mantêm sempre os direitos que a lei do seu país de residência lhes garante e podem recorrer aos tribunais da sua residência.</p>
   </section>
 
   <section id="planos">
@@ -106,80 +138,179 @@
     <p>Se ativar os pagamentos online (QR, link de pagamento ou menu online, processados pela Stripe na sua própria conta Stripe), o Dio’Stock cobra uma comissão de <b>0,5% sobre o valor de cada pagamento recebido</b>, além das taxas da própria Stripe. A comissão é retida automaticamente pela Stripe no momento do pagamento e aparece no seu painel Stripe. Gorjetas não pagam comissão. Os pagamentos em dinheiro e no terminal (SumUp ou outro) não têm qualquer comissão do Dio’Stock. Alterações a esta percentagem são avisadas com pelo menos 30 dias de antecedência e não se aplicam a pagamentos já feitos.</p>
   </section>
 
+
   <section id="pagamento">
-    <h2>3. Política de Pagamento</h2>
+    <h2>3. Política de pagamento</h2>
     <ul>
       <li>Os pagamentos são processados pela <b>Stripe</b>, numa página de pagamento segura. Não guardamos os dados do seu cartão.</li>
       <li>Meios aceites: cartão de débito/crédito e outros meios apresentados na página de pagamento.</li>
       <li><b>Plano mensal:</b> é uma assinatura. A primeira cobrança é feita no momento da compra e as seguintes são feitas automaticamente no mesmo dia de cada mês, até cancelar.</li>
       <li><b>Plano anual:</b> é uma assinatura anual. É cobrada no momento da compra e renova automaticamente a cada 12 meses, até cancelar.</li>
       <li>O plano é ativado automaticamente logo que a Stripe confirma o pagamento. No Multibanco, isso só acontece depois de a referência ser paga.</li>
-      <li>O recibo é enviado por e-mail pela Stripe. As faturas da assinatura mensal podem ser consultadas em <b>Configurações → Empresa → Gerir assinatura</b>.</li>
+      <li>A Stripe envia o recibo do pagamento por e-mail e nós enviamos a fatura, emitida nos termos da lei portuguesa. As faturas da assinatura mensal podem ser consultadas em <b>Configurações → Empresa → Gerir assinatura</b>.</li>
       <li>Se uma renovação mensal falhar (por exemplo, cartão expirado), a Stripe tenta novamente durante alguns dias. Se não for possível cobrar, a conta fica suspensa no fim do período pago, sem perda de dados, até o pagamento ser feito.</li>
     </ul>
   </section>
 
+
   <section id="cancelamento">
-    <h2>4. Política de Cancelamento e Reembolsos</h2>
-    <div class="box"><b>Resumo:</b> pode cancelar o plano mensal quando quiser, em 2 cliques, sem multas. O plano fica ativo até ao fim do período já pago e depois a conta fica suspensa. Os seus dados não são apagados.</div>
+    <h2>4. Cancelamento e reembolsos</h2>
+    <div class="box">Resumo: pode cancelar o plano mensal quando quiser, em 2 cliques e sem multas. O plano fica ativo até ao fim do período já pago e depois a conta fica suspensa. Os seus dados não são apagados, a não ser que o peça.</div>
     <h3>4.1 Como cancelar</h3>
     <ul>
-      <li>No app: <b>Configurações → Empresa → Gerir assinatura, faturas ou cancelar</b>. Abre o portal seguro da Stripe, onde pode cancelar, trocar o cartão e ver as faturas.</li>
-      <li>Ou por e-mail para <a href="mailto:geral@diostock.pt">geral@diostock.pt</a>, a partir do e-mail da conta. Confirmamos o cancelamento por escrito.</li>
+      <li>Na app, em <b>Configurações → Empresa → Gerir assinatura, faturas ou cancelar</b>. Abre o portal seguro da Stripe, onde pode cancelar, trocar o cartão e ver as faturas.</li>
+      <li>Ou por e-mail para <a href="mailto:geral@diostock.pt">geral@diostock.pt</a>, enviado do e-mail da conta. Confirmamos o cancelamento por escrito.</li>
     </ul>
     <h3>4.2 O que acontece depois</h3>
     <ul>
       <li><b>Mensal:</b> não há mais cobranças. O plano continua ativo até ao fim do mês já pago. Não há reembolso proporcional do mês em curso.</li>
       <li><b>Anual:</b> não há mais renovações. O plano continua ativo até ao fim dos 12 meses já pagos.</li>
-      <li>Quando o plano termina, a conta fica <b>suspensa</b>: as fichas e restantes dados ficam guardados e voltam a estar disponíveis se reativar um plano, a partir de 5 € por mês. Pode também exportá-los com <b>Baixar backup</b>.</li>
-      <li>Para apagar definitivamente a conta e todos os dados, peça por e-mail. Fazemo-lo no prazo máximo de 30 dias.</li>
+      <li>Quando o plano termina, a conta fica suspensa. As fichas e restantes dados ficam guardados e voltam a estar disponíveis se reativar um plano, a partir de 5 € por mês. Pode também exportá-los com <b>Baixar backup</b>.</li>
+      <li>Para apagar a conta e todos os dados, o titular pode fazê-lo na app, em <b>Configurações → Empresa → Apagar a conta</b>, ou pedir por e-mail. A eliminação na app é imediata. Por e-mail, fazemo-la no prazo máximo de 30 dias.</li>
     </ul>
     <h3>4.3 Direito de livre resolução (consumidores)</h3>
-    <p>Se contratar como consumidor (para uso não profissional), tem 14 dias a contar da compra para desistir sem indicar motivo, nos termos do Decreto-Lei n.º 24/2014. Ao pedir que o plano seja ativado de imediato, aceita que o serviço comece logo. Se desistir nesse prazo, devolvemos o valor pago, deduzido da parte proporcional aos dias já utilizados, no prazo de 14 dias e pelo mesmo meio de pagamento. Para exercer este direito, envie-nos um e-mail.</p>
+    <p>Se contratar como consumidor (uso não profissional), tem 14 dias a contar da compra para desistir sem indicar o motivo, nos termos do Decreto-Lei n.º 24/2014. Ao pedir que o plano seja ativado de imediato, aceita que o serviço comece logo. Se desistir nesse prazo, devolvemos o valor pago, deduzido da parte proporcional aos dias já usados, no prazo de 14 dias e pelo mesmo meio de pagamento.</p>
+    <p>Para desistir, basta enviar-nos uma declaração clara por e-mail. Pode usar este modelo, mas não é obrigatório:</p>
+    <div class="form">
+      <p><b>Formulário de livre resolução</b></p>
+      <p>Para: Giovani Caetano Coelho Machado (Dio'Stock), Rua de Santana, n.º 1634 B, Cobre, 2750-833 Cascais, Portugal · geral@diostock.pt</p>
+      <p>Pela presente comunico que desisto do contrato de prestação do seguinte serviço: plano ________ do Dio'Stock.</p>
+      <p>Contratado em: ____/____/______ · Nome: ____________________ · E-mail da conta: ____________________</p>
+      <p>Morada: ______________________________________ · Data: ____/____/______</p>
+      <p>Assinatura (só se enviar em papel): ____________________</p>
+    </div>
     <p>Os planos destinam-se sobretudo a empresas. Para clientes profissionais aplicam-se as regras dos pontos 4.1 e 4.2.</p>
     <h3>4.4 Reembolsos em caso de erro</h3>
-    <p>Se for cobrado em duplicado ou por engano, ou se o serviço ficar indisponível por motivo que nos seja imputável durante um período relevante, contacte-nos: devolvemos o valor indevido ou o proporcional.</p>
+    <p>Se for cobrado em duplicado ou por engano, ou se o serviço ficar indisponível por motivo que nos seja imputável durante um período relevante, contacte-nos. Devolvemos o valor indevido ou o proporcional.</p>
   </section>
 
   <section id="privacidade">
-    <h2>5. Política de Privacidade (RGPD)</h2>
-    <h3>5.1 Responsável pelo tratamento</h3>
-    <p>O prestador indicado no ponto 1.1. Contacto para questões de privacidade: <a href="mailto:geral@diostock.pt">geral@diostock.pt</a>.</p>
-    <h3>5.2 Que dados tratamos e porquê</h3>
-    <table>
-      <tr><th>Dados</th><th>Finalidade</th><th>Fundamento</th></tr>
-      <tr><td>E-mail, nome da empresa, senha (cifrada), e-mails dos colaboradores</td><td>Criar e proteger a conta, enviar códigos de acesso</td><td>Execução do contrato</td></tr>
-      <tr><td>Dados de gestão que introduz (fichas, fotos, estoque, vendas, fornecedores, logótipo)</td><td>Prestar o serviço</td><td>Execução do contrato</td></tr>
-      <tr><td>Dados de pagamento (tratados pela Stripe) e histórico de planos</td><td>Cobrar, ativar o plano, cumprir obrigações fiscais</td><td>Contrato e obrigação legal</td></tr>
-      <tr><td>Registos técnicos (data/hora de acesso, IP)</td><td>Segurança e resolução de problemas</td><td>Interesse legítimo</td></tr>
-    </table>
-    <p>Não vendemos dados, não fazemos publicidade e não usamos cookies de rastreio. O app guarda no seu navegador apenas o necessário para manter a sessão iniciada e as preferências (por exemplo, o tema).</p>
-    <h3>5.3 Com quem partilhamos</h3>
+    <h2>5. Política de Privacidade</h2>
+    <p>Esta política explica como tratamos dados pessoais, nos termos do Regulamento Geral sobre a Proteção de Dados (RGPD, Regulamento (UE) 2016/679) e da Lei n.º 58/2019.</p>
+    <h3>5.1 Responsável pelo tratamento e contacto</h3>
+    <p>O prestador indicado no ponto 1.1. Para qualquer questão de privacidade ou para exercer os seus direitos, escreva para <a href="mailto:geral@diostock.pt?subject=Privacidade">geral@diostock.pt</a>. Pela dimensão da atividade, não é obrigatório designar um encarregado de proteção de dados. O contacto acima cumpre essa função.</p>
+    <h3>5.2 Que dados tratamos, para quê e com que fundamento</h3>
+    <div class="tw"><table>
+      <tr><th>Dados</th><th>Finalidade</th><th>Fundamento (art. 6.º RGPD)</th></tr>
+      <tr><td>E-mail, nome da empresa, senha (guardada cifrada), e-mails e acessos dos colaboradores</td><td>Criar e proteger a conta, enviar códigos e convites de acesso</td><td>Execução do contrato</td></tr>
+      <tr><td>Dados de gestão que introduz (fichas, fotos, stock, vendas, fornecedores, logótipo, equipa, documentos)</td><td>Prestar o serviço</td><td>Execução do contrato</td></tr>
+      <tr><td>Dados de pagamento (tratados pela Stripe), plano e histórico de pagamentos</td><td>Cobrar, ativar o plano, faturar e cumprir obrigações fiscais</td><td>Contrato e obrigação legal</td></tr>
+      <tr><td>Data e versão dos termos aceites</td><td>Provar a aceitação dos termos</td><td>Obrigação legal e interesse legítimo</td></tr>
+      <tr><td>Mensagens de apoio e motivo de cancelamento (se o indicar)</td><td>Responder-lhe e melhorar o serviço</td><td>Contrato e interesse legítimo</td></tr>
+      <tr><td>Textos enviados para tradução e imagens de faturas ou fichas que manda ler</td><td>Traduzir a app e ler documentos, só quando usa essas funções</td><td>Execução do contrato</td></tr>
+      <tr><td>Registos técnicos (data e hora de acesso, endereço IP, erros)</td><td>Segurança, prevenção de abusos e resolução de problemas</td><td>Interesse legítimo</td></tr>
+    </table></div>
+    <p>Os dados da conta são necessários para prestar o serviço. Sem eles não é possível criar a conta. Os dados que tratamos vêm de si ou dos colaboradores que convida.</p>
+    <p><b>Não vendemos dados, não fazemos publicidade, não criamos perfis de marketing e não usamos cookies de rastreio.</b> Não tomamos decisões exclusivamente automatizadas com efeitos jurídicos sobre pessoas.</p>
+    <h3>5.3 Dados que tratamos por conta dos estabelecimentos</h3>
+    <p>Nos casos abaixo, o <b>responsável</b> é o estabelecimento (o nosso cliente) e o Dio'Stock é <b>subcontratante</b> (art. 28.º do RGPD). Tratamos esses dados só para prestar o serviço ao estabelecimento, segundo o Acordo de tratamento de dados do ponto 7. Os titulares podem exercer os seus direitos junto do estabelecimento ou escrever-nos, e nós encaminhamos o pedido.</p>
     <ul>
-      <li><b>Supabase</b>: base de dados, autenticação e armazenamento de fotos.</li>
-      <li><b>Stripe</b>: processamento de pagamentos.</li>
-      <li><b>GitHub (GitHub Pages)</b>: alojamento do site.</li>
-      <li><b>Google (Gemini)</b>: leitura automática de faturas e talões de fornecedores, só quando usa essa função.</li>
-      <li><b>Google (Gmail)</b>: envio dos e-mails com os códigos de acesso.</li>
+      <li><b>Clientes que pedem no menu online, por QR ou por NFC:</b> nome para chamar, produtos pedidos e, se o cliente quiser, e-mail, NIF e nome para a fatura, e a autorização para o aviso de "pedido pronto". Os pagamentos com cartão, Apple Pay ou Google Pay são feitos diretamente na Stripe. O Dio'Stock nunca vê nem guarda os dados do cartão.</li>
+      <li><b>Clientes do cartão de fidelidade:</b> nome, telemóvel, carimbos e prémios, data da autorização e, só se o cliente marcar essa opção, autorização para receber novidades. O cliente pode retirar essa autorização ou apagar o cartão a qualquer momento, no próprio cartão.</li>
+      <li><b>Colaboradores do estabelecimento (Equipe):</b> nome, função, área, escala, horários, faltas e tips. O estabelecimento não deve registar dados de saúde (por exemplo, o motivo de uma baixa médica) nas notas das faltas.</li>
     </ul>
-    <p>Estes prestadores tratam os dados apenas por nossa conta. Alguns podem tratá-los fora do Espaço Económico Europeu, com as garantias previstas no RGPD (por exemplo, cláusulas contratuais-tipo da Comissão Europeia).</p>
-    <h3>5.3-A Dados dos clientes dos estabelecimentos (menu online e pagamentos)</h3>
-    <p>Quando um cliente de um estabelecimento faz um pedido pelo menu online, pelo QR ou pela etiqueta NFC, são recolhidos o nome para chamar, os produtos pedidos e, se o cliente quiser, o e-mail, o NIF e o nome para a fatura, e a autorização para receber o aviso de "pedido pronto" no telemóvel. O <b>responsável</b> por esses dados é o estabelecimento onde o pedido é feito; o Dio’Stock trata-os apenas <b>por conta do estabelecimento</b> (subcontratante, art. 28.º do RGPD), para preparar o pedido, cobrar através da Stripe, avisar o cliente e permitir a emissão da fatura. Os pagamentos com cartão, Apple Pay ou Google Pay são feitos diretamente na Stripe; o Dio’Stock nunca vê nem guarda os dados do cartão. Os pedidos ficam guardados na conta do estabelecimento enquanto esta existir; o aviso no telemóvel é apagado quando deixa de ser válido. Para exercer os seus direitos, o cliente pode contactar o estabelecimento ou escrever-nos para o e-mail indicado.</p>
-    <h3>5.4 Durante quanto tempo</h3>
-    <p>Enquanto a conta existir. Depois de pedir a eliminação, os dados são apagados no prazo de 30 dias, exceto os registos de faturação, que a lei obriga a guardar durante 10 anos.</p>
-    <h3>5.5 Os seus direitos</h3>
-    <p>Pode pedir acesso, retificação, eliminação, limitação, portabilidade (o <b>Baixar backup</b> já lhe dá os dados num ficheiro) e opor-se ao tratamento, por e-mail. Tem também o direito de apresentar reclamação à <a href="https://www.cnpd.pt" target="_blank" rel="noopener">Comissão Nacional de Proteção de Dados (CNPD)</a>.</p>
+    <h3>5.4 Com quem partilhamos (subcontratantes)</h3>
+    <div class="tw"><table>
+      <tr><th>Prestador</th><th>Para quê</th><th>Onde</th></tr>
+      <tr><td>Supabase</td><td>Base de dados, autenticação e armazenamento de fotos</td><td>UE (Irlanda)</td></tr>
+      <tr><td>Stripe</td><td>Pagamentos da assinatura e pagamentos online dos estabelecimentos</td><td>UE (Irlanda), com transferências para os EUA</td></tr>
+      <tr><td>GitHub (Microsoft)</td><td>Alojamento do site e das páginas públicas dos cartões</td><td>EUA</td></tr>
+      <tr><td>Google (Gemini)</td><td>Leitura de faturas e fichas e tradução automática, só quando usa essas funções</td><td>EUA</td></tr>
+      <tr><td>Google (Gmail)</td><td>Envio dos e-mails de acesso e resposta aos e-mails</td><td>UE e EUA</td></tr>
+      <tr><td>ImprovMX</td><td>Reencaminhamento do e-mail geral@diostock.pt</td><td>Fora do EEE</td></tr>
+      <tr><td>SumUp e o seu programa de faturação (por exemplo, Vendus)</td><td>Só se ligar essas contas: ler vendas e enviar dados para faturar</td><td>UE</td></tr>
+    </table></div>
+    <p>Estes prestadores tratam os dados apenas por nossa conta e sob contrato. Quando há transferência para fora do Espaço Económico Europeu, é feita com as garantias do RGPD: decisão de adequação (Quadro de Privacidade de Dados UE-EUA) ou cláusulas contratuais-tipo da Comissão Europeia. Pode pedir-nos uma cópia dessas garantias. Também partilhamos dados com autoridades quando a lei o exige.</p>
+    <h3>5.5 Durante quanto tempo guardamos</h3>
+    <div class="tw"><table>
+      <tr><th>Dados</th><th>Prazo</th></tr>
+      <tr><td>Conta e dados de gestão</td><td>Enquanto a conta existir. Se a apagar, são eliminados de imediato, e as cópias de segurança são substituídas em até 30 dias.</td></tr>
+      <tr><td>Conta suspensa por falta de pagamento</td><td>Guardada para poder reativar. Pode apagá-la a qualquer momento.</td></tr>
+      <tr><td>Pagamentos e faturas do Dio'Stock</td><td>10 anos, por obrigação fiscal</td></tr>
+      <tr><td>Nome, e-mail, NIF e notas dos pedidos online</td><td>12 meses. Depois os pedidos ficam anónimos (só produtos e valores).</td></tr>
+      <tr><td>Avisos de "pedido pronto" no telemóvel</td><td>Até 3 dias</td></tr>
+      <tr><td>Cartões de fidelidade sem uso</td><td>Apagados ao fim de 24 meses sem atividade</td></tr>
+      <tr><td>Mensagens de apoio e motivos de cancelamento</td><td>24 meses</td></tr>
+      <tr><td>Registos de leitura de faturas</td><td>12 meses</td></tr>
+      <tr><td>Registos técnicos</td><td>No máximo 90 dias</td></tr>
+    </table></div>
+    <p>Estes prazos são aplicados automaticamente, todos os dias.</p>
+    <h3>5.6 Os seus direitos</h3>
+    <ul>
+      <li>Pode pedir acesso, retificação, apagamento, limitação, portabilidade e opor-se ao tratamento baseado em interesse legítimo.</li>
+      <li>A portabilidade já está na app (<b>Baixar backup</b>) e o titular pode apagar a conta em <b>Configurações → Empresa</b>.</li>
+      <li>Quando o tratamento se basear no consentimento (por exemplo, receber novidades de uma loja), pode retirá-lo a qualquer momento, sem afetar o que foi feito antes.</li>
+      <li>Respondemos no prazo de 1 mês, sem custos. Podemos pedir-lhe que confirme a identidade, por exemplo escrevendo do e-mail da conta.</li>
+      <li>Tem o direito de apresentar reclamação à <a href="https://www.cnpd.pt/" target="_blank" rel="noopener">Comissão Nacional de Proteção de Dados (CNPD)</a>.</li>
+    </ul>
+  </section>
+
+  <section id="cookies">
+    <h2>6. Cookies e armazenamento no dispositivo</h2>
+    <p>O Dio'Stock <b>não usa cookies de publicidade, de estatística nem de redes sociais</b>, e não tem rastreadores de terceiros. As letras e os ícones estão alojados no nosso próprio site, por isso o seu navegador não contacta a Google nem outras empresas para os carregar.</p>
+    <p>A app guarda no seu dispositivo apenas o estritamente necessário para funcionar. Por isso, a lei (artigo 5.º da Lei n.º 41/2004) não exige consentimento, mas explicamos tudo aqui:</p>
+    <div class="tw"><table>
+      <tr><th>O quê</th><th>Para quê</th><th>Duração</th></tr>
+      <tr><td>Sessão de acesso (Supabase)</td><td>Manter a sessão iniciada em segurança</td><td>Até terminar a sessão</td></tr>
+      <tr><td>Cópia local dos dados da empresa e alterações por enviar</td><td>A app abrir rápido e não perder alterações quando a internet falha</td><td>Até terminar a sessão ou limpar o navegador</td></tr>
+      <tr><td>Preferências (tema, idioma, vista escolhida, impressora)</td><td>Lembrar as suas escolhas</td><td>Até as mudar ou limpar o navegador</td></tr>
+      <tr><td>Traduções já feitas</td><td>Não voltar a traduzir os mesmos textos</td><td>Até limpar o navegador</td></tr>
+      <tr><td>Cópia da app (service worker)</td><td>Abrir a app mesmo com internet fraca</td><td>Até à versão seguinte</td></tr>
+      <tr><td>Nome e e-mail do último pedido (menu online, só no telemóvel do cliente)</td><td>Não ter de os escrever de novo no próximo pedido</td><td>Até limpar o navegador</td></tr>
+      <tr><td>Cookies da Stripe, só na página de pagamento</td><td>Pagamento seguro e prevenção de fraude</td><td>Definida pela Stripe</td></tr>
+    </table></div>
+    <p>Pode apagar estes dados quando quiser, nas definições do navegador (dados do site diostock.pt). Se o fizer, terá de iniciar sessão de novo.</p>
+  </section>
+
+  <section id="tratamento">
+    <h2>7. Acordo de tratamento de dados (art. 28.º do RGPD)</h2>
+    <p>Este acordo faz parte dos Termos e aplica-se aos dados pessoais que o cliente (o estabelecimento, <b>responsável</b>) coloca no Dio'Stock e que nós (<b>subcontratante</b>) tratamos por sua conta: clientes do menu online e do cartão de fidelidade, colaboradores, fornecedores e contactos.</p>
+    <ol>
+      <li><b>Objeto e duração:</b> prestar o serviço Dio'Stock enquanto a conta existir.</li>
+      <li><b>Instruções:</b> tratamos os dados só segundo as instruções do cliente, que são as configurações e o uso que faz da app e estes Termos. Avisamos se uma instrução nos parecer contrária à lei.</li>
+      <li><b>Confidencialidade:</b> só quem precisa para prestar o serviço tem acesso, com dever de sigilo.</li>
+      <li><b>Segurança:</b> aplicamos as medidas do ponto 8.</li>
+      <li><b>Subcontratantes ulteriores:</b> o cliente autoriza os prestadores do ponto 5.4. Avisamos com pelo menos 30 dias de antecedência antes de acrescentar ou trocar algum. O cliente pode opor-se e cancelar sem custos. Impomos-lhes as mesmas obrigações de proteção de dados.</li>
+      <li><b>Assistência:</b> ajudamos o cliente a responder aos pedidos dos titulares (a app permite ver, corrigir, exportar e apagar os dados), a avaliar impactos e a cumprir as suas obrigações.</li>
+      <li><b>Violações de dados:</b> avisamos o cliente sem demora injustificada, e no máximo em 48 horas depois de termos conhecimento, com a informação disponível.</li>
+      <li><b>Fim do contrato:</b> o cliente pode exportar os dados. Quando apaga a conta, eliminamos os dados, salvo o que a lei nos obrigue a guardar.</li>
+      <li><b>Demonstração e auditoria:</b> disponibilizamos a informação necessária para demonstrar o cumprimento e colaboramos em auditorias razoáveis, com aviso prévio.</li>
+      <li><b>Transferências:</b> só com as garantias do capítulo V do RGPD, como indicado no ponto 5.4.</li>
+    </ol>
+    <p><b>Obrigações do cliente:</b> ter fundamento legal para os dados que coloca na app, informar os seus clientes e colaboradores, só enviar novidades a quem as autorizou e não registar dados sensíveis sem necessidade.</p>
+  </section>
+
+  <section id="seguranca">
+    <h2>8. Segurança e proteção</h2>
+    <ul>
+      <li>Toda a comunicação é cifrada (HTTPS/TLS).</li>
+      <li>Cada empresa só acede aos seus dados. O isolamento é garantido na própria base de dados, com regras por linha (Row Level Security), e não apenas na app.</li>
+      <li>As senhas nunca são guardadas em texto: são cifradas com um algoritmo de hash. Os códigos de acesso por e-mail expiram ao fim de pouco tempo.</li>
+      <li>O titular escolhe o acesso de cada colaborador (só ver, alterar ou tudo) e pode retirá-lo a qualquer momento. As alterações são confirmadas também no servidor.</li>
+      <li>Os dados de cartão são tratados só pela Stripe, certificada PCI DSS. O Dio'Stock nunca os vê.</li>
+      <li>A base de dados fica na UE e tem cópias de segurança. Os dados pessoais antigos são apagados ou tornados anónimos automaticamente (ponto 5.5).</li>
+      <li>Em caso de violação de dados com risco para as pessoas, notificamos a CNPD no prazo de 72 horas e, se o risco for elevado, também as pessoas afetadas.</li>
+    </ul>
+    <p><b>Encontrou uma falha de segurança?</b> Escreva para <a href="mailto:geral@diostock.pt?subject=Seguran%C3%A7a">geral@diostock.pt</a> com o assunto "Segurança". Agradecemos e respondemos depressa. Por favor, não aceda a dados de outras pessoas nem perturbe o serviço.</p>
+    <p><b>O que pode fazer:</b> use uma senha única e longa, não partilhe acessos, convide cada colaborador com o seu próprio e-mail e retire o acesso a quem sai da empresa.</p>
+  </section>
+
+  <section id="acessibilidade">
+    <h2>9. Acessibilidade</h2>
+    <p>Queremos que o Dio'Stock seja fácil de usar por todos: funciona em telemóvel, tablet e computador, em tema claro e escuro, permite aumentar o texto do navegador e usa contraste adequado. Seguimos como referência as diretrizes WCAG 2.1 (nível AA) e o Decreto-Lei n.º 82/2022, e vamos melhorando os pontos que ainda não as cumprem totalmente.</p>
+    <p>Se tiver dificuldade em usar alguma parte da app, diga-nos em <a href="mailto:geral@diostock.pt?subject=Acessibilidade">geral@diostock.pt</a>. Ajudamos e corrigimos.</p>
   </section>
 
   <section id="reclamacoes">
-    <h2>6. Reclamações e resolução de litígios</h2>
+    <h2>10. Reclamações, litígios e contactos</h2>
     <ul>
-      <li>Contacte-nos primeiro por e-mail. Respondemos no prazo máximo de 15 dias úteis.</li>
-      <li><a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener">Livro de Reclamações Eletrónico</a>.</li>
-      <li>Em caso de litígio de consumo, pode recorrer a uma entidade de resolução alternativa de litígios, por exemplo o <a href="https://www.cniacc.pt" target="_blank" rel="noopener">CNIACC – Centro Nacional de Informação e Arbitragem de Conflitos de Consumo</a>. Mais informações no <a href="https://www.consumidor.gov.pt" target="_blank" rel="noopener">Portal do Consumidor</a>.</li>
+      <li>Contacte-nos primeiro por <a href="mailto:geral@diostock.pt">geral@diostock.pt</a>. Respondemos no prazo máximo de 15 dias úteis.</li>
+      <li><a href="https://www.livroreclamacoes.pt/" target="_blank" rel="noopener"><b>Livro de Reclamações Eletrónico</b></a>.</li>
+      <li>Em caso de litígio de consumo, pode recorrer a uma entidade de resolução alternativa de litígios, por exemplo o <a href="https://www.cniacc.pt/" target="_blank" rel="noopener">CNIACC – Centro Nacional de Informação e Arbitragem de Conflitos de Consumo</a>. Mais informações no <a href="https://www.consumidor.gov.pt/" target="_blank" rel="noopener">Portal do Consumidor</a>.</li>
+      <li><b>Ponto de contacto único</b> (Regulamento dos Serviços Digitais, artigos 11.º e 12.º), para autoridades e utilizadores: <a href="mailto:geral@diostock.pt">geral@diostock.pt</a>, em português ou inglês. A denúncia de conteúdos ilegais está explicada no ponto 1.3.</li>
     </ul>
   </section>
 </main>
-<footer>© 2026 Dio’Stock · Giovani Caetano Coelho Machado · NIF 325 410 062 · <a href="mailto:geral@diostock.pt">geral@diostock.pt</a></footer>
+<footer>© 2026 Dio'Stock · Giovani Caetano Coelho Machado · NIF 325 410 062 · <a href="mailto:geral@diostock.pt">geral@diostock.pt</a> · <a href="ajuda.html">Perguntas frequentes</a> · <a href="https://www.livroreclamacoes.pt/" target="_blank" rel="noopener">Livro de Reclamações</a></footer>
 </body>
 </html>
