@@ -60,7 +60,7 @@ async function copiarImagem(src, dir, original) {
     const og = await bannerOG(buf);
     if (!fs.existsSync(f) || !fs.readFileSync(f).equals(og)) { fs.writeFileSync(f, og); console.log('imagem', dir); }
     return 'og.jpg' + (v ? '?v=' + v : '?v=' + crypto.createHash('sha1').update(og).digest('hex').slice(0, 8));
-  } catch (e) { console.error('imagem', src, e.message); return fs.existsSync(f) ? 'og.jpg' : ''; }
+  } catch (e) { console.error('imagem', src, e.message); return fs.existsSync(f) ? 'og.jpg?v=' + crypto.createHash('sha1').update(fs.readFileSync(f)).digest('hex').slice(0, 8) : ''; }
 }
 
 const pasta = path.resolve('n');
@@ -70,7 +70,7 @@ for (const p of lista) {
   // imagem da pré-visualização: o cartão real da loja (1200×630), guardada aqui ao lado da página.
   // Se ainda não existir, fica a cartao-og.png. As meta og:* e twitter:card são obrigatórias: não apagar.
   const local = await copiarImagem(p.imagem, dir);
-  const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : BASE + 'cartao-og.png', url = BASE + 'n/' + p.curto + '/';
+  const titulo = `${p.nome}${p.loja ? ' · ' + p.loja : ''}`, img = local ? BASE + 'n/' + p.curto + '/' + local : BASE + 'cartao-og.png?v=3', url = BASE + 'n/' + p.curto + '/';
   const html = `<!doctype html>
 <html lang="pt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(titulo)}</title>
@@ -90,6 +90,7 @@ for (const p of lista) {
 <link rel="canonical" href="${esc(url)}">
 <meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${esc(img)}">
 <script>location.replace('../../cartao.html?n=${p.curto}' + location.hash);</script>
 <style>body{font-family:system-ui,sans-serif;background:#F6F3F0;color:#231F20;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center}a{color:#231F20;font-weight:700}</style>
 </head><body><p><a href="../../cartao.html?n=${p.curto}">Abrir o cartão</a></p></body></html>
@@ -179,9 +180,9 @@ const linkar = t => esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" rel="no
 for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
   const dir = path.join(pm, c.curto); fs.mkdirSync(dir, { recursive: true });
   const localC = await copiarImagem(c.imagem, dir, true);
-  const br = cor(c.cor), img = localC ? BASE + 'm/' + c.curto + '/' + localC : BASE + 'cartao-og.png', url = BASE + 'm/' + c.curto + '/';
+  const br = cor(c.cor), img = localC ? BASE + 'm/' + c.curto + '/' + localC : BASE + 'cartao-og.png?v=3', url = BASE + 'm/' + c.curto + '/';
   const poster = localC && fs.existsSync(path.join(dir, 'poster.jpg')) ? 'poster.jpg?' + localC.split('?')[1] : (https(c.imagem) || '');
-  const desc = String(c.texto || '').replace(/\{nome\}/g, '').replace(/\s+/g, ' ').trim().slice(0, 180);
+  const desc = String(c.texto || '').replace(/\{nome\}/g, '').replace(/\s+/g, ' ').trim().slice(0, 180) || 'Toque para ver a campanha.';
   const mapa = https(c.local_url) || (c.local ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.local) : '');
   const cartao = /^[A-Za-z0-9]{6}$/.test(c.prog_curto || '') ? '../../cartao.html?n=' + c.prog_curto : '';
   const titulo = c.titulo + (c.loja ? ' · ' + c.loja : '');
@@ -203,6 +204,7 @@ for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
 <meta property="og:locale" content="pt_PT">
 <meta name="description" content="${esc(desc)}">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${esc(img)}">
 <meta name="theme-color" content="${br}">
 <link rel="stylesheet" href="${BASE}fontes/fontes.css">
 <style>

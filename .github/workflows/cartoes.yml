@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['scripts/cartoes.mjs', 'scripts/verificar-og.mjs', '.github/workflows/cartoes.yml', '*.html', 'c/**', 'conhecer/**', 'diostock-og.png', 'cartao-og.png']
+    paths: ['scripts/cartoes.mjs', 'scripts/verificar-og.mjs', '.github/workflows/cartoes.yml', '*.html', 'c/**', 'conhecer/**', 'diostock-og.png', 'cartao-og.png', 'convite-og.png', 'gestor/**', 'PRE-VISUALIZACAO.md']
 permissions:
   contents: write
 concurrency:
