@@ -5,7 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dio’Stock · Entrar na app</title>
+    <title>Dio’Stock — gestão para restaurantes, cafés e equipas · Entrar</title>
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <link rel="canonical" href="https://diostock.pt/">
+    <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://diostock.pt/#org","name":"Dio’Stock","alternateName":["Dio'Stock","DioStock","Dio Stock","diostock","diostockpt"],"url":"https://diostock.pt/","logo":"https://diostock.pt/icon-512.png","email":"geral@diostock.pt","sameAs":["https://www.instagram.com/diostockpt/"]},{"@type":"WebSite","@id":"https://diostock.pt/#site","name":"Dio’Stock","alternateName":["DioStock","Dio Stock"],"url":"https://diostock.pt/","publisher":{"@id":"https://diostock.pt/#org"},"inLanguage":"pt-PT"}]}</script>
 <!-- Pré-visualização (WhatsApp, iMessage, Facebook): REGRA FIXA — banner grande 1200×630 e summary_large_image. Não remover nem trocar por imagem quadrada. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Dio'Stock">
@@ -1331,7 +1334,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 18:13</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 18:19</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -1376,6 +1379,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                             <button type="button" onclick="openUpgrade()" class="menu-item"><i class="fas fa-crown"></i> Plano e PRO</button>
                             <button type="button" id="menu-install" onclick="closeAccountMenu(); installApp()" class="menu-item hidden"><i class="fas fa-mobile-screen"></i> Instalar app no celular</button>
                             <button type="button" onclick="toggleTheme()" class="menu-item"><i class="fas fa-circle-half-stroke"></i> <span id="menu-theme-label">Tema escuro</span></button>
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <p class="px-4 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-slate-400">Dio’Stock</p>
+                            <a href="conhecer/" target="_blank" rel="noopener" onclick="closeAccountMenu()" class="menu-item"><i class="fas fa-globe"></i> Site do Dio’Stock</a>
+                            <a href="https://www.instagram.com/diostockpt/" target="_blank" rel="noopener" onclick="closeAccountMenu()" class="menu-item"><i class="fab fa-instagram"></i> Instagram @diostockpt</a>
+                            <button type="button" onclick="closeAccountMenu(); caixaAbrir()" class="menu-item"><i class="fas fa-envelope"></i> Fale connosco</button>
                             <div class="border-t border-slate-100 my-1"></div>
                             <button type="button" onclick="closeAccountMenu(); exportBackup()" class="menu-item"><i class="fas fa-download"></i> Baixar backup</button>
                             <label class="menu-item cursor-pointer"><i class="fas fa-upload"></i> Importar backup<input type="file" accept="application/json,.json" class="hidden" onchange="closeAccountMenu(); importBackup(this)"></label>
@@ -26089,6 +26097,164 @@ async function dsTrPreparar() {
                 .pa-n{font-size:12px;color:#7A6A60;margin:8px 0 0}
                 .fmx-eqp .eq-b.wa{background:#25D366;border-color:#25D366;color:#fff}
                 html.dark .pa-box{background:#3A2218;border-color:#5A3626}html.dark .pa-nm b{color:#F2ECE4}html.dark .pa-nm small{color:#C9BBAF}html.dark .pa-it{border-color:#5A3626}html.dark .pa-bt .n{background:#2A1B14;border-color:#44332A;color:#C9BBAF}
+            </style>`);
+        })();
+    </script>
+    <script>
+        // ======================================================= ESTOQUE: ATUALIZAR O STOCK (foto, galeria, texto ou SAF-T)
+        // Lista "produto quantidade" → revisão → contagem (fica X), entrada (soma X) ou saída (tira X).
+        let stkModo = 'contagem', stkLinhas = [];
+        const STK_MODOS = { contagem: ['Contar o que há', 'Fica com a quantidade que escrever.', 'fa-clipboard-check'], entrada: ['Chegou mercadoria', 'Soma ao que já tem.', 'fa-truck-ramp-box'], saida: ['Gastou / saiu', 'Tira ao que tem (quebras, consumo, ofertas).', 'fa-arrow-down'] };
+        const stkNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9%\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        const stkFmt = (v, u) => (Math.round(v * 1000) / 1000).toLocaleString('pt-PT', { maximumFractionDigits: 3 }) + (u ? ' ' + u : '');
+        // unidades: converte o que se escreve para a unidade do insumo
+        const STK_U = { g: ['g', 1], gr: ['g', 1], grs: ['g', 1], gramas: ['g', 1], kg: ['g', 1000], kgs: ['g', 1000], quilos: ['g', 1000], ml: ['ml', 1], cl: ['ml', 10], dl: ['ml', 100], l: ['ml', 1000], lt: ['ml', 1000], litros: ['ml', 1000], litro: ['ml', 1000], un: ['un', 1], uni: ['un', 1], unid: ['un', 1], unidades: ['un', 1], x: ['un', 1], cx: ['cx', 1], caixas: ['cx', 1], pct: ['pct', 1], pacotes: ['pct', 1], garrafas: ['un', 1], latas: ['un', 1] };
+        function stkConverter(q, uEscrita, uItem) {
+            const a = STK_U[stkNorm(uEscrita)], b = STK_U[stkNorm(uItem)];
+            if (!a || !b || a[0] !== b[0]) return q;
+            return q * a[1] / b[1];
+        }
+        function stkMelhor(nome) {
+            const n = stkNorm(nome), t = n.split(' ').filter(w => w.length > 2);
+            let best = null, bs = 0;
+            (appState.inventory || []).forEach(it => {
+                const m = stkNorm(it.name); if (!m) return;
+                let s = 0;
+                if (m === n) s = 100; else if (m.includes(n) || n.includes(m)) s = 60 + Math.min(m.length, n.length) / Math.max(m.length, n.length) * 30;
+                else { const mt = m.split(' '); const hit = t.filter(w => mt.some(x => x.startsWith(w.slice(0, 4)) || w.startsWith(x.slice(0, 4)))).length; s = t.length ? hit / Math.max(t.length, mt.length) * 70 : 0; }
+                if (s > bs) { bs = s; best = it; }
+            });
+            return bs >= 35 ? best : null;
+        }
+        function stkLer(texto) {
+            const out = [];
+            String(texto || '').split(/\r?\n|;/).forEach(l => {
+                const raw = l.replace(/\s+/g, ' ').trim(); if (raw.length < 2) return;
+                let m, nome, q, u;
+                if (/^\d/.test(raw)) { m = /^(\d+(?:[.,]\d+)?)\s*([a-zA-Zçã]{0,9})\.?\s+(?:de\s+)?(.+)$/.exec(raw); if (m) { q = m[1]; u = m[2]; nome = m[3]; } }  // "300 copos 12oz"
+                if (!nome) { m = /^(.*?)[\s:–-]+(\d+(?:[.,]\d+)?)\s*([a-zA-Zçã]{0,9})\.?\s*$/.exec(raw); if (m && m[1].trim()) { nome = m[1]; q = m[2]; u = m[3]; } }   // "Leite meio-gordo 12 L""
+                if (!nome) return;
+                if (u && !STK_U[stkNorm(u)]) { nome = (nome + ' ' + u).trim(); u = ''; }
+                const qn = parseFloat(String(q).replace(',', '.')); if (!isFinite(qn)) return;
+                const it = stkMelhor(nome);
+                out.push({ texto: raw, nome: nome.trim(), q: qn, u: u || '', itemId: it ? it.id : '' });
+            });
+            return out;
+        }
+        function stkPintarCartao() {
+            const tab = document.getElementById('tab-inventory'); if (!tab) return;
+            let c = document.getElementById('stk-card');
+            if (!c) { const h = tab.firstElementChild; if (!h) return; h.insertAdjacentHTML('afterend', '<div id="stk-card"></div>'); c = document.getElementById('stk-card'); }
+            c.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4';
+            c.innerHTML = `<div class="flex items-center gap-3"><div class="p-2.5 text-white rounded-xl shadow-sm" style="background:var(--brand)"><i class="fas fa-arrows-rotate text-lg"></i></div><div><h2 class="text-xl font-black text-slate-900">Atualizar o stock</h2><p class="text-xs text-slate-500 font-medium">Foto de uma contagem ou de uma lista, escrito à mão ou colado, ou o SAF-T das vendas. Revê tudo antes de mudar o stock.</p></div></div>
+                <div class="stk-modos" role="group" aria-label="O que quer fazer">${Object.entries(STK_MODOS).map(([k, v]) => `<button type="button" class="${stkModo === k ? 'on' : ''}" aria-pressed="${stkModo === k}" onclick="stkModo='${k}';stkPintarCartao()"><i class="fas ${v[2]}"></i><span><b>${v[0]}</b><small>${v[1]}</small></span></button>`).join('')}</div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <label class="cursor-pointer px-3 py-3 text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition"><i class="fas fa-camera"></i> Tirar foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="stkDaFoto(this)"></label>
+                    <label class="cursor-pointer px-3 py-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center gap-2 transition"><i class="fas fa-image"></i> Galeria<input type="file" accept="image/*" class="hidden" onchange="stkDaFoto(this)"></label>
+                    <button type="button" onclick="document.getElementById('stk-txt-box').classList.toggle('hidden');document.getElementById('stk-txt').focus()" class="px-3 py-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center gap-2 transition"><i class="fas fa-keyboard"></i> Escrever / colar</button>
+                    <label class="cursor-pointer px-3 py-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl flex items-center justify-center gap-2 transition" title="Ficheiro SAF-T (.xml) das vendas: o stock desconta pelas fichas"><i class="fas fa-file-code"></i> SAF-T (.xml)<input type="file" accept=".xml,text/xml,application/xml" class="hidden" onchange="stkSaft(this)"></label>
+                </div>
+                <div id="stk-txt-box" class="hidden space-y-2"><textarea id="stk-txt" rows="6" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2.5" placeholder="Um insumo por linha, por exemplo:&#10;Leite meio-gordo 12 L&#10;Café em grão 2,5 kg&#10;Copos 12 oz 300"></textarea>
+                    <button type="button" onclick="stkDeTexto()" class="px-4 py-2.5 text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition"><i class="fas fa-check mr-1"></i> Ler lista</button></div>
+                <p id="stk-prog" class="text-xs font-bold text-slate-500 hidden"></p>
+                <p class="text-xs text-slate-500">Fatura ou guia de compra? Use <button type="button" class="font-bold underline" style="color:var(--brand)" onclick="openPurchase()">Registar compra</button>: soma ao stock e guarda o preço.</p>`;
+        }
+        function stkProg(t) { const p = document.getElementById('stk-prog'); if (!p) return; p.textContent = t || ''; p.classList.toggle('hidden', !t); }
+        async function stkDaFoto(input) {
+            const file = input.files && input.files[0]; input.value = ''; if (!file) return;
+            try {
+                stkProg('A preparar a foto…');
+                const { canvas } = await prepareImage(file);
+                stkProg('A carregar o leitor de texto…'); await loadTesseract();
+                const worker = await Tesseract.createWorker('por', 1, { logger: m => { if (m.status === 'recognizing text') stkProg('A ler a lista… ' + Math.round(m.progress * 100) + '%'); } });
+                await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+                const { data } = await worker.recognize(canvas); await worker.terminate(); stkProg('');
+                const l = stkLer(data.text);
+                if (!l.length) { document.getElementById('stk-txt-box').classList.remove('hidden'); document.getElementById('stk-txt').value = data.text; return dsToast('Não consegui ler insumos com quantidade. Corrija o texto e toque em "Ler lista".', true); }
+                stkRever(l);
+            } catch (e) { stkProg(''); dsToast((e && e.message) || 'Não foi possível ler a foto.', true); }
+        }
+        function stkDeTexto() {
+            const l = stkLer(document.getElementById('stk-txt').value);
+            if (!l.length) return dsToast('Escreva um insumo por linha com a quantidade, ex.: "Leite 12 L".', true);
+            stkRever(l);
+        }
+        function stkSaft(input) {
+            // as vendas do SAF-T descontam pelas fichas: segue o mesmo caminho das Vendas do Dia
+            switchTab('sales'); setTimeout(() => salesFromSaft(input), 60);
+        }
+        function stkRever(l) {
+            stkLinhas = l;
+            const inv = (appState.inventory || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
+            const opts = sel => `<option value="">— não mexer —</option>${inv.map(it => `<option value="${it.id}" ${it.id === sel ? 'selected' : ''}>${escapeHtml(it.name)}</option>`).join('')}`;
+            dsModal('stk-rev', `<div class="flex items-start justify-between gap-3"><div><h3 class="text-lg font-black">Rever antes de mudar o stock</h3><p class="text-sm text-slate-500">${STK_MODOS[stkModo][0]}: ${STK_MODOS[stkModo][1]}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('stk-rev')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
+                <div class="stk-modos mini mt-3">${Object.entries(STK_MODOS).map(([k, v]) => `<button type="button" class="${stkModo === k ? 'on' : ''}" onclick="stkLerRev();stkModo='${k}';stkPintarCartao();stkRever(stkLinhas)"><i class="fas ${v[2]}"></i><span><b>${v[0]}</b></span></button>`).join('')}</div>
+                <div class="stk-rev">${l.map((x, i) => `<div class="r" data-i="${i}"><small class="o">“${escapeHtml(x.texto)}”</small><div class="g"><select class="it" onchange="stkLerRev();stkRever(stkLinhas)">${opts(x.itemId)}</select><input class="q" inputmode="decimal" value="${String(x.q).replace('.', ',')}" aria-label="Quantidade" oninput="stkLerRev();stkPrev(${i})"><span class="u">${escapeHtml(x.u || ((inv.find(it => it.id === x.itemId) || {}).unit) || '')}</span></div><p class="pv" id="stk-pv-${i}"></p></div>`).join('')}</div>
+                <div class="flex gap-2 mt-4"><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold bg-slate-100" onclick="dsModalFechar('stk-rev')">Cancelar</button><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold text-white" style="background:var(--brand)" onclick="stkAplicar()"><i class="fas fa-check mr-1"></i>Atualizar o stock</button></div>`);
+            l.forEach((_, i) => stkPrev(i));
+        }
+        function stkLerRev() {
+            document.querySelectorAll('#stk-rev .r').forEach(el => { const x = stkLinhas[+el.dataset.i]; if (!x) return; x.itemId = el.querySelector('.it').value; const v = parseFloat(String(el.querySelector('.q').value).replace(',', '.')); x.q = isFinite(v) ? v : 0; });
+        }
+        function stkNovo(x) {
+            const it = (appState.inventory || []).find(i => i.id === x.itemId); if (!it) return null;
+            const q = stkConverter(x.q, x.u, it.unit), atual = Number(it.stock) || 0;
+            const novo = stkModo === 'contagem' ? q : stkModo === 'entrada' ? atual + q : Math.max(0, atual - q);
+            return { it, atual, novo };
+        }
+        function stkPrev(i) {
+            const el = document.getElementById('stk-pv-' + i), x = stkLinhas[i]; if (!el || !x) return;
+            const r = stkNovo(x);
+            el.innerHTML = r ? `${escapeHtml(stkFmt(r.atual, r.it.unit))} → <b>${escapeHtml(stkFmt(r.novo, r.it.unit))}</b>` : '<span style="color:#B45309">Escolha o insumo, ou fica como está.</span>';
+        }
+        function stkAplicar() {
+            stkLerRev();
+            const mud = stkLinhas.map(stkNovo).filter(Boolean);
+            if (!mud.length) return dsToast('Escolha pelo menos um insumo.', true);
+            const log = Array.isArray(appState.stockAjustes) ? appState.stockAjustes : (appState.stockAjustes = []);
+            const em = new Date().toISOString(), por = (currentUser && currentUser.email) || '';
+            mud.forEach(r => { log.unshift({ em, por, modo: stkModo, id: r.it.id, nome: r.it.name, antes: r.atual, depois: r.novo }); r.it.stock = Math.round(r.novo * 1000) / 1000; });
+            appState.stockAjustes = log.slice(0, 300);
+            saveStorage(); dsModalFechar('stk-rev'); renderInventory();
+            const t = document.getElementById('stk-txt'); if (t) t.value = '';
+            dsToast(mud.length === 1 ? mud[0].it.name + ': ' + stkFmt(mud[0].novo, mud[0].it.unit) : mud.length + ' insumos atualizados');
+        }
+        (function () {
+            document.head.insertAdjacentHTML('beforeend', `<style>
+                .stk-modos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+                .stk-modos button{display:flex;align-items:flex-start;gap:10px;text-align:left;border:1.5px solid #E4DCCF;border-radius:14px;padding:10px 12px;background:#fff;color:#231F20}
+                .stk-modos button i{margin-top:3px;color:#7A6A60}.stk-modos button b{display:block;font-size:13.5px;font-weight:800}.stk-modos button small{display:block;font-size:11.5px;color:#7A6A60;line-height:1.3;margin-top:2px}
+                .stk-modos button.on{border-color:var(--brand);background:#FBEDE6}.stk-modos button.on i{color:var(--brand)}
+                .stk-modos.mini button{padding:8px 10px;align-items:center}
+                @media (max-width:560px){.stk-modos:not(.mini){grid-template-columns:1fr}}
+                .stk-rev{margin-top:12px;max-height:55vh;overflow-y:auto}.stk-rev .r{padding:10px 0;border-top:1px solid #F2ECE4}.stk-rev .o{display:block;font-size:12px;color:#7A6A60;margin-bottom:6px}
+                .stk-rev .g{display:grid;grid-template-columns:1fr 84px auto;gap:6px;align-items:center}.stk-rev select,.stk-rev .q{border:1px solid #E4DCCF;border-radius:10px;padding:9px 8px;font-size:15px;background:#fff;min-width:0}.stk-rev .q{text-align:right}.stk-rev .u{font-size:13px;color:#5B4A40;font-weight:700;min-width:22px}
+                .stk-rev .pv{font-size:13px;color:#5B4A40;margin-top:6px}
+                html.dark .stk-modos button,html.dark .stk-rev select,html.dark .stk-rev .q{background:#2A1B14;border-color:#44332A;color:#F2ECE4}html.dark .stk-modos button.on{background:#3A2218}html.dark .stk-modos button b{color:#F2ECE4}
+            </style>`);
+            stkPintarCartao();
+        })();
+    </script>
+    <script>
+        // ligações do Dio'Stock sempre à mão: rodapé no Início (site, Instagram, ajuda, contacto)
+        (function () {
+            const pintar = () => {
+                const t = document.getElementById('tab-home'); if (!t || document.getElementById('ds-links-home')) return;
+                t.insertAdjacentHTML('beforeend', `<div id="ds-links-home"><div class="tx"><b>Dio’Stock</b><span>Novidades, dicas e ajuda</span></div><div class="ls">
+                    <a href="conhecer/" target="_blank" rel="noopener"><i class="fas fa-globe"></i>Site</a>
+                    <a href="https://www.instagram.com/diostockpt/" target="_blank" rel="noopener"><i class="fab fa-instagram"></i>Instagram</a>
+                    <a href="ajuda.html" target="_blank" rel="noopener"><i class="fas fa-circle-question"></i>Ajuda</a>
+                    <button type="button" onclick="caixaAbrir()"><i class="fas fa-envelope"></i>Fale connosco</button></div></div>`);
+            };
+            if (typeof renderHome === 'function') { const o = renderHome; renderHome = function () { const r = o.apply(this, arguments); try { pintar(); } catch (_) {} return r; }; }
+            pintar();
+            document.head.insertAdjacentHTML('beforeend', `<style>
+                a.menu-item{text-decoration:none}
+                #ds-links-home{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid #E4DCCF;border-radius:20px;padding:14px 16px;margin-top:18px}
+                #ds-links-home .tx b{display:block;font-weight:900;color:#231F20}#ds-links-home .tx span{font-size:12.5px;color:#7A6A60}
+                #ds-links-home .ls{display:flex;gap:6px;flex-wrap:wrap}#ds-links-home .ls a,#ds-links-home .ls button{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:12px;border:1px solid #E4DCCF;font-size:13px;font-weight:800;color:#231F20;text-decoration:none;background:#fff}
+                #ds-links-home .ls a:hover,#ds-links-home .ls button:hover{border-color:var(--brand);color:var(--brand)}
+                html.dark #ds-links-home,html.dark #ds-links-home .ls a,html.dark #ds-links-home .ls button{background:#2A1B14;border-color:#44332A;color:#F2ECE4}html.dark #ds-links-home .tx b{color:#F2ECE4}
             </style>`);
         })();
     </script>
