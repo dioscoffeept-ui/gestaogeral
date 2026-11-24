@@ -5650,7 +5650,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                                 <div style="${r.icon === '' ? 'visibility:hidden' : ''}" class="w-14 h-14 rounded-2xl bg-white border border-rose-200 flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition">
                                     ${r.icon === '' ? '' : (r.icon || '🍹')}
                                 </div>
-                                <span class="text-xs font-black bg-rose-200/80 text-rose-800 px-3 py-1 rounded-full">${escapeHtml(r.size || '500ml')}</span>
+                                ${dsTamanho(r) ? `<span class="text-xs font-black bg-rose-200/80 text-rose-800 px-3 py-1 rounded-full">${escapeHtml(dsTamanho(r))}</span>` : ''}
                             </div>
                             <div>
                                 <h4 class="font-black ${img ? 'text-white' : 'text-slate-900 group-hover:text-rose-700'} text-base leading-snug transition mb-1">${escapeHtml(r.name)}</h4>
@@ -5704,7 +5704,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                                 <div style="${r.icon === '' ? 'visibility:hidden' : ''}" class="w-14 h-14 rounded-2xl bg-white border border-emerald-200 flex items-center justify-center text-3xl shadow-sm group-hover:scale-110 transition">
                                     ${r.icon === '' ? '' : (r.icon || '🍳')}
                                 </div>
-                                <span class="text-xs font-black bg-emerald-200/80 text-emerald-800 px-3 py-1 rounded-full">${escapeHtml(r.size || '1 Porção')}</span>
+                                ${dsTamanho(r) ? `<span class="text-xs font-black bg-emerald-200/80 text-emerald-800 px-3 py-1 rounded-full">${escapeHtml(dsTamanho(r))}</span>` : ''}
                             </div>
                             <div>
                                 <h4 class="font-black ${img ? 'text-white' : 'text-slate-900 group-hover:text-emerald-700'} text-base leading-snug transition mb-1">${escapeHtml(r.name)}</h4>
@@ -5733,6 +5733,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
 
         // VIEW DETAILED RECIPE MODAL
+        // rendimento/porção: vazio (ou o antigo "Porção Padrão") não aparece em lado nenhum
+        function dsTamanho(r) { const t = String((r && r.size) || '').trim(); return /^porção padrão$/i.test(t) ? '' : t; }
         function openRecipeViewModal(id) {
             const recipe = appState.recipes.find(r => r.id === id);
             if (!recipe) return;
@@ -5741,7 +5743,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
             document.getElementById('view-recipe-name').innerText = recipe.name;
             document.getElementById('view-recipe-cat').innerText = recipe.category;
-            document.getElementById('view-recipe-size').innerText = recipe.size || 'Porção Padrão';
+            document.getElementById('view-recipe-size').innerText = dsTamanho(recipe);
 
             const header = document.getElementById('view-modal-header');
             const sizeBadge = document.getElementById('view-recipe-size');
@@ -5749,11 +5751,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
             if (isKitchen) {
                 header.className = "p-6 bg-emerald-50 border-b border-emerald-100 flex justify-between items-start";
-                sizeBadge.className = "px-4 py-2 bg-emerald-600 text-white font-black text-xs rounded-2xl shadow-sm";
+                sizeBadge.className = "px-4 py-2 bg-emerald-600 text-white font-black text-xs rounded-2xl shadow-sm" + (dsTamanho(recipe) ? '' : ' hidden');
                 catBadge.className = "text-xs font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full";
             } else {
                 header.className = "p-6 bg-rose-50 border-b border-rose-100 flex justify-between items-start";
-                sizeBadge.className = "px-4 py-2 bg-rose-500 text-white font-black text-xs rounded-2xl shadow-sm";
+                sizeBadge.className = "px-4 py-2 bg-rose-500 text-white font-black text-xs rounded-2xl shadow-sm" + (dsTamanho(recipe) ? '' : ' hidden');
                 catBadge.className = "text-xs font-black uppercase tracking-wider text-rose-600 bg-rose-100 px-3 py-1 rounded-full";
             }
 
@@ -5890,7 +5892,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const id = document.getElementById('recipe-id').value;
             const type = document.getElementById('recipe-type').value;
             const name = document.getElementById('recipe-name').value.trim();
-            const size = document.getElementById('recipe-size').value.trim() || 'Porção Padrão';
+            const size = document.getElementById('recipe-size').value.trim();
             const icon = document.getElementById('recipe-icon').value.trim() || (type==='KITCHEN' ? '🍳' : '🍹');
             const category = document.getElementById('recipe-category').value;
             const rawSteps = document.getElementById('recipe-steps').value.trim();
@@ -19343,7 +19345,7 @@ var qrcode = function() {
                 const tipo = x.tipo === 'KITCHEN' ? 'KITCHEN' : 'BAR';
                 const cats = tipo === 'KITCHEN' ? appState.kitchenCategories : appState.barCategories;
                 if (x.categoria && !cats.includes(x.categoria)) cats.push(x.categoria);
-                const rec = { id: 'rec_' + (base + n), type: tipo, name: x.nome.trim(), category: x.categoria || cats[0] || '', icon: tipo === 'KITCHEN' ? '🍳' : '🍹', size: x.tamanho || 'Porção Padrão',
+                const rec = { id: 'rec_' + (base + n), type: tipo, name: x.nome.trim(), category: x.categoria || cats[0] || '', icon: tipo === 'KITCHEN' ? '🍳' : '🍹', size: x.tamanho || '',
                     ingredients: x.ingredientes.map(g => { const it = g.item_id && appState.inventory.find(i => i.id === g.item_id); return { name: it ? it.name : g.nome, quantity: g.quantidade, unit: g.quantidade == null ? '' : (g.unidade || (it ? it.unit : '')) }; }),
                     steps: x.passos || [] };
                 if (x.pvp > 0) rec.pvp = Math.round(x.pvp * 100) / 100;
