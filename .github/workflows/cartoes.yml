@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['scripts/cartoes.mjs', '.github/workflows/cartoes.yml']
+    paths: ['scripts/cartoes.mjs', 'scripts/verificar-og.mjs', '.github/workflows/cartoes.yml', '*.html', 'c/**', 'conhecer/**', 'diostock-og.png', 'cartao-og.png']
 permissions:
   contents: write
 concurrency:
@@ -19,8 +19,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm i --no-save --no-package-lock @resvg/resvg-js@2.6.2
+      - run: npm i --no-save --no-package-lock @resvg/resvg-js@2.6.2 sharp@0.33.5
       - run: node scripts/cartoes.mjs
+      # REGRA FIXA: nenhuma página é publicada se a pré-visualização não for o banner grande 1200×630
+      - run: node scripts/verificar-og.mjs
       - name: Guardar
         run: |
           if [ -n "$(git status --porcelain n m k)" ]; then

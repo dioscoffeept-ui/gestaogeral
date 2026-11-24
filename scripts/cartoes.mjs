@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import sharp from 'sharp';
 
 const URL_SB = 'https://brisrzuvvxkkzhmhsgro.supabase.co';
 const KEY = 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs';
@@ -18,17 +19,47 @@ else {
 }
 const lista = dados.filter(p => /^[A-Za-z0-9]{6}$/.test(p.curto || ''));
 
-// a imagem da pré-visualização fica guardada no próprio site, ao lado da página (como a cartao-og.png):
-// o WhatsApp mostra-a em grande e com qualidade, o que não acontece quando vem de outro endereço
-async function copiarImagem(src, dir) {
+// ============================================================================================
+// REGRA FIXA (não remover nem alterar sem autorização do dono do Dio'Stock):
+// a pré-visualização no WhatsApp é SEMPRE o banner grande (imagem horizontal em cima, texto em baixo).
+// Por isso TODA a og:image publicada aqui é um JPEG de exatamente 1200×630 (1.91:1), com menos de 300 KB,
+// com margem à volta do conteúdo, e as páginas declaram og:image:width=1200, og:image:height=630
+// e twitter:card=summary_large_image. Imagens quadradas, verticais ou pequenas NUNCA vão diretas para og:image:
+// são postas dentro de um banner 1200×630 (fundo desfocado da própria imagem + imagem inteira ao centro).
+// O passo scripts/verificar-og.mjs falha a publicação se alguma página quebrar esta regra.
+// ============================================================================================
+const OG_W = 1200, OG_H = 630, OG_MAX = 280 * 1024, MARGEM = 40;
+async function bannerOG(buf) {
+  const img = sharp(buf, { failOn: 'none' }).rotate();
+  const m = await img.metadata();
+  let base;
+  if (m.width === OG_W && m.height === OG_H) base = sharp(buf).rotate();   // já é 1200×630 (gerada pela app, já com margem)
+  else {
+    // fundo: a própria imagem a cobrir tudo, desfocada e um pouco escurecida; à frente: a imagem INTEIRA, com margem
+    const fundo = await sharp(buf).rotate().resize(OG_W, OG_H, { fit: 'cover' }).blur(28).modulate({ brightness: 0.82 }).toBuffer();
+    const frente = await sharp(buf).rotate().resize(OG_W - 2 * MARGEM, OG_H - 2 * MARGEM, { fit: 'inside', withoutEnlargement: false }).toBuffer();
+    const fm = await sharp(frente).metadata();
+    base = sharp(fundo).composite([{ input: frente, left: Math.round((OG_W - fm.width) / 2), top: Math.round((OG_H - fm.height) / 2) }]);
+  }
+  const plano = await base.flatten({ background: '#F6F3F0' }).resize(OG_W, OG_H, { fit: 'fill' }).toBuffer();
+  for (const q of [86, 80, 74, 68, 60, 52]) {
+    const out = await sharp(plano).jpeg({ quality: q, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
+    if (out.length <= OG_MAX || q === 52) return out;
+  }
+}
+// a imagem da pré-visualização fica guardada no próprio site, ao lado da página: og.jpg (sempre 1200×630).
+// Para as mensagens (m/), a imagem original também fica como poster.jpg, para a página a mostrar sem cortes.
+async function copiarImagem(src, dir, original) {
   if (!/^https:\/\//.test(src || '')) return '';
   const v = (src.match(/[?&]v=([\w-]+)/) || [])[1] || '';
   const f = path.join(dir, 'og.jpg');
   try {
     const r = await fetch(src); if (!r.ok) return '';
-    const buf = Buffer.from(await r.arrayBuffer()); if (buf.length < 1000 || buf.length > 590000) return '';
-    if (!fs.existsSync(f) || !fs.readFileSync(f).equals(buf)) { fs.writeFileSync(f, buf); console.log('imagem', dir); }
-    return 'og.jpg' + (v ? '?v=' + v : '?v=' + buf.length.toString(36));
+    const buf = Buffer.from(await r.arrayBuffer()); if (buf.length < 1000 || buf.length > 15e6) return '';
+    if (original) { const fp = path.join(dir, 'poster.jpg'); const pj = await sharp(buf).rotate().resize(1600, 1600, { fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 84, mozjpeg: true }).toBuffer(); if (!fs.existsSync(fp) || !fs.readFileSync(fp).equals(pj)) fs.writeFileSync(fp, pj); }
+    const og = await bannerOG(buf);
+    if (!fs.existsSync(f) || !fs.readFileSync(f).equals(og)) { fs.writeFileSync(f, og); console.log('imagem', dir); }
+    return 'og.jpg' + (v ? '?v=' + v : '?v=' + crypto.createHash('sha1').update(og).digest('hex').slice(0, 8));
   } catch (e) { console.error('imagem', src, e.message); return fs.existsSync(f) ? 'og.jpg' : ''; }
 }
 
@@ -147,8 +178,9 @@ const https = u => /^https:\/\//.test(u || '') ? u : '';
 const linkar = t => esc(t).replace(/(https:\/\/[^\s<]+)/g, '<a href="$1" rel="noopener">$1</a>').replace(/\n/g, '<br>');
 for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
   const dir = path.join(pm, c.curto); fs.mkdirSync(dir, { recursive: true });
-  const localC = await copiarImagem(c.imagem, dir);
-  const br = cor(c.cor), img = localC ? BASE + 'm/' + c.curto + '/' + localC : (https(c.imagem) || BASE + 'cartao-og.png'), url = BASE + 'm/' + c.curto + '/';
+  const localC = await copiarImagem(c.imagem, dir, true);
+  const br = cor(c.cor), img = localC ? BASE + 'm/' + c.curto + '/' + localC : BASE + 'cartao-og.png', url = BASE + 'm/' + c.curto + '/';
+  const poster = localC && fs.existsSync(path.join(dir, 'poster.jpg')) ? 'poster.jpg?' + localC.split('?')[1] : (https(c.imagem) || '');
   const desc = String(c.texto || '').replace(/\{nome\}/g, '').replace(/\s+/g, ' ').trim().slice(0, 180);
   const mapa = https(c.local_url) || (c.local ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.local) : '');
   const cartao = /^[A-Za-z0-9]{6}$/.test(c.prog_curto || '') ? '../../cartao.html?n=' + c.prog_curto : '';
@@ -163,9 +195,10 @@ for (const c of camps.filter(c => /^[A-Za-z0-9]{6}$/.test(c.curto || ''))) {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${esc(img)}">
 <meta property="og:image:secure_url" content="${esc(img)}">
-<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:type" content="${localC ? 'image/jpeg' : 'image/png'}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(titulo)}">
 <meta property="og:url" content="${esc(url)}">
 <meta property="og:locale" content="pt_PT">
 <meta name="description" content="${esc(desc)}">
@@ -184,7 +217,7 @@ h1{font:800 30px/1.1 'Bricolage Grotesque',sans-serif;letter-spacing:-.02em;marg
 footer{text-align:center;color:#7A6A60;font-size:13px;margin-top:26px}
 </style></head><body><main>
 <header>${https(c.logo) ? `<img src="${esc(c.logo)}" alt="">` : ''}<b>${esc(c.loja || '')}</b></header>
-<img class="pst" src="${esc(img)}" alt="${esc(c.titulo)}">
+${poster ? `<img class="pst" src="${esc(poster)}" alt="${esc(c.titulo)}">` : ''}
 <h1>${esc(c.titulo)}</h1>
 <div class="tx">${linkar(String(c.texto || '').replace(/\{nome\}/g, '').replace(/^\s*Olá[^\n]{0,20}\n+/i, '').trim())}</div>
 ${mapa ? `<a class="bt p" href="${esc(mapa)}" rel="noopener">📍 ${esc(c.local || 'Ver no mapa')}</a>` : ''}
