@@ -18138,7 +18138,7 @@ var qrcode = function() {
             if (!sb || !currentUser || !fidDono()) return;
             const [{ data: cfg }, { data: cs }] = await Promise.all([
                 sb.from('fidelidade_cfg').select('*').eq('dono_id', fidDono()).maybeSingle(),
-                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate, og_tok, og_v').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
+                sb.from('fidelidade_cartoes').select('id, curto, codigo, nome, telefone, carimbos, premios, historico, atualizado_em, consentimento_em, marketing, desconto_tipo, desconto_valor, desconto_nota, programa_id, valido_ate, og_tok, og_v, aniversario, aniv_usado').eq('dono_id', fidDono()).order('atualizado_em', { ascending: false }).limit(500),
             ]);
             fidCfg = cfg || null; fidCartoes = cs || []; fidCarregado = true;
         }
@@ -24912,6 +24912,152 @@ async function dsTrPreparar() {
             e.preventDefault(); pv.style.outline = ''; const f = dsImagemDoEvento(e) || (e.dataTransfer.files || [])[0]; if (f) mepFotoEscolhida({ files: [f], value: '' });
         });
         document.addEventListener('dragover', e => { const pv = e.target.closest && e.target.closest('#mep-foto-prev'); if (pv) { e.preventDefault(); pv.style.outline = '2px dashed var(--brand)'; } });
+    </script>
+    <style>
+        .fx-aniv { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #FDE7EE; color: #9D174D; margin-top: 4px; }
+        .fx-aniv.usada { background: #F1F5F9; color: #64748B; }
+        .fx-hoje { margin-top: 10px; border-radius: 16px; padding: 12px 14px; background: linear-gradient(135deg, #FFF4E5, #FDE7EE); color: #5B2A1A; font-size: 13.5px; }
+        .fx-hoje b { font-weight: 800; }
+        .fx-hoje .l { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .fx-hoje .l button { font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: #fff; color: #9D174D; border: 1px solid #F9C5D5; }
+        #fx-modal .sec { border: 1px solid #E4DCCF; border-radius: 16px; padding: 14px; margin-top: 12px; }
+        #fx-modal .sec h4 { font-weight: 900; font-size: 15px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+        #fx-modal .sec p { font-size: 12.5px; color: #64748B; line-height: 1.5; margin: 0 0 8px; }
+        #fx-modal label.tg { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; margin: 6px 0; }
+        #fx-modal label.tg input { width: 18px; height: 18px; accent-color: var(--brand); }
+        #fx-modal .campo { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-top: 8px; }
+        #fx-modal .campo input, #fx-modal .campo select { display: block; width: 100%; margin-top: 4px; font-size: 14px; border-radius: 12px; border: 1px solid #CBD5E1; padding: 9px 11px; }
+        #fx-modal .lk { display: flex; gap: 6px; margin-top: 8px; }
+        #fx-modal .lk code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; background: #F6F3F0; border-radius: 10px; padding: 9px 10px; }
+        #fx-modal .lk button, #fx-modal .bt { font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 10px; border: 1px solid #CBD5E1; background: #fff; white-space: nowrap; }
+        #fx-modal ol { font-size: 12.5px; color: #475569; padding-left: 18px; margin: 8px 0 0; list-style: decimal; line-height: 1.55; }
+    </style>
+    <script>
+        // ======================================================= FIDELIDADE: carimbo por NFC e oferta de aniversário
+        const FX_MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+        const fxHoje = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+        // a oferta de aniversário está ativa hoje para este cliente? (do dia do aniversário até X dias depois)
+        function fxAniv(k) {
+            const c = fidCfg; if (!c || !c.aniv_ligado || !k || !k.aniversario) return null;
+            const h = fxHoje(), ano = Number(h.slice(0, 4)), dias = c.aniv_dias || 0;
+            for (const a of [ano, ano - 1]) {
+                let ini = a + '-' + k.aniversario; if (k.aniversario === '02-29' && !(a % 4 === 0 && (a % 100 !== 0 || a % 400 === 0))) ini = a + '-02-28';
+                const fim = new Date(Date.parse(ini + 'T12:00:00') + dias * 864e5); const f = fim.getFullYear() + '-' + String(fim.getMonth() + 1).padStart(2, '0') + '-' + String(fim.getDate()).padStart(2, '0');
+                if (h >= ini && h <= f) return { ano: a, usada: k.aniv_usado === a };
+            }
+            return null;
+        }
+        const fxAnivTxt = a => { const [m, d] = String(a).split('-'); return Number(d) + ' ' + FX_MES[Number(m) - 1]; };
+        async function fxAnivUsar(id) {
+            const k = fidCartoes.find(x => x.id === id), e = fxAniv(k); if (!k || !e || e.usada) return;
+            if (!(await dsConfirmar('Entregar a oferta de aniversário (' + (fidCfg.aniv_oferta || 'Um café grátis').toLowerCase() + ') a ' + k.nome + '?'))) return;
+            const hist = (Array.isArray(k.historico) ? k.historico : []).concat([{ t: 'aniversario', n: 0, em: new Date().toISOString(), por: (currentUser && currentUser.email) || '' }]).slice(-60);
+            const { error } = await sb.from('fidelidade_cartoes').update({ aniv_usado: e.ano, historico: hist }).eq('id', id);
+            if (error) return dsToast('Não foi possível guardar. Verifique a internet.', true);
+            k.aniv_usado = e.ano; k.historico = hist; fidPintar(); dsToast('Oferta de aniversário entregue a ' + k.nome.split(' ')[0] + ' 🎂');
+        }
+        async function fxAnivMudar(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k) return;
+            const v = await dsPerguntar('Aniversário de ' + k.nome + ' (dia/mês, ex.: 12/03). Deixe vazio para apagar.', k.aniversario ? k.aniversario.split('-').reverse().join('/') : '');
+            if (v === null) return;
+            let a = null; const m = String(v).trim().match(/^(\d{1,2})\s*[\/\-.]\s*(\d{1,2})$/);
+            if (String(v).trim() && !m) return dsToast('Escreva no formato dia/mês, por exemplo 12/03.', true);
+            if (m) { const d = Number(m[1]), me = Number(m[2]); if (me < 1 || me > 12 || d < 1 || d > [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][me - 1]) return dsToast('Essa data não existe.', true); a = String(me).padStart(2, '0') + '-' + String(d).padStart(2, '0'); }
+            const { error } = await sb.from('fidelidade_cartoes').update({ aniversario: a }).eq('id', id);
+            if (error) return dsToast('Não foi possível guardar.', true);
+            k.aniversario = a; fidPintar(); dsToast(a ? 'Aniversário guardado: ' + fxAnivTxt(a) : 'Aniversário apagado');
+        }
+        function fxWhatsAniv(id) {
+            const k = fidCartoes.find(x => x.id === id); if (!k || !k.telefone) return;
+            let t = k.telefone.replace(/\D/g, ''); if (t.length === 9) t = '351' + t;
+            const msg = `Feliz aniversário, ${k.nome.split(' ')[0]}! 🎂 ${currentEmpresa ? 'A ' + currentEmpresa + ' oferece-lhe' : 'Oferecemos-lhe'} ${(fidCfg.aniv_oferta || 'um café grátis').toLowerCase()}. Mostre o seu cartão ao balcão: ${fidLinkCartao(k)}`;
+            window.open('https://api.whatsapp.com/send?phone=' + t + '&text=' + encodeURIComponent(msg), '_blank', 'noopener');
+        }
+        // marcar aniversários na lista de clientes
+        function fxPosLista() {
+            if (!fidCfg) return;
+            document.querySelectorAll('.fid-c').forEach(el => {
+                if (el.querySelector('.fx-aniv, .fx-av')) return;
+                const b = el.querySelector('[onclick*="fidMudar(\'"], [onclick*="fidUsar(\'"], [onclick*="fidWhats(\'"]'); if (!b) return;
+                const id = ((b.getAttribute('onclick') || '').match(/'([0-9a-f-]{36})'/) || [])[1]; const k = id && fidCartoes.find(x => x.id === id); if (!k) return;
+                const nm = el.querySelector('.nm'); const e = fxAniv(k);
+                if (fidCfg.aniv_ligado && nm) {
+                    if (e) nm.insertAdjacentHTML('beforeend', `<span class="fx-aniv ${e.usada ? 'usada' : ''}">🎂 ${e.usada ? 'Oferta de aniversário entregue' : 'Faz anos: ' + escapeHtml((fidCfg.aniv_oferta || 'Um café grátis'))}</span>`);
+                    else nm.insertAdjacentHTML('beforeend', `<span class="fx-av" style="display:block;font-size:11px;color:#94A3B8;margin-top:2px;cursor:pointer" onclick="fxAnivMudar('${k.id}')">🎂 ${k.aniversario ? fxAnivTxt(k.aniversario) : 'Juntar aniversário'}</span>`);
+                }
+                const ac = el.querySelector('.fid-acoes');
+                if (ac && e && !e.usada) ac.insertAdjacentHTML('afterbegin', `<button type="button" class="usar" style="background:#DB2777" onclick="fxAnivUsar('${k.id}')">🎂 Dar oferta</button>`);
+            });
+        }
+        // aniversários de hoje no topo
+        function fxHojeCaixa() {
+            if (!fidCfg || !fidCfg.aniv_ligado) return;
+            const box = document.querySelector('#fid-page .fid-link, #fid-modal .fid-link'); if (!box || document.getElementById('fx-hoje')) return;
+            const l = fidCartoes.filter(k => { const e = fxAniv(k); return e && !e.usada; });
+            if (!l.length) return;
+            box.insertAdjacentHTML('afterend', `<div class="fx-hoje" id="fx-hoje">🎂 <b>${l.length === 1 ? 'Faz anos' : l.length + ' clientes fazem anos'}</b> · oferta: ${escapeHtml(fidCfg.aniv_oferta || 'Um café grátis')}<div class="l">${l.slice(0, 12).map(k => `<button type="button" onclick="fidQ='${escapeHtml(k.codigo)}';fidPintar()">${escapeHtml(k.nome.split(' ')[0])} · ${escapeHtml(k.codigo)}</button>${k.marketing && k.telefone ? `<button type="button" onclick="fxWhatsAniv('${k.id}')"><i class="fab fa-whatsapp"></i> Parabéns</button>` : ''}`).join('')}</div></div>`);
+        }
+        // definições: NFC e aniversário
+        function fxTok() { const a = new Uint8Array(16); crypto.getRandomValues(a); return [...a].map(x => x.toString(16).padStart(2, '0')).join(''); }
+        const fxLinkNfc = () => fidCfg && fidCfg.nfc_tok ? fidBase() + 'cartao.html?nfc=' + fidCfg.nfc_tok : '';
+        function fxAbrir() {
+            const c = fidCfg || {};
+            dsModal('fx-modal', `<div class="flex items-start justify-between gap-3"><div><h3>NFC e aniversário</h3><p class="text-sm text-slate-500">Carimbo com um toque do telemóvel e uma oferta no aniversário do cliente.</p></div><button type="button" class="x" onclick="dsModalFechar('fx-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+              <div class="sec"><h4>📲 Carimbo por NFC</h4><p>O cliente encosta o telemóvel à etiqueta NFC no balcão e recebe o carimbo no cartão dele, sem a equipa tocar em nada.</p>
+                <label class="tg"><input type="checkbox" id="fx-nfc" ${c.nfc_ligado ? 'checked' : ''}> Ligar o carimbo por NFC</label>
+                <label class="campo">No máximo 1 carimbo por cliente a cada
+                  <select id="fx-horas">${[[1, '1 hora'], [2, '2 horas'], [4, '4 horas'], [8, '8 horas'], [12, '12 horas'], [24, '1 dia']].map(([v, t]) => `<option value="${v}" ${(c.nfc_horas || 4) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+                ${c.nfc_tok ? `<div class="lk"><code>${escapeHtml(fxLinkNfc())}</code><button type="button" onclick="fidCopiar(fxLinkNfc())"><i class="fas fa-copy"></i> Copiar</button></div>
+                <div class="flex gap-2 mt-2"><button type="button" class="bt" onclick="fxTrocarNfc()"><i class="fas fa-rotate"></i> Trocar o link (a etiqueta antiga deixa de dar carimbos)</button></div>` : '<p style="margin-top:8px">Ao guardar, criamos o link para gravar na etiqueta.</p>'}
+                <ol><li>Compre etiquetas NFC NTAG213 ou NTAG215 (custam poucos cêntimos cada).</li><li>Instale a app gratuita <b>NFC Tools</b> no telemóvel (iPhone ou Android).</li><li>Em <b>Escrever → Adicionar um registo → URL</b>, cole o link acima e encoste o telemóvel à etiqueta.</li><li>Cole a etiqueta no balcão, com um aviso: “Encoste o telemóvel e ganhe o carimbo”.</li></ol>
+                <p style="margin-top:8px">Cada telemóvel só recebe 1 carimbo no intervalo escolhido. Os carimbos por NFC aparecem no histórico do cliente. Se o link for partilhado, toque em <b>Trocar o link</b> e grave a etiqueta de novo.</p></div>
+              <div class="sec"><h4>🎂 Oferta de aniversário</h4><p>Ao criar o cartão, o cliente pode indicar o dia e o mês do aniversário (sem o ano). Nesse dia o cartão mostra a oferta e a app avisa a equipa.</p>
+                <label class="tg"><input type="checkbox" id="fx-aniv" ${c.aniv_ligado ? 'checked' : ''}> Ligar a oferta de aniversário</label>
+                <label class="campo">Oferta<input id="fx-oferta" maxlength="60" value="${escapeHtml(c.aniv_oferta || 'Um café grátis')}"></label>
+                <label class="campo">Válida
+                  <select id="fx-dias">${[[0, 'só no dia do aniversário'], [3, 'no dia e nos 3 dias seguintes'], [7, 'durante 1 semana'], [30, 'durante 1 mês']].map(([v, t]) => `<option value="${v}" ${(c.aniv_dias || 0) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label></div>
+              <div class="flex justify-end gap-2 mt-4"><button type="button" class="px-4 py-2.5 text-sm font-bold rounded-xl bg-slate-100" onclick="dsModalFechar('fx-modal')">Fechar</button><button type="button" class="px-5 py-2.5 text-sm font-bold text-white rounded-xl" style="background:var(--brand)" onclick="fxGuardar()"><i class="fas fa-check mr-1"></i>Guardar</button></div>`);
+        }
+        async function fxGuardar(novoTok) {
+            const nfc = document.getElementById('fx-nfc').checked;
+            const up = { nfc_ligado: nfc, nfc_horas: Number(document.getElementById('fx-horas').value) || 4, aniv_ligado: document.getElementById('fx-aniv').checked,
+                aniv_oferta: (document.getElementById('fx-oferta').value || '').trim().slice(0, 60) || 'Um café grátis', aniv_dias: Number(document.getElementById('fx-dias').value) || 0 };
+            if ((nfc && !(fidCfg && fidCfg.nfc_tok)) || novoTok) up.nfc_tok = fxTok();
+            const { data, error } = await sb.from('fidelidade_cfg').update(up).eq('dono_id', fidDono()).select('*').single();
+            if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
+            fidCfg = data; dsToast(novoTok ? 'Link novo criado. Grave-o na etiqueta.' : 'Guardado'); fxAbrir(); try { fidPintar(); } catch (_) {}
+        }
+        async function fxTrocarNfc() { if (await dsConfirmar('Criar um link novo? A etiqueta NFC atual deixa de dar carimbos até ser gravada com o link novo.')) fxGuardar(true); }
+        // aniversário também ao criar o cartão pela equipa
+        (function () {
+            const oC = fidCriar;
+            fidCriar = async function () {
+                const d = (document.getElementById('fx-n-dia') || {}).value, m = (document.getElementById('fx-n-mes') || {}).value;
+                const antes = fidCartoes[0];
+                const r = await oC.apply(this, arguments);
+                const k = fidCartoes[0];
+                if (k && k !== antes && d && m) { const a = m + '-' + d; const { error } = await sb.from('fidelidade_cartoes').update({ aniversario: a }).eq('id', k.id); if (!error) { k.aniversario = a; try { fidLista(); } catch (_) {} } }
+                return r;
+            };
+            const oP = fidPintar;
+            fidPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    const links = document.querySelector('#fid-page .fid-link, #fid-modal .fid-link');
+                    if (links && !links.querySelector('.fx-bt')) links.insertAdjacentHTML('beforeend', '<button type="button" class="fx-bt" onclick="fxAbrir()"><i class="fas fa-wifi" style="transform:rotate(90deg)"></i>NFC e aniversário</button>');
+                    const nv = document.getElementById('fid-novo');
+                    if (nv && fidCfg && fidCfg.aniv_ligado && !document.getElementById('fx-n-dia')) {
+                        const bt = nv.querySelector('button');
+                        const html = `<label class="text-sm font-bold">Aniversário (opcional)<span style="display:flex;gap:6px"><select id="fx-n-dia" style="flex:1"><option value="">Dia</option>${Array.from({ length: 31 }, (_, i) => `<option value="${String(i + 1).padStart(2, '0')}">${i + 1}</option>`).join('')}</select><select id="fx-n-mes" style="flex:1"><option value="">Mês</option>${FX_MES.map((x, i) => `<option value="${String(i + 1).padStart(2, '0')}">${x}</option>`).join('')}</select></span></label>`;
+                        if (bt) bt.insertAdjacentHTML('beforebegin', html); else nv.insertAdjacentHTML('beforeend', html);
+                    }
+                    fxHojeCaixa(); fxPosLista();
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+            const oL = fidLista;
+            fidLista = function () { const r = oL.apply(this, arguments); try { fxPosLista(); } catch (e) { console.warn(e); } return r; };
+        })();
     </script>
 </body>
 </html>

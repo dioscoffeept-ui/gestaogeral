@@ -255,6 +255,21 @@
   .dm-prog.pausa i.agora b { animation-play-state: paused; }
   @keyframes dmProg { to { width: 100%; } }
   @media (prefers-reduced-motion: reduce) { .dm-cena, .dm-menu, .dm-folha, .dm-dlg, .dm-ios-add, .dm-home .ap.novo i, .dm-desk .jan, .dm-desk .bar i.novo { animation: none !important; } .dm-dedo { transition: none; } }
+  /* aniversário e carimbo por NFC */
+  .aniv { display: flex; gap: 12px; align-items: center; margin-top: 12px; padding: 14px 16px; border-radius: 18px; background: linear-gradient(135deg, #FFF4E5, #FDE7EE); color: #5B2A1A; }
+  .aniv i { font-style: normal; font-size: 28px; line-height: 1; }
+  .aniv b { display: block; font-size: 16px; }
+  .aniv span { font-size: 14px; line-height: 1.4; }
+  .dm-sel { display: flex; gap: 8px; }
+  .dm-sel select { flex: 1; font: inherit; font-size: 16px; padding: 11px 10px; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .nfc-ok { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(35,31,32,.55); padding: 20px; animation: nfcIn .25s ease; }
+  .nfc-ok > div { background: #fff; border-radius: 24px; padding: 26px 22px 20px; text-align: center; max-width: 340px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,.3); }
+  .nfc-ok .ic { width: 84px; height: 84px; margin: 0 auto 12px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; animation: nfcPop .6s cubic-bezier(.3,1.6,.5,1); }
+  .nfc-ok .ic svg { width: 54px; height: 54px; color: #fff; fill: currentColor; }
+  .nfc-ok h3 { margin: 0 0 6px; font-size: 22px; }
+  .nfc-ok p { margin: 0 0 16px; color: var(--mut); font-size: 15px; line-height: 1.45; }
+  @keyframes nfcIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes nfcPop { from { transform: scale(.3); } to { transform: scale(1); } }
 </style>
 </head>
 <body>
@@ -327,7 +342,7 @@
     const lg = d.legal || {}, resp = lg.nome || d.loja || 'a loja';
     return `<div class="priv-tx">
       <p><b>Quem trata os dados:</b> ${esc(resp)}${lg.nif ? ', NIF ' + esc(lg.nif) : ''}${lg.morada ? ', ' + esc(lg.morada) : ''}${lg.contacto ? '. Contacto: ' + esc(lg.contacto) : ''}.</p>
-      <p><b>Que dados:</b> o seu primeiro nome, o telemóvel e os carimbos do cartão.</p>
+      <p><b>Que dados:</b> o seu primeiro nome, o telemóvel e os carimbos do cartão${d.aniv ? ' e, se o indicar, o dia e o mês do seu aniversário (sem o ano), para lhe dar a oferta de aniversário' : ''}.</p>
       <p><b>Para quê:</b> gerir o seu cartão de fidelidade e encontrá-lo ao balcão. Só lhe enviamos novidades e ofertas se marcar essa opção, e pode retirá-la quando quiser.</p>
       <p><b>Por quanto tempo:</b> enquanto tiver o cartão. Pode apagá-lo a qualquer momento, nesta página ou ao balcão.</p>
       <p><b>Onde ficam:</b> em servidores na União Europeia (Irlanda), através do Dio’Stock, que presta o serviço à loja. Não vendemos nem partilhamos os seus dados.</p>
@@ -490,6 +505,8 @@
       ${tem && !S ? `<div class="aviso"><i>🎁</i><span>Tem ${esc(d.premio.toLowerCase())} à espera. Mostre este ecrã ao balcão.</span></div>` : ''}
       ${d.expirado ? `<div class="aviso" style="background:#FEE2E2;color:#7F1D1D"><i>⌛</i><span>Este cartão expirou a ${dataPT(d.valido_ate)}. Fale com a loja para o renovar.</span></div>` : (d.valido_ate ? `<p class="dica" style="text-align:center;margin-top:10px">Válido até <b>${dataPT(d.valido_ate)}</b></p>` : '')}
       ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
+      ${anivHtml(d)}
+      ${d.nfc && !S ? `<div class="aviso desc"><i>📲</i><span>Na loja, encoste o telemóvel à etiqueta NFC do balcão depois de pagar e o carimbo entra sozinho.</span></div>` : ''}
       <div class="bloco"><h2>Como funciona</h2><p class="dica">${S ? `Diga o código <b>${esc(d.codigo)}</b> ao balcão quando pagar e recebe ${esc(V.charAt(0).toLowerCase() + V.slice(1))}.` : `Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.`}</p>${d.condicoes ? `<p class="dica" style="margin-top:8px"><b>Condições:</b> ${esc(d.condicoes)}</p>` : ''}</div>
       ${redesHtml(d.redes, d)}
       ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link. Veja como:</p>${dmHtml()}<button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
@@ -646,13 +663,69 @@
       DM.io.observe(box);
     }
   }
+  // ---- aniversário (só dia e mês: não pedimos o ano)
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  function anivSel(p, val) {
+    const [m, d] = String(val || '').split('-');
+    return `<div class="dm-sel"><select id="${p}-ad" aria-label="Dia"><option value="">Dia</option>${Array.from({ length: 31 }, (_, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${d === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${i + 1}</option>`).join('')}</select><select id="${p}-am" aria-label="Mês"><option value="">Mês</option>${MESES.map((x, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${m === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${x}</option>`).join('')}</select></div>`;
+  }
+  function anivLer(p) { const d = (document.getElementById(p + '-ad') || {}).value, m = (document.getElementById(p + '-am') || {}).value; return d && m ? m + '-' + d : null; }
+  const anivTxt = a => { const [m, d] = a.split('-'); return Number(d) + ' de ' + MESES[Number(m) - 1]; };
+  function anivHtml(d) {
+    const a = d.aniv; if (!a) return '';
+    const e = a.estado;
+    if (e && e.hoje && !e.usada) return `<div class="aniv"><i>🎂</i><div><b>Feliz aniversário, ${esc(d.nome)}!</b><span>${esc(a.oferta)} por nossa conta${e.ate && a.dias ? ' até ' + e.ate.split('-').reverse().slice(0, 2).join('/') : ' hoje'}. Mostre este ecrã ao balcão.</span></div></div>`;
+    if (e && e.hoje && e.usada) return `<div class="aniv"><i>🎉</i><div><b>Feliz aniversário, ${esc(d.nome)}!</b><span>Já recebeu a sua oferta deste ano. Obrigado por estar connosco.</span></div></div>`;
+    if (a.data) return `<p class="dica" style="text-align:center;margin-top:10px">🎂 No seu aniversário (${anivTxt(a.data)}) tem ${esc(a.oferta.toLowerCase())}. <a href="#" onclick="anivEditar();return false" style="color:inherit">Alterar</a></p><div id="aniv-ed"></div>`;
+    return `<div class="bloco" id="aniv-bl"><h2>🎂 Oferta de aniversário</h2><p class="dica">Diga-nos o dia do seu aniversário e recebe ${esc(a.oferta.toLowerCase())} nesse dia.</p>${anivSel('av')}<p class="erro" id="av-erro" role="alert"></p><button type="button" class="bp" onclick="anivGuardar()">Guardar o meu aniversário</button></div>`;
+  }
+  function anivEditar() {
+    const box = document.getElementById('aniv-ed'); if (!box) return;
+    const atual = (window._ultD && window._ultD.aniv && window._ultD.aniv.data) || '';
+    box.innerHTML = `<div class="bloco" id="aniv-bl"><h2>🎂 O seu aniversário</h2>${anivSel('av', atual)}<p class="erro" id="av-erro" role="alert"></p><button type="button" class="bp" onclick="anivGuardar()">Guardar</button><button type="button" class="bs" onclick="anivGuardar(true)">Apagar a data</button></div>`;
+  }
+  async function anivGuardar(apagar) {
+    const v = apagar ? null : anivLer('av'), er = document.getElementById('av-erro');
+    if (!apagar && !v) { if (er) er.textContent = 'Escolha o dia e o mês.'; return; }
+    try { await post({ acao: 'aniversario', k: K, c: C, aniv: v }); ultimo = ''; ver(true); }
+    catch (e) { if (er) er.textContent = e.message; }
+  }
+
+  // ---- carimbo ao tocar na etiqueta NFC da loja
+  function nfcPend() { try { return !!sessionStorage.getItem('ds_nfc'); } catch (_) { return false; } }
+  function nfcMostrar(icone, titulo, texto) {
+    document.querySelector('.nfc-ok')?.remove();
+    document.body.insertAdjacentHTML('beforeend', `<div class="nfc-ok" role="dialog" aria-live="assertive" onclick="if(event.target===this)this.remove()"><div><div class="ic">${icone}</div><h3>${esc(titulo)}</h3><p>${esc(texto)}</p><button type="button" class="bp" onclick="this.closest('.nfc-ok').remove()">Ver o meu cartão</button></div></div>`);
+    try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (_) {}
+  }
+  async function nfcAplicar(d) {
+    let t = ''; try { t = sessionStorage.getItem('ds_nfc') || ''; sessionStorage.removeItem('ds_nfc'); } catch (_) {}
+    if (!/^[a-f0-9]{32}$/.test(t) || !d || !d.k) return;
+    window._nfcSessao = true;
+    try {
+      const r = await post({ acao: 'nfc', t, k: d.k });
+      if (r.cheio) nfcMostrar('🎁', 'Cartão completo', 'Já tem ' + (d.premio || 'o prémio').toLowerCase() + ' à espera. Mostre este ecrã ao balcão.');
+      else { ultimo = ''; await ver(true); nfcMostrar('☕', '+1 carimbo!', r.completo ? 'Completou o cartão: ' + (d.premio || 'o prémio').toLowerCase() + ' à sua espera.' : 'Tem ' + r.carimbos + ' de ' + r.alvo + '. Faltam ' + (r.alvo - r.carimbos) + '.'); }
+    } catch (e) { nfcMostrar('⏳', 'Carimbo não dado', e.message); }
+  }
+  async function nfcEntrar(t) {
+    topoNeutro(); document.getElementById('app').innerHTML = '<div class="esq"></div>';
+    try {
+      const r = await post({ acao: 'nfc_info', t });
+      try { sessionStorage.setItem('ds_nfc', t); } catch (_) {}
+      let k = ''; try { k = localStorage.getItem('ds_cartao_' + r.n) || ''; } catch (_) {}
+      location.replace('cartao.html?' + (k ? (k.length === 7 ? 'k=' : 'c=') + k : 'n=' + encodeURIComponent(r.n) + '&nfc_criar=1'));
+    } catch (e) { document.getElementById('app').innerHTML = `<div class="vazio">${esc(e.message)}</div>`; }
+  }
   async function ver(silencioso) {
     try {
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
       const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca, d.titulo, d.condicoes, d.desconto, d.programa]);
-      if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); try { dmIniciar(d); } catch (_) {} if (d.consentimento) convidar(); festejar(d); }
+      if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); try { dmIniciar(d); } catch (_) {} if (d.consentimento && !nfcPend() && !window._nfcSessao) convidar(); festejar(d); }
       manifestar(d);
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
+      window._ultD = d;
+      if (!silencioso || window._nfcPend) { window._nfcPend = false; nfcAplicar(d); }
     } catch (e) {
       if (/já não existe/i.test(e.message || '')) {
         // o cartão foi apagado (pela loja ou pelo cliente): esquecer o cartão neste telemóvel e voltar à página da loja para pedir outro
@@ -737,10 +810,12 @@
       : `<section class="cartao"><div class="c-top"><div><small>Junte ${d.alvo} carimbos e ganhe</small><h1>${esc(d.premio)}</h1></div></div>
         <div class="selos">${selos(d.alvo, 0)}</div>
         <div class="c-pe"><div><span class="falta">1 carimbo em cada compra</span><small>${d.condicoes ? esc(d.condicoes) : "Ao completar o cartão, recebe o prémio e começa de novo."}</small></div></div></section>` + (extras(d.programa).length ? `<div class="aviso desc"><i>🏷️</i><span>E ganha já ${esc(extras(d.programa).join(' e ').replace(/^./, c => c.toLowerCase()))}.</span></div>` : '')) + `
+      ${P.get('nfc_criar') ? `<div class="aviso"><i>📲</i><span>Ainda não tem o cartão neste telemóvel. Crie-o aqui (ou abra-o em "Já tem cartão?") e o carimbo entra logo a seguir.</span></div>` : ''}
       <form class="bloco" id="f" novalidate><h2>Criar o meu cartão</h2>
         <p class="dica">É grátis e fica guardado neste telemóvel. Não precisa de palavra-passe.</p>
         <label>Nome<input id="nome" autocomplete="given-name" maxlength="40" placeholder="Como o chamamos"></label>
         <label>Telemóvel<input id="tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="9xx xxx xxx"></label>
+        ${d.aniv ? `<label>Aniversário <span style="font-weight:500;color:var(--mut)">(opcional) · ganhe ${esc(d.aniv.oferta.toLowerCase())}</span>${anivSel('cr')}</label>` : ''}
         <label class="chk"><input type="checkbox" id="aceito"><span>Aceito que${d.loja ? ' a ' + esc(d.loja) : ' a loja'} guarde o meu nome e o telemóvel para o cartão de fidelidade.</span></label>
         <label class="chk"><input type="checkbox" id="mk"><span>Quero receber novidades e ofertas por WhatsApp ou SMS. (Opcional)</span></label>
         <details class="priv" style="margin-top:12px"><summary>Ler a informação de privacidade</summary>${privTexto(d)}</details>
@@ -756,14 +831,16 @@
       if (!document.getElementById('aceito').checked) { er.textContent = 'Para criar o cartão, marque que aceita guardar o nome e o telemóvel.'; return; }
       b.disabled = true; b.textContent = 'A criar…';
       try {
-        const r = await post({ acao: 'criar', n: N, nome: document.getElementById('nome').value, tel: document.getElementById('tel').value, aceito: true, marketing: document.getElementById('mk').checked });
+        const r = await post({ acao: 'criar', n: N, nome: document.getElementById('nome').value, tel: document.getElementById('tel').value, aceito: true, marketing: document.getElementById('mk').checked, aniv: anivLer('cr') });
         try { localStorage.setItem('ds_cartao_' + N, r.k || r.c); } catch (_) {}
         location.replace('cartao.html?' + (r.k ? 'k=' + r.k : 'c=' + r.c));
       } catch (e) { er.textContent = e.message; b.disabled = false; b.textContent = 'Criar o meu cartão'; }
     });
   }
 
-  if (C || K) { ver(); window._poll = setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
+  const NFC = (P.get('nfc') || '').toLowerCase();
+  if (/^[a-f0-9]{32}$/.test(NFC)) nfcEntrar(NFC);
+  else if (C || K) { ver(); window._poll = setInterval(() => { if (!document.hidden) ver(true); }, 15000); document.addEventListener('visibilitychange', () => { if (!document.hidden) ver(true); }); }
   else if (N) {
     let guardado = ''; try { guardado = localStorage.getItem('ds_cartao_' + N) || ''; } catch (_) {}
     if (guardado) location.replace('cartao.html?' + (guardado.length === 7 ? 'k=' : 'c=') + guardado); else pedir();
