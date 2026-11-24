@@ -570,7 +570,25 @@
     })(t0);
     rebentar(W / 2, H * .28);
     try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (_) {}
+    nfcSom(icone === '⏳' ? 'erro' : icone === '🎁' || /Completou/.test(texto) ? 'premio' : 'carimbo');
   }
+  // som do toque: os telemóveis só deixam tocar som depois de um toque no ecrã;
+  // se ainda não der, toca no primeiro toque (ex.: ao fechar o aviso)
+  function nfcSom(tipo) {
+    const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+    let ctx; try { ctx = new A(); } catch (_) { return; }
+    const agendar = () => {
+      const t0 = ctx.currentTime + .03;
+      const n = (f, t, d, tp = 'sine', v = .16) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = tp; o.frequency.value = f; g.gain.setValueAtTime(0, t0 + t); g.gain.linearRampToValueAtTime(v, t0 + t + .01); g.gain.exponentialRampToValueAtTime(.001, t0 + t + d); o.connect(g).connect(ctx.destination); o.start(t0 + t); o.stop(t0 + t + d + .03); };
+      if (tipo === 'erro') { n(330, 0, .18, 'triangle'); n(262, .16, .3, 'triangle'); }
+      else if (tipo === 'premio') { [523, 659, 784, 1047, 1319].forEach((f, i) => n(f, i * .09, .35, 'triangle', .14)); [1568, 2093].forEach((f, i) => n(f, .5 + i * .08, .25, 'sine', .07)); }
+      else { n(988, 0, .12, 'sine', .18); n(1319, .09, .35, 'sine', .16); n(1976, .1, .25, 'sine', .04); }
+    };
+    const esperar = () => { const uma = () => { removeEventListener('pointerdown', uma, true); removeEventListener('keydown', uma, true); ctx.resume().then(agendar).catch(() => {}); }; addEventListener('pointerdown', uma, true); addEventListener('keydown', uma, true); };
+    if (ctx.state === 'running') return agendar();
+    Promise.race([ctx.resume(), new Promise(r => setTimeout(r, 250))]).then(() => ctx.state === 'running' ? agendar() : esperar()).catch(esperar);
+  }
+
   // ---- vídeo animado: como pôr o cartão no ecrã principal (iPhone, Android, computador)
   let DM = { d: null, plat: null, i: 0, t: null, pausa: false, visto: false };
   const dmPlatAuto = () => { const ua = navigator.userAgent; if (/iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios'; if (/android/i.test(ua)) return 'and'; return 'pc'; };

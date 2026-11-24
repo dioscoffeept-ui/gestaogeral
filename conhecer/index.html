@@ -363,6 +363,43 @@ body{background:#F6F3F0}
 .fim::before{content:"";position:absolute;z-index:-1;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.08);right:-90px;bottom:-140px}
 .rv{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}.rv.on{opacity:1;transform:none}
 @media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
+
+/* ---------- funcionalidades em grelha variada */
+#funcionalidades{padding-top:96px!important}
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.bx{border-radius:30px;padding:32px;position:relative;overflow:hidden;isolation:isolate;background:#fff;border:1px solid var(--line)}
+.bx h3{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.02em;line-height:1.1;margin:10px 0 0}
+.bx p{color:var(--ink-2);margin:12px 0 0}
+.bx .eti{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);background:var(--brand-soft);padding:5px 10px;border-radius:99px}
+.bx .plano{display:block;margin-top:18px}
+.bx .chk{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px;grid-template-columns:1fr 1fr}
+.bx .chk li{position:relative;padding-left:24px;font-size:15px}
+.bx .chk li::before{content:"";position:absolute;left:2px;top:7px;width:11px;height:6px;border-left:2.5px solid var(--green);border-bottom:2.5px solid var(--green);transform:rotate(-45deg)}
+.bx-fichas{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+.bx-fichas .vis{background:#F6E2D6;border-radius:22px;padding:22px;position:relative;isolation:isolate;overflow:hidden}
+.bx-fichas .vis::before{content:"";position:absolute;z-index:-1;width:60%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.4);right:-18%;top:-24%}
+.escuro{background:var(--ink);border-color:var(--ink);color:#fff}.escuro h3{color:#fff}.escuro .eti{background:rgba(255,255,255,.1);color:#FBD5C2}.escuro .plano{color:#BFAFA3}
+.bx-stock .big{font-family:var(--display);font-weight:800;font-size:54px;letter-spacing:-.03em;line-height:1;color:#fff;margin-top:22px}
+.bx-stock .sb{display:block;color:#BFAFA3;font-size:14px;margin-top:6px}
+.bx-stock .mini{margin-top:20px;display:grid;gap:12px}.bx-stock .mini div{display:grid;grid-template-columns:1fr auto;gap:6px 10px;font-size:14px}.bx-stock .mini b{font-weight:600;color:#F2ECE4}.bx-stock .barra{background:rgba(255,255,255,.12)}
+.bx-stock::after{content:"";position:absolute;z-index:-1;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05);right:-70px;top:-70px}
+.cafe{background:var(--brand);border-color:var(--brand);color:#fff}.cafe h3{color:#fff}.cafe .eti{background:rgba(255,255,255,.14);color:#fff}.cafe .plano{color:#F6DCCF}
+.bx-vendas .fontes{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}.bx-vendas .fontes span{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:8px 12px;border-radius:12px;font-weight:700;font-size:14px}
+.bx-vendas .seta{font-size:26px;text-align:center;margin:10px 0;color:#FBD5C2}
+.bx-vendas .lista1{background:#fff;color:var(--ink);border-radius:16px;padding:14px 16px}.bx-vendas .lista1 b{display:block;font-size:17px}.bx-vendas .lista1 small{display:block;color:var(--ink-2);font-size:14px;margin-top:4px;line-height:1.4}
+.bx-vendas::after{content:"";position:absolute;z-index:-1;width:150px;height:150px;border-radius:26px;background:rgba(255,255,255,.07);left:-50px;bottom:-50px;transform:rotate(14deg)}
+.bx-enc{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;background:#E9DED4;border-color:#E9DED4}
+.bx-enc .eti{background:#fff}
+.bx-enc .wa-bg{background:#ECE5DD;border-radius:22px;padding:22px;display:flex;justify-content:center;background-image:radial-gradient(rgba(0,0,0,.04) 1px,transparent 1px);background-size:14px 14px}
+.bx-enc .zap{background:#DCF8C6;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.bx-form{grid-column:1 / -1;display:grid;grid-template-columns:1.1fr .8fr .9fr;gap:28px;align-items:center;background:linear-gradient(135deg,#FBEDE6 0%,#F6E2D6 100%);border-color:#F2D6C7}
+.bx-form::before{content:"";position:absolute;z-index:-1;width:380px;height:380px;border-radius:50%;background:rgba(255,255,255,.45);left:34%;top:-120px}
+.bx-form .eti{background:#fff}
+.bx-form figure{margin:0;text-align:center}.bx-form figcaption{font-size:13px;font-weight:700;color:var(--ink-2);margin-top:10px}
+.bx-form .fm-tel img{height:auto;width:100%;max-width:250px;border-radius:30px;border:8px solid var(--ink);box-shadow:0 24px 40px -18px rgba(36,21,14,.45);background:#fff;display:block;margin:0 auto;transform:rotate(-3deg)}
+.bx-form .fm-pnl img{height:auto;width:100%;max-width:300px;border-radius:20px;box-shadow:0 20px 40px -20px rgba(36,21,14,.4);display:block;margin:0 auto;transform:rotate(2deg)}
+@media (max-width:980px){.bento{grid-template-columns:1fr 1fr}.bx-fichas,.bx-enc{grid-column:1 / -1}.bx-form{grid-template-columns:1fr 1fr}.bx-form .tx{grid-column:1 / -1}}
+@media (max-width:640px){.bento{grid-template-columns:1fr;gap:14px}.bx{padding:22px;border-radius:24px}.bx-fichas,.bx-enc,.bx-form{grid-template-columns:1fr;grid-column:auto}.bx h3{font-size:24px}.bx .chk{grid-template-columns:1fr}.bx-form .fm-tel img{max-width:210px}.bx-form .fm-pnl img{max-width:260px}.bx-stock .big{font-size:46px}}
 </style>
 </head>
 <body>
@@ -512,98 +549,62 @@ body{background:#F6F3F0}
   </div>
 </section>
 
-<section class="bloco" id="funcionalidades" style="padding-top:0">
+<section class="bloco" id="funcionalidades">
   <div class="wrap">
     <div class="cab">
       <h2>O que o Dio’Stock faz por si.</h2>
+      <p class="lead">O trabalho chato do dia a dia, feito sozinho. Fica com tempo para a sala, o balcão e a equipa.</p>
     </div>
+    <div class="bento">
 
-    <div class="func">
-      <div class="txt">
-        <h3>Fichas técnicas com o custo certo</h3>
-        <p>Cada receita mostra quanto custa a fazer, quanto lhe sobra e o preço mínimo para a margem que quer. Quando o fornecedor sobe o leite, todas as fichas se atualizam.</p>
-        <ul>
-          <li>Bebidas, pratos, brunch e preparações de base</li>
-          <li>Foto e modo de preparo para a equipa</li>
-          <li>Alergénios marcados em cada ficha</li>
-          <li>Simulador de margem e de lucro líquido</li>
-        </ul>
-        <span class="plano">Desde 5 € por mês</span>
-      </div>
-      <div class="ecra">
-        <div class="ui">
+      <article class="bx bx-fichas">
+        <div class="tx">
+          <span class="eti">Fichas técnicas</span>
+          <h3>O custo certo de cada prato e bebida</h3>
+          <p>Cada receita mostra quanto custa a fazer, quanto lhe sobra e o preço mínimo para a margem que quer. Quando o fornecedor sobe o leite, todas as fichas se atualizam.</p>
+          <ul class="chk"><li>Bebidas, pratos, brunch e bases</li><li>Foto e modo de preparo</li><li>Alergénios em cada ficha</li><li>Simulador de margem e lucro</li></ul>
+          <span class="plano">Desde 5 € por mês</span>
+        </div>
+        <div class="vis"><div class="ui">
           <div class="ui-t">Fichas do bar <small>12 fichas</small></div>
           <div class="linha"><b>Expresso</b><span class="num">custo 0,50 € · <b style="color:#D97706">43%</b></span></div>
           <div class="linha"><b>Cappuccino</b><span class="num">custo 0,82 € · <b style="color:var(--green)">74%</b></span></div>
           <div class="linha"><b>Iced Matcha</b><span class="num">custo 1,36 € · <b style="color:var(--green)">69%</b></span></div>
           <div class="linha"><b>Nitro Cold Brew</b><span class="num">custo 1,30 € · <b style="color:#D97706">63%</b></span></div>
           <div class="linha"><b>Bolo de banana</b><span class="num">custo 0,61 € · <b style="color:var(--green)">66%</b></span></div>
-        </div>
-      </div>
-    </div>
+        </div></div>
+      </article>
 
-    <div class="func inv">
-      <div class="txt">
-        <h3>Stock que desconta sozinho</h3>
-        <p>Cada café vendido tira 18 g ao saco. Sabe sempre o que tem, o que está a acabar e quanto vale o que está na prateleira.</p>
-        <ul>
-          <li>Alertas quando passa abaixo do mínimo</li>
-          <li>Fornecedores e encomendas por WhatsApp</li>
-          <li>Balcão: venda ao balcão e até 5 mesas</li>
-          <li>Validades e desperdício a descontar o stock</li>
-          <li>Pare a venda de um produto quando o ingrediente acaba</li>
-        </ul>
+      <article class="bx bx-stock escuro">
+        <span class="eti">Stock</span>
+        <h3>Desconta sozinho a cada venda</h3>
+        <p class="big num">412,30 €</p><small class="sb">em stock hoje, contado pelas fichas</small>
+        <div class="mini">
+          <div><b>Leite meio-gordo</b><span class="pill cr">pedir hoje</span><span class="barra"><i class="cr" style="width:14%"></i></span></div>
+          <div><b>Copos 12 oz</b><span class="pill al">a acabar</span><span class="barra"><i class="al" style="width:28%"></i></span></div>
+          <div><b>Café em grão</b><span class="num">2,4 kg</span><span class="barra"><i style="width:62%"></i></span></div>
+        </div>
+        <span class="plano">Plano Café · alertas, validades e desperdício</span>
+      </article>
+
+      <article class="bx bx-vendas cafe">
+        <span class="eti">Vendas do dia</span>
+        <h3>Fecho do dia em um minuto</h3>
+        <div class="fontes"><span>SumUp</span><span>Foto do relatório</span><span>SAF-T</span><span>Dinheiro</span></div>
+        <div class="seta" aria-hidden="true">↓</div>
+        <div class="lista1"><b>Uma só lista</b><small>Corrija o que quiser. O stock desconta pelas fichas, sem contar duas vezes.</small></div>
         <span class="plano">Plano Café</span>
-      </div>
-      <div class="ecra">
-        <div class="ui">
-          <div class="ui-t">Estoque <small>valor: 412,30 €</small></div>
-          <div class="linha"><b>Leite meio-gordo</b><span class="pill cr">pedir hoje</span><span class="barra"><i class="cr" style="width:14%"></i></span></div>
-          <div class="linha"><b>Café Brazil Jaguara</b><span class="num">2,4 kg</span><span class="barra"><i style="width:62%"></i></span></div>
-          <div class="linha"><b>Copos 12 oz</b><span class="pill al">a acabar</span><span class="barra"><i class="al" style="width:28%"></i></span></div>
-          <div class="linha"><b>Matcha cerimonial</b><span class="num">310 g</span><span class="barra"><i style="width:77%"></i></span></div>
-        </div>
-      </div>
-    </div>
+      </article>
 
-    <div class="func">
-      <div class="txt">
-        <h3>As vendas do dia em um minuto</h3>
-        <p>Vendeu no terminal e em dinheiro? Importe da SumUp, tire foto ao relatório do seu POS ou conte à mão. Junta tudo na mesma lista, corrige o que quiser e o stock desconta pelas fichas.</p>
-        <ul>
-          <li>SumUp: os artigos do dia chegam sozinhos</li>
-          <li>Qualquer POS: foto do relatório ou ficheiro SAF-T</li>
-          <li>Dinheiro: conte à mão com + e −</li>
-          <li>Corrija um dia já aplicado, sem descontar duas vezes</li>
-        </ul>
-        <span class="plano">Plano Café</span>
-      </div>
-      <div class="ecra">
-        <div class="ui">
-          <div class="ui-t">Vendas de sábado <small>3 fontes</small></div>
-          <div class="linha"><b>SumUp · 23 pagamentos</b><span class="num">93,00 €</span></div>
-          <div class="linha"><b>Contado à mão (dinheiro)</b><span class="num">11 vendas</span></div>
-          <div class="linha"><b>Iced Latte</b><span class="num">14</span></div>
-          <div class="linha"><b>Expresso</b><span class="num">9</span></div>
-          <div class="linha"><b>Bolo de banana</b><span class="num">6</span></div>
+      <article class="bx bx-enc">
+        <div class="tx">
+          <span class="eti">Encomendas</span>
+          <h3>Ao fornecedor, num toque</h3>
+          <p>O que está abaixo do mínimo vira uma lista por fornecedor, com o valor estimado e a mensagem já escrita com o nome da sua empresa. Só carrega em enviar.</p>
+          <ul class="chk"><li>Valor de cada encomenda e do total</li><li>Faturas de compra lidas por foto</li><li>O que falta pagar a cada fornecedor</li></ul>
+          <span class="plano">Plano PRO</span>
         </div>
-      </div>
-    </div>
-
-    <div class="func inv">
-      <div class="txt">
-        <h3>Encomendas ao fornecedor num toque</h3>
-        <p>O Dio’Stock junta o que está abaixo do mínimo, separa por fornecedor, mostra quanto vai gastar e escreve a mensagem com o nome da sua empresa. Só tem de carregar em enviar.</p>
-        <ul>
-          <li>Valor estimado de cada encomenda e do total</li>
-          <li>Produção do dia calculada pelas vendas</li>
-          <li>Faturas de compra lidas por foto, e o que falta pagar</li>
-          <li>Equipa com acesso só ao que precisa</li>
-        </ul>
-        <span class="plano">Plano PRO</span>
-      </div>
-      <div class="ecra">
-        <div class="zap">
+        <div class="vis wa-bg"><div class="zap">
           <b>Para: Lacticínios do Vale</b>
           Olá, boa tarde!<br>Gostaria de fazer uma encomenda, seriam:<br><br>
           • Leite meio-gordo — 12 L<br>
@@ -611,33 +612,22 @@ body{background:#F6F3F0}
           • Manteiga — 2 kg<br><br>
           Obrigado e fico a aguardar a confirmação.<br><br>Atenciosamente,<br>Café da Praça
           <small>enviado pelo Dio’Stock</small>
-        </div>
-      </div>
-    </div>
+        </div></div>
+      </article>
 
-    <div class="func">
-      <div class="txt">
-        <h3>A equipa a par de tudo, desde o primeiro dia</h3>
-        <p>Escala da semana, tips divididas ao cêntimo e as regras da casa num só sítio. Quem entra novo aprende o menu com cursos feitos a partir das suas fichas, e tira dúvidas sem interromper o chefe.</p>
-        <ul>
-          <li>Cursos e quizzes por função: sala, bar, cozinha</li>
-          <li>Quiz criado sozinho a partir das fichas técnicas</li>
-          <li>Pergunte à casa: ingredientes, alergénios e regras</li>
-          <li>Escala, férias, faltas e tips</li>
-        </ul>
-        <span class="plano">Plano PRO</span>
-      </div>
-      <div class="ecra">
-        <div class="ui">
-          <div class="ui-t">Formação <small>Equipe</small></div>
-          <div class="linha"><b>Pratos da cozinha</b><span class="num">Rui · <b style="color:var(--green)">✓ 90%</b></span></div>
-          <div class="linha"><b>Bebidas do bar</b><span class="num">Ana · <b style="color:var(--green)">✓ 100%</b></span></div>
-          <div class="linha"><b>Receber o cliente</b><span class="num">Marta · <b style="color:#D97706">por fazer</b></span></div>
-          <div class="linha"><b>“A lasanha tem glúten?”</b><span class="num"><b style="color:#B91C1C">Sim</b> · da ficha</span></div>
+      <article class="bx bx-form">
+        <div class="tx">
+          <span class="eti">Equipa e formação</span>
+          <h3>A equipa aprende o menu a jogar</h3>
+          <p>Cursos feitos a partir das suas fichas, com vidas, XP e níveis. Cada pessoa entra com a sua conta e o responsável vê a evolução de todos.</p>
+          <ul class="chk"><li>Quiz automático de 8 perguntas num toque</li><li>Liga da semana e evolução da equipa</li><li>Convite por WhatsApp ou e-mail</li><li>Escala, faltas e tips na mesma aba</li></ul>
+          <span class="plano">Plano PRO</span>
         </div>
-      </div>
-    </div>
+        <figure class="fm-tel"><img src="img/quiz.webp" width="390" height="660" alt="Quiz da Formação no Dio’Stock: pergunta sobre o Mojito com a resposta certa e +10 XP" loading="lazy" decoding="async"><figcaption>O quiz no telemóvel</figcaption></figure>
+        <figure class="fm-pnl"><img src="img/painel.webp" width="366" height="679" alt="Painel da Formação: liga da semana e evolução da equipa por semana" loading="lazy" decoding="async"><figcaption>O painel do responsável</figcaption></figure>
+      </article>
 
+    </div>
   </div>
 </section>
 
@@ -873,11 +863,11 @@ body{background:#F6F3F0}
 (function(){ // as secções aparecem ao descer
   if(!('IntersectionObserver' in window)) return;
   try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
-  const els=document.querySelectorAll('.func, .fluxo li, .pl, .int > div, .fim, section.bloco .cab, .faq details');
+  const els=document.querySelectorAll('.func, .bx, .fluxo li, .pl, .int > div, .fim, section.bloco .cab, .faq details');
   const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target);} }),{rootMargin:'0px 0px -8% 0px'});
   const ver=()=>document.querySelectorAll('.rv:not(.on)').forEach(el=>{ if(el.getBoundingClientRect().top < innerHeight*0.95) el.classList.add('on'); });
   addEventListener('scroll',ver,{passive:true}); addEventListener('resize',ver);
-  els.forEach((el,i)=>{ if(el.getBoundingClientRect().top < innerHeight) return; el.classList.add('rv'); const sib=[...el.parentNode.children].indexOf(el); el.style.transitionDelay=(el.matches('.fluxo li, .pl, .int > div, .faq details')? Math.min(sib,5)*80 : 0)+'ms'; io.observe(el); });
+  els.forEach((el,i)=>{ if(el.getBoundingClientRect().top < innerHeight) return; el.classList.add('rv'); const sib=[...el.parentNode.children].indexOf(el); el.style.transitionDelay=(el.matches('.fluxo li, .pl, .int > div, .faq details, .bx')? Math.min(sib,5)*80 : 0)+'ms'; io.observe(el); });
 })();
 </script>
 </body>

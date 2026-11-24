@@ -1331,7 +1331,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 17:58</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 18:13</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -21599,37 +21599,37 @@ var qrcode = function() {
                 }
             } catch (_) {}
         }
-        // plateia: palmas (rajadas curtas de ruído) e gritos de festa ("uhuu!")
+        // plateia a festejar: muitas vozes num "aêêêê!" a subir, com palmas leves por trás
         function rlAplauso(ctx, ini) {
-            const sr = ctx.sampleRate, buf = ctx.createBuffer(1, Math.floor(sr * .06), sr), d = buf.getChannelData(0);
-            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 5);
-            const sai = ctx.createGain(); sai.gain.value = .9; sai.connect(ctx.destination);
-            const dur = 3.6, n = 260;
-            for (let i = 0; i < n; i++) {
-                const u = Math.random(), t = ini + dur * (u < .7 ? Math.pow(Math.random(), 1.6) * .75 : Math.random()); // mais palmas no início
-                const src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g = ctx.createGain();
-                src.buffer = buf; src.playbackRate.value = .8 + Math.random() * .6;
-                bp.type = 'bandpass'; bp.frequency.value = 900 + Math.random() * 1800; bp.Q.value = .9 + Math.random();
-                const fade = Math.max(0, 1 - (t - ini) / dur);
-                g.gain.value = (.12 + Math.random() * .22) * (.35 + .65 * fade);
+            const sai = ctx.createGain(), suave = ctx.createBiquadFilter(), comp = ctx.createDynamicsCompressor();
+            suave.type = 'lowpass'; suave.frequency.value = 3200; sai.gain.value = 1.4;
+            sai.connect(suave).connect(comp).connect(ctx.destination);
+            const dur = 2.6;
+            // vozes: fonte "rouca" (dente de serra) por dois formantes que vão de "a" para "e"
+            for (let i = 0; i < 12; i++) {
+                const t = ini + Math.random() * .35, fim = t + dur - Math.random() * .5;
+                const homem = i % 3 !== 0, base = (homem ? 150 : 250) + Math.random() * (homem ? 70 : 90);
+                const o = ctx.createOscillator(), vib = ctx.createOscillator(), vg = ctx.createGain();
+                o.type = 'sawtooth';
+                o.frequency.setValueAtTime(base * .85, t); o.frequency.exponentialRampToValueAtTime(base * 1.35, t + .35); o.frequency.exponentialRampToValueAtTime(base * 1.25, fim - .3); o.frequency.exponentialRampToValueAtTime(base * .9, fim);
+                vib.frequency.value = 4.5 + Math.random() * 2.5; vg.gain.value = base * .035; vib.connect(vg).connect(o.frequency);
+                const v = ctx.createGain(); v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(.05, t + .22); v.gain.setValueAtTime(.05, fim - .55); v.gain.exponentialRampToValueAtTime(.001, fim);
+                [[800, 450, 1], [1250, 2000, .7], [2600, 2700, .25]].forEach(([fa, fe, gg]) => {
+                    const bp = ctx.createBiquadFilter(), g = ctx.createGain(); bp.type = 'bandpass'; bp.Q.value = 6;
+                    bp.frequency.setValueAtTime(fa, t); bp.frequency.linearRampToValueAtTime(fe, t + .5); g.gain.value = gg;
+                    o.connect(bp).connect(g).connect(v);
+                });
+                v.connect(sai); o.start(t); o.stop(fim + .05); vib.start(t); vib.stop(fim + .05);
+            }
+            // palmas leves
+            const sr = ctx.sampleRate, buf = ctx.createBuffer(1, Math.floor(sr * .04), sr), d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 6);
+            for (let i = 0; i < 70; i++) {
+                const t = ini + .2 + Math.random() * (dur - .2), src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+                src.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = 1100 + Math.random() * 900; bp.Q.value = 1.2;
+                g.gain.value = (.03 + Math.random() * .04) * Math.max(.2, 1 - (t - ini) / dur);
                 src.connect(bp).connect(g).connect(sai); src.start(t);
             }
-            // burburinho da plateia
-            const nb = ctx.createBuffer(1, Math.floor(sr * dur), sr), nd = nb.getChannelData(0); let last = 0;
-            for (let i = 0; i < nd.length; i++) { last = last * .97 + (Math.random() * 2 - 1) * .03; nd[i] = last * 6; }
-            const ns = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
-            ns.buffer = nb; lp.type = 'lowpass'; lp.frequency.value = 1400; ng.gain.setValueAtTime(0, ini); ng.gain.linearRampToValueAtTime(.18, ini + .3); ng.gain.linearRampToValueAtTime(0, ini + dur);
-            ns.connect(lp).connect(ng).connect(sai); ns.start(ini);
-            // gritos "uhuu!"
-            [0.15, 0.45, 0.8, 1.2, 1.7].forEach((dt, i) => {
-                const t = ini + dt, o = ctx.createOscillator(), f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), g = ctx.createGain(), vib = ctx.createOscillator(), vg = ctx.createGain();
-                const base = 260 + Math.random() * 180;
-                o.type = 'sawtooth'; o.frequency.setValueAtTime(base, t); o.frequency.exponentialRampToValueAtTime(base * 1.9, t + .22); o.frequency.exponentialRampToValueAtTime(base * 1.5, t + .7);
-                vib.frequency.value = 7 + Math.random() * 3; vg.gain.value = 12; vib.connect(vg).connect(o.frequency);
-                f1.type = 'bandpass'; f1.frequency.value = 700 + i * 60; f1.Q.value = 4; f2.type = 'lowpass'; f2.frequency.value = 2400;
-                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.06, t + .06); g.gain.exponentialRampToValueAtTime(.001, t + .75);
-                o.connect(f1).connect(f2).connect(g).connect(sai); o.start(t); o.stop(t + .8); vib.start(t); vib.stop(t + .8);
-            });
         }
         function rlAnimar(roda, de, ate, n, reduz) {
             return new Promise(res => {
@@ -25308,7 +25308,7 @@ async function dsTrPreparar() {
             const cursos = f.cursos.length ? `<div class="fm-cursos">${f.cursos.map(c => fmCursoCard(c, staff)).join('')}</div>`
                 : `<div class="eq-card eq-vazio" style="margin-top:12px"><b>Ainda sem cursos</b><p>${ed ? 'Escolha as fichas que a equipa tem de saber e a app faz o quiz sozinha. Pode juntar textos com as regras da casa.' : 'O responsável ainda não criou cursos.'}</p>${ed ? '<button type="button" class="eq-b p" onclick="fmEditar()"><i class="fas fa-plus"></i>Criar o primeiro curso</button>' : ''}</div>`;
             el.innerHTML = `${me}
-                <div class="eq-bar" style="margin-top:18px"><b style="font-size:16px;font-weight:900">Cursos</b>${ed ? `<span style="flex:1"></span><button type="button" class="eq-b p" onclick="fmEditar()"><i class="fas fa-plus"></i>Novo curso</button>` : ''}</div>
+                <div class="eq-bar" style="margin-top:18px"><b style="font-size:16px;font-weight:900">Cursos</b>${ed ? `<span style="flex:1"></span><button type="button" class="eq-b" onclick="fmRapido()" title="Cria um quiz de 8 perguntas com fichas do menu"><i class="fas fa-bolt"></i>Curso rápido</button><button type="button" class="eq-b p" onclick="fmEditar()"><i class="fas fa-plus"></i>Novo curso</button>` : ''}</div>
                 ${cursos}
                 <div id="fmx-painel">${fmPainelHtml(pessoas, f.cursos, staff, ed)}</div>
                 <div class="fm-ass" style="margin-top:18px"><h3>💬 Pergunte à casa</h3><p class="sub">Dúvidas sobre o menu, as receitas, os alergénios e as regras. As respostas vêm das fichas técnicas e dos documentos da empresa.</p>
@@ -25375,13 +25375,15 @@ async function dsTrPreparar() {
         }
         function fmEquipaHtml(staff) {
             if (fmMembros === null || fmMembrosDono !== dataOwnerId) { fmCarregarMembros().then(() => { if (eqVista === 'formacao') { const p = document.getElementById('fmx-painel'); if (p) fmPintar(); } }); }
+            if (typeof paCarregar === 'function' && !window._fmPa) { window._fmPa = true; paCarregar().then(() => { if (paLista.length && eqVista === 'formacao') fmPintar(); }); }
             const ord = { sem: 0, email: 1, convidado: 2, entrou: 3 };
             const l = staff.map(s => ({ s, e: fmEstado(s) })).sort((a, b) => ord[a.e] - ord[b.e]);
             const falta = l.filter(x => x.e !== 'entrou').length;
             const est = { entrou: '<span class="fmx-est ok">✓ Tem conta</span>', convidado: '<span class="fmx-est al">Convite enviado</span>', email: '<span class="fmx-est">Por convidar</span>', sem: '<span class="fmx-est">Sem e-mail</span>' };
             return `<div class="eq-card fmx-cd" style="margin-top:18px"><div class="eq-bar" style="margin:0"><b style="font-size:15px;font-weight:900">👥 Equipa na formação</b><span style="flex:1"></span><small style="color:#7A6A60">${falta ? falta + (falta === 1 ? ' pessoa por entrar' : ' pessoas por entrar') : 'Todos têm conta'}</small></div>
-                <p class="fmx-nota" style="margin-top:4px">Convide cada pessoa da escala pelo e-mail. Ela recebe o link, cria a palavra-passe e entra já ligada ao seu nome: os cursos que fizer ficam no histórico dela.</p>
-                ${l.map(({ s, e }) => `<div class="fmx-eqp"><span class="av" style="background:${s.cor || fmCor(s.id)}">${escapeHtml(fmIni(s.nome))}</span><span class="nm"><b>${escapeHtml(s.nome)}</b><small>${s.email ? escapeHtml(s.email) : escapeHtml(s.funcao || s.area || '')}</small></span>${est[e]}${e === 'entrou' ? '' : `<button type="button" class="eq-b${e === 'convidado' ? '' : ' p'}" onclick="fmConvidar('${s.id}',this)"><i class="fas ${e === 'convidado' ? 'fa-rotate-right' : 'fa-paper-plane'}"></i>${e === 'convidado' ? 'Reenviar' : 'Convidar'}</button>`}</div>`).join('')}</div>`;
+                <p class="fmx-nota" style="margin-top:4px">Envie o convite por WhatsApp ou por e-mail. Pelo WhatsApp, a pessoa abre o link e pede acesso; aceite aqui e ela recebe o e-mail para criar a palavra-passe, já ligada ao seu nome na escala.</p>
+                ${typeof paLista !== 'undefined' && paLista.length ? `<div class="pa-box" style="margin-top:10px"><p class="pa-t"><i class="fas fa-user-plus"></i> A pedir para entrar <b>${paLista.length}</b></p>${paHtml(paLista)}</div>` : ''}
+                ${l.map(({ s, e }) => `<div class="fmx-eqp"><span class="av" style="background:${s.cor || fmCor(s.id)}">${escapeHtml(fmIni(s.nome))}</span><span class="nm"><b>${escapeHtml(s.nome)}</b><small>${s.email ? escapeHtml(s.email) : escapeHtml(s.funcao || s.area || '')}</small></span>${est[e]}${e === 'entrou' ? '' : `<span class="fmx-bts"><button type="button" class="eq-b wa" onclick="fmWhats('${s.id}',this)" aria-label="Convidar ${escapeHtml(s.nome)} pelo WhatsApp"><i class="fab fa-whatsapp"></i>WhatsApp</button><button type="button" class="eq-b${e === 'convidado' ? '' : ' p'}" onclick="fmConvidar('${s.id}',this)"><i class="fas ${e === 'convidado' ? 'fa-rotate-right' : 'fa-envelope'}"></i>${e === 'convidado' ? 'Reenviar' : 'E-mail'}</button></span>`}</div>`).join('')}</div>`;
         }
         async function fmConvidar(sid, bt) {
             if (currentRole !== 'dono') return dsToast('Só o responsável da conta pode convidar.', true);
@@ -25557,6 +25559,19 @@ async function dsTrPreparar() {
             const f = fmDados(); f.cursos = f.cursos.filter(c => c.id !== id); eqGuardar(); dsModalFechar('fm-ed'); fmPintar();
         }
         async function fmAuto() { fmEditar(); }
+        // curso rápido: 8 perguntas sobre fichas do menu escolhidas ao acaso (repetir troca as fichas)
+        function fmRapido() {
+            if (!eqPodeEditar()) return;
+            const fichas = fmMist((appState.recipes || []).filter(r => (r.ingredients || []).length));
+            if (!fichas.length) return dsToast('Ainda não há fichas com ingredientes para fazer perguntas.', true);
+            const f = fmDados(), titulo = 'Quiz rápido do menu';
+            let c = f.cursos.find(x => x.rapido);
+            const licoes = fichas.slice(0, 8).map(r => ({ tipo: 'ficha', id: r.id }));
+            if (c) Object.assign(c, { licoes, auto: true, nPerg: 8 });
+            else { c = { id: fmId(), titulo, descricao: '8 perguntas sobre o menu, criadas sozinhas. Gere de novo para trocar as fichas.', para: [], licoes, perguntas: [], auto: true, nPerg: 8, minimo: 80, rapido: true }; f.cursos.unshift(c); }
+            eqGuardar(); fmPintar(); dsToast('Curso rápido pronto: 8 perguntas com ' + licoes.length + (licoes.length === 1 ? ' ficha.' : ' fichas.'));
+            setTimeout(() => { const el = [...document.querySelectorAll('.fmx-cc')].find(x => x.querySelector('b')?.textContent === titulo); if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('fmx-pop'); } }, 60);
+        }
 
         // ---------- perguntas automáticas a partir das fichas
         const fmMist = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -25780,9 +25795,9 @@ async function dsTrPreparar() {
             if (document.getElementById('fmx-css')) return;
             document.head.insertAdjacentHTML('beforeend', `<style id="fmx-css">
             .fmx-cd{padding:16px!important;border-radius:18px}.fmx-nota{font-size:13px;color:#7A6A60;margin-top:10px;line-height:1.4}
-            .fmx-eqp{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F2ECE4}.fmx-eqp .av{width:36px;height:36px;border-radius:11px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}.fmx-eqp .nm{flex:1;min-width:0}.fmx-eqp .nm b{display:block;font-size:14px;font-weight:800;color:#231F20}.fmx-eqp .nm small{display:block;font-size:12px;color:#7A6A60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fmx-eqp .eq-b{flex-shrink:0}
+            .fmx-eqp{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F2ECE4}.fmx-eqp .av{width:36px;height:36px;border-radius:11px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}.fmx-eqp .nm{flex:1;min-width:0}.fmx-eqp .nm b{display:block;font-size:14px;font-weight:800;color:#231F20}.fmx-eqp .nm small{display:block;font-size:12px;color:#7A6A60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fmx-eqp .eq-b{flex-shrink:0}.fmx-bts{display:flex;gap:6px;flex-shrink:0}
             .fmx-est{font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:99px;background:#F2ECE4;color:#5B4A40;white-space:nowrap}.fmx-est.ok{background:#DCFCE7;color:#15803D}.fmx-est.al{background:#FEF3C7;color:#B45309}
-            @media (max-width:480px){.fmx-eqp{flex-wrap:wrap}.fmx-eqp .nm{min-width:55%}.fmx-eqp .eq-b{margin-left:46px}}
+            @media (max-width:480px){.fmx-eqp{flex-wrap:wrap}.fmx-eqp .nm{min-width:55%}.fmx-bts{margin-left:46px}}
             html.dark .fmx-eqp{border-color:#44332A}html.dark .fmx-eqp .nm b{color:#F2ECE4}html.dark .fmx-est{background:#44332A;color:#C9BBAF}
             .fmx-me{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #E4DCCF;border-radius:18px;padding:14px 16px}
             .fmx-me .av,.fmx-av,.fmx-lg .av,.fmx-quem .av{width:46px;height:46px;border-radius:14px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0}
@@ -25963,5 +25978,119 @@ async function dsTrPreparar() {
         })();
     </script>
 
+    <script>
+        // ======================================================= PEDIDOS DE ACESSO (convite por WhatsApp)
+        // O responsável envia um link por WhatsApp; a pessoa pede acesso com o seu e-mail; o responsável aceita
+        // (Definições → Colaboradores, Formação ou caixa de mensagens) e ela recebe o e-mail para criar a palavra-passe.
+        let paLista = [], paAvisado = '';
+        async function paCarregar() {
+            if (!sb || typeof currentRole === 'undefined' || currentRole !== 'dono' || !dataOwnerId) { paLista = []; return; }
+            try { const { data, error } = await sb.from('pedidos_acesso').select('*').eq('dono_id', dataOwnerId).eq('estado', 'pendente').order('criado_em', { ascending: false }); if (!error) paLista = data || []; } catch (_) {}
+        }
+        const paHtml = (lista, cls) => lista.map(p => `<div class="pa-it ${cls || ''}"><span class="pa-av">${escapeHtml(fmIni(p.nome))}</span><span class="pa-nm"><b>${escapeHtml(p.nome)}</b><small>${escapeHtml(p.email)} · pediu ${new Date(p.criado_em).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span><span class="pa-bt"><button type="button" class="n" onclick="paRecusar('${p.id}',this)">Recusar</button><button type="button" class="s" onclick="paAceitar('${p.id}',this)"><i class="fas fa-check"></i> Aceitar</button></span></div>`).join('');
+        async function paAceitar(id, bt) {
+            const p = paLista.find(x => x.id === id); if (!p) return;
+            if (bt) { bt.disabled = true; bt.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; }
+            try {
+                const { error } = await sb.from('membros').insert({ dono_id: currentUser.id, email: p.email, permissao: 'ver', tipo: 'funcionario' });
+                if (error && error.code !== '23505') throw error;
+                await sb.from('pedidos_acesso').update({ estado: 'aceite', lido: true }).eq('id', id);
+                // liga à pessoa da escala (ou junta-a à equipe)
+                const e = eqDados(); let s = p.staff_id && e.staff.find(x => x.id === p.staff_id);
+                if (!s) s = e.staff.find(x => String(x.email || '').toLowerCase() === p.email);
+                if (s) { if (!s.email) s.email = p.email; } else e.staff.push({ id: eqId(), nome: p.nome.slice(0, 40), email: p.email, funcao: '', area: '', cor: EQ_CORES[e.staff.length % EQ_CORES.length], tipsModo: 'trabalha', tips: true, padrao: {}, horas: {} });
+                eqGuardar();
+                if (typeof fmMembros !== 'undefined' && fmMembros) fmMembros.push({ email: p.email, membro_id: null, permissao: 'ver', tipo: 'funcionario' });
+                const modo = typeof colabConvidar === 'function' ? await colabConvidar(p.email, true) : 'convite';
+                dsToast(modo ? p.nome.split(' ')[0] + ' foi aceite. Recebe agora um e-mail para criar a palavra-passe.' : p.nome.split(' ')[0] + ' foi aceite, mas o e-mail não seguiu. Use "Reenviar convite" em Colaboradores.', !modo);
+            } catch (err) { console.warn(err); dsToast('Não foi possível aceitar agora. Verifique a internet.', true); if (bt) { bt.disabled = false; bt.innerHTML = '<i class="fas fa-check"></i> Aceitar'; } return; }
+            paLista = paLista.filter(x => x.id !== id); paAtualizarTudo();
+        }
+        async function paRecusar(id, bt) {
+            const p = paLista.find(x => x.id === id); if (!p) return;
+            if (!(await dsConfirm('Recusar o pedido de ' + p.nome + '?', 'A pessoa não fica com acesso. Pode enviar-lhe um novo convite mais tarde.', { danger: true, ok: 'Recusar' }))) return;
+            const { error } = await sb.from('pedidos_acesso').update({ estado: 'recusado', lido: true }).eq('id', id);
+            if (error) return dsToast('Não foi possível recusar agora.', true);
+            paLista = paLista.filter(x => x.id !== id); paAtualizarTudo();
+        }
+        function paAtualizarTudo() {
+            try { caixaPintarSino(); } catch (_) {}
+            const cx = document.getElementById('pa-caixa'); if (cx) cx.outerHTML = paCaixaHtml();
+            if (typeof eqVista !== 'undefined' && eqVista === 'formacao' && document.getElementById('fmx-painel')) fmPintar();
+            const st = document.getElementById('pa-colab'); if (st) st.outerHTML = paColabHtml();
+            if (document.getElementById('set-colab-list') && !paLista.length && typeof loadCollaborators === 'function') loadCollaborators();
+        }
+        const paCaixaHtml = () => paLista.length ? `<div id="pa-caixa" class="pa-box"><p class="pa-t"><i class="fas fa-user-plus"></i> Pedidos de acesso à equipa <b>${paLista.length}</b></p>${paHtml(paLista)}</div>` : '<div id="pa-caixa"></div>';
+        const paColabHtml = () => paLista.length ? `<div id="pa-colab" class="pa-box" style="margin-bottom:12px"><p class="pa-t"><i class="fas fa-user-plus"></i> A pedir para entrar <b>${paLista.length}</b></p>${paHtml(paLista)}<p class="pa-n">Ao aceitar, a pessoa entra com acesso "Só ver" e recebe um e-mail para criar a palavra-passe. Pode mudar o acesso depois, aqui em baixo.</p></div>` : '<div id="pa-colab"></div>';
+
+        // ---------- convidar pelo WhatsApp
+        async function fmWhats(sid, bt) {
+            if (currentRole !== 'dono') return dsToast('Só o responsável da conta pode convidar.', true);
+            const s = fmStaff().find(x => x.id === sid);
+            const jan = window.open('about:blank', '_blank');                // abre já, para o navegador não bloquear
+            if (bt) bt.disabled = true;
+            try {
+                const a = new Uint8Array(12); crypto.getRandomValues(a); const token = [...a].map(x => x.toString(16).padStart(2, '0')).join('');
+                const { error } = await sb.from('convites_link').insert({ token, dono_id: currentUser.id, staff_id: s ? s.id : null, staff_nome: s ? s.nome.slice(0, 60) : null });
+                if (error) throw error;
+                const link = new URL('convite.html?t=' + token, location.href).href;
+                const nome = s ? s.nome.split(' ')[0] : '';
+                const txt = `Olá${nome ? ' ' + nome : ''}! 👋 Junta-te à equipa ${currentEmpresa ? 'da ' + currentEmpresa + ' ' : ''}no Dio'Stock para veres a escala e fazeres a formação. Toca no link e pede acesso com o teu e-mail:\n${link}`;
+                const wa = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(txt);
+                if (jan) jan.location.href = wa; else location.href = wa;
+                dsToast('Link criado. Quando a pessoa pedir acesso, aparece nas Mensagens e em Colaboradores para aceitar.');
+            } catch (e) { console.warn(e); if (jan) jan.close(); dsToast('Não foi possível criar o link agora. Verifique a internet.', true); }
+            if (bt) bt.disabled = false;
+        }
+
+        // ---------- ligar à caixa de mensagens, às Definições e à Formação
+        (function () {
+            const oC = caixaCarregar;
+            caixaCarregar = async function () { const r = await oC.apply(this, arguments); await paCarregar(); caixaPintarSino(); return r; };
+            const oS = caixaPintarSino;
+            caixaPintarSino = function () {
+                const r = oS.apply(this, arguments);
+                const b = document.getElementById('ds-sino'); if (!b) return r;
+                const n1 = caixaMsgs.filter(m => m.resposta && m.lida_cliente === false).length, n2 = paLista.filter(p => !p.lido).length;
+                b.innerHTML = '<i class="fas fa-envelope"></i>' + (n1 + n2 ? `<b>${n1 + n2}</b>` : '');
+                const chave = paLista.filter(p => !p.lido).map(p => p.id).join(',');
+                if (n2 && chave !== paAvisado && !document.getElementById('caixa-modal')) {
+                    paAvisado = chave; const p = paLista.find(x => !x.lido);
+                    document.getElementById('msg-aviso')?.remove();
+                    document.body.insertAdjacentHTML('beforeend', `<div id="msg-aviso" role="status"><span class="ic"><i class="fas fa-user-plus"></i></span><div class="flex-1 min-w-0"><b class="block text-slate-900">${n2 === 1 ? escapeHtml(p.nome) + ' quer entrar na equipa' : n2 + ' pessoas querem entrar na equipa'}</b><span class="block text-sm text-slate-600">Aceite para lhe dar acesso à escala e à formação.</span><div class="flex gap-2 mt-2"><button type="button" class="text-sm font-bold px-3 py-1.5 rounded-lg text-white" style="background:var(--brand)" onclick="caixaAbrir()">Ver pedido${n2 === 1 ? '' : 's'}</button><button type="button" class="text-sm font-bold px-3 py-1.5 text-slate-500" onclick="this.closest('#msg-aviso').remove()">Depois</button></div></div></div>`);
+                }
+                return r;
+            };
+            const oA = caixaAbrir;
+            caixaAbrir = function () {
+                const r = oA.apply(this, arguments);
+                const l = document.getElementById('cx-msgs');
+                if (l && paLista.length) {
+                    l.insertAdjacentHTML('beforebegin', paCaixaHtml());
+                    const nl = paLista.filter(p => !p.lido); if (nl.length) { nl.forEach(p => p.lido = true); sb.from('pedidos_acesso').update({ lido: true }).in('id', nl.map(p => p.id)).then(() => caixaPintarSino()); caixaPintarSino(); }
+                }
+                return r;
+            };
+            const oL = loadCollaborators;
+            loadCollaborators = async function () {
+                const r = await oL.apply(this, arguments);
+                await paCarregar();
+                const box = document.getElementById('set-colab-list');
+                if (box) { document.getElementById('pa-colab')?.remove(); box.insertAdjacentHTML('beforebegin', paColabHtml()); }
+                return r;
+            };
+            document.head.insertAdjacentHTML('beforeend', `<style>
+                .pa-box{background:#FBEDE6;border:1px solid #F2D6C7;border-radius:16px;padding:12px 14px;margin:6px 0 10px}
+                .pa-t{font-size:13.5px;font-weight:900;color:#983808;margin:0 0 4px;display:flex;align-items:center;gap:6px}.pa-t b{background:#983808;color:#fff;border-radius:99px;padding:1px 8px;font-size:12px}
+                .pa-it{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F2D6C7;flex-wrap:wrap}.pa-it:first-of-type{border-top:0}
+                .pa-av{width:34px;height:34px;border-radius:11px;background:#983808;color:#fff;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+                .pa-nm{flex:1;min-width:150px}.pa-nm b{display:block;font-size:14px;color:#231F20}.pa-nm small{display:block;font-size:12px;color:#5B4A40;word-break:break-all}
+                .pa-bt{display:flex;gap:6px;margin-left:auto}.pa-bt button{padding:8px 12px;border-radius:10px;font-weight:800;font-size:13px}.pa-bt .s{background:#15803D;color:#fff}.pa-bt .n{background:#fff;border:1px solid #E4DCCF;color:#5B4A40}
+                .pa-n{font-size:12px;color:#7A6A60;margin:8px 0 0}
+                .fmx-eqp .eq-b.wa{background:#25D366;border-color:#25D366;color:#fff}
+                html.dark .pa-box{background:#3A2218;border-color:#5A3626}html.dark .pa-nm b{color:#F2ECE4}html.dark .pa-nm small{color:#C9BBAF}html.dark .pa-it{border-color:#5A3626}html.dark .pa-bt .n{background:#2A1B14;border-color:#44332A;color:#C9BBAF}
+            </style>`);
+        })();
+    </script>
 </body>
 </html>

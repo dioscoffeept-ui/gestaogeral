@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#983808">
+<title>Convite para a equipa · Dio’Stock</title>
+<meta name="description" content="Peça acesso à equipa no Dio’Stock para fazer a formação e ver a escala.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Junte-se à equipa no Dio’Stock">
+<meta property="og:description" content="Toque para pedir acesso. Depois de aceite, faz a formação e vê a escala com a sua conta.">
+<meta property="og:image" content="https://diostock.pt/diostock-og.png">
+<meta property="og:image:secure_url" content="https://diostock.pt/diostock-og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Dio’Stock">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="fontes/fontes.css">
+<style>
+  :root { --cafe: #983808; --preto: #231F20; --creme: #F6F3F0; --linha: #E4DCCF; --t2: #5B4A40; --t3: #7A6A60; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; background: var(--creme); color: var(--preto); font-family: 'Schibsted Grotesk', -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; display: flex; flex-direction: column; }
+  .topo { background: var(--cafe); color: #fff; padding: calc(36px + env(safe-area-inset-top)) 20px 64px; position: relative; overflow: hidden; }
+  .topo::before { content: ""; position: absolute; width: 260px; height: 260px; border-radius: 50%; background: rgba(255,255,255,.08); right: -80px; top: -90px; }
+  .topo::after { content: ""; position: absolute; width: 120px; height: 120px; border-radius: 22px; background: rgba(255,255,255,.07); left: -40px; bottom: -30px; transform: rotate(14deg); }
+  .topo .in { max-width: 440px; margin: 0 auto; position: relative; }
+  .logo { display: flex; align-items: center; gap: 10px; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -.02em; }
+  .logo svg { width: 36px; height: 36px; }
+  h1 { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 32px; line-height: 1.08; letter-spacing: -.02em; margin: 26px 0 8px; }
+  .topo p { margin: 0; color: #F6DCCF; font-size: 16px; line-height: 1.45; }
+  main { flex: 1; padding: 0 16px 32px; }
+  .card { max-width: 440px; margin: -36px auto 0; background: #fff; border: 1px solid var(--linha); border-radius: 22px; padding: 22px 20px; position: relative; }
+  label { display: block; font-size: 13px; font-weight: 700; color: #3A2A22; margin-top: 14px; }
+  label:first-of-type { margin-top: 0; }
+  input { display: block; width: 100%; margin-top: 6px; border: 1px solid var(--linha); border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; background: #fff; color: var(--preto); }
+  input:focus { outline: 2px solid var(--cafe); outline-offset: 1px; border-color: var(--cafe); }
+  button { display: block; width: 100%; margin-top: 18px; min-height: 52px; border: 0; border-radius: 14px; background: var(--cafe); color: #fff; font: inherit; font-weight: 800; font-size: 16px; cursor: pointer; box-shadow: 0 4px 0 #5E2205; }
+  button:active { transform: translateY(2px); box-shadow: 0 2px 0 #5E2205; }
+  button:disabled { opacity: .6; }
+  .nota { font-size: 13px; color: var(--t3); margin: 12px 0 0; line-height: 1.45; }
+  .erro { background: #FEE2E2; color: #B91C1C; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600; margin-top: 14px; display: none; }
+  .ok { text-align: center; padding: 8px 0; }
+  .ok .ic { width: 72px; height: 72px; border-radius: 50%; background: #DCFCE7; color: #15803D; font-size: 34px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; animation: pop .5s cubic-bezier(.2,1.6,.4,1); }
+  .ok h2 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; margin: 0 0 6px; }
+  .ok p { color: var(--t2); margin: 0; line-height: 1.5; }
+  .ok a { display: inline-block; margin-top: 18px; color: var(--cafe); font-weight: 800; }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .ok .ic { animation: none; } }
+  footer { text-align: center; font-size: 12px; color: var(--t3); padding: 0 16px calc(20px + env(safe-area-inset-bottom)); }
+</style>
+</head>
+<body>
+<div class="topo"><div class="in">
+  <div class="logo"><svg viewBox="0 0 512 512" aria-hidden="true"><rect width="512" height="512" rx="110" fill="#FFFFFF"/><path fill="#983808" fill-rule="evenodd" transform="translate(-310.56 -358.57) scale(2.0901)" d="M285.94,221.79h-71.81v144.01h104.27l9.08-55.02-41.54-89ZM275.92,336.73h-31.92v-51.88h31.92v51.88Z"/></svg>Dio’Stock</div>
+  <h1 id="tit">Junte-se à equipa</h1>
+  <p id="sub">Peça acesso com o seu e-mail. Quando o responsável aceitar, recebe um e-mail para criar a palavra-passe.</p>
+</div></div>
+<main><div class="card" id="card">
+  <form id="f" novalidate>
+    <label for="nome">O seu nome</label><input id="nome" autocomplete="name" maxlength="60" required>
+    <label for="email">O seu e-mail</label><input id="email" type="email" inputmode="email" autocomplete="email" maxlength="120" required placeholder="nome@gmail.com">
+    <div class="erro" id="erro" role="alert"></div>
+    <button type="submit" id="bt">Pedir acesso</button>
+    <p class="nota">Use o e-mail que vai usar para entrar no Dio’Stock. Só o responsável da empresa vê o seu pedido.</p>
+  </form>
+</div></main>
+<footer>Dio’Stock · <a href="termos.html" style="color:inherit">Termos e privacidade</a></footer>
+<script>
+(function () {
+  const URL_ = 'https://brisrzuvvxkkzhmhsgro.supabase.co', KEY = 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs';
+  const t = new URLSearchParams(location.search).get('t') || '';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rpc = (fn, body) => fetch(URL_ + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json());
+  const erro = m => { const e = $('erro'); e.textContent = m; e.style.display = m ? 'block' : 'none'; };
+  const invalido = () => { $('card').innerHTML = '<div class="ok"><div class="ic" style="background:#FEF3C7;color:#B45309">!</div><h2>Link sem validade</h2><p>Este convite já não é válido. Peça um novo link a quem o enviou.</p></div>'; };
+  if (!t) return invalido();
+  rpc('convite_info', { p_token: t }).then(d => {
+    if (!d || typeof d !== 'object' || d.empresa === undefined) return invalido();
+    if (d.empresa) { $('tit').textContent = 'Junte-se à equipa de ' + d.empresa; document.title = 'Equipa de ' + d.empresa + ' · Dio’Stock'; }
+    if (d.nome) $('nome').value = d.nome;
+  }).catch(() => {});
+  $('f').addEventListener('submit', async e => {
+    e.preventDefault(); erro('');
+    const nome = $('nome').value.trim(), email = $('email').value.trim().toLowerCase();
+    if (!nome) return erro('Escreva o seu nome.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return erro('O e-mail não parece certo.');
+    const b = $('bt'); b.disabled = true; b.textContent = 'A enviar…';
+    try {
+      const r = await rpc('pedir_acesso', { p_token: t, p_nome: nome, p_email: email });
+      if (!r || !r.ok) { b.disabled = false; b.textContent = 'Pedir acesso'; return erro((r && r.erro) || 'Não foi possível enviar. Tente de novo.'); }
+      $('card').innerHTML = r.ja
+        ? `<div class="ok"><div class="ic">✓</div><h2>Já tem acesso</h2><p>O e-mail <b>${esc(email)}</b> já faz parte da equipa. Entre no Dio’Stock com ele.</p><a href="./">Abrir o Dio’Stock</a></div>`
+        : `<div class="ok"><div class="ic">✓</div><h2>Pedido enviado</h2><p>Quando o responsável aceitar, recebe um e-mail em <b>${esc(email)}</b> para criar a palavra-passe e entrar.</p><p style="margin-top:10px;font-size:14px">Não encontra o e-mail? Veja em Spam ou Promoções.</p></div>`;
+    } catch (_) { b.disabled = false; b.textContent = 'Pedir acesso'; erro('Sem ligação à internet. Tente de novo.'); }
+  });
+})();
+</script>
+</body>
+</html>
