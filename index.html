@@ -24096,6 +24096,14 @@ async function dsTrPreparar() {
                 </div>
                 <div class="p-5 space-y-4">
                   <input type="hidden" id="mep-id">
+                  <div class="flex items-center gap-3">
+                    <div id="mep-foto-prev" class="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl" style="aspect-ratio:4/3"></div>
+                    <div class="flex flex-wrap gap-2">
+                      <label class="px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-700 cursor-pointer hover:bg-slate-50"><i class="fas fa-camera mr-1"></i><span id="mep-foto-lbl">Adicionar foto</span><input type="file" accept="image/*" class="hidden" onchange="mepFotoEscolhida(this)"></label>
+                      <button type="button" id="mep-foto-aj" onclick="mepFotoAjustar()" class="px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-700 hidden"><i class="fas fa-crop-simple mr-1"></i>Ajustar</button>
+                      <button type="button" id="mep-foto-rm" onclick="mepFotoTirar()" class="px-3 py-2 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 hidden"><i class="fas fa-trash mr-1"></i>Remover</button>
+                    </div>
+                  </div>
                   <div class="grid gap-3" style="grid-template-columns:72px 1fr">
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Ícone</label><input id="mep-icon" maxlength="4" class="w-full text-center text-xl rounded-xl border-slate-300" placeholder="🥣"></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Nome *</label><input id="mep-name" required class="w-full text-sm font-bold rounded-xl border-slate-300" placeholder="Ex.: Pack Bali Green congelado"></div>
@@ -24152,10 +24160,49 @@ async function dsTrPreparar() {
             g('mep-days').value = m && m.shelfDays ? m.shelfDays : '';
             g('mep-steps').value = m ? (m.steps || []).join('\n') : '';
             g('mep-del').style.visibility = m ? '' : 'hidden';
+            mepFoto = m && m.image ? m.image : null; mepFotoOrig = null; mepFotoPintar();
+            g('mep-icon').oninput = mepFotoPintar;
             g('mep-ings-list').innerHTML = '';
             ((m && m.ingredients && m.ingredients.length) ? m.ingredients : [{ name: '', quantity: '', unit: 'g' }]).forEach(i => mepAddIng(i.name, i.quantity, i.unit ?? 'g'));
             const md = g('mep-modal'); md.classList.remove('hidden'); md.classList.add('flex');
             if (window.matchMedia('(hover: hover)').matches) g('mep-name').focus();
+        }
+        // foto da mise en place (igual às fichas: ajustar/recortar 4:3)
+        let mepFoto = null, mepFotoOrig = null;
+        function mepFotoPintar() {
+            const pv = document.getElementById('mep-foto-prev'); if (!pv) return;
+            const ic = (document.getElementById('mep-icon') || {}).value || '🥣';
+            pv.innerHTML = mepFoto ? `<img src="${escapeHtml(mepFoto)}" alt="" class="w-full h-full object-cover">` : escapeHtml(ic);
+            document.getElementById('mep-foto-lbl').textContent = mepFoto ? 'Trocar foto' : 'Adicionar foto';
+            document.getElementById('mep-foto-rm').classList.toggle('hidden', !mepFoto);
+            document.getElementById('mep-foto-aj').classList.toggle('hidden', !mepFotoOrig);
+        }
+        async function mepFotoEscolhida(input) {
+            const f = input.files && input.files[0]; input.value = ''; if (!f) return;
+            const url = await dsRecortar(f, { aspeto: 4 / 3, saida: 1000, inicio: 'cobrir', titulo: 'Ajustar a foto' });
+            if (!url) return; mepFotoOrig = f; mepFoto = url; mepFotoPintar();
+        }
+        async function mepFotoAjustar() {
+            if (!mepFotoOrig) return;
+            const url = await dsRecortar(mepFotoOrig, { aspeto: 4 / 3, saida: 1000, inicio: 'cobrir', titulo: 'Ajustar a foto' });
+            if (url) { mepFoto = url; mepFotoPintar(); }
+        }
+        function mepFotoTirar() { mepFoto = null; mepFotoOrig = null; mepFotoPintar(); }
+        async function mepFotoEnviar(m) {
+            if (!m || typeof m.image !== 'string' || !m.image.startsWith('data:') || !currentUser || !dataOwnerId) return;
+            try { m.image = await uploadPhoto(m.image, 'mep_' + String(m.id).replace(/[^a-z0-9_-]/gi, '')); saveStorage(); mepRefresh(); }
+            catch (e) { console.error(e); dsToast('A foto ficou neste aparelho e será enviada quando houver ligação.', true); }
+        }
+        // corrigir o que está pronto (ex.: voltar a 0)
+        async function mepCorrigirPronto(id) {
+            const m = mepList().find(x => x.id === id); if (!m) return;
+            const p = mepStockOf(m), yu = m.yieldUnit || 'un';
+            const v = await dsPerguntar('Quanto de "' + m.name + '" tem pronto agora? (em ' + yu + ')\n\nEscreva 0 se já não há nenhum.', String(Math.round((Number(p.tenho) || 0) * 100) / 100));
+            if (v === null) return;
+            const n = parseFloat(String(v).replace(',', '.'));
+            if (!(n >= 0)) return dsCartao({ tipo: 'alert', msg: 'Indique um número igual ou maior que zero.' });
+            mepSet(id, 'tenho', n);
+            prepToast('✓ ' + m.name + ': pronto agora ' + fmtQty(n, yu));
         }
         function mepClose() { const md = document.getElementById('mep-modal'); if (md) { md.classList.add('hidden'); md.classList.remove('flex'); } }
         function mepSave(e) {
@@ -24174,7 +24221,7 @@ async function dsTrPreparar() {
             const obj = Object.assign({}, old || {}, {
                 id: id || 'mep_' + Date.now(), name, icon: g('mep-icon').value.trim() || '🥣', area: g('mep-area').value,
                 yieldQty: num(g('mep-yq').value) || 1, yieldUnit: g('mep-yu').value, storage: g('mep-cons').value,
-                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients,
+                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients, image: mepFoto || '',
                 steps: g('mep-steps').value.split('\n').map(s => s.trim()).filter(Boolean)
             });
             if (old) {
@@ -24190,6 +24237,7 @@ async function dsTrPreparar() {
                 const p = mepStockOf(obj); p.meta = obj.yieldQty;
             }
             saveStorage(); mepClose(); mepRefresh();
+            mepFotoEnviar(mepList().find(x => x.id === obj.id));
             prepToast('✓ Mise en place "' + name + '" guardada.');
         }
         async function mepDelete() {
@@ -24220,7 +24268,8 @@ async function dsTrPreparar() {
                 const p = mepStockOf(m), yu = m.yieldUnit || 'un', uc = mepUnitCost(m, 0), us = mepUsedIn(m), val = mepValidade(m);
                 const baixo = (Number(p.tenho) || 0) < (Number(p.meta) || 0);
                 return `<div class="recipe-card-bar rounded-2xl p-4 flex flex-col gap-3">
-                    <div class="flex items-start gap-3"><div class="text-3xl leading-none">${escapeHtml(m.icon || '🥣')}</div>
+                    ${m.image ? `<div class="-mx-4 -mt-4 rounded-t-2xl overflow-hidden bg-slate-100" style="aspect-ratio:4/3"><img src="${escapeHtml(m.image)}" alt="" loading="lazy" class="w-full h-full object-cover"></div>` : ''}
+                    <div class="flex items-start gap-3">${m.image ? '' : `<div class="text-3xl leading-none">${escapeHtml(m.icon || '🥣')}</div>`}
                         <div class="min-w-0 flex-1"><h4 class="font-extrabold text-slate-900 leading-tight">${escapeHtml(m.name)}</h4>
                         <div class="flex flex-wrap items-center gap-1.5 mt-1">${mepConsBadge(m)}<span class="text-[10px] font-bold text-slate-500">${(m.area || 'BAR') === 'KITCHEN' ? 'Cozinha' : 'Bar'}</span>${m.shelfDays ? `<span class="text-[10px] text-slate-500">· validade ${m.shelfDays} d</span>` : ''}</div></div></div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
@@ -24228,7 +24277,7 @@ async function dsTrPreparar() {
                         <div class="bg-white/70 rounded-xl p-2"><p class="text-[10px] font-bold text-slate-400 uppercase">Custo</p><p class="font-extrabold text-slate-800">${uc ? eur2(uc.net) + '<span class="text-[10px] font-semibold text-slate-400">/' + escapeHtml(yu) + '</span>' : '<span class="text-amber-600 text-[11px]">sem preço</span>'}</p>${uc ? `<p class="text-[10px] text-slate-400">receita ${eur2(uc.batchNet)} s/IVA${uc.missing ? '*' : ''}</p>` : ''}</div>
                     </div>
                     <div class="flex items-center justify-between gap-2 bg-white/70 rounded-xl px-3 py-2">
-                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Pronto agora</p><p class="font-black ${baixo ? 'text-amber-600' : 'text-emerald-700'}">${fmtQty(Number(p.tenho) || 0, yu)} <span class="text-[10px] font-semibold text-slate-400">/ quero ${fmtQty(Number(p.meta) || 0, yu)}</span></p>${prepFalta(p) ? `<p class="text-[10px] text-slate-500">faltam ${mepReceitasTxt(Math.ceil(prepFalta(p) / mepYield(m) * 10) / 10)}</p>` : ''}</div>${val.html}</div>
+                        <div><p class="text-[10px] font-bold text-slate-400 uppercase">Pronto agora <button type="button" onclick="mepCorrigirPronto('${m.id}')" class="ml-1 normal-case font-bold underline" style="color:var(--brand)">corrigir</button></p><p class="font-black ${baixo ? 'text-amber-600' : 'text-emerald-700'}">${fmtQty(Number(p.tenho) || 0, yu)} <span class="text-[10px] font-semibold text-slate-400">/ quero ${fmtQty(Number(p.meta) || 0, yu)}</span></p>${prepFalta(p) ? `<p class="text-[10px] text-slate-500">faltam ${mepReceitasTxt(Math.ceil(prepFalta(p) / mepYield(m) * 10) / 10)}</p>` : ''}</div>${val.html}</div>
                     <div class="text-[11px] text-slate-500"><span class="font-bold">Ingredientes:</span> ${(m.ingredients || []).map(i => escapeHtml(i.name) + (mepIngQty(i) !== null ? ' ' + i.quantity + ' ' + escapeHtml(i.unit || '') : '')).join(' · ') || '—'}</div>
                     <div class="flex flex-wrap gap-1">${us.length ? us.map(u => `<span class="px-2 py-0.5 rounded-full bg-white text-[10px] font-bold text-slate-600 border border-slate-200">${escapeHtml(u.icon || '')} ${escapeHtml(u.name)}</span>`).join('') : '<span class="text-[10px] text-slate-400"><i class="fas fa-link-slash mr-1"></i>Ainda não usada em nenhuma ficha</span>'}</div>
                     ${(m.steps || []).length ? `<details class="text-[11px] text-slate-600"><summary class="font-bold cursor-pointer">Modo de preparo</summary><ol class="list-decimal pl-4 mt-1 space-y-0.5">${m.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol></details>` : ''}
@@ -24249,7 +24298,7 @@ async function dsTrPreparar() {
                     const p = mepStockOf(m), yu = m.yieldUnit || 'un', falta = prepFalta(p), val = mepValidade(m);
                     const receitas = falta ? Math.ceil(falta / mepYield(m) * 10) / 10 : 0;
                     return `<tr class="border-b border-slate-100">
-                        <td class="px-4 py-3"><div class="flex items-center gap-2"><span class="text-xl">${escapeHtml(m.icon || '🥣')}</span><div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
+                        <td class="px-4 py-3"><div class="flex items-center gap-2">${m.image ? `<img src="${escapeHtml(m.image)}" alt="" loading="lazy" class="w-10 h-10 rounded-lg object-cover shrink-0">` : `<span class="text-xl">${escapeHtml(m.icon || '🥣')}</span>`}<div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
                         <td data-label="Tenho" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
                         <td data-label="Quero ter" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
                         <td data-label="Validade" class="px-4 py-3">${val.html}</td>
@@ -24468,6 +24517,143 @@ async function dsTrPreparar() {
             if (window.visualViewport) visualViewport.addEventListener('resize', dock);
             const o = switchTab; switchTab = function () { const r = o.apply(this, arguments); setTimeout(dock, 0); return r; };
             setTimeout(dock, 0);
+        })();
+    </script>
+    <style>
+        .rt-graf { position: relative; padding: 4px 14px 2px; }
+        .rt-graf svg { display: block; width: 100%; height: auto; overflow: visible; }
+        .rt-graf .gl { stroke: #F1ECE4; stroke-width: 1; }
+        .rt-graf .ax { font: 600 10.5px 'Schibsted Grotesk', sans-serif; fill: #7A6A60; }
+        .rt-graf .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+        .rt-graf .ln.fade { opacity: .18; }
+        .rt-graf .cx { stroke: #C9BBAF; stroke-width: 1; stroke-dasharray: 3 3; }
+        .rt-tip { position: absolute; pointer-events: none; background: #231F20; color: #fff; border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.45; min-width: 150px; box-shadow: 0 6px 20px rgba(0,0,0,.2); z-index: 3; }
+        .rt-tip b { font-weight: 800; }
+        .rt-tip .r { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .rt-tip .r span:last-child { margin-left: auto; padding-left: 10px; font-weight: 800; }
+        .rt-dot { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+        .rt-modos { display: flex; gap: 4px; }
+        .rt-modos button { font-size: 12px !important; padding: 4px 9px; border-radius: 999px; color: #5B4A40 !important; }
+        .rt-modos button.on { background: #FBEDE6; color: #983808 !important; }
+        .rt-sub { padding: 0 18px 2px; font-size: 12px; color: #7A6A60; }
+        .rt-tend { font-size: 12px; font-weight: 800; white-space: nowrap; }
+    </style>
+    <script>
+        // ======================================================= FICHAS MAIS RENTÁVEIS: ranking com linhas de evolução
+        // Lucro por semana = unidades vendidas × lucro por unidade da ficha. Sem vendas, mostra a evolução da margem (%).
+        const RT_COR = ['#983808', '#2B6CB0', '#D97706', '#7C3AED', '#0891B2'];   // validado (CVD, contraste) sobre fundo claro
+        let rtModo = 'lucro';
+        function rtGuardarMargens() {
+            // uma fotografia por dia da margem de cada ficha, para a linha de evolução
+            if (!appState || !Array.isArray(appState.recipes)) return;
+            const hoje = new Date().toISOString().slice(0, 10), H = appState.margemHist = appState.margemHist || {};
+            let mudou = false;
+            appState.recipes.forEach(r => {
+                const m = recipeMargin(r); if (!m) return;
+                const l = H[r.id] = H[r.id] || [], ult = l[l.length - 1], v = [hoje, Math.round(m.pct * 10) / 10, Math.round(m.lucro * 100) / 100];
+                if (ult && ult[0] === hoje) { if (ult[1] !== v[1] || ult[2] !== v[2]) { l[l.length - 1] = v; mudou = true; } }
+                else if (!ult || ult[1] !== v[1] || ult[2] !== v[2]) { l.push(v); if (l.length > 120) l.splice(0, l.length - 120); mudou = true; }
+            });
+            Object.keys(H).forEach(id => { if (!appState.recipes.some(r => r.id === id)) { delete H[id]; mudou = true; } });
+            return mudou;
+        }
+        function rtDados() {
+            const hoje = new Date(); hoje.setHours(12, 0, 0, 0);
+            const iso = d => d.toISOString().slice(0, 10);
+            const semanas = []; for (let i = 7; i >= 0; i--) { const fim = new Date(hoje.getTime() - i * 7 * 864e5), ini = new Date(fim.getTime() - 6 * 864e5); semanas.push({ ini: iso(ini), fim: iso(fim) }); }
+            const ms = {}; (appState.recipes || []).forEach(r => { const m = recipeMargin(r); if (m) ms[r.id] = { r, m, sem: semanas.map(() => 0), un: semanas.map(() => 0) }; });
+            (appState.salesHistory || []).forEach(h => {
+                const d = saleDay(h); const w = semanas.findIndex(s => d >= s.ini && d <= s.fim); if (w < 0) return;
+                (h.items || []).forEach(i => { const a = dhAlvo(i.target); if (!a || !ms[a.id]) return; const q = Number(i.qty) || 0; ms[a.id].sem[w] += q * ms[a.id].m.lucro; ms[a.id].un[w] += q; });
+            });
+            const L = Object.values(ms);
+            L.forEach(x => { x.ult4 = x.sem.slice(4).reduce((a, b) => a + b, 0); x.ant4 = x.sem.slice(0, 4).reduce((a, b) => a + b, 0); });
+            const temVendas = L.some(x => x.ult4 + x.ant4 > 0);
+            return { semanas, L, temVendas };
+        }
+        function rtGrafico(series, rotulos, fmt, titulos) {
+            const W = 520, H = 190, pl = 44, pr = 10, pt = 10, pb = 24, n = rotulos.length;
+            const vals = series.flatMap(s => s.v.filter(v => v != null));
+            let mx = Math.max(...vals, 0), mn = Math.min(...vals, 0);
+            if (mx === mn) mx = mn + 1;
+            const passo = (() => { const r = (mx - mn) / 4, p = Math.pow(10, Math.floor(Math.log10(r))); return [1, 2, 2.5, 5, 10].map(k => k * p).find(k => k >= r); })();
+            mx = Math.ceil(mx / passo) * passo; mn = Math.floor(mn / passo) * passo;
+            const X = i => pl + (n === 1 ? (W - pl - pr) / 2 : i * (W - pl - pr) / (n - 1)), Y = v => pt + (1 - (v - mn) / (mx - mn)) * (H - pt - pb);
+            let g = '';
+            for (let v = mn; v <= mx + 1e-9; v += passo) g += `<line class="gl" x1="${pl}" x2="${W - pr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ax" x="${pl - 6}" y="${Y(v) + 3.5}" text-anchor="end">${fmt(v, true)}</text>`;
+            rotulos.forEach((r, i) => { if (n <= 8 || i % 2 === 0 || i === n - 1) g += `<text class="ax" x="${X(i)}" y="${H - 6}" text-anchor="${i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}">${r}</text>`; });
+            const linhas = series.map((s, k) => {
+                const pts = s.v.map((v, i) => v == null ? null : [X(i), Y(v)]).filter(Boolean);
+                const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+                const ult = pts[pts.length - 1];
+                return `<path class="ln" data-k="${k}" d="${d}" stroke="${s.cor}"/>${ult ? `<circle cx="${ult[0]}" cy="${ult[1]}" r="4" fill="${s.cor}" stroke="#fff" stroke-width="2" data-k="${k}"/>` : ''}`;
+            }).join('');
+            const hit = rotulos.map((_, i) => `<rect x="${X(i) - (W - pl - pr) / Math.max(1, n - 1) / 2}" y="${pt}" width="${(W - pl - pr) / Math.max(1, n - 1)}" height="${H - pt - pb}" fill="transparent" data-i="${i}"/>`).join('');
+            return { html: `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(titulos)}">${g}${linhas}<line class="cx" id="rt-cx" x1="0" x2="0" y1="${pt}" y2="${H - pb}" style="display:none"/>${hit}</svg><div class="rt-tip" id="rt-tip" style="display:none"></div>`, X, W };
+        }
+        function rtLigar(box, series, rotulos, fmt, X, W) {
+            const svg = box.querySelector('svg'), tip = box.querySelector('#rt-tip'), cx = box.querySelector('#rt-cx');
+            const mostrar = i => {
+                const sx = svg.getBoundingClientRect().width / W, x = X(i) * sx;
+                cx.setAttribute('x1', X(i)); cx.setAttribute('x2', X(i)); cx.style.display = '';
+                const ord = series.map(s => ({ s, v: s.v[i] })).filter(o => o.v != null).sort((a, b) => b.v - a.v);
+                tip.innerHTML = `<b>${rotulos[i]}</b>` + ord.map(o => `<div class="r"><span class="rt-dot" style="background:${o.s.cor}"></span><span>${escapeHtml(o.s.nome)}</span><span>${fmt(o.v)}</span></div>`).join('');
+                tip.style.display = ''; const tw = tip.offsetWidth, bw = box.clientWidth;
+                tip.style.left = Math.max(4, Math.min(bw - tw - 4, x + 14 + (x + tw + 30 > bw ? -tw - 28 : 0))) + 'px'; tip.style.top = '6px';
+            };
+            const esconder = () => { tip.style.display = 'none'; cx.style.display = 'none'; };
+            svg.querySelectorAll('rect[data-i]').forEach(r => { r.addEventListener('pointerenter', () => mostrar(+r.dataset.i)); r.addEventListener('pointerdown', () => mostrar(+r.dataset.i)); });
+            svg.addEventListener('pointerleave', esconder);
+        }
+        function rtRealcar(k) { document.querySelectorAll('#rt-box .ln, #rt-box circle[data-k]').forEach(p => p.classList.toggle('fade', k != null && p.dataset.k !== String(k))); }
+        function rtPintar() {
+            const sec = document.getElementById('rt-card'); if (!sec) return;
+            const { semanas, L, temVendas } = rtDados();
+            const modo = temVendas ? rtModo : 'margem';
+            const dm = d => d.slice(8, 10) + '/' + d.slice(5, 7);
+            let top, series, rotulos, fmt, sub, nota = '';
+            if (modo === 'lucro') {
+                top = L.slice().sort((a, b) => b.ult4 - a.ult4 || b.m.lucro - a.m.lucro).slice(0, 5);
+                rotulos = semanas.map(s => dm(s.ini));
+                series = top.map((x, k) => ({ nome: x.r.name, cor: RT_COR[k], v: x.sem.map(v => Math.round(v * 100) / 100) }));
+                fmt = (v, ax) => ax ? Math.round(v) + ' €' : eur2(v);
+                sub = 'Lucro por semana (vendas × lucro de cada unidade), últimas 8 semanas';
+            } else {
+                const H = appState.margemHist || {};
+                top = L.slice().sort((a, b) => b.m.lucro - a.m.lucro).slice(0, 5);
+                const dias = [...new Set(top.flatMap(x => (H[x.r.id] || []).map(p => p[0])))].sort().slice(-12);
+                rotulos = dias.map(dm);
+                series = top.map((x, k) => { const h = H[x.r.id] || []; let last = null; return { nome: x.r.name, cor: RT_COR[k], v: dias.map(d => { const p = h.filter(q => q[0] <= d).pop(); last = p ? p[1] : null; return last; }) }; });
+                fmt = (v, ax) => (Math.round(v * 10) / 10).toLocaleString('pt-PT') + '%';
+                sub = 'Margem de cada ficha ao longo do tempo (muda com o preço de venda e o custo dos ingredientes)';
+                if (dias.length < 2) nota = temVendas ? '' : 'A linha de evolução aparece quando houver vendas registadas ou quando a margem mudar (preço ou custo). Até lá, o ranking usa o lucro por unidade.';
+            }
+            const modos = temVendas ? `<span class="rt-modos"><button type="button" class="${modo === 'lucro' ? 'on' : ''}" onclick="rtModo='lucro';rtPintar()">Lucro</button><button type="button" class="${modo === 'margem' ? 'on' : ''}" onclick="rtModo='margem';rtPintar()">Margem</button></span>` : '';
+            const grafOk = rotulos.length >= 2 && series.some(s => s.v.some(v => v));
+            const g = grafOk ? rtGrafico(series, rotulos, fmt, 'Fichas mais rentáveis: ' + sub) : null;
+            const linhas = top.map((x, k) => {
+                let dir = '';
+                if (modo === 'lucro' && (x.ult4 || x.ant4)) {
+                    const pc = x.ant4 ? Math.round((x.ult4 - x.ant4) / x.ant4 * 100) : null;
+                    dir = x.ult4 >= x.ant4 ? `<span class="rt-tend" style="color:#15803D"><i class="fas fa-arrow-trend-up mr-1"></i>${pc == null ? 'novo' : '+' + pc + '%'}</span>` : `<span class="rt-tend" style="color:#B91C1C"><i class="fas fa-arrow-trend-down mr-1"></i>${pc}%</span>`;
+                }
+                const dir2 = modo === 'lucro' ? `<span class="q">${eur2(x.ult4)}</span>` : `<span class="q">${eur2(x.m.lucro)}</span>`;
+                return `<button type="button" class="dh-lin" onclick="openRecipeViewModal('${x.r.id}')" onmouseenter="rtRealcar(${k})" onmouseleave="rtRealcar(null)"><span class="rt-dot" style="background:${RT_COR[k]}"></span><span class="n">${escapeHtml(x.r.name)}<small>${eur2(x.m.lucro)} de lucro por unidade · margem ${Math.round(x.m.pct)}%${modo === 'lucro' ? ' · ' + x.un.slice(4).reduce((a, b) => a + b, 0) + ' vendidas em 4 semanas' : ''}</small></span><span class="flex flex-col items-end gap-0.5">${dir2}${dir}</span></button>`;
+            }).join('');
+            sec.innerHTML = `<h4><span>Fichas mais rentáveis</span>${modos}</h4><p class="rt-sub">${sub}</p>${g ? `<div class="rt-graf" id="rt-box">${g.html}</div>` : ''}${linhas}${nota ? `<p class="dh-nota">${nota}</p>` : modo === 'lucro' ? `<p class="dh-nota">Valor à direita: lucro das últimas 4 semanas. A seta compara com as 4 semanas anteriores.</p>` : ''}`;
+            if (g) rtLigar(document.getElementById('rt-box'), series, rotulos, fmt, g.X, g.W);
+        }
+        (function () {
+            const oD = renderDashboard;
+            renderDashboard = function () {
+                const r = oD.apply(this, arguments);
+                try {
+                    if (rtGuardarMargens()) { clearTimeout(window._rtSave); window._rtSave = setTimeout(() => { try { saveStorage(); } catch (_) {} }, 4000); }
+                    const card = [...document.querySelectorAll('#dash .dh-card')].find(c => (c.querySelector('h4 span') || {}).textContent === 'Fichas mais rentáveis');
+                    if (card) { card.id = 'rt-card'; rtPintar(); }
+                } catch (e) { console.error(e); }
+                return r;
+            };
         })();
     </script>
 </body>
