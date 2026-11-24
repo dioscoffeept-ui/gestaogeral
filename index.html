@@ -21723,6 +21723,9 @@ var qrcode = function() {
         .eq-t td.c > button:hover { border-color: var(--eq-linha); }
         .eq-t td.c > button.vazio { color: var(--eq-txt3); }
         .eq-t td.c > button.folga { background: var(--eq-fundo); color: var(--eq-txt3); font-weight: 800; font-size: 12.5px; }
+        .eq-t td.c > button.folga.ferias { background: #EAF2FB; color: #1E4E86; }
+        .eq-fer { display: inline-flex; align-items: center; gap: 5px; font-weight: 800; }
+        .eq-fer i { font-size: 11px; }
         .eq-t td.c > button.falta { background: #FEE2E2; }
         html.dark .eq-t td.c > button.falta { background: rgba(239,68,68,.16); }
         .eq-turno { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
@@ -21998,7 +22001,7 @@ var qrcode = function() {
         // o que aparece em cada dia: turno + hora de entrada e saída (de cada pessoa)
         function eqCelHtml(c, s) {
             if (!c) return `<i class="fas fa-plus" style="font-size:12px;opacity:.5"></i>`;
-            if (c.folga) return 'Folga';
+            if (c.folga) return c.ferias ? '<span class="eq-fer"><i class="fas fa-umbrella-beach"></i>Férias</span>' : 'Folga';
             if (c.fd) return `<span class="eq-fl">Falta</span>${c.fm ? `<span class="eq-hr">${escapeHtml(c.fm.slice(0, 16))}</span>` : ''}`;
             const ft = c.ft || [], t = (c.t || []).filter(id => eqTurno(id));
             if (c.ini && c.fim) return `${t.map(id => `<span class="eq-chip ${ft.includes(id) ? 'x' : ''}">${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span>`).join(' ')}<span class="eq-hr">${c.ini}–${c.fim}</span>${ft.length ? '<span class="eq-fl">Falta</span>' : ''}`;
@@ -22012,9 +22015,9 @@ var qrcode = function() {
             const areas = eqAreas(), varias = areas.length > 1 || (areas[0] || '') !== '';
             const linha = s => {
                 let h = 0, f = 0, dt = 0, fl = 0;
-                const cels = ks.map((k, d) => { const c = eqCel(k, s.id); if (c && c.folga) f++; fl += eqFaltas(c); if (eqTrab(c)) { dt++; h += eqHorasCel(c, s); }
-                    return `<td class="c"><button type="button" class="${!c ? 'vazio' : c.folga ? 'folga' : c.fd ? 'falta' : ''}" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${eqCelHtml(c, s)}</button></td>`; }).join('');
-                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}${s.funcao ? `<small>${escapeHtml(s.funcao)}</small>` : ''}</span></button></td>${cels}<td class="tot">${eqHtxt(h)}<small>${dt} dia${dt === 1 ? '' : 's'} · ${f} folga${f === 1 ? '' : 's'}</small>${fl ? `<small class="f">${fl} falta${fl === 1 ? '' : 's'}</small>` : ''}</td></tr>`;
+                let fe = 0; const cels = ks.map((k, d) => { const c = eqCel(k, s.id); if (c && c.folga) { if (c.ferias) fe++; else f++; } fl += eqFaltas(c); if (eqTrab(c)) { dt++; h += eqHorasCel(c, s); }
+                    return `<td class="c"><button type="button" class="${!c ? 'vazio' : c.folga ? 'folga' + (c.ferias ? ' ferias' : '') : c.fd ? 'falta' : ''}" onclick="eqCelula('${k}','${s.id}')" aria-label="${escapeHtml(s.nome)}, ${EQ_DIAS_L[d]}">${eqCelHtml(c, s)}</button></td>`; }).join('');
+                return `<tr><td class="nm"><button type="button" onclick="eqPessoa('${s.id}')"><span class="dot" style="background:${s.cor || '#983808'}"></span><span>${escapeHtml(s.nome)}${s.funcao ? `<small>${escapeHtml(s.funcao)}</small>` : ''}</span></button></td>${cels}<td class="tot">${eqHtxt(h)}<small>${dt} dia${dt === 1 ? '' : 's'} · ${f} folga${f === 1 ? '' : 's'}</small>${fe ? `<small>${fe} dia${fe === 1 ? '' : 's'} de férias</small>` : ''}${fl ? `<small class="f">${fl} falta${fl === 1 ? '' : 's'}</small>` : ''}</td></tr>`;
             };
             const corpo = areas.map(a => { const l = e.staff.filter(s => eqArea(s) === a); return (varias ? `<tr class="area"><td class="nm">${escapeHtml(a || 'Sem área')}</td><td colspan="8"></td></tr>` : '') + l.map(linha).join(''); }).join('');
             const pe = areas.map(a => { const l = e.staff.filter(s => eqArea(s) === a); return `<tr><td class="nm">A trabalhar${varias ? ` <small>· ${escapeHtml(a || 'Sem área')}</small>` : ''}</td>${ks.map(k => `<td>${l.filter(s => eqTrab(eqCel(k, s.id))).length}</td>`).join('')}<td></td></tr>`; }).join('');
@@ -22028,7 +22031,8 @@ var qrcode = function() {
             const e = eqDados(), s = eqPessoaDe(sid); if (!s) return;
             const c = eqCel(k, sid) || {}, d = eqData(k), wd = (d.getDay() + 6) % 7, ft = c.ft || [];
             dsModal('eq-cel', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(s.nome)}</h3><p class="sub">${EQ_DIAS_L[wd]}, ${d.getDate()} ${eqMes(d)}${eqArea(s) ? ' · ' + escapeHtml(eqArea(s)) : ''}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-cel')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
-                <label class="ck"><input type="checkbox" id="eqc-folga" ${c.folga ? 'checked' : ''} onchange="eqCelVista(this)">Folga</label>
+                <div class="dois"><label class="ck"><input type="checkbox" id="eqc-folga" ${c.folga && !c.ferias ? 'checked' : ''} onchange="eqCelVista(this)">Folga</label><label class="ck"><input type="checkbox" id="eqc-fer" ${c.ferias ? 'checked' : ''} onchange="eqCelVista(this)"><i class="fas fa-umbrella-beach" style="color:#2B6CB0"></i>Férias</label></div>
+                <label class="f" id="eqc-fer-ate" style="${c.ferias ? '' : 'display:none'}">Férias até (inclusive)<input type="date" id="eqc-fer-fim" value="${k}" min="${k}"></label>
                 <div id="eqc-trab">${e.turnos.map(t => { const h = eqTurnoH(s, t.id); return `<label class="ck"><input type="checkbox" class="eqc-t" value="${t.id}" ${(c.t || []).includes(t.id) ? 'checked' : ''} onchange="eqCelVista(this)">${escapeHtml(t.nome)}<small>${h.ini}–${h.fim}</small></label>`; }).join('')}
                     <label class="ck"><input type="checkbox" id="eqc-hd" ${c.ini && c.fim ? 'checked' : ''} onchange="eqCelVista(this)">Horário diferente neste dia</label>
                     <div class="dois" id="eqc-h" style="${c.ini && c.fim ? '' : 'display:none'}"><label class="f">Entra<input type="time" id="eqc-ini" value="${c.ini || ''}"></label><label class="f">Sai<input type="time" id="eqc-fim" value="${c.fim || ''}"></label></div></div>
@@ -22041,17 +22045,24 @@ var qrcode = function() {
             eqCelVista();
         }
         function eqCelVista(src) {
-            const fo = document.getElementById('eqc-folga'), fd = document.getElementById('eqc-fd');
+            const fo = document.getElementById('eqc-folga'), fd = document.getElementById('eqc-fd'), fer = document.getElementById('eqc-fer');
+            if (src === fer && fer.checked) fo.checked = false;
+            if (src === fo && fo.checked) fer.checked = false;
+            if (fer.checked) { document.querySelectorAll('.eqc-t,.eqc-ft').forEach(x => x.checked = false); fd.checked = false; document.getElementById('eqc-hd').checked = false; }
+            if (src && (src.classList && src.classList.contains('eqc-t') || src.id === 'eqc-hd' || src === fd) && src.checked) fer.checked = false;
+            document.getElementById('eqc-fer-ate').style.display = fer.checked ? '' : 'none';
             if (src && src.classList && src.classList.contains('eqc-t') && src.checked) fo.checked = false;
             if (src === fo && fo.checked) { document.querySelectorAll('.eqc-t,.eqc-ft').forEach(x => x.checked = false); fd.checked = false; document.getElementById('eqc-hd').checked = false; }
             if (src === fd && fd.checked) fo.checked = false;
-            document.getElementById('eqc-trab').style.opacity = fo.checked ? '.45' : '';
+            const parado = fo.checked || fer.checked;
+            document.getElementById('eqc-trab').style.opacity = parado ? '.45' : '';
             document.getElementById('eqc-h').style.display = document.getElementById('eqc-hd').checked ? '' : 'none';
             const marcados = [...document.querySelectorAll('.eqc-t:checked')].map(x => x.value), temH = document.getElementById('eqc-hd').checked;
             document.querySelectorAll('#eqc-faltas label[data-t]').forEach(l => { const on = marcados.includes(l.dataset.t) && !fd.checked; l.style.display = on ? '' : 'none'; if (!on) l.querySelector('input').checked = false; });
-            document.getElementById('eqc-fd-l').style.display = fo.checked ? 'none' : '';
-            document.getElementById('eqc-fm-l').style.display = fo.checked ? 'none' : '';
-            document.getElementById('eqc-faltas').previousElementSibling.style.display = fo.checked ? 'none' : '';
+            document.getElementById('eqc-fd-l').style.display = parado ? 'none' : '';
+            document.getElementById('eqc-fm-l').style.display = parado ? 'none' : '';
+            document.getElementById('eqc-faltas').previousElementSibling.style.display = parado ? 'none' : '';
+            const rp = document.getElementById('eqc-rep'); if (rp) rp.closest('label').style.display = fer.checked ? 'none' : '';
             void temH;
         }
         function eqCelGravar(k, sid, limpar) {
@@ -22061,6 +22072,15 @@ var qrcode = function() {
                 const hd = document.getElementById('eqc-hd').checked, ini = document.getElementById('eqc-ini').value, fim = document.getElementById('eqc-fim').value;
                 const ft = [...document.querySelectorAll('.eqc-ft:checked')].map(x => x.value), fd = document.getElementById('eqc-fd').checked, fm = document.getElementById('eqc-fm').value.trim().slice(0, 60);
                 if (hd && !folga && (!ini || !fim)) return dsToast('Escreva a hora de entrada e de saída.', true);
+                const fer = document.getElementById('eqc-fer').checked;
+                if (fer) {
+                    const fim = document.getElementById('eqc-fer-fim').value || k;
+                    if (fim < k) return dsToast('A data final das férias tem de ser depois do início.', true);
+                    let d = eqData(k), n = 0; const dFim = eqData(fim);
+                    while (d <= dFim && n < 120) { const kk = eqKey(d); if (!e.escala[kk]) e.escala[kk] = {}; e.escala[kk][sid] = { folga: true, ferias: true }; d = eqMais(d, 1); n++; }
+                    eqGuardar(); dsModalFechar('eq-cel'); eqPintar();
+                    return dsToast(n === 1 ? 'Férias marcadas.' : `Férias marcadas: ${n} dias.`);
+                }
                 if (folga) v = { folga: true };
                 else if (t.length || hd || fd) { v = { t }; if (hd) { v.ini = ini; v.fim = fim; } if (ft.length) v.ft = ft; if (fd) v.fd = true; if ((ft.length || fd) && fm) v.fm = fm; }
             }
@@ -22139,7 +22159,7 @@ var qrcode = function() {
             const e = eqDados(), ks = eqSemanaKeys(eqSeg), ant = eqSemanaKeys(eqMais(eqSeg, -7));
             if (!ant.some(k => e.escala[k] && Object.keys(e.escala[k]).length)) return dsToast('A semana anterior está vazia.', true);
             if (ks.some(k => e.escala[k] && Object.keys(e.escala[k]).length) && !(await dsConfirm('Substituir esta semana?', 'A escala desta semana fica igual à da semana anterior (sem as faltas).', { ok: 'Substituir' }))) return;
-            ks.forEach((k, i) => { if (e.escala[ant[i]]) { const c = JSON.parse(JSON.stringify(e.escala[ant[i]])); Object.values(c).forEach(x => { delete x.ft; delete x.fd; delete x.fm; }); e.escala[k] = c; } else delete e.escala[k]; });
+            ks.forEach((k, i) => { if (e.escala[ant[i]]) { const c = JSON.parse(JSON.stringify(e.escala[ant[i]])); Object.keys(c).forEach(id => { const x = c[id]; if (x.ferias) { delete c[id]; return; } delete x.ft; delete x.fd; delete x.fm; }); if (Object.keys(c).length) e.escala[k] = c; else delete e.escala[k]; } else delete e.escala[k]; });
             eqGuardar(); eqPintar(); dsToast('Escala copiada da semana anterior.');
         }
         function eqEnviarEscala() {
@@ -22149,7 +22169,7 @@ var qrcode = function() {
                 const l = e.staff.filter(s => eqArea(s) === a); if (!l.length) return;
                 if (a) t += `\n_${a}_`;
                 l.forEach(s => {
-                    const dias = ks.map((k, i) => { const c = eqCel(k, s.id); if (!c) return null; if (c.folga) return `${EQ_DIAS[i]} folga`;
+                    const dias = ks.map((k, i) => { const c = eqCel(k, s.id); if (!c) return null; if (c.folga) return `${EQ_DIAS[i]} ${c.ferias ? 'férias' : 'folga'}`;
                         if (c.ini && c.fim) return `${EQ_DIAS[i]} ${c.ini}-${c.fim}`;
                         return `${EQ_DIAS[i]} ` + (c.t || []).filter(eqTurno).map(id => { const h = eqTurnoH(s, id); return `${h.ini}-${h.fim}`; }).join(' e '); }).filter(Boolean);
                     if (dias.length) t += `\n*${s.nome}:* ${dias.join(' · ')}`;
@@ -22199,7 +22219,7 @@ var qrcode = function() {
                 const x = r.res[s.id];
                 const cels = ks.map((k, d) => { const c = eqCel(k, s.id);
                     let m = '';
-                    if (c && c.folga) m = '<span style="background:transparent;color:inherit;opacity:.6">folga</span>';
+                    if (c && c.folga) m = `<span style="background:transparent;color:inherit;opacity:.6">${c.ferias ? 'férias' : 'folga'}</span>`;
                     else if (c && c.fd) m = '<span class="x">falta</span>';
                     else if (c) m = (c.t || []).filter(eqTurno).map(id => `<span class="${(c.ft || []).includes(id) ? 'x' : ''}">${escapeHtml(eqAbrev(eqTurnoNome(id)))}</span>`).join('') || (c.ini ? `<span>${c.ini}–${c.fim}</span>` : '');
                     const v = cfg.modo === 'semana' ? '' : (x.dias[d] ? eqEur(x.dias[d]) : `<span class="zero">${eqTrab(c) ? '0,00 €' : '—'}</span>`);
@@ -22600,8 +22620,9 @@ var qrcode = function() {
                 l.forEach(s => {
                     let h = 0, f = 0, fl = 0;
                     const cels = ks.map(k => {
-                        const c = eqCel(k, s.id); if (c && c.folga) f++; fl += eqFaltas(c); if (eqTrab(c)) h += eqHorasCel(c, s);
+                        const c = eqCel(k, s.id); if (c && c.folga && !c.ferias) f++; fl += eqFaltas(c); if (eqTrab(c)) h += eqHorasCel(c, s);
                         if (!c) return [{ t: '—', fraco: true }];
+                        if (c.folga && c.ferias) return Object.assign([{ t: 'Férias', cor: '#2B6CB0', forte: true }], { fundo: '#EAF2FB' });
                         if (c.folga) return Object.assign([{ t: 'Folga', fraco: true, forte: true }], { fundo: '#F6F3F0' });
                         if (c.fd) return Object.assign([{ t: 'Falta', cor: '#B91C1C', forte: true }].concat(c.fm ? [{ t: c.fm, fraco: true, tam: 13 }] : []), { fundo: '#FEE2E2' });
                         const ft = c.ft || [], out = [];
@@ -22624,7 +22645,7 @@ var qrcode = function() {
                 const cels = ks.map((k, d) => {
                     const c = eqCel(k, s.id), out = [];
                     if (cfg.modo !== 'semana') out.push(x.dias[d] ? { t: eqEur(x.dias[d]), forte: true, tam: 16 } : { t: '—', fraco: true });
-                    if (c && c.folga) out.push({ t: 'folga', fraco: true, tam: 13 });
+                    if (c && c.folga) out.push({ t: c.ferias ? 'férias' : 'folga', fraco: true, tam: 13 });
                     else if (c && c.fd) out.push({ t: 'falta', cor: '#B91C1C', tam: 13 });
                     else if (c) { const n = (c.t || []).filter(eqTurno).map(id => eqAbrev(eqTurnoNome(id)) + ((c.ft || []).includes(id) ? ' ✗' : '')).join(' + '); if (n) out.push({ t: n, fraco: true, tam: 13 }); }
                     return out.length ? out : [{ t: '—', fraco: true }];
@@ -23617,7 +23638,7 @@ function eqAprenderPadrao() {
         const pad = {};
         for (let d = 0; d < 7; d++) {
             const cont = {};
-            for (let w = 1; w <= 6; w++) { const ks = eqSemanaKeys(eqMais(eqSeg, -7 * w)); const c = e.escala[ks[d]] && e.escala[ks[d]][s.id]; if (!c) continue; const k = c.folga ? 'folga' : (c.t || []).slice().sort().join('+'); if (k) cont[k] = (cont[k] || 0) + 1; }
+            for (let w = 1; w <= 6; w++) { const ks = eqSemanaKeys(eqMais(eqSeg, -7 * w)); const c = e.escala[ks[d]] && e.escala[ks[d]][s.id]; if (!c || c.ferias) continue; const k = c.folga ? 'folga' : (c.t || []).slice().sort().join('+'); if (k) cont[k] = (cont[k] || 0) + 1; }
             const best = Object.entries(cont).sort((a, b) => b[1] - a[1])[0];
             if (best && best[1] >= 2 && best[0] !== 'folga') pad[d] = best[0].split('+');
         }
@@ -24012,19 +24033,19 @@ async function dsTrPreparar() {
             document.body.insertAdjacentHTML('beforeend', `<div id="mep-prod" class="fixed inset-0 flex items-center justify-center p-4" style="z-index:95;background:rgba(15,23,42,.55)" onclick="if(event.target===this)this.remove()">
               <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-5 space-y-4">
                 <div class="flex items-start gap-3"><div class="text-3xl leading-none">${escapeHtml(m.icon || '🥣')}</div><div class="min-w-0"><h3 class="text-lg font-black text-slate-900 leading-tight">Produzi ${escapeHtml(m.name)}</h3><p class="text-xs text-slate-500 mt-0.5">1 receita rende ${fmtQty(y, yu)}${medio && Math.abs(medio - y) >= 0.1 ? ` · em média tem rendido ${fmtQty(medio, yu)}` : ''}</p></div></div>
-                <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Quantas receitas fez?</label>
-                  <div class="flex items-center gap-2"><button type="button" onclick="mepProdPasso(-0.5)" class="w-11 h-11 rounded-xl bg-slate-100 font-black text-lg" aria-label="Menos">−</button>
-                  <input id="mep-prod-r" type="number" min="0.5" step="0.5" value="${sugR}" oninput="mepProdRendeu()" class="flex-1 text-center text-lg font-black rounded-xl border-slate-300 py-2">
-                  <button type="button" onclick="mepProdPasso(0.5)" class="w-11 h-11 rounded-xl bg-slate-100 font-black text-lg" aria-label="Mais">+</button></div></div>
-                <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Rendeu</label>
-                  <div class="flex items-center gap-2"><input id="mep-prod-q" type="number" min="0" step="0.01" value="${Math.round(sugR * y * 100) / 100}" oninput="this.dataset.mexeu='1'" class="flex-1 text-lg font-black rounded-xl border-slate-300 py-2 px-3"><span class="text-sm font-bold text-slate-600">${escapeHtml(yu)}</span></div>
-                  <p class="text-[11px] text-slate-400 mt-1">Se esta vez rendeu mais ou menos, corrija aqui. Os ingredientes saem pelas receitas feitas.</p></div>
+                <div><label class="block text-xs font-black text-slate-700 mb-1">Quanto produziu?</label>
+                  <div class="flex items-center gap-2"><input id="mep-prod-q" type="number" inputmode="decimal" min="0" step="any" value="${Math.round(sugR * y * 100) / 100}" oninput="this.dataset.mexeu='1'" class="flex-1 text-2xl font-black rounded-xl border-slate-300 py-2 px-3"><span class="text-sm font-bold text-slate-600">${escapeHtml(yu)}</span></div>
+                  <p class="text-[11px] text-slate-400 mt-1">Escreva o que saiu de verdade, mesmo que seja diferente do que a receita rende.</p></div>
+                <div class="rounded-2xl bg-slate-50 p-3"><label class="block text-[11px] font-bold text-slate-500 mb-1">Receitas feitas <span class="font-semibold text-slate-400">(para descontar os ingredientes)</span></label>
+                  <div class="flex items-center gap-2"><button type="button" onclick="mepProdPasso(-0.5)" class="w-10 h-10 rounded-xl bg-white border border-slate-200 font-black text-lg" aria-label="Menos">−</button>
+                  <input id="mep-prod-r" type="number" inputmode="decimal" min="0.1" step="any" value="${sugR}" oninput="mepProdRendeu()" class="flex-1 text-center text-lg font-black rounded-xl border-slate-300 py-1.5">
+                  <button type="button" onclick="mepProdPasso(0.5)" class="w-10 h-10 rounded-xl bg-white border border-slate-200 font-black text-lg" aria-label="Mais">+</button></div></div>
                 <p class="text-[11px] text-slate-500">Pronto agora: <b>${fmtQty(Number(p.tenho) || 0, yu)}</b> · quero ter <b>${fmtQty(Number(p.meta) || 0, yu)}</b></p>
                 <div class="flex gap-2 justify-end"><button type="button" onclick="document.getElementById('mep-prod').remove()" class="px-4 py-2.5 text-xs font-bold text-slate-600 rounded-xl bg-slate-100">Cancelar</button>
                   <button type="button" onclick="mepProdConfirmar('${m.id}')" class="px-5 py-2.5 text-xs font-bold text-white rounded-xl" style="background:var(--brand)"><i class="fas fa-check mr-1"></i>Guardar produção</button></div>
               </div></div>`);
         }
-        function mepProdPasso(d) { const r = document.getElementById('mep-prod-r'); r.value = Math.max(0.5, Math.round(((parseFloat(String(r.value).replace(',', '.')) || 0) + d) * 2) / 2); mepProdRendeu(true); }
+        function mepProdPasso(d) { const r = document.getElementById('mep-prod-r'); r.value = Math.max(0.5, Math.round(((parseFloat(String(r.value).replace(',', '.')) || 0) + d) * 2) / 2); mepProdRendeu(); }
         function mepProdRendeu(forcar) {
             const r = document.getElementById('mep-prod-r'), q = document.getElementById('mep-prod-q'); if (!r || !q) return;
             const m = mepList().find(x => x.id === (document.querySelector('#mep-prod [onclick^="mepProdConfirmar"]')?.getAttribute('onclick').match(/'([^']+)'/) || [])[1]); if (!m) return;
