@@ -1338,7 +1338,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 18:27</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 19:10</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -26064,7 +26064,10 @@ async function dsTrPreparar() {
                 const r = oS.apply(this, arguments);
                 const b = document.getElementById('ds-sino'); if (!b) return r;
                 const n1 = caixaMsgs.filter(m => m.resposta && m.lida_cliente === false).length, n2 = paLista.filter(p => !p.lido).length;
-                b.innerHTML = '<i class="fas fa-envelope"></i>' + (n1 + n2 ? `<b>${n1 + n2}</b>` : '');
+                // o número no envelope conta TODOS os pedidos à espera de resposta (aceitar/recusar), não só os não vistos
+                const nb = n1 + paLista.length;
+                try { if (navigator.setAppBadge) nb ? navigator.setAppBadge(nb) : navigator.clearAppBadge(); } catch (_) {}
+                b.innerHTML = '<i class="fas fa-envelope"></i>' + (nb ? `<b>${nb > 99 ? '99+' : nb}</b>` : '');
                 const chave = paLista.filter(p => !p.lido).map(p => p.id).join(',');
                 if (n2 && chave !== paAvisado && !document.getElementById('caixa-modal')) {
                     paAvisado = chave; const p = paLista.find(x => !x.lido);
@@ -26102,6 +26105,20 @@ async function dsTrPreparar() {
                 .fmx-eqp .eq-b.wa{background:#25D366;border-color:#25D366;color:#fff}
                 html.dark .pa-box{background:#3A2218;border-color:#5A3626}html.dark .pa-nm b{color:#F2ECE4}html.dark .pa-nm small{color:#C9BBAF}html.dark .pa-it{border-color:#5A3626}html.dark .pa-bt .n{background:#2A1B14;border-color:#44332A;color:#C9BBAF}
             </style>`);
+            // Os pedidos têm de aparecer logo, não só passados 2 minutos:
+            // a primeira verificação da caixa guardou a versão antiga de caixaCarregar (sem pedidos), por isso carrega aqui,
+            // volta a ver a cada 30 s com a app aberta, ao voltar à app (iPhone: pageshow/focus) e em tempo real quando chega um pedido.
+            const paVer = () => { if (!document.hidden && currentUser) caixaCarregar().catch(() => {}); };
+            setTimeout(paVer, 3000);
+            setInterval(paVer, 30000);
+            window.addEventListener('pageshow', paVer); window.addEventListener('focus', paVer);
+            let paCanal = null;
+            setInterval(() => {
+                try {
+                    if (paCanal || !sb || !sb.channel || typeof currentRole === 'undefined' || currentRole !== 'dono' || !dataOwnerId) return;
+                    paCanal = sb.channel('pedidos-' + dataOwnerId).on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_acesso', filter: 'dono_id=eq.' + dataOwnerId }, () => paCarregar().then(() => { caixaPintarSino(); paAtualizarTudo(); })).subscribe();
+                } catch (_) {}
+            }, 5000);
         })();
     </script>
     <script>
