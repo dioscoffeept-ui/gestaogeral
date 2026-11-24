@@ -148,6 +148,99 @@
   .esq { height: 210px; border-radius: 26px; background: linear-gradient(90deg, #EDE6DD, #F6F1EB, #EDE6DD); background-size: 200% 100%; animation: sh 1.2s infinite linear; }
   @keyframes sh { to { background-position: -200% 0; } }
   @media (prefers-reduced-motion: reduce) { .selo.on svg, .esq { animation: none; } }
+  /* vídeo animado: como pôr o cartão no ecrã principal (iPhone, Android, computador) */
+  .dm { margin: 12px 0 14px; }
+  .dm-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .dm-tabs button { flex: 1; border: 1px solid var(--line); background: #fff; color: var(--mut); border-radius: 999px; padding: 7px 6px; font: 700 12.5px 'Schibsted Grotesk', system-ui, sans-serif; cursor: pointer; }
+  .dm-tabs button[aria-selected="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .dm-palco { position: relative; height: 330px; border-radius: 18px; background: linear-gradient(160deg, #EFE8DF, #E4DACD); overflow: hidden; display: flex; align-items: center; justify-content: center; user-select: none; }
+  .dm-tel { position: relative; width: 158px; height: 312px; border-radius: 28px; background: #1C1A19; padding: 7px; box-shadow: 0 14px 30px rgba(35,31,32,.25); }
+  .dm-tel.and { border-radius: 22px; }
+  .dm-pc { position: relative; width: 300px; height: 196px; border-radius: 12px; background: #1C1A19; padding: 6px; box-shadow: 0 14px 30px rgba(35,31,32,.25); }
+  .dm-pc::after { content: ''; position: absolute; left: 50%; bottom: -26px; width: 70px; height: 26px; transform: translateX(-50%); background: linear-gradient(#cfc6bb, #b8ad9f); clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%); }
+  .dm-ecra { position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: #F6F3F0; font-family: 'Schibsted Grotesk', system-ui, sans-serif; color: #231F20; }
+  .dm-tel.and .dm-ecra { border-radius: 16px; }
+  .dm-pc .dm-ecra { border-radius: 7px; }
+  .dm-cena { position: absolute; inset: 0; animation: dmEntra .35s ease; }
+  @keyframes dmEntra { from { opacity: 0; } to { opacity: 1; } }
+  .dm-pag { position: absolute; inset: 0; padding: 22px 9px 0; }
+  .dm-pc .dm-pag { padding: 30px 12px 0; }
+  .dm-top { display: flex; align-items: center; gap: 6px; }
+  .dm-lg { width: 22px; height: 22px; border-radius: 7px; background: var(--brand); overflow: hidden; flex: 0 0 auto; }
+  .dm-lg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dm-top b { font-size: 9.5px; font-weight: 800; }
+  .dm-cart { margin-top: 9px; border-radius: 11px; background: var(--brand); height: 74px; padding: 8px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; align-content: end; }
+  .dm-cart i { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.7); }
+  .dm-cart i:first-child { background: #fff; border-style: solid; }
+  .dm-lin { height: 7px; border-radius: 4px; background: #E6DED4; margin-top: 8px; }
+  .dm-lin.c { width: 70%; }
+  .dm-barra-ios { position: absolute; left: 6px; right: 6px; bottom: 8px; display: flex; gap: 5px; align-items: center; }
+  .dm-barra-ios span { height: 22px; border-radius: 999px; background: rgba(255,255,255,.95); box-shadow: 0 2px 6px rgba(0,0,0,.12); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #333; }
+  .dm-barra-ios .u { flex: 1; }
+  .dm-barra-ios .b, .dm-barra-ios .m { width: 22px; flex: 0 0 auto; }
+  .dm-chrome { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: #fff; display: flex; align-items: center; gap: 5px; padding: 0 6px; border-bottom: 1px solid #eee; }
+  .dm-chrome .u { flex: 1; height: 16px; border-radius: 999px; background: #F1F3F4; font-size: 7.5px; display: flex; align-items: center; padding: 0 7px; color: #444; gap: 4px; }
+  .dm-chrome .k { width: 14px; text-align: center; font-weight: 900; font-size: 11px; color: #444; line-height: 1; }
+  .dm-pc .dm-chrome { height: 22px; }
+  .dm-pc .dm-chrome .inst { width: 15px; height: 13px; border-radius: 3px; display: flex; align-items: center; justify-content: center; color: #444; }
+  .dm-menu { position: absolute; background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.22); padding: 4px 0; font-size: 8.5px; animation: dmSobe .3s ease; }
+  .dm-menu div { padding: 5px 9px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .dm-menu div.al { background: #FBEDE6; color: #983808; font-weight: 800; }
+  .dm-folha { position: absolute; left: 0; right: 0; bottom: 0; background: #F2F2F7; border-radius: 14px 14px 0 0; padding: 9px 8px 12px; font-size: 8.5px; animation: dmSobe .35s ease; box-shadow: 0 -6px 18px rgba(0,0,0,.12); }
+  .dm-folha .g { background: #fff; border-radius: 9px; overflow: hidden; margin-top: 6px; }
+  .dm-folha .g div { padding: 6px 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+  .dm-folha .g div:last-child { border-bottom: 0; }
+  .dm-folha .g div.al { background: #FBEDE6; color: #983808; font-weight: 800; }
+  .dm-dlg { position: absolute; left: 10px; right: 10px; top: 50%; transform: translateY(-50%); background: #fff; border-radius: 14px; padding: 11px; font-size: 8.5px; box-shadow: 0 12px 30px rgba(0,0,0,.28); animation: dmEntra .3s ease; }
+  .dm-dlg h4 { margin: 0 0 7px; font-size: 10px; font-weight: 800; }
+  .dm-dlg .lin { display: flex; align-items: center; gap: 7px; }
+  .dm-dlg .bts { display: flex; justify-content: flex-end; gap: 6px; margin-top: 9px; }
+  .dm-dlg .bts span { padding: 4px 9px; border-radius: 999px; font-weight: 800; }
+  .dm-dlg .bts .ok { background: #1A73E8; color: #fff; }
+  .dm-veu { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+  .dm-ios-add { position: absolute; inset: 0; background: #F2F2F7; padding: 26px 8px 0; font-size: 8.5px; animation: dmSobe .35s ease; }
+  .dm-ios-add .hd { display: flex; justify-content: space-between; font-weight: 700; color: #0A84FF; margin-bottom: 10px; }
+  .dm-ios-add .hd b { color: #111; }
+  .dm-ios-add .cx { background: #fff; border-radius: 9px; padding: 8px; display: flex; gap: 7px; align-items: center; }
+  .dm-ios-add .tg { background: #fff; border-radius: 9px; padding: 7px 8px; margin-top: 7px; display: flex; justify-content: space-between; align-items: center; }
+  .dm-sw { width: 22px; height: 13px; border-radius: 999px; background: #34C759; position: relative; }
+  .dm-sw::after { content: ''; position: absolute; right: 1.5px; top: 1.5px; width: 10px; height: 10px; border-radius: 50%; background: #fff; }
+  .dm-home { position: absolute; inset: 0; background: linear-gradient(160deg, #6E8FB5, #B79FC4 60%, #E8B9A0); padding: 30px 10px 0; display: grid; grid-template-columns: repeat(4, 27px); justify-content: space-evenly; gap: 11px 0; align-content: start; }
+  .dm-home .ap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .dm-home .ap i { width: 27px; height: 27px; border-radius: 8px; background: rgba(255,255,255,.55); display: block; }
+  .dm-home .ap.novo i { background: var(--brand); overflow: hidden; animation: dmPop .7s cubic-bezier(.3,1.6,.5,1) .35s both; box-shadow: 0 3px 8px rgba(0,0,0,.25); }
+  .dm-home .ap.novo i img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dm-home .ap small { font-size: 6.5px; color: #fff; font-weight: 700; max-width: 34px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dm-home .ap.novo small { animation: dmEntra .4s ease .8s both; }
+  .dm-desk { position: absolute; inset: 0; background: linear-gradient(160deg, #6E8FB5, #B79FC4 60%, #E8B9A0); }
+  .dm-desk .jan { position: absolute; left: 50px; top: 14px; width: 150px; height: 132px; background: #F6F3F0; border-radius: 7px; box-shadow: 0 8px 20px rgba(0,0,0,.25); overflow: hidden; animation: dmPop .6s cubic-bezier(.3,1.4,.5,1) .2s both; }
+  .dm-desk .jan .tb { height: 13px; background: var(--brand); display: flex; align-items: center; gap: 4px; padding: 0 5px; color: #fff; font-size: 6.5px; font-weight: 800; }
+  .dm-desk .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; background: rgba(255,255,255,.75); display: flex; justify-content: center; align-items: center; gap: 6px; }
+  .dm-desk .bar i { width: 14px; height: 14px; border-radius: 4px; background: rgba(0,0,0,.18); display: block; }
+  .dm-desk .bar i.novo { background: var(--brand); overflow: hidden; animation: dmPop .6s cubic-bezier(.3,1.6,.5,1) .6s both; }
+  .dm-desk .bar i.novo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  @keyframes dmSobe { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes dmPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .dm-dedo { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: rgba(35,31,32,.28); border: 2px solid rgba(255,255,255,.95); box-shadow: 0 3px 10px rgba(0,0,0,.25); pointer-events: none; transition: left .7s cubic-bezier(.4,0,.2,1), top .7s cubic-bezier(.4,0,.2,1), opacity .3s; z-index: 5; }
+  .dm-dedo.rato { width: 0; height: 0; margin: 0; border: 0; background: none; box-shadow: none; }
+  .dm-dedo.rato::before { content: ''; position: absolute; left: 0; top: 0; width: 13px; height: 19px; background: #111; clip-path: polygon(0 0, 0 100%, 28% 76%, 45% 100%, 60% 94%, 44% 70%, 82% 70%); filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff); }
+  .dm-dedo.toca::after { content: ''; position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 2px solid #fff; animation: dmToque .5s ease-out; }
+  .dm-dedo.rato.toca::after { left: 0; top: 0; }
+  @keyframes dmToque { from { transform: scale(.6); opacity: 1; } to { transform: scale(1.9); opacity: 0; } }
+  .dm-leg { display: flex; gap: 10px; align-items: flex-start; margin-top: 10px; min-height: 40px; }
+  .dm-leg .n { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 800; font-size: 12.5px; display: flex; align-items: center; justify-content: center; }
+  .dm-leg p { margin: 2px 0 0; font-size: 14px; line-height: 1.4; color: var(--ink); }
+  .dm-ctl { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .dm-ctl button { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+  .dm-ctl button svg { width: 14px; height: 14px; }
+  .dm-prog { flex: 1; display: flex; gap: 4px; }
+  .dm-prog i { flex: 1; height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; position: relative; cursor: pointer; }
+  .dm-prog i b { position: absolute; inset: 0; width: 0; background: var(--ink); }
+  .dm-prog i.feito b { width: 100%; }
+  .dm-prog i.agora b { animation: dmProg var(--dur, 3s) linear forwards; }
+  .dm-prog.pausa i.agora b { animation-play-state: paused; }
+  @keyframes dmProg { to { width: 100%; } }
+  @media (prefers-reduced-motion: reduce) { .dm-cena, .dm-menu, .dm-folha, .dm-dlg, .dm-ios-add, .dm-home .ap.novo i, .dm-desk .jan, .dm-desk .bar i.novo { animation: none !important; } .dm-dedo { transition: none; } }
 </style>
 </head>
 <body>
@@ -385,7 +478,7 @@
       ${!d.ligado ? '<div class="aviso"><i>⏸️</i><span>O cartão está em pausa nesta loja. Os seus carimbos ficam guardados.</span></div>' : ''}
       <div class="bloco"><h2>Como funciona</h2><p class="dica">${S ? `Diga o código <b>${esc(d.codigo)}</b> ao balcão quando pagar e recebe ${esc(V.charAt(0).toLowerCase() + V.slice(1))}.` : `Diga o código <b>${esc(d.codigo)}</b> ao balcão sempre que pedir. Cada compra dá um carimbo e, quando completar o cartão, recebe ${esc(d.premio.toLowerCase())}.`}</p>${d.condicoes ? `<p class="dica" style="margin-top:8px"><b>Condições:</b> ${esc(d.condicoes)}</p>` : ''}</div>
       ${redesHtml(d.redes, d)}
-      ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link.</p><button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
+      ${instalado() ? '' : `<div class="bloco"><h2>Tenha o cartão sempre à mão</h2><p class="dica">Guarde o cartão no ecrã do telemóvel, como uma app. Abre num toque, sem procurar o link. Veja como:</p>${dmHtml()}<button type="button" class="bp" onclick="instalar()">Adicionar ao ecrã principal</button></div>`}
       ${ajudaHtml(d, true)}
       <div class="bloco" id="mk-bloco"><h2>Mensagens da loja</h2>
         ${d.marketing ? `<p class="dica">Recebe novidades, eventos e ofertas${d.loja ? ' da ' + esc(d.loja) : ''} por WhatsApp ou SMS.</p>
@@ -447,11 +540,102 @@
     rebentar(W / 2, H * .28);
     try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (_) {}
   }
+  // ---- vídeo animado: como pôr o cartão no ecrã principal (iPhone, Android, computador)
+  let DM = { d: null, plat: null, i: 0, t: null, pausa: false, visto: false };
+  const dmPlatAuto = () => { const ua = navigator.userAgent; if (/iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios'; if (/android/i.test(ua)) return 'and'; return 'pc'; };
+  function dmHtml() {
+    return `<div class="dm" id="dm" aria-label="Vídeo: como pôr o cartão no ecrã principal">
+      <div class="dm-tabs" role="tablist">${[['ios', 'iPhone'], ['and', 'Android'], ['pc', 'Computador']].map(([k, t]) => `<button type="button" role="tab" data-p="${k}" onclick="dmPlat('${k}')">${t}</button>`).join('')}</div>
+      <div class="dm-palco" id="dm-palco"></div>
+      <div class="dm-leg"><span class="n" id="dm-n">1</span><p id="dm-txt"></p></div>
+      <div class="dm-ctl"><button type="button" id="dm-pp" onclick="dmPausa()" aria-label="Pausar"></button><div class="dm-prog" id="dm-prog"></div><button type="button" onclick="dmIr(0)" aria-label="Ver de novo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button></div>
+    </div>`;
+  }
+  function dmLogo() { const l = DM.d && DM.d.marca && DM.d.marca.logo; return l ? `<img src="${esc(l)}" alt="">` : ''; }
+  function dmPag(extra) {
+    const nome = esc((DM.d && DM.d.loja) || 'A sua loja');
+    return `<div class="dm-pag"><div class="dm-top"><span class="dm-lg">${dmLogo()}</span><b>${nome}</b></div><div class="dm-cart">${'<i></i>'.repeat(10)}</div><div class="dm-lin"></div><div class="dm-lin c"></div><div class="dm-lin"></div></div>${extra || ''}`;
+  }
+  const dmIos = (m) => `<div class="dm-barra-ios"><span class="b">‹</span><span class="u">diostock.pt</span><span class="m">•••</span></div>${m || ''}`;
+  const dmChr = (m) => `<div class="dm-chrome"><span class="u">🔒 diostock.pt</span><span class="k">⋮</span></div>${m || ''}`;
+  const dmPcBar = (m) => `<div class="dm-chrome"><span class="u">🔒 diostock.pt/cartao</span><span class="inst"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 7v6M9.5 10.5 12 13l2.5-2.5"/></svg></span><span class="k">⋮</span></div>${m || ''}`;
+  function dmHome(nome) { const ap = '<span class="ap"><i></i><small>&nbsp;</small></span>'; return `<div class="dm-home">${ap.repeat(6)}<span class="ap novo"><i>${dmLogo()}</i><small>${esc(nome)}</small></span></div>`; }
+  function dmCenas(p) {
+    const nome = (DM.d && DM.d.loja) || 'Cartão';
+    if (p === 'ios') return [
+      { h: dmPag(dmIos()), a: '.m', t: 'No Safari, toque em <b>•••</b>, ao lado do endereço (ou em <b>Partilhar</b>).' },
+      { h: dmPag(dmIos('<div class="dm-menu" style="right:6px;bottom:36px"><div class="al">⬆️ Partilhar</div><div>☆ Adicionar marcador</div><div>⊕ Novo separador</div></div>')), a: '.dm-menu .al', t: 'Toque em <b>Partilhar</b>.' },
+      { h: dmPag('<div class="dm-veu"></div><div class="dm-folha"><b>' + esc(nome) + '</b><div class="g"><div>Copiar <span>⧉</span></div><div>Adicionar aos favoritos <span>☆</span></div><div class="al">Adicionar ao ecrã principal <span>⊞</span></div></div></div>'), a: '.dm-folha .al', t: 'Desça na lista e toque em <b>Adicionar ao ecrã principal</b>.' },
+      { h: `<div class="dm-ios-add"><div class="hd"><span>Cancelar</span><b>Ecrã principal</b><span class="ok">Adicionar</span></div><div class="cx"><span class="dm-lg" style="width:30px;height:30px">${dmLogo()}</span><span>${esc(nome)}<br><small style="color:#888">diostock.pt</small></span></div><div class="tg"><span>Abrir como app web</span><span class="dm-sw"></span></div></div>`, a: '.dm-ios-add .ok', t: 'Deixe ligado <b>Abrir como app web</b> e toque em <b>Adicionar</b>.' },
+      { h: dmHome(nome), t: 'Pronto: o cartão fica no ecrã principal e abre num toque, como uma app.' }
+    ];
+    if (p === 'and') return [
+      { h: dmChr(dmPag()), a: '.k', t: 'No Chrome, toque em <b>⋮</b>, no canto de cima.' },
+      { h: dmChr(dmPag('<div class="dm-menu" style="right:4px;top:22px"><div>⊕ Novo separador</div><div>🕘 Histórico</div><div>⤓ Transferências</div><div class="al">📲 Adicionar ao ecrã principal</div><div>↗ Partilhar</div></div>')), a: '.dm-menu .al', t: 'Escolha <b>Adicionar ao ecrã principal</b> (ou <b>Instalar app</b>).' },
+      { h: dmChr(dmPag(`<div class="dm-veu"></div><div class="dm-dlg"><h4>Instalar app</h4><div class="lin"><span class="dm-lg" style="width:28px;height:28px">${dmLogo()}</span><span>${esc(nome)}<br><small style="color:#888">diostock.pt</small></span></div><div class="bts"><span>Cancelar</span><span class="ok">Instalar</span></div></div>`)), a: '.dm-dlg .ok', t: 'Toque em <b>Instalar</b>.' },
+      { h: dmHome(nome), t: 'Pronto: o cartão fica no ecrã principal e abre num toque, como uma app.' }
+    ];
+    return [
+      { h: dmPcBar(dmPag()), a: '.inst', t: 'No Chrome ou no Edge, clique no ícone de <b>instalar</b> na barra do endereço (ou no menu <b>⋮</b> → <b>Instalar</b>).' },
+      { h: dmPcBar(dmPag(`<div class="dm-dlg" style="left:auto;right:8px;top:30px;transform:none;width:150px"><h4>Instalar app?</h4><div class="lin"><span class="dm-lg" style="width:24px;height:24px">${dmLogo()}</span><span>${esc(nome)}<br><small style="color:#888">diostock.pt</small></span></div><div class="bts"><span>Cancelar</span><span class="ok">Instalar</span></div></div>`)), a: '.dm-dlg .ok', t: 'Clique em <b>Instalar</b>.' },
+      { h: `<div class="dm-desk"><div class="jan"><div class="tb"><span class="dm-lg" style="width:9px;height:9px;border-radius:3px">${dmLogo()}</span>${esc(nome)}</div>${dmPag().replace('class="dm-pag"', 'class="dm-pag" style="padding:8px 8px 0;position:relative"')}</div><div class="bar"><i></i><i></i><i class="novo">${dmLogo()}</i><i></i></div></div>`, t: 'Pronto: o cartão abre na sua própria janela e fica na barra de tarefas. No Mac com Safari: <b>Ficheiro → Adicionar à Dock</b>.' }
+    ];
+  }
+  function dmPlat(p) {
+    DM.plat = p; DM.cenas = dmCenas(p);
+    document.querySelectorAll('#dm .dm-tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.p === p ? 'true' : 'false'));
+    const palco = document.getElementById('dm-palco');
+    palco.innerHTML = `<div class="${p === 'pc' ? 'dm-pc' : 'dm-tel' + (p === 'and' ? ' and' : '')}"><div class="dm-ecra" id="dm-ecra"></div></div><span class="dm-dedo${p === 'pc' ? ' rato' : ''}" id="dm-dedo" style="opacity:0"></span>`;
+    document.getElementById('dm-prog').innerHTML = DM.cenas.map((_, i) => `<i onclick="dmIr(${i})"><b></b></i>`).join('');
+    dmIr(0);
+  }
+  function dmIr(i) {
+    clearTimeout(DM.t); clearTimeout(DM.t2); clearTimeout(DM.t3);
+    if (!DM.cenas) return; DM.i = i;
+    const c = DM.cenas[i], ecra = document.getElementById('dm-ecra'), dedo = document.getElementById('dm-dedo'), palco = document.getElementById('dm-palco'); if (!ecra) return;
+    ecra.innerHTML = `<div class="dm-cena">${c.h}</div>`;
+    document.getElementById('dm-n').textContent = i + 1; document.getElementById('dm-txt').innerHTML = c.t;
+    const dur = c.a ? 3200 : 3800;
+    document.querySelectorAll('#dm-prog i').forEach((x, k) => { x.className = k < i ? 'feito' : k === i ? 'agora' : ''; x.style.setProperty('--dur', dur + 'ms'); const b = x.querySelector('b'); b.style.animation = 'none'; b.offsetWidth; b.style.animation = ''; });
+    const rm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (c.a) {
+      const alvo = ecra.querySelector(c.a);
+      // mede depois de a cena acabar de entrar (as folhas e menus sobem com animação)
+      DM.t3 = setTimeout(() => {
+        const pr = palco.getBoundingClientRect(), ar = alvo ? alvo.getBoundingClientRect() : null;
+        const x = ar ? ar.left - pr.left + ar.width / 2 : pr.width / 2, y = ar ? ar.top - pr.top + ar.height / 2 : pr.height / 2;
+        if (i === 0 || dedo.style.opacity === '0') { dedo.style.transition = 'none'; dedo.style.left = (x + 40) + 'px'; dedo.style.top = (y + 60) + 'px'; dedo.offsetWidth; dedo.style.transition = ''; }
+        dedo.style.opacity = '1';
+        requestAnimationFrame(() => { dedo.style.left = x + 'px'; dedo.style.top = y + 'px'; });
+      }, rm ? 0 : 420);
+      DM.t2 = setTimeout(() => { dedo.classList.remove('toca'); dedo.offsetWidth; dedo.classList.add('toca'); if (alvo) alvo.style.filter = 'brightness(.88)'; }, rm ? 0 : 1300);
+    } else dedo.style.opacity = '0';
+    dmPintarPP();
+    if (!DM.pausa) DM.t = setTimeout(() => dmIr((i + 1) % DM.cenas.length), dur);
+  }
+  function dmPintarPP() {
+    const b = document.getElementById('dm-pp'); if (!b) return;
+    b.innerHTML = DM.pausa ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>' : '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+    b.setAttribute('aria-label', DM.pausa ? 'Ver' : 'Pausar');
+    document.getElementById('dm-prog').classList.toggle('pausa', DM.pausa);
+  }
+  function dmPausa() { DM.pausa = !DM.pausa; if (DM.pausa) { clearTimeout(DM.t); dmPintarPP(); } else dmIr((DM.i + 1) % DM.cenas.length); }
+  function dmIniciar(d) {
+    DM.d = d; const box = document.getElementById('dm'); if (!box) return;
+    DM.pausa = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    dmPlat(DM.plat || dmPlatAuto());
+    // só anda quando está à vista
+    if ('IntersectionObserver' in window) {
+      if (DM.io) DM.io.disconnect();
+      DM.io = new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) { clearTimeout(DM.t); } else if (!DM.pausa) dmIr(DM.i); }), { threshold: 0.4 });
+      DM.io.observe(box);
+    }
+  }
   async function ver(silencioso) {
     try {
       const d = await post(K ? { acao: 'ver', k: K } : { acao: 'ver', c: C });
       const k = JSON.stringify([d.carimbos, d.premios, d.ligado, d.alvo, d.premio, d.redes, d.consentimento, d.marketing, d.marca, d.titulo, d.condicoes, d.desconto, d.programa]);
-      if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); if (d.consentimento) convidar(); festejar(d); }
+      if (k !== ultimo) { ultimo = k; await seloPreparar(d); cartao(d); try { dmIniciar(d); } catch (_) {} if (d.consentimento) convidar(); festejar(d); }
       manifestar(d);
       if (d.n && d.k) try { localStorage.setItem('ds_cartao_' + d.n, d.k); localStorage.setItem('ds_cartao_ultimo', d.k); } catch (_) {}
     } catch (e) {
