@@ -1331,7 +1331,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 17:47</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 17:58</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -21590,6 +21590,7 @@ var qrcode = function() {
                     [523, 659, 784, 1047].forEach((f, i) => nota(f, i * .11, .22, 'triangle', .14));
                     [523, 659, 784, 1047].forEach(f => nota(f, .5, .9, 'triangle', .07));
                     [1568, 2093, 2637, 2093, 3136].forEach((f, i) => nota(f, .55 + i * .07, .12, 'sine', .05));
+                    rlAplauso(ctx, t0 + .35);
                 } else if (tipo === 'perdeu') {
                     // "trombone triste": quatro notas a descer, a última a tremer
                     [[392, 0, .38], [370, .42, .38], [349, .84, .38]].forEach(([f, t, d]) => nota(f, t, d, 'sawtooth', .07));
@@ -21597,6 +21598,38 @@ var qrcode = function() {
                     lfo.frequency.value = 6; lg.gain.value = 9; lfo.connect(lg).connect(o.frequency); lfo.start(t0 + 1.3); lfo.stop(t0 + 2.4);
                 }
             } catch (_) {}
+        }
+        // plateia: palmas (rajadas curtas de ruído) e gritos de festa ("uhuu!")
+        function rlAplauso(ctx, ini) {
+            const sr = ctx.sampleRate, buf = ctx.createBuffer(1, Math.floor(sr * .06), sr), d = buf.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 5);
+            const sai = ctx.createGain(); sai.gain.value = .9; sai.connect(ctx.destination);
+            const dur = 3.6, n = 260;
+            for (let i = 0; i < n; i++) {
+                const u = Math.random(), t = ini + dur * (u < .7 ? Math.pow(Math.random(), 1.6) * .75 : Math.random()); // mais palmas no início
+                const src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), g = ctx.createGain();
+                src.buffer = buf; src.playbackRate.value = .8 + Math.random() * .6;
+                bp.type = 'bandpass'; bp.frequency.value = 900 + Math.random() * 1800; bp.Q.value = .9 + Math.random();
+                const fade = Math.max(0, 1 - (t - ini) / dur);
+                g.gain.value = (.12 + Math.random() * .22) * (.35 + .65 * fade);
+                src.connect(bp).connect(g).connect(sai); src.start(t);
+            }
+            // burburinho da plateia
+            const nb = ctx.createBuffer(1, Math.floor(sr * dur), sr), nd = nb.getChannelData(0); let last = 0;
+            for (let i = 0; i < nd.length; i++) { last = last * .97 + (Math.random() * 2 - 1) * .03; nd[i] = last * 6; }
+            const ns = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), ng = ctx.createGain();
+            ns.buffer = nb; lp.type = 'lowpass'; lp.frequency.value = 1400; ng.gain.setValueAtTime(0, ini); ng.gain.linearRampToValueAtTime(.18, ini + .3); ng.gain.linearRampToValueAtTime(0, ini + dur);
+            ns.connect(lp).connect(ng).connect(sai); ns.start(ini);
+            // gritos "uhuu!"
+            [0.15, 0.45, 0.8, 1.2, 1.7].forEach((dt, i) => {
+                const t = ini + dt, o = ctx.createOscillator(), f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), g = ctx.createGain(), vib = ctx.createOscillator(), vg = ctx.createGain();
+                const base = 260 + Math.random() * 180;
+                o.type = 'sawtooth'; o.frequency.setValueAtTime(base, t); o.frequency.exponentialRampToValueAtTime(base * 1.9, t + .22); o.frequency.exponentialRampToValueAtTime(base * 1.5, t + .7);
+                vib.frequency.value = 7 + Math.random() * 3; vg.gain.value = 12; vib.connect(vg).connect(o.frequency);
+                f1.type = 'bandpass'; f1.frequency.value = 700 + i * 60; f1.Q.value = 4; f2.type = 'lowpass'; f2.frequency.value = 2400;
+                g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.06, t + .06); g.gain.exponentialRampToValueAtTime(.001, t + .75);
+                o.connect(f1).connect(f2).connect(g).connect(sai); o.start(t); o.stop(t + .8); vib.start(t); vib.stop(t + .8);
+            });
         }
         function rlAnimar(roda, de, ate, n, reduz) {
             return new Promise(res => {
@@ -22207,6 +22240,7 @@ var qrcode = function() {
             dsModal('eq-p', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><h3>${id ? 'Editar pessoa' : 'Nova pessoa'}</h3><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('eq-p')" aria-label="Fechar"><i class="fas fa-xmark text-lg"></i></button></div>
                 <label class="f">Nome<input id="eqp-n" maxlength="40" value="${escapeHtml(s.nome)}" placeholder="Ex.: Ana"></label>
                 <label class="f">Função (opcional)<input id="eqp-f" maxlength="40" value="${escapeHtml(s.funcao || '')}" placeholder="Ex.: Barista, Chefe de sala"></label>
+                <label class="f">E-mail (opcional)<input id="eqp-e" type="email" inputmode="email" autocomplete="off" maxlength="120" value="${escapeHtml(s.email || '')}" placeholder="Ex.: ana@gmail.com"><small style="display:block;font-weight:500;color:#7A6A60;margin-top:4px">Liga esta pessoa à conta dela: o que fizer na Formação fica no seu nome. Para a convidar, use Formação → Convidar.</small></label>
                 <div class="tit">Área <span>(a escala conta cada área à parte)</span></div>
                 <div class="pz" id="eqp-areas">${areas.map(a => `<button type="button" class="${s.area === a ? 'on' : ''}" onclick="eqAreaEscolher(this,'${escapeHtml(a)}')">${escapeHtml(a)}</button>`).join('')}<button type="button" onclick="eqAreaNova(this)"><i class="fas fa-plus"></i> Outra</button></div>
                 <div class="tit">Cor</div><div class="cores" id="eqp-cores">${EQ_CORES.map(c => `<button type="button" style="background:${c}" class="${c === s.cor ? 'on' : ''}" onclick="window._eqCor='${c}';document.querySelectorAll('#eqp-cores button').forEach(b=>b.classList.toggle('on',b===this))" aria-label="Cor"></button>`).join('')}</div>
@@ -22239,7 +22273,10 @@ var qrcode = function() {
                 if (ini && fim) horas[t.id] = { ini, fim }; else if (ini || fim) mau = true; });
             if (mau) return dsToast('No horário próprio, escreva a entrada e a saída (ou deixe as duas em branco).', true);
             const tm = (document.querySelector('#eq-p input[name="eqp-tm"]:checked') || {}).value || 'trabalha';
-            const v = { nome: nome.slice(0, 40), funcao: document.getElementById('eqp-f').value.trim().slice(0, 40), area: (window._eqArea || '').slice(0, 24), cor: window._eqCor || '#983808', tipsModo: tm, tips: tm !== 'nao', padrao, horas };
+            const em = ((document.getElementById('eqp-e') || {}).value || '').trim().toLowerCase();
+            if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return dsToast('O e-mail não parece certo.', true);
+            if (em && e.staff.some(x => x.id !== id && String(x.email || '').toLowerCase() === em)) return dsToast('Esse e-mail já está noutra pessoa da equipe.', true);
+            const v = { email: em, nome: nome.slice(0, 40), funcao: document.getElementById('eqp-f').value.trim().slice(0, 40), area: (window._eqArea || '').slice(0, 24), cor: window._eqCor || '#983808', tipsModo: tm, tips: tm !== 'nao', padrao, horas };
             if (id) Object.assign(eqPessoaDe(id) || {}, v); else e.staff.push(Object.assign({ id: eqId() }, v));
             eqGuardar(); dsModalFechar('eq-p'); eqPintar();
         }
@@ -25297,7 +25334,8 @@ async function dsTrPreparar() {
             if (!fmResCarregado) return '';
             const liga = pessoas.slice().sort((a, b) => b.xpSem - a.xpSem || b.xp - a.xp);
             const linhaP = (p, i) => `<button type="button" class="fmx-lg${p.eu ? ' eu' : ''}" onclick="fmPessoaVer('${escapeHtml(p.k)}')"><span class="ps">${i + 1}</span><span class="av" style="background:${fmCor(p.k)}">${escapeHtml(fmIni(p.nome))}</span><span class="nm"><b>${escapeHtml(p.nome)}${p.eu ? ' (eu)' : ''}</b><small>Nível ${p.nivel} · ${p.seq ? '🔥 ' + p.seq + (p.seq === 1 ? ' dia' : ' dias') + ' · ' : ''}${p.ult ? 'último ' + new Date(p.ult.criado_em).toLocaleDateString('pt-PT') : ''}</small></span>${fmSpark(p.res.slice(-8).map(r => r.nota))}<span class="xp">${p.xpSem} XP</span></button>`;
-            let h = `<div class="eq-card fmx-cd" style="margin-top:18px"><div class="eq-bar" style="margin:0"><b style="font-size:15px;font-weight:900">🏅 Liga da semana</b><span style="flex:1"></span><small style="color:#7A6A60">XP dos últimos 7 dias</small></div>
+            let h = (ed && currentRole === 'dono' && staff.length) ? fmEquipaHtml(staff) : '';
+            h += `<div class="eq-card fmx-cd" style="margin-top:18px"><div class="eq-bar" style="margin:0"><b style="font-size:15px;font-weight:900">🏅 Liga da semana</b><span style="flex:1"></span><small style="color:#7A6A60">XP dos últimos 7 dias</small></div>
                 ${liga.length ? liga.slice(0, ed ? 50 : 10).map(linhaP).join('') : `<p class="fmx-nota">Ainda ninguém fez um curso. Cada pessoa entra com a sua conta e faz os cursos; o progresso aparece aqui.</p>`}</div>`;
             if (!ed) {
                 const meus = fmRes.filter(r => r.membro_id === fmUid()).slice(0, 8);
@@ -25319,8 +25357,59 @@ async function dsTrPreparar() {
             if (cursos.length && staff.length) h += `<div class="eq-card fmx-cd" style="margin-top:14px;overflow-x:auto"><b style="font-size:15px;font-weight:900">Quem já fez cada curso</b>
                 <table class="fm-tab"><thead><tr><th>Pessoa</th>${cursos.map(c => `<th>${escapeHtml(c.titulo)}</th>`).join('')}</tr></thead><tbody>
                 ${staff.map(s => `<tr><td><b>${escapeHtml(s.nome)}</b>${s.funcao ? `<br><small style="color:#7A6A60">${escapeHtml(s.funcao)}</small>` : ''}${fmLigados()[s.id] ? '' : '<br><small style="color:#B45309">ainda não entrou</small>'}</td>${cursos.map(c => { if (!fmParaMim(c, s)) return '<td style="color:#C9BBAF">—</td>'; const m = fmMelhorStaff(c.id, s.id); return m ? `<td class="${fmPassou(c, m) ? 'ok' : 'nao'}">${fmPassou(c, m) ? '✓' : '✗'} ${m.nota}%<br><small style="font-weight:600;color:#7A6A60">${new Date(m.criado_em).toLocaleDateString('pt-PT')}</small></td>` : '<td style="color:#7A6A60">por fazer</td>'; }).join('')}</tr>`).join('')}
-                </tbody></table><p class="fmx-nota">Cada pessoa entra com a sua conta (Definições → Colaboradores) e escolhe o seu nome na primeira vez.</p></div>`;
+                </tbody></table><p class="fmx-nota">Cada pessoa entra com a sua conta. Convide-as em “Equipa na formação”, acima.</p></div>`;
             return h;
+        }
+        // ---------- convidar a equipa: cada pessoa da escala liga-se a um e-mail e cria o seu login
+        let fmMembros = null, fmMembrosDono = null;
+        async function fmCarregarMembros() {
+            fmMembrosDono = dataOwnerId; fmMembros = [];
+            if (!sb || currentRole !== 'dono') return false;
+            try { const { data } = await sb.from('membros').select('email,membro_id,permissao,tipo').eq('dono_id', dataOwnerId); fmMembros = data || []; return true; } catch (_) { return false; }
+        }
+        function fmEstado(s) {
+            const em = String(s.email || '').toLowerCase(), m = em && (fmMembros || []).find(x => String(x.email || '').toLowerCase() === em);
+            if (fmLigados()[s.id] || (m && m.membro_id)) return 'entrou';
+            if (m) return 'convidado';
+            return em ? 'email' : 'sem';
+        }
+        function fmEquipaHtml(staff) {
+            if (fmMembros === null || fmMembrosDono !== dataOwnerId) { fmCarregarMembros().then(() => { if (eqVista === 'formacao') { const p = document.getElementById('fmx-painel'); if (p) fmPintar(); } }); }
+            const ord = { sem: 0, email: 1, convidado: 2, entrou: 3 };
+            const l = staff.map(s => ({ s, e: fmEstado(s) })).sort((a, b) => ord[a.e] - ord[b.e]);
+            const falta = l.filter(x => x.e !== 'entrou').length;
+            const est = { entrou: '<span class="fmx-est ok">✓ Tem conta</span>', convidado: '<span class="fmx-est al">Convite enviado</span>', email: '<span class="fmx-est">Por convidar</span>', sem: '<span class="fmx-est">Sem e-mail</span>' };
+            return `<div class="eq-card fmx-cd" style="margin-top:18px"><div class="eq-bar" style="margin:0"><b style="font-size:15px;font-weight:900">👥 Equipa na formação</b><span style="flex:1"></span><small style="color:#7A6A60">${falta ? falta + (falta === 1 ? ' pessoa por entrar' : ' pessoas por entrar') : 'Todos têm conta'}</small></div>
+                <p class="fmx-nota" style="margin-top:4px">Convide cada pessoa da escala pelo e-mail. Ela recebe o link, cria a palavra-passe e entra já ligada ao seu nome: os cursos que fizer ficam no histórico dela.</p>
+                ${l.map(({ s, e }) => `<div class="fmx-eqp"><span class="av" style="background:${s.cor || fmCor(s.id)}">${escapeHtml(fmIni(s.nome))}</span><span class="nm"><b>${escapeHtml(s.nome)}</b><small>${s.email ? escapeHtml(s.email) : escapeHtml(s.funcao || s.area || '')}</small></span>${est[e]}${e === 'entrou' ? '' : `<button type="button" class="eq-b${e === 'convidado' ? '' : ' p'}" onclick="fmConvidar('${s.id}',this)"><i class="fas ${e === 'convidado' ? 'fa-rotate-right' : 'fa-paper-plane'}"></i>${e === 'convidado' ? 'Reenviar' : 'Convidar'}</button>`}</div>`).join('')}</div>`;
+        }
+        async function fmConvidar(sid, bt) {
+            if (currentRole !== 'dono') return dsToast('Só o responsável da conta pode convidar.', true);
+            const s = fmStaff().find(x => x.id === sid); if (!s) return;
+            let em = String(s.email || '').trim().toLowerCase();
+            if (!em) {
+                const v = await dsPromptBox('E-mail de ' + s.nome, 'Ex.: ' + fmNorm(s.nome).split(' ')[0] + '@gmail.com', '', { ok: 'Convidar' });
+                em = String(v || '').trim().toLowerCase(); if (!em) return;
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return dsToast('O e-mail não parece certo.', true);
+                if (fmStaff().some(x => x.id !== sid && String(x.email || '').toLowerCase() === em)) return dsToast('Esse e-mail já está noutra pessoa da equipe.', true);
+                s.email = em; eqGuardar();
+            }
+            if (currentUser && em === String(currentUser.email || '').toLowerCase()) return dsToast('Esse é o seu próprio e-mail: já entra com a sua conta.', true);
+            const t = bt ? bt.innerHTML : ''; if (bt) { bt.disabled = true; bt.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>A enviar…'; }
+            try {
+                const ja = (fmMembros || []).some(x => String(x.email || '').toLowerCase() === em);
+                if (!ja) {
+                    const { error } = await sb.from('membros').insert({ dono_id: currentUser.id, email: em, permissao: 'ver', tipo: 'funcionario' });
+                    if (error && error.code !== '23505') throw error;
+                    (fmMembros = fmMembros || []).push({ email: em, membro_id: null, permissao: 'ver', tipo: 'funcionario' });
+                }
+                const modo = typeof colabConvidar === 'function' ? await colabConvidar(em, true) : 'convite';
+                if (modo === 'entrar') dsToast(s.nome + ' já tinha conta no Dio’Stock: enviámos um e-mail para entrar.');
+                else if (modo) dsToast('Convite enviado para ' + em + '. Peça-lhe para ver também o Spam ou Promoções.');
+                else dsToast('A pessoa ficou adicionada, mas o e-mail não seguiu. Tente "Reenviar" daqui a pouco.', true);
+            } catch (e) { console.warn(e); dsToast('Não foi possível convidar agora. Verifique a internet e tente de novo.', true); }
+            if (bt) { bt.disabled = false; bt.innerHTML = t; }
+            fmPintar();
         }
         function fmSpark(v) {
             if (v.length < 2) return '<span class="sp"></span>';
@@ -25691,6 +25780,10 @@ async function dsTrPreparar() {
             if (document.getElementById('fmx-css')) return;
             document.head.insertAdjacentHTML('beforeend', `<style id="fmx-css">
             .fmx-cd{padding:16px!important;border-radius:18px}.fmx-nota{font-size:13px;color:#7A6A60;margin-top:10px;line-height:1.4}
+            .fmx-eqp{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F2ECE4}.fmx-eqp .av{width:36px;height:36px;border-radius:11px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}.fmx-eqp .nm{flex:1;min-width:0}.fmx-eqp .nm b{display:block;font-size:14px;font-weight:800;color:#231F20}.fmx-eqp .nm small{display:block;font-size:12px;color:#7A6A60;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fmx-eqp .eq-b{flex-shrink:0}
+            .fmx-est{font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:99px;background:#F2ECE4;color:#5B4A40;white-space:nowrap}.fmx-est.ok{background:#DCFCE7;color:#15803D}.fmx-est.al{background:#FEF3C7;color:#B45309}
+            @media (max-width:480px){.fmx-eqp{flex-wrap:wrap}.fmx-eqp .nm{min-width:55%}.fmx-eqp .eq-b{margin-left:46px}}
+            html.dark .fmx-eqp{border-color:#44332A}html.dark .fmx-eqp .nm b{color:#F2ECE4}html.dark .fmx-est{background:#44332A;color:#C9BBAF}
             .fmx-me{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #E4DCCF;border-radius:18px;padding:14px 16px}
             .fmx-me .av,.fmx-av,.fmx-lg .av,.fmx-quem .av{width:46px;height:46px;border-radius:14px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0}
             .fmx-me .tx{flex:1;min-width:0}.fmx-me .tx b{display:block;font-size:16px;font-weight:900;color:#231F20}.fmx-me .tx span{font-size:13px;font-weight:700;color:#983808}.fmx-me .tx small{display:block;font-size:12px;color:#7A6A60;margin-top:3px}

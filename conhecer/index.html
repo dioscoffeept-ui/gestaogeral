@@ -107,6 +107,8 @@ img,svg,video{max-width:100%}
 @media (max-width:420px){.step output{min-width:64px;font-size:20px}.step button{width:32px;height:32px;flex-shrink:0}.step{gap:6px}.preco{padding:10px 10px;gap:8px}.preco span{font-size:13.5px;white-space:normal;line-height:1.2}.pos div{font-size:12px;padding:10px 8px;min-height:64px}.pos div span{font-size:11.5px}}
 .step{display:flex;align-items:center;gap:6px}
 .step button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--ink);background:#fff;font-size:20px;font-weight:700;cursor:pointer;color:var(--ink);line-height:1}
+.pin{display:inline-flex;align-items:baseline;gap:3px;font-family:var(--display);font-weight:800;font-size:24px;color:var(--ink)}.pin input{width:4.2ch;font:inherit;color:inherit;text-align:right;border:0;border-bottom:2px dashed var(--brand);background:transparent;padding:0 2px;outline:0;border-radius:0}.pin input:focus{border-bottom-style:solid;background:#fff;border-radius:6px 6px 0 0}.pin span{font-size:inherit!important;font-weight:inherit!important}
+@media (max-width:420px){.pin{font-size:20px}}
 .step button:hover{background:var(--ink);color:#fff}
 .step output{font-family:var(--display);font-weight:800;font-size:24px;min-width:92px;text-align:center}
 .margem{display:flex;align-items:baseline;justify-content:space-between;margin-top:18px;gap:12px}
@@ -325,6 +327,42 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 .fid-v small{display:block;font-size:13px;opacity:.8;font-weight:700}
 .fid-v b{display:block;font-family:var(--display);font-size:40px;line-height:1.02;letter-spacing:-.02em}
 #fid-fogo{position:absolute;left:-40px;top:-40px;width:calc(100% + 80px);height:calc(100% + 80px);pointer-events:none;z-index:3}
+
+/* ---------- mais vida entre as secções (momentos Dio's: formas em bloco e cor) */
+:root{--brand:#983808;--brand-soft:#FBEDE6}
+body{background:#F6F3F0}
+.hero{position:relative;isolation:isolate}
+.hero::before{content:"";position:absolute;z-index:-1;width:560px;height:560px;border-radius:50%;background:#FBEDE6;right:-160px;top:-140px}
+.hero::after{content:"";position:absolute;z-index:-1;width:150px;height:150px;border-radius:26px;background:#E9DED4;left:-50px;bottom:36px;transform:rotate(14deg)}
+#como{background:var(--brand);color:#fff;position:relative;overflow:hidden;isolation:isolate}
+#como::before{content:"";position:absolute;z-index:-1;width:380px;height:380px;border-radius:50%;background:rgba(255,255,255,.08);right:-120px;top:-150px}
+#como::after{content:"";position:absolute;z-index:-1;width:200px;height:200px;border-radius:30px;background:rgba(255,255,255,.07);left:-70px;bottom:-60px;transform:rotate(-12deg)}
+#como h2{color:#fff}#como .lead{color:#F6DCCF}
+#como .fluxo{border-color:rgba(255,255,255,.45)}#como .fluxo li::before{background:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.18)}
+#como .fluxo .n{color:#FBD5C2}#como .fluxo h3{color:#fff}#como .fluxo p{color:#F6DCCF}
+@media (max-width:920px){#como .fluxo{border-color:rgba(255,255,255,.45)}}
+#funcionalidades{padding-top:96px!important}
+#funcionalidades .func,.esc-sec .func{background:#fff;border:1px solid var(--line);border-radius:32px;padding:44px!important;margin-bottom:26px;box-shadow:0 1px 0 rgba(36,21,14,.04)}
+@media (max-width:860px){#funcionalidades .func,.esc-sec .func{padding:22px!important;border-radius:24px}}
+.func .ecra{position:relative;overflow:hidden;isolation:isolate}
+.func .ecra::before{content:"";position:absolute;z-index:-1;width:46%;aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.35);right:-12%;top:-16%}
+.func .ecra::after{content:"";position:absolute;z-index:-1;width:24%;aspect-ratio:1;border-radius:18px;background:rgba(255,255,255,.25);left:-6%;bottom:-6%;transform:rotate(12deg)}
+#funcionalidades .func:nth-of-type(4n+1) .ecra{background:#F6E2D6}
+#funcionalidades .func:nth-of-type(4n+2) .ecra{background:var(--ink)}
+#funcionalidades .func:nth-of-type(4n+3) .ecra{background:#E9DED4}
+#funcionalidades .func:nth-of-type(4n+4) .ecra{background:var(--brand)}
+#funcionalidades .func:nth-of-type(4n+2) .ecra::before,#funcionalidades .func:nth-of-type(4n+4) .ecra::before{background:rgba(255,255,255,.08)}
+#funcionalidades .func:nth-of-type(4n+2) .ecra::after,#funcionalidades .func:nth-of-type(4n+4) .ecra::after{background:rgba(255,255,255,.07)}
+.esc-sec .ecra{background:#F6E2D6}
+.faixa{background:var(--ink);border:0}.faixa .wrap{color:#D9CCC0}.faixa b{color:#fff}
+.int{background:#fff}
+#perguntas .faq{background:#fff;border:1px solid var(--line);border-radius:28px;padding:8px 32px}
+#perguntas .faq details:first-child{border-top:0}#perguntas .faq details:last-child{border-bottom:0}
+@media (max-width:640px){#perguntas .faq{padding:4px 18px}}
+.fim{position:relative;overflow:hidden;isolation:isolate}
+.fim::before{content:"";position:absolute;z-index:-1;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.08);right:-90px;bottom:-140px}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}.rv.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}}
 </style>
 </head>
 <body>
@@ -375,7 +413,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
         <span>Preço no menu</span>
         <div class="step">
           <button type="button" id="f-menos" aria-label="Baixar o preço 10 cêntimos">−</button>
-          <output id="f-preco" class="num" aria-live="polite">3,80 €</output>
+          <label class="pin num"><input id="f-preco" type="text" inputmode="decimal" autocomplete="off" aria-label="Preço no menu, em euros" value="3,80"><span>€</span></label>
           <button type="button" id="f-mais" aria-label="Subir o preço 10 cêntimos">+</button>
         </div>
       </div>
@@ -762,7 +800,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
     b.l.forEach((x, i) => { const pr = num($('f-p' + i)), q = x[4] ? num($('f-q' + i)) : 1, c = x[4] ? pr * q / x[5] : pr; custo += c; $('f-o' + i).textContent = fmt(c); });
     $('f-custo').textContent = fmt(custo);
     const iva = $('f-isento').checked ? 0 : b.iva / 100, liq = preco / (1 + iva), sobra = liq - custo, m = liq > 0 ? sobra / liq * 100 : 0;
-    $('f-preco').textContent = fmt(preco);
+    const ip = $('f-preco'); if (document.activeElement !== ip) ip.value = preco.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     $('f-margem').textContent = Math.round(m) + '%';
     $('f-margem').classList.toggle('mal', m < 60);
     $('f-txt').innerHTML = sobra > 0 ? 'de margem. Sobram <b class="num">' + fmt(sobra) + '</b> por bebida' + (iva ? ', já sem IVA.' : '.') : 'de margem. A este preço, perde dinheiro em cada bebida.';
@@ -776,6 +814,9 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
   }
   document.querySelectorAll('.bebidas button').forEach(x => x.onclick = () => escolher(x.dataset.b));
   $('f-isento').addEventListener('input', draw);
+  $('f-preco').addEventListener('input', e => { const v = parseFloat(String(e.target.value).replace(/[^\d,.]/g, '').replace(',', '.')); if (isFinite(v) && v > 0) { preco = Math.min(999, Math.round(v * 100) / 100); draw(); } });
+  $('f-preco').addEventListener('blur', draw);
+  $('f-preco').addEventListener('focus', e => e.target.select());
   $('f-mais').onclick = () => { preco = Math.min(29.9, Math.round((preco + 0.1) * 100) / 100); draw(); };
   $('f-menos').onclick = () => { preco = Math.max(0.5, Math.round((preco - 0.1) * 100) / 100); draw(); };
   escolher('latte');
@@ -825,6 +866,18 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
     (function f(t){x.clearRect(0,0,W,H);for(let i=P.length-1;i>=0;i--){const p=P[i];p.vx*=.98;p.vy=p.vy*.98+.05*d;p.x+=p.vx;p.y+=p.vy;p.l-=.013;if(p.l<=0){P.splice(i,1);continue}x.globalAlpha=p.l;x.fillStyle=p.c;x.beginPath();x.arc(p.x,p.y,2.2*d,0,7);x.fill()}x.globalAlpha=1;if(P.length||t-t0<800)requestAnimationFrame(f);else x.clearRect(0,0,W,H)})(t0);
   }
   pintar();
+})();
+</script>
+
+<script>
+(function(){ // as secções aparecem ao descer
+  if(!('IntersectionObserver' in window)) return;
+  try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches) return; }catch(e){}
+  const els=document.querySelectorAll('.func, .fluxo li, .pl, .int > div, .fim, section.bloco .cab, .faq details');
+  const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target);} }),{rootMargin:'0px 0px -8% 0px'});
+  const ver=()=>document.querySelectorAll('.rv:not(.on)').forEach(el=>{ if(el.getBoundingClientRect().top < innerHeight*0.95) el.classList.add('on'); });
+  addEventListener('scroll',ver,{passive:true}); addEventListener('resize',ver);
+  els.forEach((el,i)=>{ if(el.getBoundingClientRect().top < innerHeight) return; el.classList.add('rv'); const sib=[...el.parentNode.children].indexOf(el); el.style.transitionDelay=(el.matches('.fluxo li, .pl, .int > div, .faq details')? Math.min(sib,5)*80 : 0)+'ms'; io.observe(el); });
 })();
 </script>
 </body>
