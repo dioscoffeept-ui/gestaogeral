@@ -101,9 +101,10 @@
     try {
       const r = await rpc('pedir_acesso', { p_token: t, p_nome: nome, p_email: email });
       if (!r || !r.ok) { b.disabled = false; b.textContent = 'Pedir acesso'; return erro((r && r.erro) || 'Não foi possível enviar. Tente de novo.'); }
+      const ent = './?colab=1&email=' + encodeURIComponent(email) + '&nome=' + encodeURIComponent(nome);
       $('card').innerHTML = r.ja
-        ? `<div class="ok"><div class="ic">✓</div><h2>Já tem acesso</h2><p>O e-mail <b>${esc(email)}</b> já faz parte da equipa. Entre no Dio’Stock com ele.</p><a href="./">Abrir o Dio’Stock</a></div>`
-        : `<div class="ok"><div class="ic">✓</div><h2>Pedido enviado</h2><p>Quando o responsável aceitar, recebe um e-mail em <b>${esc(email)}</b> para criar a palavra-passe e entrar.</p><p style="margin-top:10px;font-size:14px">Não encontra o e-mail? Veja em Spam ou Promoções.</p></div>`;
+        ? `<div class="ok"><div class="ic">✓</div><h2>Já tem acesso</h2><p>O e-mail <b>${esc(email)}</b> já faz parte da equipa. Entre no Dio’Stock na aba <b>Colaborador</b>.</p><a href="${ent}">Entrar como colaborador</a></div>`
+        : `<div class="ok"><div class="ic">✓</div><h2>Pedido enviado</h2><p>Quando o responsável aceitar, abra o Dio’Stock na aba <b>Colaborador</b>, toque em "Primeira vez" e crie a sua senha com o código que chega a <b>${esc(email)}</b>.</p><p style="margin-top:10px;font-size:14px">Depois entra sempre com o e-mail e a senha, e o acesso fica guardado no telemóvel.</p><a href="${ent}">Abrir a aba Colaborador</a></div>`;
     } catch (_) { b.disabled = false; b.textContent = 'Pedir acesso'; erro('Sem ligação à internet. Tente de novo.'); }
   });
 })();

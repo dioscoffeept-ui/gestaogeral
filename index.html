@@ -1275,8 +1275,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="flex border-b border-slate-200 text-xs font-bold">
+                        <button type="button" id="auth-tab-first" onclick="authShow('first')" class="flex-1 py-3.5 text-slate-500 border-b-2 border-transparent">Criar conta</button>
                         <button type="button" id="auth-tab-login" onclick="authShow('login')" class="flex-1 py-3.5 text-slate-900 border-b-2 border-slate-900">Entrar</button>
-                        <button type="button" id="auth-tab-first" onclick="authShow('first')" class="flex-1 py-3.5 text-slate-500 border-b-2 border-transparent">Primeiro acesso</button>
+                        <button type="button" id="auth-tab-colab" onclick="authShow('colab')" class="flex-1 py-3.5 text-slate-500 border-b-2 border-transparent"><i class="fas fa-user-group mr-1"></i>Colaborador</button>
                     </div>
 
                     <div class="p-6 space-y-4">
@@ -1298,6 +1299,23 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                             </div>
                             <button type="submit" class="auth-submit w-full py-3 text-sm bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition"><i class="fas fa-right-to-bracket mr-1"></i> Entrar e guardar acesso</button>
                             <p class="text-[11px] text-slate-400 text-center leading-relaxed">Com "Lembrar-me", o acesso fica guardado e o navegador oferece-se para guardar a senha.</p>
+                        </form>
+
+                        <!-- Colaborador: entra com o e-mail e a senha que criou (a primeira vez recebe um código) -->
+                        <form id="auth-form-colab" onsubmit="colabEntrar(event)" class="hidden space-y-3">
+                            <p class="text-xs text-slate-500 leading-relaxed">Para quem trabalha numa empresa que usa o Dio’Stock. Use o e-mail com que pediu acesso.</p>
+                            <label class="block text-xs font-bold text-slate-600">O seu nome
+                                <input id="colab-nome" type="text" autocomplete="name" maxlength="60" class="mt-1 w-full text-sm rounded-xl border-slate-300 px-3 py-2.5 border focus:ring-slate-900 focus:border-slate-900" placeholder="Ex.: Ana Silva">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-600">E-mail
+                                <input id="colab-email" type="email" required autocomplete="username" autocapitalize="none" class="mt-1 w-full text-sm rounded-xl border-slate-300 px-3 py-2.5 border focus:ring-slate-900 focus:border-slate-900" placeholder="nome@gmail.com">
+                            </label>
+                            <label class="block text-xs font-bold text-slate-600">Senha
+                                <input id="colab-senha" type="password" autocomplete="current-password" class="mt-1 w-full text-sm rounded-xl border-slate-300 px-3 py-2.5 border focus:ring-slate-900 focus:border-slate-900" placeholder="A senha que criou">
+                            </label>
+                            <button type="submit" class="auth-submit w-full py-3 text-sm bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition"><i class="fas fa-right-to-bracket mr-1"></i> Entrar</button>
+                            <button type="button" onclick="colabCodigo()" class="w-full text-xs text-slate-600 hover:text-slate-900 font-bold py-1"><i class="fas fa-key mr-1"></i>Primeira vez ou esqueci a senha? Criar senha com código no e-mail</button>
+                            <p class="text-[11px] text-slate-400 text-center leading-relaxed">O acesso fica guardado neste telemóvel. Só entra depois de o responsável da empresa aceitar o seu pedido.</p>
                         </form>
 
                         <!-- Primeiro acesso / recuperar senha: passo 1 (e-mail) -->
@@ -1338,7 +1356,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 19:10</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 19:12</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -4312,10 +4330,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             authMode = mode;
             authMsg('');
             const isLogin = mode === 'login';
-            document.getElementById('auth-tab-login').className = 'flex-1 py-3.5 border-b-2 ' + (isLogin ? 'text-slate-900 border-slate-900' : 'text-slate-500 border-transparent');
-            document.getElementById('auth-tab-first').className = 'flex-1 py-3.5 border-b-2 ' + (!isLogin ? 'text-slate-900 border-slate-900' : 'text-slate-500 border-transparent');
-            ['auth-form-login', 'auth-form-first', 'auth-form-code', 'auth-form-password'].forEach(id => document.getElementById(id).classList.add('hidden'));
-            document.getElementById(isLogin ? 'auth-form-login' : 'auth-form-first').classList.remove('hidden');
+            const isColab = mode === 'colab' || mode === 'invite';
+            const tab = (id, on) => { const t = document.getElementById(id); if (t) t.className = 'flex-1 py-3.5 border-b-2 ' + (on ? 'text-slate-900 border-slate-900' : 'text-slate-500 border-transparent'); };
+            tab('auth-tab-login', isLogin); tab('auth-tab-colab', isColab); tab('auth-tab-first', !isLogin && !isColab);
+            ['auth-form-login', 'auth-form-colab', 'auth-form-first', 'auth-form-code', 'auth-form-password'].forEach(id => { const f = document.getElementById(id); if (f) f.classList.add('hidden'); });
+            document.getElementById(isLogin ? 'auth-form-login' : mode === 'colab' ? 'auth-form-colab' : 'auth-form-first').classList.remove('hidden');
             const noEmpresa = mode === 'reset' || mode === 'invite';
             document.getElementById('auth-first-intro').textContent =
                 mode === 'reset' ? 'Indique o seu e-mail. Vai receber um código para criar uma nova senha.'
@@ -4323,12 +4342,66 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 : 'Indique o e-mail e o nome da sua empresa. Vai receber um código de validação nesse e-mail.';
             document.getElementById('first-empresa-wrap').classList.toggle('hidden', noEmpresa);
             document.getElementById('first-empresa').required = !noEmpresa;
-            document.getElementById('invite-toggle').textContent = mode === 'invite' ? 'Quero registar a minha empresa' : 'Fui convidado por uma empresa';
+            document.getElementById('invite-toggle').textContent = mode === 'invite' ? 'Quero registar a minha empresa' : 'Sou colaborador de uma empresa';
             document.getElementById('invite-toggle').classList.toggle('hidden', mode === 'reset');
             const le = document.getElementById('login-id').value.includes('@') ? document.getElementById('login-id').value : '';
             if (le && !document.getElementById('first-email').value) document.getElementById('first-email').value = le;
         }
-        function authToggleInvite() { authShow(authMode === 'invite' ? 'first' : 'invite'); }
+        function authToggleInvite() { authShow(authMode === 'invite' ? 'first' : 'colab'); }
+
+        // ---------------------------------------------------------------- aba Colaborador
+        function colabLembrar(email, nome) {
+            try {
+                localStorage.setItem('diostock-remember', '1');                // a sessão do colaborador fica sempre guardada
+                localStorage.setItem('diostock-last-login', JSON.stringify({ id: email }));
+                localStorage.setItem('diostock-colab', JSON.stringify({ email, nome: nome || '' }));
+            } catch (_) {}
+        }
+        async function colabEntrar(e) {
+            if (e) e.preventDefault();
+            if (!sb) return authMsg('Não foi possível ligar ao servidor. Verifique a internet e recarregue a página.');
+            const nome = document.getElementById('colab-nome').value.trim(), email = document.getElementById('colab-email').value.trim().toLowerCase();
+            const senha = document.getElementById('colab-senha').value;
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return authMsg('Escreva o e-mail com que pediu acesso.');
+            if (!senha) return colabCodigo();
+            authBusy(true); authMsg('');
+            try {
+                colabLembrar(email, nome);
+                const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+                if (error) throw error;
+                if (nome && !((data.user.user_metadata || {}).nome)) { try { await sb.auth.updateUser({ data: { nome } }); } catch (_) {} }
+                try { if (typeof dsContaGuardar === 'function') dsContaGuardar(email); localStorage.removeItem('diostock-saiu'); } catch (_) {}
+                if (window.PasswordCredential && navigator.credentials) { try { await navigator.credentials.store(new PasswordCredential({ id: email, password: senha, name: nome || email })); } catch (_) {} }
+                await enterApp(data.user);
+            } catch (err) {
+                authMsg(/invalid login credentials/i.test(String(err.message || '')) ? 'E-mail ou senha incorretos. Se ainda não criou a senha, toque em "Primeira vez ou esqueci a senha".' : authError(err));
+            } finally { authBusy(false); }
+        }
+        async function colabCodigo() {
+            const nome = document.getElementById('colab-nome').value.trim(), email = document.getElementById('colab-email').value.trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { authMsg('Escreva primeiro o e-mail com que pediu acesso.'); document.getElementById('colab-email').focus(); return; }
+            colabLembrar(email, nome);
+            authMode = 'invite';
+            document.getElementById('first-email').value = email;
+            document.getElementById('first-empresa').required = false;
+            document.getElementById('auth-form-colab').classList.add('hidden');
+            await authSendCode(null);
+            if (!document.getElementById('auth-form-code').classList.contains('hidden')) authMsg('Enviámos um código para ' + email + '. Escreva-o abaixo e depois crie a sua senha.', 'ok');
+            else { document.getElementById('auth-form-first').classList.add('hidden'); document.getElementById('auth-form-colab').classList.remove('hidden'); }
+        }
+        // abre a aba Colaborador quando quem usa este aparelho é colaborador, ou quando vem do convite (?colab=1&email=…)
+        setTimeout(() => {
+            try {
+                const q = new URLSearchParams(location.search), c = JSON.parse(localStorage.getItem('diostock-colab') || 'null');
+                const email = (q.get('email') || (c && c.email) || '').slice(0, 120), nome = (q.get('nome') || (c && c.nome) || '').slice(0, 60);
+                if (q.has('colab') || c) {
+                    authShow('colab');
+                    if (email) document.getElementById('colab-email').value = email;
+                    if (nome) document.getElementById('colab-nome').value = nome;
+                    if (q.has('colab')) history.replaceState(null, '', location.pathname);
+                }
+            } catch (_) {}
+        }, 0);
 
         async function rememberLogin(id, password) {
             const remember = document.getElementById('login-remember') ? document.getElementById('login-remember').checked : true;
@@ -4472,6 +4545,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 const saved = ((u && u.user && u.user.user_metadata) || {}).empresa;
                 const upd = { password: p1 };
                 if (!saved && authEmpresaPending) upd.data = { empresa: authEmpresaPending };
+                try { const c = JSON.parse(localStorage.getItem('diostock-colab') || 'null'); if (authMode === 'invite' && c && c.nome && c.email === authEmail) upd.data = Object.assign(upd.data || {}, { nome: c.nome }); } catch (_) {}
                 const { data, error } = await sb.auth.updateUser(upd);
                 if (error && !/should be different/i.test(error.message)) throw error;
                 const user = (data && data.user) || (u && u.user);
@@ -4531,7 +4605,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 try { await sb.auth.signOut(); } catch (_) {}
                 authShow('first');
                 document.getElementById('first-email').value = user.email || '';
-                return authMsg('Este e-mail ainda não pertence a nenhuma empresa. Registe a sua empresa abaixo ou peça ao responsável para o adicionar como colaborador.');
+                return authMsg('Este e-mail ainda não pertence a nenhuma empresa. Se é colaborador, peça ao responsável para aceitar o seu pedido e depois entre na aba Colaborador. Se é a sua empresa, registe-a abaixo.');
             }
             currentUser = user;
             dataOwnerId = emp.dono_id;
@@ -22894,6 +22968,7 @@ var qrcode = function() {
                     window._dsConvite = false;
                     try { history.replaceState(null, '', location.pathname); } catch (_) {}
                     authEmail = (user.email || '').toLowerCase();
+                    try { colabLembrar(authEmail, (user.user_metadata || {}).nome || ''); } catch (_) {}
                     const scr = document.getElementById('auth-screen'); if (scr) { scr.classList.remove('hidden'); scr.style.display = ''; }
                     ['auth-form-login', 'auth-form-first', 'auth-form-code'].forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
                     const f = document.getElementById('auth-form-password'); if (f) f.classList.remove('hidden');
