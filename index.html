@@ -1316,7 +1316,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 19/11/2026 14:50</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 07:40</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -14353,7 +14353,7 @@ var qrcode = function() {
             if (vdBusy || !vdOn() || !navigator.onLine) return;
             vdBusy = true;
             try {
-                const lim = Date.now() - 6 * 864e5, agora = Date.now();
+                const lim = Date.now() - 60 * 864e5, agora = Date.now();   // faturas em falta até 60 dias (ex.: quando o Vendus esteve bloqueado)
                 const pend = (appState.orders || []).filter(o => o.fiscal && o.fiscal.pendente && !o.anulado && new Date(o.at).getTime() > lim && (!o.fiscal.apos || new Date(o.fiscal.apos).getTime() <= agora)).slice(0, 10);
                 for (const o of pend) await vdEmitir(o, true);
             } finally { vdBusy = false; }
@@ -20482,7 +20482,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795098935';
+        const DS_BUILD = '1795505407';
         (function () {
             let aVer = false;
             async function verNova() {
