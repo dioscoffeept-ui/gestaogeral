@@ -1950,12 +1950,25 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                             <div class="flex items-center gap-4">
                                 <div id="set-logo-preview" class="w-24 h-24 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 overflow-hidden shrink-0"></div>
                                 <div class="flex flex-col gap-2 owner-only">
-                                    <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-center"><i class="fas fa-image mr-1"></i> Escolher imagem<input type="file" accept="image/*" class="hidden" onchange="settingsLogoChosen(this)"></label>
-                                    <button type="button" id="set-logo-remove" onclick="settingsLogoRemove()" class="hidden px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl"><i class="fas fa-trash mr-1"></i> Remover</button>
+                                    <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-center"><i class="fas fa-camera mr-1"></i> Tirar foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="settingsLogoChosen(this)"></label>
+                                    <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-center"><i class="fas fa-image mr-1"></i> Escolher da galeria<input type="file" accept="image/*" class="hidden" onchange="settingsLogoChosen(this)"></label>
+                                    <button type="button" onclick="logoFotosLivres()" class="px-3 py-2 text-xs font-bold text-white rounded-xl text-center" style="background:var(--brand)"><i class="fas fa-images mr-1"></i> Fotos gratuitas</button>
+                                    <button type="button" id="set-logo-ajustar" onclick="logoAjustar()" class="hidden px-3 py-2 text-xs font-bold rounded-xl text-center" style="background:#FBEDE6;color:#983808"><i class="fas fa-crop-simple mr-1"></i> Ajustar foto</button>
+                                    <button type="button" id="set-logo-remove" onclick="settingsLogoRemove()" class="hidden px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl"><i class="fas fa-trash mr-1"></i> Remover foto</button>
                                     <button type="button" onclick="settingsSaveLogo()" class="px-3 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"><i class="fas fa-check mr-1"></i> Guardar logótipo</button>
                                 </div>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-2 owner-only">Aparece no topo do site e no ecrã de entrada. A imagem é cortada em quadrado.</p>
+                            <div class="owner-only"><div id="logo-fl" class="hidden mt-3 p-3 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
+                                <div class="flex gap-2">
+                                    <input id="logo-fl-q" placeholder="Ex.: coffee, bakery, pizza" class="flex-1 text-xs font-semibold rounded-xl" onkeydown="if(event.key==='Enter'){event.preventDefault();logoFlProcurar(1)}">
+                                    <button type="button" onclick="logoFlProcurar(1)" class="px-3 py-2 text-xs font-bold text-white rounded-xl" style="background:var(--brand)" aria-label="Procurar"><i class="fas fa-search"></i></button>
+                                    <button type="button" onclick="logoFlProcurar(0)" class="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl whitespace-nowrap"><i class="fas fa-shuffle mr-1"></i>Outras</button>
+                                </div>
+                                <div id="logo-fl-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+                                <p id="logo-fl-msg" class="text-[11px] text-slate-500"></p>
+                                <p class="text-[10px] text-slate-400">Fotos de bancos gratuitos (Openverse e Wikimedia Commons). Pesquisas em inglês costumam dar melhores resultados.</p>
+                            </div></div>
+                            <p class="text-[11px] text-slate-400 mt-2 owner-only">Aparece no topo do site e no ecrã de entrada. A imagem é cortada em quadrado. <i class="fas fa-hand-pointer mx-1"></i>Também pode arrastar uma imagem para o quadrado ou colar (Ctrl+V).</p>
                             <p class="text-[11px] text-slate-400 mt-2 member-only">Só o responsável da conta pode mudar o logótipo.</p>
                         </div>
                     </section>
@@ -24763,6 +24776,97 @@ async function dsTrPreparar() {
             const oV = openRecipeViewModal;
             openRecipeViewModal = function () { const r = oV.apply(this, arguments); sc.scrollTop = 0; return r; };
         })();
+    </script>
+    <script>
+        // ======================================================= LOGÓTIPO e MISE EN PLACE: fotos gratuitas, ajustar a imagem atual, colar (Ctrl+V) e arrastar
+        // abre uma imagem já guardada (link) como ficheiro, para a voltar a ajustar
+        async function dsFicheiroDeUrl(u) {
+            if (!u) return null;
+            if (u.startsWith('data:')) { const b = dataUrlToBlob(u); return new File([b], 'foto.jpg', { type: b.type }); }
+            const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error('foto'); const b = await r.blob();
+            return new File([b], 'foto.' + ((b.type || 'image/jpeg').split('/')[1] || 'jpg'), { type: b.type || 'image/jpeg' });
+        }
+        async function dsFotosLivresProcurar(q, page) {
+            const pg = page || (1 + Math.floor(Math.random() * 4));
+            let list = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=' + pg)).json()).fotos) || [];
+            if (!list.length && pg > 1) list = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=1')).json()).fotos) || [];
+            for (let i = list.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [list[i], list[k]] = [list[k], list[i]]; }
+            return list.slice(0, 12);
+        }
+        async function dsFotoLivreFicheiro(f) {
+            let r; try { r = await fotosCall('img=' + encodeURIComponent(f.full)); } catch (_) { r = await fotosCall('img=' + encodeURIComponent(f.thumb)); }
+            const b = await r.blob(); return new File([b], 'foto.jpg', { type: b.type || 'image/jpeg' });
+        }
+        // ---- logótipo
+        let logoOrig = null, logoFl = [];
+        const oLogoChosen = settingsLogoChosen;
+        settingsLogoChosen = async function (input) {
+            const f = input.files && input.files[0]; if (f) logoOrig = f;
+            return oLogoChosen.apply(this, arguments);
+        };
+        const oLogoRender = renderSettingsLogo;
+        renderSettingsLogo = function () {
+            const r = oLogoRender.apply(this, arguments);
+            const cur = settingsLogoData !== undefined ? settingsLogoData : ((appState.perfil || {}).logo || '');
+            const aj = document.getElementById('set-logo-ajustar'); if (aj) aj.classList.toggle('hidden', !cur);
+            return r;
+        };
+        async function logoAjustar() {
+            try {
+                const cur = settingsLogoData !== undefined ? settingsLogoData : ((appState.perfil || {}).logo || '');
+                const f = logoOrig || await dsFicheiroDeUrl(cur); if (!f) return;
+                logoOrig = f; await oLogoChosen({ files: [f], value: '' });
+            } catch (_) { dsToast('Não foi possível abrir a imagem para ajustar. Escolha-a de novo.', true); }
+        }
+        function logoFotosLivres() {
+            const pn = document.getElementById('logo-fl'); pn.classList.toggle('hidden');
+            if (!pn.classList.contains('hidden')) { const q = document.getElementById('logo-fl-q'); if (!q.value.trim()) q.value = 'coffee'; logoFlProcurar(1); }
+        }
+        async function logoFlProcurar(page) {
+            const q = document.getElementById('logo-fl-q').value.trim(), grid = document.getElementById('logo-fl-grid'), msg = document.getElementById('logo-fl-msg');
+            if (!q) { msg.textContent = 'Escreva o que procura (de preferência em inglês).'; return; }
+            grid.innerHTML = '<div class="col-span-full text-center text-xs text-slate-400 py-6"><i class="fas fa-circle-notch fa-spin mr-1"></i>A procurar fotos…</div>'; msg.textContent = '';
+            try {
+                logoFl = await dsFotosLivresProcurar(q, page);
+                grid.innerHTML = logoFl.map((f, i) => `<button type="button" onclick="logoFlEscolher(${i})" class="relative aspect-square rounded-xl overflow-hidden bg-slate-200"><img loading="lazy" src="${escapeHtml(f.thumb)}" alt="" class="w-full h-full object-cover" onerror="this.closest('button').remove()"></button>`).join('')
+                    || '<div class="col-span-full text-center text-xs text-slate-400 py-6">Nenhuma foto encontrada. Tente outra palavra (em inglês funciona melhor).</div>';
+            } catch (e) { grid.innerHTML = ''; msg.textContent = String(e.message) === 'login' ? 'Entre na sua conta para procurar fotos.' : 'Não foi possível procurar fotos agora. Tente de novo daqui a pouco.'; }
+        }
+        async function logoFlEscolher(i) {
+            const f = logoFl[i]; if (!f) return;
+            try { const file = await dsFotoLivreFicheiro(f); logoOrig = file; await oLogoChosen({ files: [file], value: '' }); if (f.credit) document.getElementById('logo-fl-msg').innerHTML = '<i class="fas fa-circle-info mr-1"></i>Crédito: ' + escapeHtml(f.credit); }
+            catch (_) { dsToast('Não foi possível usar esta foto. Escolha outra.', true); }
+        }
+        // ---- mise en place: ajustar também a foto já guardada
+        const oMepAj = mepFotoAjustar;
+        mepFotoAjustar = async function () {
+            if (!mepFotoOrig && mepFoto) { try { mepFotoOrig = await dsFicheiroDeUrl(mepFoto); } catch (_) { return dsToast('Não foi possível abrir a foto para ajustar. Escolha-a de novo.', true); } }
+            return oMepAj.apply(this, arguments);
+        };
+        const oMepPintar = mepFotoPintar;
+        mepFotoPintar = function () { const r = oMepPintar.apply(this, arguments); const aj = document.getElementById('mep-foto-aj'); if (aj) aj.classList.toggle('hidden', !mepFoto); return r; };
+        // ---- colar (Ctrl+V) e arrastar para o logótipo e para a mise en place
+        function dsImagemDoEvento(ev) {
+            const it = [...((ev.clipboardData || ev.dataTransfer || {}).items || [])].find(x => x.kind === 'file' && /^image\//.test(x.type));
+            return it ? it.getAsFile() : null;
+        }
+        const aberto = id => { const m = document.getElementById(id); return !!m && !m.classList.contains('hidden') && m.getClientRects().length > 0; };
+        document.addEventListener('paste', ev => {
+            const f = dsImagemDoEvento(ev); if (!f) return;
+            if (aberto('mep-modal')) { ev.preventDefault(); mepFotoEscolhida({ files: [f], value: '' }); }
+            else if (aberto('settings-modal') && document.getElementById('set-logo-preview')?.getClientRects().length && typeof currentRole !== 'undefined' && currentRole === 'dono') { ev.preventDefault(); settingsLogoChosen({ files: [f], value: '' }); }
+        });
+        [['set-logo-preview', f => settingsLogoChosen({ files: [f], value: '' })]].forEach(([id, fn]) => {
+            const el = document.getElementById(id); if (!el) return;
+            el.addEventListener('dragover', e => { e.preventDefault(); el.style.outline = '2px dashed var(--brand)'; });
+            el.addEventListener('dragleave', () => { el.style.outline = ''; });
+            el.addEventListener('drop', e => { e.preventDefault(); el.style.outline = ''; const f = dsImagemDoEvento(e) || (e.dataTransfer.files || [])[0]; if (f) fn(f); });
+        });
+        document.addEventListener('drop', e => {
+            const pv = e.target.closest && e.target.closest('#mep-foto-prev'); if (!pv) return;
+            e.preventDefault(); pv.style.outline = ''; const f = dsImagemDoEvento(e) || (e.dataTransfer.files || [])[0]; if (f) mepFotoEscolhida({ files: [f], value: '' });
+        });
+        document.addEventListener('dragover', e => { const pv = e.target.closest && e.target.closest('#mep-foto-prev'); if (pv) { e.preventDefault(); pv.style.outline = '2px dashed var(--brand)'; } });
     </script>
 </body>
 </html>
