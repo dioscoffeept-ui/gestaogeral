@@ -23937,6 +23937,8 @@ async function dsTrPreparar() {
             return f === null ? null : { m, f };
         }
         function mepYield(m) { return Number(m && m.yieldQty) > 0 ? Number(m.yieldQty) : 1; }
+        // os ingredientes da ficha estão escritos para a receita inteira ou para 1 unidade (porção)?
+        function mepBase(m) { return m && m.ingPor === 'unidade' ? 1 : mepYield(m); }
         function mepStockOf(m) {
             appState.prepStock = appState.prepStock || {};
             let p = appState.prepStock[m.id];
@@ -23958,7 +23960,7 @@ async function dsTrPreparar() {
         }
         // tira dos ingredientes da ficha o necessário para fazer "amt" da mise en place
         function mepExplode(m, amt, moves, missing, prepMoves, depth) {
-            const scale = amt / mepYield(m);
+            const scale = amt / mepBase(m);
             (m.ingredients || []).forEach(ing => {
                 const iq = mepIngQty(ing); if (iq === null) return;
                 const need = iq * scale;
@@ -23972,7 +23974,7 @@ async function dsTrPreparar() {
         }
         // ingredientes crus para produzir "qty" (desce às mises en place usadas dentro, só o que lhes faltar)
         function mepRawNeeds(m, qty, depth) {
-            const out = [], scale = qty / mepYield(m);
+            const out = [], scale = qty / mepBase(m);
             (m.ingredients || []).forEach(ing => {
                 const iq = mepIngQty(ing); if (iq === null) return;
                 const need = iq * scale;
@@ -23992,8 +23994,8 @@ async function dsTrPreparar() {
             if ((depth || 0) > 3) return null;
             const c = recipeCost({ ingredients: m.ingredients || [], _mepDepth: (depth || 0) + 1 });
             if (!c.known) return null;
-            const y = mepYield(m);
-            return { net: c.total / y, gross: c.gross / y, missing: c.missing, batchNet: c.total, batchGross: c.gross };
+            const b = mepBase(m), y = mepYield(m);
+            return { net: c.total / b, gross: c.gross / b, missing: c.missing, batchNet: c.total / b * y, batchGross: c.gross / b * y };
         }
         function mepUsedIn(m) {
             const k = normTxt(m.name), uses = ings => (ings || []).some(i => normTxt(i.name) === k);
@@ -24048,8 +24050,8 @@ async function dsTrPreparar() {
                 <div class="flex items-start gap-3">${m.icon ? `<div class="text-3xl leading-none">${escapeHtml(m.icon)}</div>` : ''}<div class="min-w-0"><h3 class="text-lg font-black text-slate-900 leading-tight">Produzi ${escapeHtml(m.name)}</h3><p class="text-xs text-slate-500 mt-0.5">1 receita rende ${fmtQty(y, yu)}${medio && Math.abs(medio - y) >= 0.1 ? ` · em média tem rendido ${fmtQty(medio, yu)}` : ''}</p></div></div>
                 <div><label class="block text-xs font-black text-slate-700 mb-1">Quanto produziu?</label>
                   <div class="flex items-center gap-2"><input id="mep-prod-q" type="number" inputmode="decimal" min="0" step="any" value="${Math.round(sugR * y * 100) / 100}" oninput="this.dataset.mexeu='1'" class="flex-1 text-2xl font-black rounded-xl border-slate-300 py-2 px-3"><span class="text-sm font-bold text-slate-600">${escapeHtml(yu)}</span></div>
-                  <p class="text-[11px] text-slate-400 mt-1">Escreva o que saiu de verdade, mesmo que seja diferente do que a receita rende.</p></div>
-                <div class="rounded-2xl bg-slate-50 p-3"><label class="block text-[11px] font-bold text-slate-500 mb-1">Receitas feitas <span class="font-semibold text-slate-400">(para descontar os ingredientes)</span></label>
+                  <p class="text-[11px] text-slate-400 mt-1">${m.ingPor === 'unidade' ? 'Os ingredientes saem do estoque por cada unidade produzida.' : 'Escreva o que saiu de verdade, mesmo que seja diferente do que a receita rende.'}</p></div>
+                <div class="rounded-2xl bg-slate-50 p-3" style="${m.ingPor === 'unidade' ? 'display:none' : ''}"><label class="block text-[11px] font-bold text-slate-500 mb-1">Receitas feitas <span class="font-semibold text-slate-400">(para descontar os ingredientes)</span></label>
                   <div class="flex items-center gap-2"><button type="button" onclick="mepProdPasso(-0.5)" class="w-10 h-10 rounded-xl bg-white border border-slate-200 font-black text-lg" aria-label="Menos">−</button>
                   <input id="mep-prod-r" type="number" inputmode="decimal" min="0.1" step="any" value="${sugR}" oninput="mepProdRendeu()" class="flex-1 text-center text-lg font-black rounded-xl border-slate-300 py-1.5">
                   <button type="button" onclick="mepProdPasso(0.5)" class="w-10 h-10 rounded-xl bg-white border border-slate-200 font-black text-lg" aria-label="Mais">+</button></div></div>
@@ -24077,7 +24079,7 @@ async function dsTrPreparar() {
         function mepRegistarProducao(m, rec, n) {
             const p = mepStockOf(m), yu = m.yieldUnit || 'un';
             const moves = {}, missing = {}, pm = {};
-            mepExplode(m, rec * mepYield(m), moves, missing, pm, 0);
+            mepExplode(m, m.ingPor === 'unidade' ? n : rec * mepYield(m), moves, missing, pm, 0);
             const log = { id: 'mp_' + Date.now(), mepId: m.id, q: n, receitas: rec, at: new Date().toISOString(), moves: [], prepMoves: [] }, used = [];
             Object.entries(moves).forEach(([iid, a]) => {
                 const inv = appState.inventory.find(i => i.id === iid); if (!inv) return;
@@ -24168,13 +24170,19 @@ async function dsTrPreparar() {
                   </div>
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Área</label><select id="mep-area" class="w-full text-xs font-bold rounded-xl border-slate-300"><option value="BAR">Bar</option><option value="KITCHEN">Cozinha</option></select></div>
-                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">1 receita rende *</label><div class="flex gap-1"><input id="mep-yq" type="number" step="0.01" min="0.01" required class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="10"><select id="mep-yu" class="w-20 text-xs font-bold rounded-xl border-slate-300">${MEP_YU.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">1 receita rende *</label><div class="flex gap-1"><input id="mep-yq" oninput="mepIngPorTxt()" type="number" step="0.01" min="0.01" required class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="10"><select id="mep-yu" onchange="mepIngPorTxt()" class="w-20 text-xs font-bold rounded-xl border-slate-300">${MEP_YU.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Conservação</label><select id="mep-cons" class="w-full text-xs font-bold rounded-xl border-slate-300">${Object.entries(MEP_CONS).map(([k, c]) => `<option value="${k}">${c[0]}</option>`).join('')}</select></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Validade (dias)</label><input id="mep-days" type="number" min="0" step="1" class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="Ex.: 30"></div>
                   </div>
                   <p class="text-[11px] text-slate-500 -mt-1">Ex.: 1 receita de cold brew rende <b>6 copos</b>. Se num dia render mais ou menos, corrige ao registar a produção, e a app mostra a média.</p>
                   <div>
-                    <div class="flex items-center justify-between mb-2"><label class="text-[11px] font-bold text-slate-500">Ingredientes de uma receita</label>
+                    <div class="mb-2"><label class="block text-[11px] font-bold text-slate-500 mb-1">Os ingredientes abaixo são para</label>
+                      <div class="grid grid-cols-2 gap-2" role="radiogroup">
+                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold cursor-pointer"><input type="radio" name="mep-ingpor" value="receita" onchange="mepIngPorTxt()"> 1 receita inteira</label>
+                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold cursor-pointer"><input type="radio" name="mep-ingpor" value="unidade" onchange="mepIngPorTxt()"> 1 unidade / porção</label>
+                      </div>
+                      <p id="mep-ingpor-txt" class="text-[11px] text-slate-400 mt-1"></p></div>
+                    <div class="flex items-center justify-between mb-2"><label id="mep-ings-tit" class="text-[11px] font-bold text-slate-500">Ingredientes de uma receita</label>
                       <button type="button" onclick="mepAddIng()" class="text-xs font-bold" style="color:var(--brand)"><i class="fas fa-plus mr-1"></i>Ingrediente</button></div>
                     <div id="mep-ings-list" class="space-y-2"></div>
                     <p class="text-[10px] text-slate-400 mt-2">Escolha da lista para ligar ao estoque (e ao custo). Também pode usar outra mise en place como ingrediente.</p>
@@ -24213,6 +24221,8 @@ async function dsTrPreparar() {
             g('mep-icon').value = m ? (m.icon || '') : '';
             g('mep-area').value = m ? (m.area || 'BAR') : (mepFiltro.area === 'KITCHEN' ? 'KITCHEN' : 'BAR');
             g('mep-yq').value = m ? mepYield(m) : '';
+            document.querySelectorAll('input[name="mep-ingpor"]').forEach(r => { r.checked = r.value === ((m && m.ingPor) || 'receita'); });
+            setTimeout(mepIngPorTxt, 0);
             g('mep-yu').value = m ? (m.yieldUnit || 'un') : 'un';
             g('mep-cons').value = m ? (m.storage || 'refrigerado') : 'congelado';
             g('mep-days').value = m && m.shelfDays ? m.shelfDays : '';
@@ -24295,6 +24305,15 @@ async function dsTrPreparar() {
             mepSet(id, 'tenho', n);
             prepToast('✓ ' + m.name + ': pronto agora ' + fmtQty(n, yu));
         }
+        function mepIngPorTxt() {
+            const v = (document.querySelector('input[name="mep-ingpor"]:checked') || {}).value || 'receita';
+            const yq = document.getElementById('mep-yq').value || '…', yu = document.getElementById('mep-yu').value || 'un';
+            document.getElementById('mep-ings-tit').textContent = v === 'unidade' ? 'Ingredientes de 1 ' + yu.replace(/s$/, '') : 'Ingredientes de uma receita';
+            document.getElementById('mep-ingpor-txt').textContent = v === 'unidade'
+                ? 'Escreva as quantidades de uma só unidade. Ao produzir, a app multiplica pelo que fez (ex.: ' + yq + ' ' + yu + ').'
+                : 'Escreva as quantidades da receita toda, que rende ' + yq + ' ' + yu + '.';
+            document.querySelectorAll('input[name="mep-ingpor"]').forEach(r => { const l = r.closest('label'); l.style.borderColor = r.checked ? 'var(--brand)' : ''; l.style.background = r.checked ? '#FBEDE6' : ''; });
+        }
         function mepClose() { const md = document.getElementById('mep-modal'); if (md) { md.classList.add('hidden'); md.classList.remove('flex'); } }
         function mepSave(e) {
             e.preventDefault();
@@ -24312,7 +24331,7 @@ async function dsTrPreparar() {
             const obj = Object.assign({}, old || {}, {
                 id: id || 'mep_' + Date.now(), name, icon: g('mep-icon').value.trim(), area: g('mep-area').value,
                 yieldQty: num(g('mep-yq').value) || 1, yieldUnit: g('mep-yu').value, storage: g('mep-cons').value,
-                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients, image: mepFoto || '', imageCredit: mepFoto ? mepFotoCredito : '',
+                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingPor: (document.querySelector('input[name="mep-ingpor"]:checked') || {}).value || 'receita', ingredients, image: mepFoto || '', imageCredit: mepFoto ? mepFotoCredito : '',
                 steps: g('mep-steps').value.split('\n').map(s => s.trim()).filter(Boolean)
             });
             if (old) {
@@ -24369,7 +24388,7 @@ async function dsTrPreparar() {
                     </div>
                     <div class="flex items-center justify-between gap-2 bg-white/70 rounded-xl px-3 py-2">
                         <div><p class="text-[10px] font-bold text-slate-400 uppercase">Pronto agora <button type="button" onclick="mepCorrigirPronto('${m.id}')" class="ml-1 normal-case font-bold underline" style="color:var(--brand)">corrigir</button></p><p class="font-black ${baixo ? 'text-amber-600' : 'text-emerald-700'}">${fmtQty(Number(p.tenho) || 0, yu)} <span class="text-[10px] font-semibold text-slate-400">/ quero ${fmtQty(Number(p.meta) || 0, yu)}</span></p>${prepFalta(p) ? `<p class="text-[10px] text-slate-500">faltam ${mepReceitasTxt(Math.ceil(prepFalta(p) / mepYield(m) * 10) / 10)}</p>` : ''}</div>${val.html}</div>
-                    <div class="text-[11px] text-slate-500"><span class="font-bold">Ingredientes:</span> ${(m.ingredients || []).map(i => escapeHtml(i.name) + (mepIngQty(i) !== null ? ' ' + i.quantity + ' ' + escapeHtml(i.unit || '') : '')).join(' · ') || '—'}</div>
+                    <div class="text-[11px] text-slate-500"><span class="font-bold">Ingredientes${m.ingPor === 'unidade' ? ' (por ' + escapeHtml((m.yieldUnit || 'un').replace(/s$/, '')) + ')' : ' (receita)'}:</span> ${(m.ingredients || []).map(i => escapeHtml(i.name) + (mepIngQty(i) !== null ? ' ' + i.quantity + ' ' + escapeHtml(i.unit || '') : '')).join(' · ') || '—'}</div>
                     <div class="flex flex-wrap gap-1">${us.length ? us.map(u => `<span class="px-2 py-0.5 rounded-full bg-white text-[10px] font-bold text-slate-600 border border-slate-200">${escapeHtml(u.icon || '')} ${escapeHtml(u.name)}</span>`).join('') : '<span class="text-[10px] text-slate-400"><i class="fas fa-link-slash mr-1"></i>Ainda não usada em nenhuma ficha</span>'}</div>
                     ${(m.steps || []).length ? `<details class="text-[11px] text-slate-600"><summary class="font-bold cursor-pointer">Modo de preparo</summary><ol class="list-decimal pl-4 mt-1 space-y-0.5">${m.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol></details>` : ''}
                     <div class="flex gap-2 mt-auto"><button onclick="mepProduce('${m.id}')" class="flex-1 px-3 py-2 text-xs text-white font-bold rounded-xl" style="background:var(--brand)"><i class="fas fa-plus mr-1"></i>Produzi receita</button>
