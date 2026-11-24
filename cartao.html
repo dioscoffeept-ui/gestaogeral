@@ -172,6 +172,18 @@
   .dm-cart { margin-top: 9px; border-radius: 11px; background: var(--brand); height: 74px; padding: 8px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; align-content: end; }
   .dm-cart i { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.7); }
   .dm-cart i:first-child { background: #fff; border-style: solid; }
+  .dm-pc .dm-cart { height: 62px; grid-template-columns: repeat(5, 20px); gap: 5px; justify-content: start; }
+  .dm-ios-sh { position: absolute; left: 3px; right: 3px; bottom: 3px; top: 34%; background: rgba(60,58,56,.97); border-radius: 18px; padding: 9px 8px; color: #fff; font-size: 7.5px; animation: dmSobe .35s ease; }
+  .dm-ios-sh .pv { display: flex; gap: 6px; align-items: center; padding-bottom: 7px; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .dm-ios-sh .pv i { width: 24px; height: 24px; border-radius: 6px; background: #F6F3F0; flex: 0 0 auto; }
+  .dm-ios-sh .row { display: flex; justify-content: space-between; margin-top: 8px; }
+  .dm-ios-sh .row span { width: 26px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 5.5px; text-align: center; color: #eee; }
+  .dm-ios-sh .row span i { width: 22px; height: 22px; border-radius: 50%; background: #8a8580; display: block; }
+  .dm-ios-sh .row.ap span i { border-radius: 6px; }
+  .dm-ios-sh .row.ac span i { background: #5a5653; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 10px; }
+  .dm-ios-sh .lista { margin-top: 6px; background: #4a4745; border-radius: 9px; overflow: hidden; }
+  .dm-ios-sh .lista div { padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; justify-content: space-between; }
+  .dm-ios-sh .lista div.al { background: #FBEDE6; color: #983808; font-weight: 800; }
   .dm-lin { height: 7px; border-radius: 4px; background: #E6DED4; margin-top: 8px; }
   .dm-lin.c { width: 70%; }
   .dm-barra-ios { position: absolute; left: 6px; right: 6px; bottom: 8px; display: flex; gap: 5px; align-items: center; }
@@ -199,7 +211,9 @@
   .dm-dlg .bts .ok { background: #1A73E8; color: #fff; }
   .dm-veu { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
   .dm-ios-add { position: absolute; inset: 0; background: #F2F2F7; padding: 26px 8px 0; font-size: 8.5px; animation: dmSobe .35s ease; }
-  .dm-ios-add .hd { display: flex; justify-content: space-between; font-weight: 700; color: #0A84FF; margin-bottom: 10px; }
+  .dm-ios-add .hd { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; font-weight: 700; color: #0A84FF; margin-bottom: 10px; font-size: 7.5px; }
+  .dm-ios-add .hd .ok { text-align: right; }
+  .dm-ios-add .hd b { padding: 0 4px; white-space: nowrap; }
   .dm-ios-add .hd b { color: #111; }
   .dm-ios-add .cx { background: #fff; border-radius: 9px; padding: 8px; display: flex; gap: 7px; align-items: center; }
   .dm-ios-add .tg { background: #fff; border-radius: 9px; padding: 7px 8px; margin-top: 7px; display: flex; justify-content: space-between; align-items: center; }
@@ -400,8 +414,8 @@
     } else if (dentroApp) {
       corpo = `<p class="dica">Está a ver o cartão dentro de outra app. Toque em ${tresPontos} (ou no ícone da bússola) e escolha <b>Abrir no Safari</b>. No Safari siga os passos para adicionar ao ecrã principal.</p>`;
     } else if (ios) {
-      corpo = `<ol><li>Toque em ${tresPontos} ao lado do endereço (ou em ${partilhar} <b>Partilhar</b>).</li><li>Toque em <b>Partilhar</b> e depois em <b>Adicionar ao ecrã principal</b>.</li><li>Deixe ligado <b>Abrir como app web</b> e toque em <b>Adicionar</b>.</li></ol>
-        <p class="dica" style="margin-top:8px">O iPhone não deixa as páginas fazerem isto sozinhas: são só estes 3 toques.</p>`;
+      corpo = `<ol><li>Toque em ${tresPontos} ao lado do endereço e depois em ${partilhar} <b>Partilhar</b>.</li><li>Na janela de partilha, toque em <b>Ver mais</b> e depois em <b>Adicionar ao ecrã principal</b>.</li><li>Deixe ligado <b>Abrir como app web</b> e toque em <b>Adicionar</b>.</li></ol>
+        <p class="dica" style="margin-top:8px">O iPhone não deixa as páginas fazerem isto sozinhas: são só estes toques.</p>`;
     } else if (android) {
       // aberto a partir do WhatsApp, o link fica numa janela do Chrome que não deixa instalar: abrir no Chrome resolve
       const destino = 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;end';
@@ -565,7 +579,8 @@
     if (p === 'ios') return [
       { h: dmPag(dmIos()), a: '.m', t: 'No Safari, toque em <b>•••</b>, ao lado do endereço (ou em <b>Partilhar</b>).' },
       { h: dmPag(dmIos('<div class="dm-menu" style="right:6px;bottom:36px"><div class="al">⬆️ Partilhar</div><div>☆ Adicionar marcador</div><div>⊕ Novo separador</div></div>')), a: '.dm-menu .al', t: 'Toque em <b>Partilhar</b>.' },
-      { h: dmPag('<div class="dm-veu"></div><div class="dm-folha"><b>' + esc(nome) + '</b><div class="g"><div>Copiar <span>⧉</span></div><div>Adicionar aos favoritos <span>☆</span></div><div class="al">Adicionar ao ecrã principal <span>⊞</span></div></div></div>'), a: '.dm-folha .al', t: 'Desça na lista e toque em <b>Adicionar ao ecrã principal</b>.' },
+      { h: dmPag(`<div class="dm-veu"></div><div class="dm-ios-sh"><div class="pv"><i></i><span><b>${esc(nome)}</b><br><span style="opacity:.6">diostock.pt</span></span></div><div class="row"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div><div class="row ap"><span><i style="background:#2F80ED"></i>AirDrop</span><span><i style="background:#34C759"></i>Mensagens</span><span><i style="background:#3B82F6"></i>E-mail</span><span><i style="background:#fff"></i>Gmail</span></div><div class="row ac"><span><i>⧉</i>Copiar</span><span><i>🔖</i>Marcadores</span><span><i>👓</i>Leitura</span><span class="vm"><i>⌄</i>Ver mais</span></div></div>`), a: '.vm i', t: 'Na janela de partilha, toque em <b>Ver mais</b>.' },
+      { h: dmPag(`<div class="dm-veu"></div><div class="dm-ios-sh"><div class="pv"><i></i><span><b>${esc(nome)}</b><br><span style="opacity:.6">diostock.pt</span></span></div><div class="lista"><div>Copiar <span>⧉</span></div><div>Adicionar a Marcadores <span>🔖</span></div><div>Adicionar aos favoritos <span>☆</span></div><div class="al">Adicionar ao ecrã principal <span>⊞</span></div><div>Encontrar na página <span>🔍</span></div></div></div>`), a: '.dm-ios-sh .al', t: 'Toque em <b>Adicionar ao ecrã principal</b>.' },
       { h: `<div class="dm-ios-add"><div class="hd"><span>Cancelar</span><b>Ecrã principal</b><span class="ok">Adicionar</span></div><div class="cx"><span class="dm-lg" style="width:30px;height:30px">${dmLogo()}</span><span>${esc(nome)}<br><small style="color:#888">diostock.pt</small></span></div><div class="tg"><span>Abrir como app web</span><span class="dm-sw"></span></div></div>`, a: '.dm-ios-add .ok', t: 'Deixe ligado <b>Abrir como app web</b> e toque em <b>Adicionar</b>.' },
       { h: dmHome(nome), t: 'Pronto: o cartão fica no ecrã principal e abre num toque, como uma app.' }
     ];
