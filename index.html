@@ -24790,7 +24790,7 @@ async function dsTrPreparar() {
         #recipe-view-modal #view-modal-header { flex: 0 0 auto; padding: 16px 20px; }
         #recipe-view-modal #view-recipe-name { font-size: clamp(20px, 2.6vw, 28px); line-height: 1.15; }
         #vr-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        #vr-media { position: relative; height: clamp(170px, 34vh, 340px); overflow: hidden; background: #F1ECE4; }
+        #vr-media { position: relative; height: clamp(130px, 32vh, 340px); overflow: hidden; background: #F1ECE4; }
         #vr-media:has(> img.hidden) { display: none; }
         #vr-media::before { content: ''; position: absolute; inset: -20px; background: var(--vr-bg) center / cover no-repeat; filter: blur(18px) saturate(1.1); opacity: .55; }
         #vr-media > img { position: relative; width: 100%; height: 100% !important; max-height: none !important; object-fit: cover !important; object-position: center 45%; }
@@ -24799,6 +24799,15 @@ async function dsTrPreparar() {
         #recipe-view-modal #vr-scroll > .grid > div { padding: 16px 18px !important; }
         #recipe-view-modal > div > div:last-child { flex: 0 0 auto; padding: 10px 16px !important; }
         #recipe-view-modal > div:has(#view-actions) > div:has(> #view-recipe-edit-btn) { display: none !important; }
+        /* telemóvel e tablet estreito (e ao redimensionar o ecrã): a ficha ocupa o ecrã todo, cabeçalho e botões fixos e o conteúdo desliza por dentro — nada fica escondido */
+        @media (max-width: 767px) {
+            #recipe-view-modal { padding: 0 !important; overflow: hidden !important; }
+            #recipe-view-modal > div { height: 100dvh !important; max-height: 100dvh !important; min-height: 0 !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; }
+            #recipe-view-modal #vr-scroll > .grid { grid-template-columns: minmax(0, 1fr) !important; }
+        }
+        #recipe-view-modal #vr-scroll > .grid > div { min-width: 0; }
+        #recipe-view-modal #vr-scroll li, #recipe-view-modal #vr-scroll p, #recipe-view-modal #vr-scroll span { overflow-wrap: anywhere; }
+        @media (max-height: 560px) { #vr-media { height: clamp(90px, 24vh, 200px); } }
     </style>
     <script>
         (function () {
