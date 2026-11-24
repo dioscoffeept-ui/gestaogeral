@@ -24711,10 +24711,10 @@ async function dsTrPreparar() {
         #recipe-view-modal #view-modal-header { flex: 0 0 auto; padding: 16px 20px; }
         #recipe-view-modal #view-recipe-name { font-size: clamp(20px, 2.6vw, 28px); line-height: 1.15; }
         #vr-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        #vr-media { position: relative; height: clamp(150px, 30vh, 300px); overflow: hidden; background: #F1ECE4; }
+        #vr-media { position: relative; height: clamp(170px, 34vh, 340px); overflow: hidden; background: #F1ECE4; }
         #vr-media:has(> img.hidden) { display: none; }
         #vr-media::before { content: ''; position: absolute; inset: -20px; background: var(--vr-bg) center / cover no-repeat; filter: blur(18px) saturate(1.1); opacity: .55; }
-        #vr-media > img { position: relative; width: 100%; height: 100% !important; max-height: none !important; object-fit: contain !important; }
+        #vr-media > img { position: relative; width: 100%; height: 100% !important; max-height: none !important; object-fit: cover !important; object-position: center 45%; }
         #vr-media #view-photo-credit { position: absolute; right: 8px; bottom: 6px; background: rgba(255,255,255,.85); border-radius: 8px; padding: 2px 8px !important; }
         #recipe-view-modal #vr-scroll > .grid { padding: 16px !important; gap: 14px !important; }
         #recipe-view-modal #vr-scroll > .grid > div { padding: 16px 18px !important; }
