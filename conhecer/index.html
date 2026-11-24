@@ -363,29 +363,13 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       </div>
       <div class="bebidas" role="group" aria-label="Bebida">
         <button type="button" data-b="expresso">Expresso</button>
-        <button type="button" data-b="cappuccino">Cappuccino</button>
         <button type="button" data-b="latte" aria-pressed="true">Latte</button>
-        <button type="button" data-b="flat">Flat White</button>
-        <button type="button" data-b="iced">Iced Latte</button>
+        <button type="button" data-b="gin">Gin tónico</button>
+        <button type="button" data-b="aperol">Aperol Spritz</button>
+        <button type="button" data-b="coca">Coca-Cola</button>
+        <button type="button" data-b="zero">Coca-Cola Zero</button>
       </div>
-      <div class="lin num">
-        <label for="f-kg">Café</label>
-        <span class="in"><input id="f-kg" type="number" inputmode="decimal" step="0.5" min="0" value="26"> €/kg</span>
-        <span class="in"><input id="f-g" type="number" inputmode="decimal" step="0.5" min="0" value="18"> g</span>
-        <output id="o-cafe">0,47 €</output>
-      </div>
-      <div class="lin num" id="l-leite">
-        <label for="f-l">Leite</label>
-        <span class="in"><input id="f-l" type="number" inputmode="decimal" step="0.05" min="0" value="1.20"> €/L</span>
-        <span class="in"><input id="f-ml" type="number" inputmode="numeric" step="10" min="0" value="160"> ml</span>
-        <output id="o-leite">0,19 €</output>
-      </div>
-      <div class="lin num">
-        <label for="f-emb">Copo e tampa</label>
-        <span class="in"><input id="f-emb" type="number" inputmode="decimal" step="0.01" min="0" value="0.20"> €</span>
-        <span></span>
-        <output id="o-emb">0,20 €</output>
-      </div>
+      <div id="f-linhas"></div>
       <div class="lin tot num"><span>Custo de produção</span><output id="f-custo">0,86 €</output></div>
       <div class="preco">
         <span>Preço no menu</span>
@@ -399,7 +383,7 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
         <span class="big num" id="f-margem">74%</span>
         <p id="f-txt">de margem.</p>
       </div>
-      <p class="dica">Ponha os seus valores. IVA da restauração (13%) já descontado. <label class="iva"><input type="checkbox" id="f-isento"> Sou isento de IVA</label></p>
+      <p class="dica">Ponha os seus valores. <span id="f-iva">IVA da restauração (13%) já descontado.</span> <label class="iva"><input type="checkbox" id="f-isento"> Sou isento de IVA</label></p>
     </div>
   </div>
 </section>
@@ -635,8 +619,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       <div class="pl">
         <h3>Expresso</h3>
         <p class="para">Para fazer as contas às suas bebidas.</p>
-        <p class="val num" data-mes="5 €" data-ano="5 €">5 €<small> /mês</small></p>
-        <p class="eq">só pagamento mensal</p>
+        <p class="val num" data-mes="0,16 €" data-ano="0,14 €">0,16 €<small> /dia</small></p>
+        <p class="eq num" data-mes="5 € por mês · ou 50 € por ano" data-ano="50 € por ano · equivale a 4,17 € por mês">5 € por mês · ou 50 € por ano</p>
         <ul>
           <li>Simulador de margem e lucro líquido</li>
           <li>Até 10 fichas técnicas do bar, com foto</li>
@@ -649,8 +633,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
         <span class="rot">O mais escolhido</span>
         <h3>Café</h3>
         <p class="para">Para um café, uma banca ou um bar que quer saber o que ganha e o que tem.</p>
-        <p class="val num" data-mes="15 €" data-ano="149 €">15 €<small> /mês</small></p>
-        <p class="eq num" data-mes="ou 149 € por ano" data-ano="equivale a 12,42 € por mês">ou 149 € por ano</p>
+        <p class="val num" data-mes="0,49 €" data-ano="0,41 €">0,49 €<small> /dia</small></p>
+        <p class="eq num" data-mes="15 € por mês · ou 149 € por ano" data-ano="149 € por ano · equivale a 12,42 € por mês">15 € por mês · ou 149 € por ano</p>
         <ul>
           <li>Até 60 fichas do bar, com foto e custo</li>
           <li>Stock, porções prontas e validades</li>
@@ -665,8 +649,8 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
       <div class="pl">
         <h3>PRO</h3>
         <p class="para">Para restaurantes e brunch com cozinha, equipa e fornecedores.</p>
-        <p class="val num" data-mes="32 €" data-ano="320 €">32 €<small> /mês</small></p>
-        <p class="eq num" data-mes="ou 320 € por ano" data-ano="equivale a 26,67 € por mês">ou 320 € por ano</p>
+        <p class="val num" data-mes="1,05 €" data-ano="0,88 €">1,05 €<small> /dia</small></p>
+        <p class="eq num" data-mes="32 € por mês · ou 320 € por ano" data-ano="320 € por ano · equivale a 26,67 € por mês">32 € por mês · ou 320 € por ano</p>
         <ul>
           <li><b>Tudo o que o plano Café inclui, mais:</b></li>
           <li>Fichas do bar sem limite</li>
@@ -747,43 +731,59 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
 (function () {
   // ficha do topo: calculadora com valores do visitante
   const B = {
-    expresso:   { nome: 'Expresso',       copo: 'Ficha técnica · chávena de 30 ml', g: 18, ml: 0,   emb: 0.03, preco: 1.00 },
-    cappuccino: { nome: 'Cappuccino',     copo: 'Ficha técnica · copo de 180 ml',  g: 18, ml: 120, emb: 0.15, preco: 3.50 },
-    latte:      { nome: 'Latte',          copo: 'Ficha técnica · copo de 300 ml',  g: 18, ml: 160, emb: 0.20, preco: 3.80 },
-    flat:       { nome: 'Flat White',     copo: 'Ficha técnica · copo de 180 ml',  g: 18, ml: 110, emb: 0.15, preco: 3.80 },
-    iced:       { nome: 'Iced Latte',     copo: 'Ficha técnica · copo de 400 ml com gelo', g: 18, ml: 180, emb: 0.24, preco: 5.00 }
+    expresso: { nome: 'Expresso', copo: 'Ficha técnica · chávena de 30 ml', iva: 13, preco: 1.00, l: [
+      ['Café', 26, '€/kg', 18, 'g', 1000, 0.5], ['Chávena e açúcar', 0.03, '€', 0, '', 0, 0.01] ] },
+    latte: { nome: 'Latte', copo: 'Ficha técnica · copo de 300 ml', iva: 13, preco: 3.80, l: [
+      ['Café', 26, '€/kg', 18, 'g', 1000, 0.5], ['Leite', 1.20, '€/L', 160, 'ml', 1000, 0.05], ['Copo e tampa', 0.20, '€', 0, '', 0, 0.01] ] },
+    gin: { nome: 'Gin tónico', copo: 'Ficha técnica · copo balão', iva: 23, preco: 8.00, l: [
+      ['Gin', 22, '€/L', 50, 'ml', 1000, 0.5], ['Água tónica', 0.55, '€/un', 1, 'un', 1, 0.05], ['Gelo, lima e especiarias', 0.25, '€', 0, '', 0, 0.01] ] },
+    aperol: { nome: 'Aperol Spritz', copo: 'Ficha técnica · copo de vinho', iva: 23, preco: 7.50, l: [
+      ['Aperol', 16, '€/L', 60, 'ml', 1000, 0.5], ['Prosecco', 8, '€/L', 90, 'ml', 1000, 0.5], ['Água com gás e laranja', 0.20, '€', 0, '', 0, 0.01] ] },
+    coca: { nome: 'Coca-Cola', copo: 'Ficha técnica · lata de 33 cl', iva: 23, preco: 2.20, l: [
+      ['Lata 33 cl', 0.45, '€/un', 1, 'un', 1, 0.01], ['Gelo e limão', 0.05, '€', 0, '', 0, 0.01] ] },
+    zero: { nome: 'Coca-Cola Zero', copo: 'Ficha técnica · lata de 33 cl', iva: 23, preco: 2.20, l: [
+      ['Lata 33 cl', 0.45, '€/un', 1, 'un', 1, 0.01], ['Gelo e limão', 0.05, '€', 0, '', 0, 0.01] ] }
   };
-  let preco = 3.80;
+  let preco = 3.80, cur = null;
   const $ = id => document.getElementById(id);
-  const n = id => { const v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) && v > 0 ? v : 0; };
+  const num = el => { const v = parseFloat(String(el.value).replace(',', '.')); return isFinite(v) && v > 0 ? v : 0; };
   const fmt = v => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  // cada linha: [ingrediente, preço de compra, unidade do preço, quantidade, unidade, divisor, passo]
+  function linhas(b) {
+    $('f-linhas').innerHTML = b.l.map((x, i) => `<div class="lin num">
+        <label for="f-p${i}">${x[0]}</label>
+        <span class="in"><input id="f-p${i}" type="number" inputmode="decimal" step="${x[2] === '€' ? 0.01 : x[6]}" min="0" value="${x[1]}"> ${x[2]}</span>
+        ${x[4] ? `<span class="in"><input id="f-q${i}" type="number" inputmode="decimal" step="${x[4] === 'un' ? 1 : x[4] === 'g' ? 0.5 : 10}" min="0" value="${x[3]}"> ${x[4]}</span>` : '<span></span>'}
+        <output id="f-o${i}">0,00 €</output></div>`).join('');
+    $('f-linhas').querySelectorAll('input').forEach(el => el.addEventListener('input', draw));
+  }
   function draw() {
-    const cafe = n('f-kg') * n('f-g') / 1000, leite = n('f-l') * n('f-ml') / 1000, emb = n('f-emb'), custo = cafe + leite + emb;
-    $('o-cafe').textContent = fmt(cafe); $('o-leite').textContent = fmt(leite); $('o-emb').textContent = fmt(emb); $('f-custo').textContent = fmt(custo);
-    $('l-leite').classList.toggle('off', !n('f-ml'));
-    const iva = $('f-isento').checked ? 0 : 0.13, liq = preco / (1 + iva), sobra = liq - custo, m = liq > 0 ? sobra / liq * 100 : 0;
+    const b = B[cur]; let custo = 0;
+    b.l.forEach((x, i) => { const pr = num($('f-p' + i)), q = x[4] ? num($('f-q' + i)) : 1, c = x[4] ? pr * q / x[5] : pr; custo += c; $('f-o' + i).textContent = fmt(c); });
+    $('f-custo').textContent = fmt(custo);
+    const iva = $('f-isento').checked ? 0 : b.iva / 100, liq = preco / (1 + iva), sobra = liq - custo, m = liq > 0 ? sobra / liq * 100 : 0;
     $('f-preco').textContent = fmt(preco);
     $('f-margem').textContent = Math.round(m) + '%';
     $('f-margem').classList.toggle('mal', m < 60);
     $('f-txt').innerHTML = sobra > 0 ? 'de margem. Sobram <b class="num">' + fmt(sobra) + '</b> por bebida' + (iva ? ', já sem IVA.' : '.') : 'de margem. A este preço, perde dinheiro em cada bebida.';
+    $('f-iva').textContent = b.iva === 13 ? 'IVA da restauração (13%) já descontado.' : 'IVA de 23% já descontado (bebidas alcoólicas e refrigerantes).';
   }
   function escolher(k) {
-    const b = B[k]; preco = b.preco;
+    const b = B[k]; cur = k; preco = b.preco;
     $('f-nome').textContent = b.nome; $('f-copo').textContent = b.copo;
-    $('f-g').value = b.g; $('f-ml').value = b.ml; $('f-emb').value = b.emb.toFixed(2);
     document.querySelectorAll('.bebidas button').forEach(x => x.setAttribute('aria-pressed', x.dataset.b === k));
-    draw();
+    linhas(b); draw();
   }
   document.querySelectorAll('.bebidas button').forEach(x => x.onclick = () => escolher(x.dataset.b));
-  ['f-kg', 'f-g', 'f-l', 'f-ml', 'f-emb', 'f-isento'].forEach(id => $(id).addEventListener('input', draw));
-  $('f-mais').onclick = () => { preco = Math.min(19.9, Math.round((preco + 0.1) * 100) / 100); draw(); };
+  $('f-isento').addEventListener('input', draw);
+  $('f-mais').onclick = () => { preco = Math.min(29.9, Math.round((preco + 0.1) * 100) / 100); draw(); };
   $('f-menos').onclick = () => { preco = Math.max(0.5, Math.round((preco - 0.1) * 100) / 100); draw(); };
   escolher('latte');
   // planos: mensal / anual
   document.querySelectorAll('.toggle button').forEach(b => b.onclick = () => {
     const p = b.dataset.p;
     document.querySelectorAll('.toggle button').forEach(x => x.setAttribute('aria-pressed', x === b));
-    document.querySelectorAll('.val[data-mes]').forEach(v => v.innerHTML = v.dataset[p] + '<small> /' + (p === 'mes' ? 'mês' : 'ano') + '</small>');
+    document.querySelectorAll('.val[data-mes]').forEach(v => v.innerHTML = v.dataset[p] + '<small> /dia</small>');
     document.querySelectorAll('.eq[data-mes]').forEach(v => v.textContent = v.dataset[p]);
   });
   // linha por baixo do topo ao descer

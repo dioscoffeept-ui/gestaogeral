@@ -1331,7 +1331,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 17:36</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 17:47</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -6820,7 +6820,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         // Links de pagamento (Stripe Payment Links). Enquanto estiverem vazios, o botão envia um e-mail.
         const PAYMENT_LINKS = { gratis_mes: '', cafe_mes: '', cafe_ano: '', pro_mes: '', pro_ano: '', portal: '' };
         const PLANS = {
-            gratis: { nome: 'Expresso', mes: 5, desc: 'Para fazer as contas às suas bebidas', feats: ['Simulador de margem e lucro líquido', 'Até 10 fichas do bar, com foto', 'Custos e margem calculados sozinhos', '1 cartão de fidelidade (carimbos ou desconto)'] },
+            gratis: { nome: 'Expresso', mes: 5, ano: 50, desc: 'Para fazer as contas às suas bebidas', feats: ['Simulador de margem e lucro líquido', 'Até 10 fichas do bar, com foto', 'Custos e margem calculados sozinhos', '1 cartão de fidelidade (carimbos ou desconto)'] },
             cafe: { nome: 'Café', mes: 15, ano: 149, desc: 'Balcão, stock e vendas do dia',
                     feats: ['Até 60 fichas do bar, com foto e custo', 'Cartões de fidelidade sem limite', 'Stock e porções prontas', 'Balcão: venda ao balcão e 5 mesas', 'Fornecedores e encomendas por WhatsApp', 'Ecrãs do bar e da cozinha, e sessões de caixa', 'Ligação ao POS: Vendus, ou SAF-T e foto de qualquer POS'] },
             pro: { nome: 'PRO', mes: 32, ano: 320, desc: 'Gestão completa: pedidos, fornecedores, equipa e cozinha',
@@ -21438,7 +21438,8 @@ var qrcode = function() {
             if (c) l.push(c); return l.slice(0, 3);
         }
         function rlPalcoHtml(c) {
-            return `<div class="rl-palco"><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(rlBrand(c))}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(c)}</div>`;
+            const luzes = Array.from({ length: 24 }, (_, i) => { const a = i / 24 * Math.PI * 2; return `<span style="left:${(50 + 48.8 * Math.cos(a)).toFixed(2)}%;top:${(50 + 48.8 * Math.sin(a)).toFixed(2)}%"></span>`; }).join('');
+            return `<div class="rl-palco"><div class="rl-luzes" aria-hidden="true">${luzes}</div><svg class="rl-seta" viewBox="0 0 34 40" aria-hidden="true"><path d="M17 40 L2 6 Q17 -2 32 6 Z" fill="${escapeHtml(rlBrand(c))}" stroke="#231F20" stroke-width="2.5"/></svg>${rlRodaSvg(c)}</div>`;
         }
         function rlPintar() {
             const box = document.getElementById('fid-roleta'); if (!box) return;
@@ -21455,7 +21456,7 @@ var qrcode = function() {
                     <div class="rl-cena ${c.fundo ? 'foto' : ''}" style="${c.fundo ? `--rlf:url('${escapeHtml(c.fundo)}')` : ''}">${rlPalcoHtml(c)}</div>
                     <button type="button" class="rl-girar" id="rl-girar" onclick="rlGirar()" style="background:${escapeHtml(rlBrand(c))};color:${rlTinta(rlBrand(c))}"><i class="fas fa-rotate-right"></i>Girar</button>
                     <button type="button" class="rl-cli" onclick="rlEscolherCliente()"><i class="fas ${k ? 'fa-stamp' : 'fa-user-plus'}"></i><span>${k ? `${escapeHtml(k.nome)} · ${k.codigo}<small>O prémio fica registado no cartão deste cliente</small>` : `Para que cliente? <small>Opcional: escolha o cartão para registar o prémio</small>`}</span><b class="x">${k ? 'Trocar' : 'Escolher'}</b></button>
-                    <div class="rl-acoes">${k ? `<button type="button" onclick="rlCli='';rlPintar()"><i class="fas fa-xmark"></i>Sem cliente</button>` : ''}<button type="button" onclick="rlEcra()"><i class="fas ${cheio ? 'fa-compress' : 'fa-expand'}"></i>${cheio ? 'Sair do ecrã do cliente' : 'Mostrar ao cliente'}</button></div>
+                    <div class="rl-acoes"><button type="button" id="rl-som" onclick="rlSomTrocar()">${rlSomOn() ? '<i class="fas fa-volume-high"></i>Som' : '<i class="fas fa-volume-xmark"></i>Sem som'}</button>${k ? `<button type="button" onclick="rlCli='';rlPintar()"><i class="fas fa-xmark"></i>Sem cliente</button>` : ''}<button type="button" onclick="rlEcra()"><i class="fas ${cheio ? 'fa-compress' : 'fa-expand'}"></i>${cheio ? 'Sair do ecrã do cliente' : 'Mostrar ao cliente'}</button></div>
                 </div>
                 <div class="rl-sec"><b>Últimos prémios</b>
                     <div class="rl-log">${rlCfg.ultimos.length ? '' : '<p class="n" style="padding-top:6px">Ainda ninguém girou a roleta. Os prémios ganhos aparecem aqui.</p>'}</div>
@@ -21573,6 +21574,77 @@ var qrcode = function() {
             const i = document.getElementById('rlc-q'); i.addEventListener('input', () => pintar(i.value)); pintar(''); setTimeout(() => i.focus(), 50);
         }
         const rlHoje = () => new Date().toISOString().slice(0, 10);
+        // ---------- som e animação da roleta
+        const rlSomOn = () => { try { return localStorage.getItem('rl_som') !== '0'; } catch (_) { return true; } };
+        function rlSomTrocar() { const on = rlSomOn(); try { localStorage.setItem('rl_som', on ? '0' : '1'); } catch (_) {} const b = document.getElementById('rl-som'); if (b) b.innerHTML = on ? '<i class="fas fa-volume-xmark"></i>Sem som' : '<i class="fas fa-volume-high"></i>Som'; if (!on) rlSom('tic'); }
+        function rlSom(tipo) {
+            if (!rlSomOn()) return;
+            try {
+                const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+                const ctx = rlSom.ctx || (rlSom.ctx = new A()); if (ctx.state === 'suspended') ctx.resume();
+                const t0 = ctx.currentTime, out = ctx.destination;
+                const nota = (f, t, d, tp = 'sine', v = .12, f2) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = tp; o.frequency.setValueAtTime(f, t0 + t); if (f2) o.frequency.linearRampToValueAtTime(f2, t0 + t + d); g.gain.setValueAtTime(0, t0 + t); g.gain.linearRampToValueAtTime(v, t0 + t + .012); g.gain.exponentialRampToValueAtTime(.001, t0 + t + d); o.connect(g).connect(out); o.start(t0 + t); o.stop(t0 + t + d + .03); return o; };
+                if (tipo === 'tic') { nota(2100, 0, .035, 'square', .05); nota(900, 0, .03, 'triangle', .06); }
+                else if (tipo === 'girar') { nota(220, 0, .35, 'sawtooth', .04, 660); }
+                else if (tipo === 'ganhou') {
+                    [523, 659, 784, 1047].forEach((f, i) => nota(f, i * .11, .22, 'triangle', .14));
+                    [523, 659, 784, 1047].forEach(f => nota(f, .5, .9, 'triangle', .07));
+                    [1568, 2093, 2637, 2093, 3136].forEach((f, i) => nota(f, .55 + i * .07, .12, 'sine', .05));
+                } else if (tipo === 'perdeu') {
+                    // "trombone triste": quatro notas a descer, a última a tremer
+                    [[392, 0, .38], [370, .42, .38], [349, .84, .38]].forEach(([f, t, d]) => nota(f, t, d, 'sawtooth', .07));
+                    const o = nota(330, 1.26, 1.1, 'sawtooth', .08, 300), lfo = ctx.createOscillator(), lg = ctx.createGain();
+                    lfo.frequency.value = 6; lg.gain.value = 9; lfo.connect(lg).connect(o.frequency); lfo.start(t0 + 1.3); lfo.stop(t0 + 2.4);
+                }
+            } catch (_) {}
+        }
+        function rlAnimar(roda, de, ate, n, reduz) {
+            return new Promise(res => {
+                if (!roda) return setTimeout(res, 200);
+                roda.style.transition = 'none';
+                if (reduz) { roda.style.transform = `rotate(${ate}deg)`; return setTimeout(res, 200); }
+                const palco = roda.closest('.rl-palco'), seta = palco && palco.querySelector('.rl-seta'), f = 360 / n;
+                if (palco) palco.classList.add('gira');
+                rlSom('girar');
+                const T1 = 380, T2 = 5600, t0 = performance.now(), recuo = 16, ease = k => 1 - Math.pow(1 - k, 4);
+                const fatia = a => Math.floor(((((-a) % 360) + 360) % 360) / f);
+                let ult = fatia(de), ultSom = 0;
+                (function passo(t) {
+                    const e = t - t0; let a;
+                    if (e < T1) a = de - recuo * Math.sin(e / T1 * Math.PI / 2);
+                    else a = (de - recuo) + (ate - (de - recuo)) * ease(Math.min(1, (e - T1) / T2));
+                    roda.style.transform = `rotate(${a}deg)`;
+                    const k = fatia(a);
+                    if (k !== ult) { ult = k; if (t - ultSom > 30) { ultSom = t; rlSom('tic'); } if (seta) { seta.classList.remove('bate'); void seta.getBoundingClientRect(); seta.classList.add('bate'); } }
+                    if (e < T1 + T2) requestAnimationFrame(passo); else { if (palco) palco.classList.remove('gira'); roda.style.transform = `rotate(${ate}deg)`; res(); }
+                })(t0);
+            });
+        }
+        (function () {
+            document.head.insertAdjacentHTML('beforeend', `<style id="rl-anim-css">
+            .rl-palco .rl-luzes{position:absolute;inset:0;pointer-events:none;z-index:1}
+            .rl-palco .rl-luzes span{position:absolute;width:2.6%;height:2.6%;border-radius:50%;background:#FFF7EC;box-shadow:0 0 6px 2px rgba(255,236,210,.85);transform:translate(-50%,-50%);animation:rlPisca 1.4s ease-in-out infinite}
+            .rl-palco .rl-luzes span:nth-child(odd){animation-delay:.7s}
+            .rl-palco.gira .rl-luzes span{animation-duration:.28s}
+            .rl-palco.festa .rl-luzes span{animation:rlFesta .16s steps(2) infinite}.rl-palco.festa .rl-luzes span:nth-child(odd){animation-delay:.08s}
+            .rl-palco.festa svg.rl-roda{filter:drop-shadow(0 0 18px rgba(224,121,79,.75))}
+            .rl-palco.triste svg.rl-roda{filter:grayscale(.85) brightness(.9);transition:filter .4s}
+            .rl-palco svg.rl-roda{transition:filter .4s}
+            .rl-palco .rl-seta{transform-origin:50% 0}
+            .rl-palco .rl-seta.bate{animation:rlBate .16s ease-out}
+            @keyframes rlBate{0%{transform:translateX(-50%) rotate(0)}35%{transform:translateX(-50%) rotate(-24deg)}100%{transform:translateX(-50%) rotate(0)}}
+            @keyframes rlPisca{0%,100%{opacity:1}50%{opacity:.25;box-shadow:none}}
+            @keyframes rlFesta{from{background:#FFF7EC;box-shadow:0 0 10px 4px rgba(255,236,210,.95)}to{background:#E0794F;box-shadow:0 0 12px 4px rgba(224,121,79,.9)}}
+            .rl-girar:not(:disabled){animation:rlPulsa 2.2s ease-in-out infinite}
+            @keyframes rlPulsa{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(152,56,8,.35)}50%{transform:scale(1.03);box-shadow:0 0 0 10px rgba(152,56,8,0)}}
+            #rl-res .ico{animation:rlSalta .8s cubic-bezier(.2,1.6,.4,1)}#rl-res.ganhou .big{animation:rlBrilha 1.2s ease-out .15s both}
+            #rl-res .ico.rl-triste{animation:rlCai 1.4s ease-in-out}
+            @keyframes rlSalta{0%{transform:scale(.2) rotate(-20deg);opacity:0}60%{transform:scale(1.25) rotate(8deg);opacity:1}100%{transform:none}}
+            @keyframes rlBrilha{0%{transform:scale(.6);opacity:0;text-shadow:none}50%{transform:scale(1.12);opacity:1;text-shadow:0 0 24px rgba(224,121,79,.9)}100%{transform:none;text-shadow:0 0 10px rgba(224,121,79,.35)}}
+            @keyframes rlCai{0%{transform:translateY(-14px);opacity:0}30%{transform:none;opacity:1}55%{transform:rotate(-8deg)}75%{transform:rotate(6deg)}100%{transform:none}}
+            @media (prefers-reduced-motion:reduce){.rl-palco .rl-luzes span,.rl-girar,.rl-palco .rl-seta.bate,#rl-res .ico,#rl-res .big{animation:none!important}}
+            </style>`);
+        })();
         function rlSorteio(pr) {
             const tot = pr.reduce((s, p) => s + (+p.peso || 0), 0);
             const a = new Uint32Array(1); crypto.getRandomValues(a);
@@ -21589,13 +21661,12 @@ var qrcode = function() {
                 return dsToast(`${k.nome.split(' ')[0]} já girou a roleta hoje. Volte amanhã.`, true);
             const i = rlSorteio(pr), n = pr.length, fatia = 360 / n;
             // a fatia sorteada pára debaixo da seta (no topo), num ponto ao acaso dentro dela
-            const dentro = (0.15 + Math.random() * 0.7) * fatia, alvo = 360 - (i * fatia + dentro);
+            const dentro = (0.15 + Math.random() * 0.7) * fatia, alvo = 360 - (i * fatia + dentro), deAng = rlAngulo;
             rlAngulo = rlAngulo - (rlAngulo % 360) + 360 * 6 + alvo;
             const roda = document.getElementById('rl-roda'), bt = document.getElementById('rl-girar');
             rlAGirar = true; if (bt) { bt.disabled = true; bt.innerHTML = '<i class="fas fa-rotate-right fa-spin"></i>A girar…'; }
             const reduz = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (roda) { roda.style.transitionDuration = reduz ? '0.01s' : ''; requestAnimationFrame(() => { roda.style.transform = `rotate(${rlAngulo}deg)`; }); }
-            await new Promise(r => setTimeout(r, reduz ? 200 : 5400));
+            await rlAnimar(roda, deAng, rlAngulo, n, reduz);
             rlAGirar = false;
             const p = pr[i];
             // registar
@@ -21617,13 +21688,15 @@ var qrcode = function() {
         function rlResultado(p, k) {
             if (p.nada) {
                 const m0 = document.getElementById('rl-res'); if (m0) m0.classList.remove('ganhou');
-                dsModal('rl-res', `<div class="ico">🙂</div><div class="big">${escapeHtml(p.nome || 'Não foi desta vez')}</div><p class="t">Não saiu prémio desta vez.${k && rlLer().diario ? ' Pode tentar de novo amanhã.' : ''}</p><div class="bts"><button type="button" class="p" onclick="dsModalFechar('rl-res')">Fechar</button></div>`);
+                rlSom('perdeu'); const pl0 = document.querySelector('#fid-roleta .rl-palco'); if (pl0) { pl0.classList.add('triste'); setTimeout(() => pl0.classList.remove('triste'), 2200); }
+                dsModal('rl-res', `<div class="ico rl-triste">😢</div><div class="big">${escapeHtml(p.nome || 'Não foi desta vez')}</div><p class="t">Não saiu prémio desta vez.${k && rlLer().diario ? ' Pode tentar de novo amanhã.' : ''}</p><div class="bts"><button type="button" class="p" onclick="dsModalFechar('rl-res')">Fechar</button></div>`);
                 return;
             }
             dsModal('rl-res', `<div class="ico">🎉</div><p class="t" style="margin-top:4px">${k ? escapeHtml(k.nome.split(' ')[0]) + ' ganhou' : 'Ganhou'}</p><div class="big">${escapeHtml(p.nome)}</div>
                 <p class="t">${k ? 'Ficou registado no cartão ' + escapeHtml(k.codigo) + '.' : 'Mostre este ecrã ao balcão para receber o prémio.'}</p>
                 <div class="bts"><button type="button" class="p" onclick="dsModalFechar('rl-res')">Fechar</button></div>`).classList.add('ganhou');
-            rlFogo();
+            rlSom('ganhou'); rlFogo(); if (typeof fmConfetes === 'function') setTimeout(() => fmConfetes(160), 150);
+            const pl = document.querySelector('#fid-roleta .rl-palco'); if (pl) { pl.classList.add('festa'); setTimeout(() => pl.classList.remove('festa'), 3200); }
         }
         // fogos de artifício
         function rlFogo() {
@@ -25477,9 +25550,15 @@ async function dsTrPreparar() {
             try { if (id) localStorage.setItem('fm_eu_' + fmUid(), id); else localStorage.setItem('fm_eu_' + fmUid() + '_nao', '1'); } catch (_) {}
             fmJ.fase = 'inicio'; fmJogPintar();
         }
-        async function fmSair() {
-            if (fmJ && (fmJ.fase === 'quiz' || fmJ.fase === 'licoes') && fmJ.feitas.size) { if (!(await dsConfirmar('Sair agora? O progresso desta tentativa perde-se.'))) return; }
-            document.getElementById('fmx-play')?.remove(); document.body.classList.remove('fmx-aberto'); fmJ = null;
+        function fmSair(forcar) {
+            const el = document.getElementById('fmx-play');
+            if (!forcar && el && fmJ && fmJ.fase === 'quiz') {
+                if (el.querySelector('.fmx-sair')) return;
+                const d = document.createElement('div'); d.className = 'fmx-lvl fmx-sair'; d.setAttribute('role', 'alertdialog'); d.setAttribute('aria-label', 'Sair do quiz');
+                d.innerHTML = `<div class="cx"><div class="em" style="font-size:56px;line-height:1">😟</div><h2>Sair do quiz?</h2><p>Se sair agora, perde o progresso deste teste${fmJ.xp ? ' e os ' + fmJ.xp + ' XP que já ganhou' : ''}.</p><button type="button" class="fmx-b" onclick="this.closest('.fmx-sair').remove()">Continuar o quiz</button><button type="button" class="fmx-sai" onclick="fmSair(true)">Sair e perder o progresso</button></div>`;
+                el.appendChild(d); d.querySelector('.fmx-b').focus(); return;
+            }
+            el?.remove(); document.body.classList.remove('fmx-aberto'); fmJ = null;
         }
         function fmJogPintar() {
             const j = fmJ, c = j.c, lic = c.licoes || [];
@@ -25496,7 +25575,7 @@ async function dsTrPreparar() {
                 const m = fmMeuMelhor(c.id);
                 corpo = `<div class="fmx-mid"><div class="em fmx-pop">${m && fmPassou(c, m) ? '🏆' : '🎯'}</div><h2>${escapeHtml(c.titulo)}</h2><p>${c.descricao ? escapeHtml(c.descricao) + '<br>' : ''}${lic.length ? lic.length + (lic.length === 1 ? ' lição' : ' lições') + ' e ' : ''}${j.total} perguntas · para passar: ${c.minimo || 80}%</p>
                     <div class="fmx-regras"><span>❤️<b>3 vidas</b></span><span>⚡<b>+10 XP</b> por certa</span><span>🔥<b>Bónus</b> por sequência</span></div>${m ? `<p class="sub">A sua melhor nota: <b>${m.nota}%</b></p>` : ''}</div>`;
-                pe = `<div class="fmx-pe">${lic.length ? `<button type="button" class="fmx-b sec" onclick="fmFase('quiz')">Ir direto ao quiz</button><button type="button" class="fmx-b" onclick="fmFase('licoes')">Começar as lições</button>` : `<button type="button" class="fmx-b" onclick="fmFase('quiz')" ${j.total ? '' : 'disabled'}>Começar</button>`}</div>`;
+                pe = `<div class="fmx-pe">${lic.length ? `<button type="button" class="fmx-b sec fmx-mat" onclick="fmFase('licoes')"><i class="fas fa-book-open"></i> Matéria</button><button type="button" class="fmx-b" onclick="fmFase('quiz')">Fazer o quiz</button>` : `<button type="button" class="fmx-b" onclick="fmFase('quiz')" ${j.total ? '' : 'disabled'}>Começar</button>`}</div>`;
                 if (!j.total) corpo += `<p class="sub" style="text-align:center">Este curso ainda não tem perguntas. Peça ao responsável para juntar fichas com ingredientes ou escrever perguntas.</p>`;
             } else if (j.fase === 'licoes') {
                 corpo = `<div class="fmx-lic fmx-in"><small class="tg">Lição ${j.i + 1} de ${lic.length}</small><div class="lic">${fmLicHtml(lic[j.i])}</div></div>`;
@@ -25508,7 +25587,7 @@ async function dsTrPreparar() {
                 pe = `<div class="fmx-pe" id="fmx-pe"><button type="button" class="fmx-b" id="fmx-ver" onclick="fmVerificar()" disabled>Verificar</button></div>`;
             } else corpo = fmFimHtml();
             el.innerHTML = `<div class="fmx-in-w">${j.fase === 'fim' ? '' : top}<div class="fmx-corpo">${corpo}</div>${pe}</div>`;
-            if (j.fase === 'quiz') { el.onkeydown = e => { const n = Number(e.key); if (n >= 1 && n <= 4 && !fmJ.ver) fmEscolher(n - 1); else if (e.key === 'Enter') { const b = document.querySelector('#fmx-pe .fmx-b:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } }; el.tabIndex = -1; el.focus({ preventScroll: true }); }
+            if (j.fase === 'quiz') { el.onkeydown = e => { if (e.key === 'Escape') { e.preventDefault(); return fmSair(); } const n = Number(e.key); if (n >= 1 && n <= 4 && !fmJ.ver) fmEscolher(n - 1); else if (e.key === 'Enter') { const b = document.querySelector('#fmx-pe .fmx-b:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } }; el.tabIndex = -1; el.focus({ preventScroll: true }); }
         }
         function fmFase(f) {
             fmJ.fase = f === 'licoes' && !(fmJ.c.licoes || []).length ? 'quiz' : f; fmJ.i = 0;
@@ -25686,6 +25765,7 @@ async function dsTrPreparar() {
             .fmx-lvl{position:absolute;inset:0;background:rgba(35,31,32,.72);display:flex;align-items:center;justify-content:center;padding:20px;animation:fmxEntra .2s}.fmx-lvl .cx{background:#fff;border-radius:24px;padding:28px 24px;text-align:center;max-width:340px;width:100%;animation:fmxPop .55s cubic-bezier(.2,1.6,.4,1)}
             .fmx-lvl .bd{width:120px;height:120px;margin:0 auto;border-radius:32px;background:#983808;display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);box-shadow:0 8px 0 #5E2205;animation:fmxGira 1s cubic-bezier(.2,1.4,.4,1)}.fmx-lvl .bd span{color:#fff;font-family:'Bricolage Grotesque',inherit;font-size:64px;font-weight:800;transform:rotate(6deg)}
             @keyframes fmxGira{from{transform:rotate(-200deg) scale(.2)}to{transform:rotate(-6deg) scale(1)}}
+            .fmx-mat{flex:0 0 auto;min-height:44px;font-size:14px;align-self:center;padding:0 14px!important}.fmx-sai{display:block;width:100%;margin-top:12px;padding:10px;font-weight:800;color:#B91C1C;border-radius:12px}.fmx-sai:hover{background:#FEE2E2}html.dark .fmx-sai{color:#F87171}html.dark .fmx-sai:hover{background:#3A1515}html.dark .fmx-lvl p{color:#C9BBAF}
             .fmx-lvl h2{font-family:'Bricolage Grotesque',inherit;font-size:28px;font-weight:800;margin-top:22px}.fmx-lvl p{color:#5B4A40;margin:6px 0 18px}.fmx-lvl .fmx-b{width:100%}
             .fmx-conf{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483600}
             @media (prefers-reduced-motion:reduce){.fmx-in,.fmx-pop,.fmx-shake,.fmx-fb,.fmx-st .s,.fmx-lvl .cx,.fmx-lvl .bd,.fmx-flash,.fmx-perde{animation:none!important}}
