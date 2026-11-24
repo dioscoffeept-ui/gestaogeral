@@ -24096,12 +24096,27 @@ async function dsTrPreparar() {
                 </div>
                 <div class="p-5 space-y-4">
                   <input type="hidden" id="mep-id">
-                  <div class="flex items-center gap-3">
-                    <div id="mep-foto-prev" class="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl" style="aspect-ratio:4/3"></div>
-                    <div class="flex flex-wrap gap-2">
-                      <label class="px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-700 cursor-pointer hover:bg-slate-50"><i class="fas fa-camera mr-1"></i><span id="mep-foto-lbl">Adicionar foto</span><input type="file" accept="image/*" class="hidden" onchange="mepFotoEscolhida(this)"></label>
-                      <button type="button" id="mep-foto-aj" onclick="mepFotoAjustar()" class="px-3 py-2 text-xs font-bold rounded-xl border border-slate-300 text-slate-700 hidden"><i class="fas fa-crop-simple mr-1"></i>Ajustar</button>
-                      <button type="button" id="mep-foto-rm" onclick="mepFotoTirar()" class="px-3 py-2 text-xs font-bold rounded-xl text-rose-600 hover:bg-rose-50 hidden"><i class="fas fa-trash mr-1"></i>Remover</button>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">Foto</label>
+                    <div class="flex items-start gap-3">
+                      <div id="mep-foto-prev" class="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center text-3xl" style="aspect-ratio:4/3"></div>
+                      <div class="flex flex-col gap-2 w-full max-w-[200px]">
+                        <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-center"><i class="fas fa-camera mr-1"></i> Tirar foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="mepFotoEscolhida(this)"></label>
+                        <label class="cursor-pointer px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-center"><i class="fas fa-image mr-1"></i> Escolher da galeria<input type="file" accept="image/*" class="hidden" onchange="mepFotoEscolhida(this)"></label>
+                        <button type="button" onclick="mepFotosLivres()" class="px-3 py-2 text-xs font-bold text-white rounded-xl text-center" style="background:var(--brand)"><i class="fas fa-images mr-1"></i> Fotos gratuitas</button>
+                        <button type="button" id="mep-foto-aj" onclick="mepFotoAjustar()" class="hidden px-3 py-2 text-xs font-bold rounded-xl text-center" style="background:#FBEDE6;color:#983808"><i class="fas fa-crop-simple mr-1"></i> Ajustar foto</button>
+                        <button type="button" id="mep-foto-rm" onclick="mepFotoTirar()" class="hidden px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl"><i class="fas fa-trash mr-1"></i> Remover foto</button>
+                      </div>
+                    </div>
+                    <div id="mep-fl" class="hidden mt-3 p-3 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
+                      <div class="flex gap-2">
+                        <input id="mep-fl-q" placeholder="Ex.: cold brew, smoothie, sauce" class="flex-1 text-xs font-semibold rounded-xl" onkeydown="if(event.key==='Enter'){event.preventDefault();mepFlProcurar(1)}">
+                        <button type="button" onclick="mepFlProcurar(1)" class="px-3 py-2 text-xs font-bold text-white rounded-xl" style="background:var(--brand)" aria-label="Procurar"><i class="fas fa-search"></i></button>
+                        <button type="button" onclick="mepFlProcurar(0)" class="px-3 py-2 text-xs font-bold bg-white border border-slate-200 rounded-xl whitespace-nowrap"><i class="fas fa-shuffle mr-1"></i>Outras</button>
+                      </div>
+                      <div id="mep-fl-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+                      <p id="mep-fl-msg" class="text-[11px] text-slate-500"></p>
+                      <p class="text-[10px] text-slate-400">Fotos de bancos gratuitos (Openverse e Wikimedia Commons). Pesquisas em inglês costumam dar melhores resultados.</p>
                     </div>
                   </div>
                   <div class="grid gap-3" style="grid-template-columns:72px 1fr">
@@ -24161,6 +24176,7 @@ async function dsTrPreparar() {
             g('mep-steps').value = m ? (m.steps || []).join('\n') : '';
             g('mep-del').style.visibility = m ? '' : 'hidden';
             mepFoto = m && m.image ? m.image : null; mepFotoOrig = null; mepFotoPintar();
+            mepFotoCredito = m && m.imageCredit || ''; mepFlLista = []; g('mep-fl').classList.add('hidden'); g('mep-fl-grid').innerHTML = ''; g('mep-fl-msg').textContent = ''; g('mep-fl-q').value = '';
             g('mep-icon').oninput = mepFotoPintar;
             g('mep-ings-list').innerHTML = '';
             ((m && m.ingredients && m.ingredients.length) ? m.ingredients : [{ name: '', quantity: '', unit: 'g' }]).forEach(i => mepAddIng(i.name, i.quantity, i.unit ?? 'g'));
@@ -24173,12 +24189,12 @@ async function dsTrPreparar() {
             const pv = document.getElementById('mep-foto-prev'); if (!pv) return;
             const ic = (document.getElementById('mep-icon') || {}).value || '🥣';
             pv.innerHTML = mepFoto ? `<img src="${escapeHtml(mepFoto)}" alt="" class="w-full h-full object-cover">` : escapeHtml(ic);
-            document.getElementById('mep-foto-lbl').textContent = mepFoto ? 'Trocar foto' : 'Adicionar foto';
             document.getElementById('mep-foto-rm').classList.toggle('hidden', !mepFoto);
             document.getElementById('mep-foto-aj').classList.toggle('hidden', !mepFotoOrig);
         }
         async function mepFotoEscolhida(input) {
             const f = input.files && input.files[0]; input.value = ''; if (!f) return;
+            mepFotoCredito = '';
             const url = await dsRecortar(f, { aspeto: 4 / 3, saida: 1000, inicio: 'cobrir', titulo: 'Ajustar a foto' });
             if (!url) return; mepFotoOrig = f; mepFoto = url; mepFotoPintar();
         }
@@ -24188,6 +24204,38 @@ async function dsTrPreparar() {
             if (url) { mepFoto = url; mepFotoPintar(); }
         }
         function mepFotoTirar() { mepFoto = null; mepFotoOrig = null; mepFotoPintar(); }
+        let mepFlLista = [], mepFotoCredito = '';
+        function mepFotosLivres() {
+            const pn = document.getElementById('mep-fl'); pn.classList.toggle('hidden');
+            if (!pn.classList.contains('hidden')) { const q = document.getElementById('mep-fl-q'); if (!q.value.trim()) q.value = photoQuery(document.getElementById('mep-name').value); if (q.value.trim()) mepFlProcurar(1); else q.focus(); }
+        }
+        async function mepFlProcurar(page) {
+            const qi = document.getElementById('mep-fl-q'), grid = document.getElementById('mep-fl-grid'), msg = document.getElementById('mep-fl-msg');
+            const q = qi.value.trim() || photoQuery(document.getElementById('mep-name').value);
+            if (!q) { msg.textContent = 'Escreva o nome do produto (de preferência em inglês).'; return; }
+            qi.value = q; const pg = page || (1 + Math.floor(Math.random() * 4));
+            grid.innerHTML = '<div class="col-span-full text-center text-xs text-slate-400 py-6"><i class="fas fa-circle-notch fa-spin mr-1"></i>A procurar fotos…</div>'; msg.textContent = '';
+            try {
+                let list = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=' + pg)).json()).fotos) || [];
+                if (!list.length && pg > 1) list = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=1')).json()).fotos) || [];
+                for (let i = list.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [list[i], list[k]] = [list[k], list[i]]; }
+                mepFlLista = list.slice(0, 12);
+                grid.innerHTML = mepFlLista.map((f, i) => `<button type="button" onclick="mepFlEscolher(${i})" class="relative aspect-square rounded-xl overflow-hidden border-2 border-transparent bg-slate-200"><img loading="lazy" src="${escapeHtml(f.thumb)}" alt="" class="w-full h-full object-cover" onerror="this.closest('button').remove()"></button>`).join('')
+                    || '<div class="col-span-full text-center text-xs text-slate-400 py-6">Nenhuma foto encontrada. Tente outra palavra (em inglês funciona melhor).</div>';
+            } catch (e) { grid.innerHTML = ''; msg.textContent = String(e.message) === 'login' ? 'Entre na sua conta para procurar fotos.' : 'Não foi possível procurar fotos agora. Tente de novo daqui a pouco.'; }
+        }
+        async function mepFlEscolher(i) {
+            const f = mepFlLista[i]; if (!f) return;
+            const pv = document.getElementById('mep-foto-prev'); pv.style.opacity = '.5';
+            try {
+                let r; try { r = await fotosCall('img=' + encodeURIComponent(f.full)); } catch (_) { r = await fotosCall('img=' + encodeURIComponent(f.thumb)); }
+                const b = await r.blob(); const file = new File([b], 'foto.jpg', { type: b.type || 'image/jpeg' });
+                await mepFotoEscolhida({ files: [file], value: '' });
+                mepFotoCredito = f.credit || '';
+                document.getElementById('mep-fl-msg').innerHTML = mepFotoCredito ? '<i class="fas fa-circle-info mr-1"></i>Crédito: ' + escapeHtml(mepFotoCredito) : '';
+            } catch (e) { console.error(e); dsToast('Não foi possível usar esta foto. Escolha outra.', true); }
+            finally { pv.style.opacity = ''; }
+        }
         async function mepFotoEnviar(m) {
             if (!m || typeof m.image !== 'string' || !m.image.startsWith('data:') || !currentUser || !dataOwnerId) return;
             try { m.image = await uploadPhoto(m.image, 'mep_' + String(m.id).replace(/[^a-z0-9_-]/gi, '')); saveStorage(); mepRefresh(); }
@@ -24221,7 +24269,7 @@ async function dsTrPreparar() {
             const obj = Object.assign({}, old || {}, {
                 id: id || 'mep_' + Date.now(), name, icon: g('mep-icon').value.trim() || '🥣', area: g('mep-area').value,
                 yieldQty: num(g('mep-yq').value) || 1, yieldUnit: g('mep-yu').value, storage: g('mep-cons').value,
-                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients, image: mepFoto || '',
+                shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients, image: mepFoto || '', imageCredit: mepFoto ? mepFotoCredito : '',
                 steps: g('mep-steps').value.split('\n').map(s => s.trim()).filter(Boolean)
             });
             if (old) {
@@ -24654,6 +24702,36 @@ async function dsTrPreparar() {
                 } catch (e) { console.error(e); }
                 return r;
             };
+        })();
+    </script>
+    <style>
+        /* Ficha aberta: cabe sempre no ecrã (cabeçalho e rodapé fixos, conteúdo com scroll) e a foto aparece inteira */
+        #recipe-view-modal { padding: 12px !important; }
+        #recipe-view-modal > div { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); margin: auto; }
+        #recipe-view-modal #view-modal-header { flex: 0 0 auto; padding: 16px 20px; }
+        #recipe-view-modal #view-recipe-name { font-size: clamp(20px, 2.6vw, 28px); line-height: 1.15; }
+        #vr-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        #vr-media { position: relative; height: clamp(150px, 30vh, 300px); overflow: hidden; background: #F1ECE4; }
+        #vr-media:has(> img.hidden) { display: none; }
+        #vr-media::before { content: ''; position: absolute; inset: -20px; background: var(--vr-bg) center / cover no-repeat; filter: blur(18px) saturate(1.1); opacity: .55; }
+        #vr-media > img { position: relative; width: 100%; height: 100% !important; max-height: none !important; object-fit: contain !important; }
+        #vr-media #view-photo-credit { position: absolute; right: 8px; bottom: 6px; background: rgba(255,255,255,.85); border-radius: 8px; padding: 2px 8px !important; }
+        #recipe-view-modal #vr-scroll > .grid { padding: 16px !important; gap: 14px !important; }
+        #recipe-view-modal #vr-scroll > .grid > div { padding: 16px 18px !important; }
+        #recipe-view-modal > div > div:last-child { flex: 0 0 auto; padding: 10px 16px !important; }
+        #recipe-view-modal > div:has(#view-actions) > div:has(> #view-recipe-edit-btn) { display: none !important; }
+    </style>
+    <script>
+        (function () {
+            const img = document.getElementById('view-recipe-image'); if (!img || document.getElementById('vr-scroll')) return;
+            const cx = img.parentElement, grid = img.nextElementSibling;
+            const sc = document.createElement('div'); sc.id = 'vr-scroll';
+            const md = document.createElement('div'); md.id = 'vr-media';
+            cx.insertBefore(sc, img); md.appendChild(img); sc.appendChild(md); if (grid) sc.appendChild(grid);
+            const bg = () => md.style.setProperty('--vr-bg', img.getAttribute('src') ? `url("${img.getAttribute('src').replace(/"/g, '%22')}")` : 'none');
+            new MutationObserver(bg).observe(img, { attributes: true, attributeFilter: ['src'] }); bg();
+            const oV = openRecipeViewModal;
+            openRecipeViewModal = function () { const r = oV.apply(this, arguments); sc.scrollTop = 0; return r; };
         })();
     </script>
 </body>

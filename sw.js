@@ -1,6 +1,6 @@
 // Dio’Stock — service worker: abre o app mesmo com internet fraca.
 // Os dados (Supabase) vão sempre à rede; só o próprio app fica guardado.
-const CACHE = 'diostock-1795504730';
+const CACHE = 'diostock-1795505075';
 const APP = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './termos.html', './ajuda.html', './fontes/fontes.css', './vendor/fa/css/all.min.css'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(APP)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
