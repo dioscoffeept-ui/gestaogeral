@@ -24045,7 +24045,7 @@ async function dsTrPreparar() {
             document.getElementById('mep-prod')?.remove();
             document.body.insertAdjacentHTML('beforeend', `<div id="mep-prod" class="fixed inset-0 flex items-center justify-center p-4" style="z-index:95;background:rgba(15,23,42,.55)" onclick="if(event.target===this)this.remove()">
               <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-5 space-y-4">
-                <div class="flex items-start gap-3"><div class="text-3xl leading-none">${escapeHtml(m.icon || '🥣')}</div><div class="min-w-0"><h3 class="text-lg font-black text-slate-900 leading-tight">Produzi ${escapeHtml(m.name)}</h3><p class="text-xs text-slate-500 mt-0.5">1 receita rende ${fmtQty(y, yu)}${medio && Math.abs(medio - y) >= 0.1 ? ` · em média tem rendido ${fmtQty(medio, yu)}` : ''}</p></div></div>
+                <div class="flex items-start gap-3">${m.icon ? `<div class="text-3xl leading-none">${escapeHtml(m.icon)}</div>` : ''}<div class="min-w-0"><h3 class="text-lg font-black text-slate-900 leading-tight">Produzi ${escapeHtml(m.name)}</h3><p class="text-xs text-slate-500 mt-0.5">1 receita rende ${fmtQty(y, yu)}${medio && Math.abs(medio - y) >= 0.1 ? ` · em média tem rendido ${fmtQty(medio, yu)}` : ''}</p></div></div>
                 <div><label class="block text-xs font-black text-slate-700 mb-1">Quanto produziu?</label>
                   <div class="flex items-center gap-2"><input id="mep-prod-q" type="number" inputmode="decimal" min="0" step="any" value="${Math.round(sugR * y * 100) / 100}" oninput="this.dataset.mexeu='1'" class="flex-1 text-2xl font-black rounded-xl border-slate-300 py-2 px-3"><span class="text-sm font-bold text-slate-600">${escapeHtml(yu)}</span></div>
                   <p class="text-[11px] text-slate-400 mt-1">Escreva o que saiu de verdade, mesmo que seja diferente do que a receita rende.</p></div>
@@ -24163,7 +24163,7 @@ async function dsTrPreparar() {
                     </div>
                   </div>
                   <div class="grid gap-3" style="grid-template-columns:72px 1fr">
-                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Ícone</label><input id="mep-icon" maxlength="4" class="w-full text-center text-xl rounded-xl border-slate-300" placeholder="🥣"></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Ícone <span class="font-semibold text-slate-400">(opcional)</span></label><input id="mep-icon" maxlength="4" class="w-full text-center text-xl rounded-xl border-slate-300" placeholder="—"></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Nome *</label><input id="mep-name" required class="w-full text-sm font-bold rounded-xl border-slate-300" placeholder="Ex.: Pack Bali Green congelado"></div>
                   </div>
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -24230,8 +24230,8 @@ async function dsTrPreparar() {
         let mepFoto = null, mepFotoOrig = null;
         function mepFotoPintar() {
             const pv = document.getElementById('mep-foto-prev'); if (!pv) return;
-            const ic = (document.getElementById('mep-icon') || {}).value || '🥣';
-            pv.innerHTML = mepFoto ? `<img src="${escapeHtml(mepFoto)}" alt="" class="w-full h-full object-cover">` : escapeHtml(ic);
+            const ic = (document.getElementById('mep-icon') || {}).value || '';
+            pv.innerHTML = mepFoto ? `<img src="${escapeHtml(mepFoto)}" alt="" class="w-full h-full object-cover">` : ic ? escapeHtml(ic) : '<i class="fas fa-camera text-xl text-slate-300"></i>';
             document.getElementById('mep-foto-rm').classList.toggle('hidden', !mepFoto);
             document.getElementById('mep-foto-aj').classList.toggle('hidden', !mepFotoOrig);
         }
@@ -24310,7 +24310,7 @@ async function dsTrPreparar() {
             if (ingredients.some(i => normTxt(i.name) === normTxt(name))) return dsCartao({ tipo: 'alert', msg: 'A mise en place não pode ser ingrediente dela própria.' });
             const old = id ? mepList().find(x => x.id === id) : null;
             const obj = Object.assign({}, old || {}, {
-                id: id || 'mep_' + Date.now(), name, icon: g('mep-icon').value.trim() || '🥣', area: g('mep-area').value,
+                id: id || 'mep_' + Date.now(), name, icon: g('mep-icon').value.trim(), area: g('mep-area').value,
                 yieldQty: num(g('mep-yq').value) || 1, yieldUnit: g('mep-yu').value, storage: g('mep-cons').value,
                 shelfDays: Math.max(0, Math.round(num(g('mep-days').value) || 0)), ingredients, image: mepFoto || '', imageCredit: mepFoto ? mepFotoCredito : '',
                 steps: g('mep-steps').value.split('\n').map(s => s.trim()).filter(Boolean)
@@ -24360,7 +24360,7 @@ async function dsTrPreparar() {
                 const baixo = (Number(p.tenho) || 0) < (Number(p.meta) || 0);
                 return `<div class="recipe-card-bar rounded-2xl p-4 flex flex-col gap-3">
                     ${m.image ? `<div class="-mx-4 -mt-4 rounded-t-2xl overflow-hidden bg-slate-100" style="aspect-ratio:4/3"><img src="${escapeHtml(m.image)}" alt="" loading="lazy" class="w-full h-full object-cover"></div>` : ''}
-                    <div class="flex items-start gap-3">${m.image ? '' : `<div class="text-3xl leading-none">${escapeHtml(m.icon || '🥣')}</div>`}
+                    <div class="flex items-start gap-3">${m.image || !m.icon ? '' : `<div class="text-3xl leading-none">${escapeHtml(m.icon)}</div>`}
                         <div class="min-w-0 flex-1"><h4 class="font-extrabold text-slate-900 leading-tight">${escapeHtml(m.name)}</h4>
                         <div class="flex flex-wrap items-center gap-1.5 mt-1">${mepConsBadge(m)}<span class="text-[10px] font-bold text-slate-500">${(m.area || 'BAR') === 'KITCHEN' ? 'Cozinha' : 'Bar'}</span>${m.shelfDays ? `<span class="text-[10px] text-slate-500">· validade ${m.shelfDays} d</span>` : ''}</div></div></div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
@@ -24389,7 +24389,7 @@ async function dsTrPreparar() {
                     const p = mepStockOf(m), yu = m.yieldUnit || 'un', falta = prepFalta(p), val = mepValidade(m);
                     const receitas = falta ? Math.ceil(falta / mepYield(m) * 10) / 10 : 0;
                     return `<tr class="border-b border-slate-100">
-                        <td class="px-4 py-3"><div class="flex items-center gap-2">${m.image ? `<img src="${escapeHtml(m.image)}" alt="" loading="lazy" class="w-10 h-10 rounded-lg object-cover shrink-0">` : `<span class="text-xl">${escapeHtml(m.icon || '🥣')}</span>`}<div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
+                        <td class="px-4 py-3"><div class="flex items-center gap-2">${m.image ? `<img src="${escapeHtml(m.image)}" alt="" loading="lazy" class="w-10 h-10 rounded-lg object-cover shrink-0">` : (m.icon ? `<span class="text-xl">${escapeHtml(m.icon)}</span>` : '')}<div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
                         <td data-label="Tenho" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
                         <td data-label="Quero ter" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
                         <td data-label="Validade" class="px-4 py-3">${val.html}</td>
