@@ -1331,7 +1331,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 08:00</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 24/11/2026 17:36</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -25138,84 +25138,233 @@ async function dsTrPreparar() {
         }
         const fmMelhor = (cid, sid) => fmRes.filter(r => r.curso_id === cid && r.quem_id === sid).reduce((m, r) => !m || r.nota > m.nota ? r : m, null);
 
+        // ---------- quem está a fazer: cada pessoa faz pela sua conta
+        // A pessoa é a conta com sessão iniciada. Liga-se à ficha da Equipe pelo e-mail, ou pela escolha feita uma vez.
+        const fmUid = () => (currentUser && currentUser.id) || '';
+        const fmXp = r => r.xp != null ? Number(r.xp) || 0 : (Number(r.certas) || 0) * 10;
+        const fmNivel = xp => { let n = 1; while (xp >= 50 * n * (n + 1)) n++; return n; };      // 1: 0–99 · 2: 100–299 · 3: 300–599 …
+        const fmNivelBase = n => 50 * (n - 1) * n;
+        const fmIni = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+        const fmCor = k => EQ_CORES[[...String(k || '')].reduce((a, c) => a + c.charCodeAt(0), 0) % EQ_CORES.length];
+        function fmLigados() { const m = {}; fmRes.forEach(r => { if (r.quem_id && r.membro_id && !m[r.quem_id]) m[r.quem_id] = r.membro_id; }); return m; }
+        function fmEuStaff() {
+            const st = fmStaff(), em = String((currentUser && currentUser.email) || '').toLowerCase(), uid = fmUid();
+            let s = em && st.find(x => String(x.email || '').toLowerCase() === em); if (s) return s;
+            const r = fmRes.find(x => x.membro_id === uid && x.quem_id); if (r) { s = st.find(x => x.id === r.quem_id); if (s) return s; }
+            let id = ''; try { id = localStorage.getItem('fm_eu_' + uid) || ''; } catch (_) {}
+            return st.find(x => x.id === id) || null;
+        }
+        function fmEuNome() { const s = fmEuStaff(); if (s) return s.nome; if (currentRole === 'dono') return 'Responsável'; const em = (currentUser && currentUser.email) || ''; return em.split('@')[0] || 'Eu'; }
+        function fmSequencia(res) {
+            const dias = new Set(res.map(r => eqKey(new Date(r.criado_em)))); let d = new Date(); if (!dias.has(eqKey(d))) d = eqMais(d, -1);
+            let n = 0; while (dias.has(eqKey(d))) { n++; d = eqMais(d, -1); } return n;
+        }
+        // resultados agrupados por pessoa (conta); resultados antigos sem conta ficam pelo nome escolhido
+        function fmPessoas() {
+            const m = new Map(), st = fmStaff();
+            fmRes.forEach(r => {
+                const k = r.membro_id || ('s:' + (r.quem_id || r.quem_nome || '?'));
+                if (!m.has(k)) m.set(k, { k, membro: r.membro_id || null, quem_id: r.quem_id || null, nome: r.quem_nome || '', res: [] });
+                const o = m.get(k); o.res.push(r); if (!o.quem_id && r.quem_id) o.quem_id = r.quem_id; if (!o.nome && r.quem_nome) o.nome = r.quem_nome;
+            });
+            const semana = Date.now() - 7 * 864e5;
+            return [...m.values()].map(o => {
+                o.res.sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em));
+                const s = st.find(x => x.id === o.quem_id); if (s) { o.nome = s.nome; o.staff = s; }
+                if (!o.nome) o.nome = 'Sem nome';
+                o.xp = o.res.reduce((a, r) => a + fmXp(r), 0); o.nivel = fmNivel(o.xp); o.seq = fmSequencia(o.res);
+                o.xpSem = o.res.filter(r => new Date(r.criado_em) >= semana).reduce((a, r) => a + fmXp(r), 0);
+                o.ult = o.res[o.res.length - 1];
+                o.eu = !!o.membro && o.membro === fmUid();
+                return o;
+            });
+        }
+        const fmPassou = (c, r) => r && r.nota >= (c.minimo || 80);
+        const fmMeuMelhor = cid => fmRes.filter(r => r.curso_id === cid && r.membro_id === fmUid()).reduce((m, r) => !m || r.nota > m.nota ? r : m, null);
+        // melhor resultado de uma pessoa da Equipe num curso (pela conta ligada ou pela escolha antiga)
+        function fmMelhorStaff(cid, sid) { const lig = fmLigados()[sid]; return fmRes.filter(r => r.curso_id === cid && (r.quem_id === sid || (lig && r.membro_id === lig))).reduce((m, r) => !m || r.nota > m.nota ? r : m, null); }
+
         // ---------- ecrã da Formação
         function fmPintar() {
             const el = document.getElementById('eq-corpo'); if (!el) return;
-            const f = fmDados(), ed = eqPodeEditar(), staff = fmStaff();
-            const sug = fmSugestoes();
-            el.innerHTML = `<div class="fm-ass"><h3>💬 Pergunte à casa</h3><p class="sub">Dúvidas sobre o menu, as receitas, os alergénios e as regras. As respostas vêm das fichas técnicas e dos documentos da empresa.</p>
+            fmCss();
+            const f = fmDados(), ed = eqPodeEditar(), staff = fmStaff(), sug = fmSugestoes();
+            const pessoas = fmPessoas(), eu = pessoas.find(p => p.eu);
+            const xp = eu ? eu.xp : 0, nv = fmNivel(xp), base = fmNivelBase(nv), prox = fmNivelBase(nv + 1);
+            const feitos = f.cursos.filter(c => fmPassou(c, fmMeuMelhor(c.id))).length;
+            const me = `<div class="fmx-me"><div class="av" style="background:${fmCor(fmUid())}">${escapeHtml(fmIni(fmEuNome()))}</div>
+                <div class="tx"><b>${escapeHtml(fmEuNome())}</b><span>Nível ${nv} · ${xp} XP</span><div class="nb" title="${xp - base} de ${prox - base} XP para o nível ${nv + 1}"><i style="width:${Math.min(100, Math.round((xp - base) / (prox - base) * 100))}%"></i></div><small>Faltam ${prox - xp} XP para o nível ${nv + 1}</small></div>
+                <div class="ks"><span title="Dias seguidos a aprender"><em>🔥</em><b>${eu ? eu.seq : 0}</b><small>${(eu && eu.seq === 1) ? 'dia' : 'dias'}</small></span><span title="Cursos concluídos"><em>🏆</em><b>${feitos}/${f.cursos.length}</b><small>cursos</small></span></div></div>`;
+            const cursos = f.cursos.length ? `<div class="fm-cursos">${f.cursos.map(c => fmCursoCard(c, staff)).join('')}</div>`
+                : `<div class="eq-card eq-vazio" style="margin-top:12px"><b>Ainda sem cursos</b><p>${ed ? 'Escolha as fichas que a equipa tem de saber e a app faz o quiz sozinha. Pode juntar textos com as regras da casa.' : 'O responsável ainda não criou cursos.'}</p>${ed ? '<button type="button" class="eq-b p" onclick="fmEditar()"><i class="fas fa-plus"></i>Criar o primeiro curso</button>' : ''}</div>`;
+            el.innerHTML = `${me}
+                <div class="eq-bar" style="margin-top:18px"><b style="font-size:16px;font-weight:900">Cursos</b>${ed ? `<span style="flex:1"></span><button type="button" class="eq-b p" onclick="fmEditar()"><i class="fas fa-plus"></i>Novo curso</button>` : ''}</div>
+                ${cursos}
+                <div id="fmx-painel">${fmPainelHtml(pessoas, f.cursos, staff, ed)}</div>
+                <div class="fm-ass" style="margin-top:18px"><h3>💬 Pergunte à casa</h3><p class="sub">Dúvidas sobre o menu, as receitas, os alergénios e as regras. As respostas vêm das fichas técnicas e dos documentos da empresa.</p>
                 <form onsubmit="event.preventDefault();fmPerguntarUI()"><input id="fm-q" placeholder="Ex.: o que leva o Mojito?" autocomplete="off" enterkeyhint="send"><button type="submit" aria-label="Perguntar"><i class="fas fa-paper-plane"></i></button></form>
                 <div class="fm-sug">${sug.map(s => `<button type="button" onclick="document.getElementById('fm-q').value=this.textContent;fmPerguntarUI()">${escapeHtml(s)}</button>`).join('')}</div>
-                <div class="fm-resp" id="fm-resp">${fmConversa.map(fmMsgHtml).join('')}</div></div>
-                <div class="eq-bar" style="margin-top:16px"><b style="font-size:16px;font-weight:900">Cursos</b>${ed ? `<span style="flex:1"></span><button type="button" class="eq-b" onclick="fmAuto()"><i class="fas fa-wand-magic-sparkles"></i>Criar a partir das fichas</button><button type="button" class="eq-b p" onclick="fmEditar()"><i class="fas fa-plus"></i>Novo curso</button>` : ''}</div>
-                ${f.cursos.length ? `<div class="fm-cursos">${f.cursos.map(c => fmCursoCard(c, staff)).join('')}</div>` : `<div class="eq-card eq-vazio" style="margin-top:12px"><b>Ainda sem cursos</b><p>${ed ? 'Crie um curso a partir das fichas (ex.: "Bebidas do bar") e a app faz o quiz sozinha. Pode juntar textos e documentos com as regras da casa.' : 'O responsável ainda não criou cursos.'}</p>${ed ? '<button type="button" class="eq-b p" onclick="fmAuto()"><i class="fas fa-wand-magic-sparkles"></i>Criar a partir das fichas</button>' : ''}</div>`}
-                ${ed && f.cursos.length && staff.length ? fmProgressoHtml(f.cursos, staff) : ''}`;
+                <div class="fm-resp" id="fm-resp">${fmConversa.map(fmMsgHtml).join('')}</div></div>`;
             if (!fmResCarregado || fmResDono !== dataOwnerId) fmCarregarRes().then(ok => { if (ok && eqVista === 'formacao') fmPintar(); });
         }
-        function fmCursoCard(c, staff) {
-            const alvo = staff.filter(s => fmParaMim(c, s)), feitos = alvo.filter(s => { const m = fmMelhor(c.id, s.id); return m && m.nota >= (c.minimo || 80); }).length;
-            const nl = (c.licoes || []).length;
-            return `<div class="fm-c"><b>${escapeHtml(c.titulo)}</b><small>${c.para && c.para.length ? 'Para: ' + escapeHtml(c.para.join(', ')) : 'Para toda a equipa'} · ${nl} ${nl === 1 ? 'lição' : 'lições'} · quiz</small>
+        function fmCursoCard(c) {
+            const m = fmMeuMelhor(c.id), ok = fmPassou(c, m), nl = (c.licoes || []).length;
+            const f1 = (c.licoes || []).map(l => l.tipo === 'ficha' ? fmFicha(l.id) : null).find(r => r && (typeof getRecipeImage === 'function' ? getRecipeImage(r) : r.image));
+            const img = f1 ? (typeof getRecipeImage === 'function' ? getRecipeImage(f1) : f1.image) : '';
+            const pct = m ? m.nota : 0, R = 22, P = 2 * Math.PI * R;
+            return `<div class="fm-c fmx-cc${ok ? ' ok' : ''}">
+                <div class="hd">${img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy">` : `<span class="ic"><i class="fas fa-graduation-cap"></i></span>`}
+                <svg class="rg" viewBox="0 0 52 52" aria-label="${m ? 'Melhor nota ' + m.nota + '%' : 'Por fazer'}"><circle cx="26" cy="26" r="${R}" class="t"/><circle cx="26" cy="26" r="${R}" class="v" style="stroke-dasharray:${P};stroke-dashoffset:${P * (1 - pct / 100)}"/><text x="26" y="30" text-anchor="middle">${ok ? '✓' : m ? m.nota + '%' : ''}</text></svg></div>
+                <b>${escapeHtml(c.titulo)}</b><small>${c.para && c.para.length ? 'Para: ' + escapeHtml(c.para.join(', ')) : 'Para toda a equipa'} · ${nl} ${nl === 1 ? 'lição' : 'lições'} · quiz</small>
                 ${c.descricao ? `<small style="color:#5B4A40">${escapeHtml(c.descricao)}</small>` : ''}
-                ${alvo.length ? `<div class="bar" title="${feitos} de ${alvo.length}"><i style="width:${Math.round(feitos / alvo.length * 100)}%"></i></div><small>${feitos} de ${alvo.length} ${alvo.length === 1 ? 'pessoa passou' : 'pessoas passaram'}</small>` : ''}
-                <div class="ac"><button type="button" class="p" onclick="fmJogar('${c.id}')"><i class="fas fa-play mr-1"></i>Fazer</button>${eqPodeEditar() ? `<button type="button" onclick="fmEditar('${c.id}')"><i class="fas fa-pen mr-1"></i>Editar</button>` : ''}</div></div>`;
+                <div class="ac"><button type="button" class="p" onclick="fmJogar('${c.id}')"><i class="fas ${ok ? 'fa-rotate' : 'fa-play'} mr-1"></i>${ok ? 'Repetir' : m ? 'Tentar de novo' : 'Começar'}</button>${eqPodeEditar() ? `<button type="button" onclick="fmEditar('${c.id}')"><i class="fas fa-pen mr-1"></i>Editar</button>` : ''}</div></div>`;
         }
-        function fmProgressoHtml(cursos, staff) {
-            return `<div class="eq-card" style="margin-top:16px;overflow-x:auto"><b style="font-size:15px;font-weight:900">Quem já fez</b>
+        // painel de evolução: liga da semana, evolução por semana e quem já fez cada curso
+        function fmPainelHtml(pessoas, cursos, staff, ed) {
+            if (!fmResCarregado) return '';
+            const liga = pessoas.slice().sort((a, b) => b.xpSem - a.xpSem || b.xp - a.xp);
+            const linhaP = (p, i) => `<button type="button" class="fmx-lg${p.eu ? ' eu' : ''}" onclick="fmPessoaVer('${escapeHtml(p.k)}')"><span class="ps">${i + 1}</span><span class="av" style="background:${fmCor(p.k)}">${escapeHtml(fmIni(p.nome))}</span><span class="nm"><b>${escapeHtml(p.nome)}${p.eu ? ' (eu)' : ''}</b><small>Nível ${p.nivel} · ${p.seq ? '🔥 ' + p.seq + (p.seq === 1 ? ' dia' : ' dias') + ' · ' : ''}${p.ult ? 'último ' + new Date(p.ult.criado_em).toLocaleDateString('pt-PT') : ''}</small></span>${fmSpark(p.res.slice(-8).map(r => r.nota))}<span class="xp">${p.xpSem} XP</span></button>`;
+            let h = `<div class="eq-card fmx-cd" style="margin-top:18px"><div class="eq-bar" style="margin:0"><b style="font-size:15px;font-weight:900">🏅 Liga da semana</b><span style="flex:1"></span><small style="color:#7A6A60">XP dos últimos 7 dias</small></div>
+                ${liga.length ? liga.slice(0, ed ? 50 : 10).map(linhaP).join('') : `<p class="fmx-nota">Ainda ninguém fez um curso. Cada pessoa entra com a sua conta e faz os cursos; o progresso aparece aqui.</p>`}</div>`;
+            if (!ed) {
+                const meus = fmRes.filter(r => r.membro_id === fmUid()).slice(0, 8);
+                if (meus.length) h += `<div class="eq-card fmx-cd" style="margin-top:14px"><b style="font-size:15px;font-weight:900">O meu histórico</b>${meus.map(r => fmResLinha(r)).join('')}</div>`;
+                return h;
+            }
+            // evolução: XP e nota média por semana (8 semanas)
+            const seg0 = eqSegunda(new Date()), sem = [];
+            for (let i = 7; i >= 0; i--) { const a = eqMais(seg0, -7 * i), b = eqMais(a, 7); const rs = fmRes.filter(r => { const d = new Date(r.criado_em); return d >= a && d < b; }); sem.push({ a, xp: rs.reduce((s, r) => s + fmXp(r), 0), n: rs.length, media: rs.length ? Math.round(rs.reduce((s, r) => s + r.nota, 0) / rs.length) : null, pessoas: new Set(rs.map(r => r.membro_id || r.quem_id)).size }); }
+            const ult = sem[sem.length - 1], max = Math.max(50, ...sem.map(s => s.xp));
+            const r30 = fmRes.filter(r => new Date(r.criado_em) >= Date.now() - 30 * 864e5);
+            const media30 = r30.length ? Math.round(r30.reduce((s, r) => s + r.nota, 0) / r30.length) : null;
+            const alvoTot = cursos.reduce((a, c) => a + staff.filter(s => fmParaMim(c, s)).length, 0);
+            const passTot = cursos.reduce((a, c) => a + staff.filter(s => fmParaMim(c, s) && fmPassou(c, fmMelhorStaff(c.id, s.id))).length, 0);
+            const kpi = (v, l) => `<div class="k"><b>${v}</b><small>${l}</small></div>`;
+            h += `<div class="eq-card fmx-cd" style="margin-top:14px"><b style="font-size:15px;font-weight:900">📈 Evolução da equipa</b>
+                <div class="fmx-kpi">${kpi(ult.pessoas, 'pessoas a aprender esta semana')}${kpi(ult.xp + ' XP', 'ganhos esta semana')}${kpi(media30 == null ? '—' : media30 + '%', 'nota média (30 dias)')}${kpi(alvoTot ? Math.round(passTot / alvoTot * 100) + '%' : '—', 'dos cursos concluídos')}</div>
+                <div class="fmx-ch" role="img" aria-label="XP por semana nas últimas 8 semanas">${sem.map((s, i) => `<div class="c" title="${s.xp} XP · ${s.n} ${s.n === 1 ? 'quiz' : 'quizzes'}${s.media != null ? ' · média ' + s.media + '%' : ''}"><span class="v">${s.xp || ''}</span><i style="height:${Math.max(2, Math.round(s.xp / max * 100))}%" class="${i === sem.length - 1 ? 'on' : ''}"></i><small>${s.a.getDate()}/${s.a.getMonth() + 1}</small></div>`).join('')}</div></div>`;
+            if (cursos.length && staff.length) h += `<div class="eq-card fmx-cd" style="margin-top:14px;overflow-x:auto"><b style="font-size:15px;font-weight:900">Quem já fez cada curso</b>
                 <table class="fm-tab"><thead><tr><th>Pessoa</th>${cursos.map(c => `<th>${escapeHtml(c.titulo)}</th>`).join('')}</tr></thead><tbody>
-                ${staff.map(s => `<tr><td><b>${escapeHtml(s.nome)}</b>${s.funcao ? `<br><small style="color:#7A6A60">${escapeHtml(s.funcao)}</small>` : ''}</td>${cursos.map(c => { if (!fmParaMim(c, s)) return '<td style="color:#C9BBAF">—</td>'; const m = fmMelhor(c.id, s.id); return m ? `<td class="${m.nota >= (c.minimo || 80) ? 'ok' : 'nao'}">${m.nota >= (c.minimo || 80) ? '✓' : '✗'} ${m.nota}%<br><small style="font-weight:600;color:#7A6A60">${new Date(m.criado_em).toLocaleDateString('pt-PT')}</small></td>` : '<td style="color:#7A6A60">por fazer</td>'; }).join('')}</tr>`).join('')}
-                </tbody></table></div>`;
+                ${staff.map(s => `<tr><td><b>${escapeHtml(s.nome)}</b>${s.funcao ? `<br><small style="color:#7A6A60">${escapeHtml(s.funcao)}</small>` : ''}${fmLigados()[s.id] ? '' : '<br><small style="color:#B45309">ainda não entrou</small>'}</td>${cursos.map(c => { if (!fmParaMim(c, s)) return '<td style="color:#C9BBAF">—</td>'; const m = fmMelhorStaff(c.id, s.id); return m ? `<td class="${fmPassou(c, m) ? 'ok' : 'nao'}">${fmPassou(c, m) ? '✓' : '✗'} ${m.nota}%<br><small style="font-weight:600;color:#7A6A60">${new Date(m.criado_em).toLocaleDateString('pt-PT')}</small></td>` : '<td style="color:#7A6A60">por fazer</td>'; }).join('')}</tr>`).join('')}
+                </tbody></table><p class="fmx-nota">Cada pessoa entra com a sua conta (Definições → Colaboradores) e escolhe o seu nome na primeira vez.</p></div>`;
+            return h;
+        }
+        function fmSpark(v) {
+            if (v.length < 2) return '<span class="sp"></span>';
+            const w = 64, h = 22, pts = v.map((n, i) => `${(i / (v.length - 1) * w).toFixed(1)},${(h - 2 - n / 100 * (h - 4)).toFixed(1)}`).join(' ');
+            return `<svg class="sp" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+        }
+        function fmResLinha(r) {
+            const c = fmDados().cursos.find(x => x.id === r.curso_id), ok = c ? fmPassou(c, r) : r.nota >= 80;
+            return `<div class="fmx-hl"><span class="${ok ? 'ok' : 'nao'}">${ok ? '✓' : '✗'}</span><span class="nm"><b>${escapeHtml((c && c.titulo) || r.curso_titulo || 'Curso apagado')}</b><small>${new Date(r.criado_em).toLocaleString('pt-PT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></span><b>${r.nota}%</b><span class="xp">+${fmXp(r)} XP</span></div>`;
+        }
+        function fmPessoaVer(k) {
+            const p = fmPessoas().find(x => x.k === k); if (!p) return;
+            const v = p.res.map(r => r.nota), w = 300, h = 110;
+            const pts = v.map((n, i) => `${(v.length < 2 ? w / 2 : 12 + i / (v.length - 1) * (w - 24)).toFixed(1)},${(h - 14 - n / 100 * (h - 28)).toFixed(1)}`);
+            dsModal('fmx-pes', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div class="flex items-center gap-3"><span class="fmx-av" style="background:${fmCor(p.k)}">${escapeHtml(fmIni(p.nome))}</span><div><h3>${escapeHtml(p.nome)}</h3><p class="sub">Nível ${p.nivel} · ${p.xp} XP · ${p.seq ? '🔥 ' + p.seq + (p.seq === 1 ? ' dia seguido' : ' dias seguidos') : 'sem sequência ativa'}</p></div></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fmx-pes')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
+                <div class="tit">Notas ao longo do tempo</div><svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto" role="img" aria-label="Evolução das notas"><line x1="0" x2="${w}" y1="${h - 14 - 0.8 * (h - 28)}" y2="${h - 14 - 0.8 * (h - 28)}" stroke="#E4DCCF" stroke-dasharray="4 4"/><text x="${w - 2}" y="${h - 18 - 0.8 * (h - 28)}" text-anchor="end" font-size="9" fill="#7A6A60">80%</text>${v.length > 1 ? `<polyline points="${pts.join(' ')}" fill="none" stroke="#983808" stroke-width="2.5" stroke-linejoin="round"/>` : ''}${pts.map(q => `<circle cx="${q.split(',')[0]}" cy="${q.split(',')[1]}" r="3.5" fill="#983808"/>`).join('')}</svg>
+                <div class="tit">Histórico</div>${p.res.slice().reverse().slice(0, 30).map(fmResLinha).join('')}
+                <div class="acoes"><button type="button" class="p" onclick="dsModalFechar('fmx-pes')">Fechar</button></div></div>`);
         }
 
-        // ---------- criar e editar cursos
-        let fmEd = null;
+        // ---------- criar e editar cursos (3 passos: conteúdo · detalhes · quiz)
+        let fmEd = null, fmEdPasso = 1, fmEdBusca = '', fmEdCat = '';
         function fmEditar(id) {
             if (!eqPodeEditar()) return;
+            fmCss();
             const c = id ? fmDados().cursos.find(x => x.id === id) : null;
             fmEd = c ? JSON.parse(JSON.stringify(c)) : { id: fmId(), titulo: '', descricao: '', para: [], licoes: [], perguntas: [], auto: true, nPerg: 8, minimo: 80 };
-            fmEdPintar(!!c);
+            fmEd._novo = !c; fmEdPasso = 1; fmEdBusca = ''; fmEdCat = '';
+            fmEdPintar();
         }
-        function fmEdPintar(existe) {
-            const c = fmEd, pub = fmPublico();
-            const recs = (appState.recipes || []).slice().sort((a, b) => String(a.category || '').localeCompare(String(b.category || '')) || String(a.name).localeCompare(String(b.name)));
-            const docs = eqDados().docs;
-            dsModal('fm-ed', `<div class="eq-m"><div class="flex items-start justify-between gap-3"><div><h3>${existe ? 'Editar curso' : 'Novo curso'}</h3><p class="sub">Lições (fichas, textos e documentos) e um quiz no fim.</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fm-ed')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
-                <label class="f">Nome do curso<input id="fme-t" maxlength="60" value="${escapeHtml(c.titulo)}" placeholder="Ex.: Bebidas do bar"></label>
-                <label class="f">Descrição (opcional)<input id="fme-d" maxlength="140" value="${escapeHtml(c.descricao || '')}" placeholder="Ex.: Tudo o que um barista novo tem de saber"></label>
-                <div class="tit">Para quem</div><div class="chips">${pub.map(p => `<button type="button" class="${c.para.includes(p) ? 'on' : ''}" onclick="fmEdPara(this,'${escapeHtml(p).replace(/'/g, '&#39;')}')">${escapeHtml(p)}</button>`).join('')}</div><p class="sub" style="margin-top:4px">Sem nada escolhido, o curso é para toda a equipa.</p>
-                <div class="tit">Lições</div><div class="lst">${c.licoes.map((l, i) => `<div><i class="fas ${l.tipo === 'ficha' ? 'fa-utensils' : l.tipo === 'doc' ? 'fa-file-lines' : 'fa-paragraph'}" style="color:var(--brand)"></i><span>${escapeHtml(fmLicTitulo(l))}</span><button type="button" onclick="fmEdMover(${i},-1)" aria-label="Subir"><i class="fas fa-arrow-up"></i></button><button type="button" onclick="fmEdTirar(${i})" aria-label="Tirar" style="color:#B91C1C"><i class="fas fa-trash"></i></button></div>`).join('') || '<p class="sub">Ainda sem lições.</p>'}</div>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    <select id="fme-ficha" style="flex:1;min-width:180px"><option value="">+ Juntar ficha técnica…</option><option value="*BAR">Todas as fichas do bar</option><option value="*KITCHEN">Todas as fichas da cozinha</option>${[...new Set(recs.map(r => r.category).filter(Boolean))].map(cat => `<option value="#${escapeHtml(cat)}">Categoria: ${escapeHtml(cat)}</option>`).join('')}${recs.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('')}</select>
-                    <button type="button" class="eq-b" onclick="fmEdJuntarFicha()">Juntar</button></div>
-                <div class="flex flex-wrap gap-2 mt-2">${docs.length ? `<select id="fme-doc" style="flex:1;min-width:180px"><option value="">+ Juntar documento…</option>${docs.map(d => `<option value="${d.id}">${escapeHtml(d.nome)}</option>`).join('')}</select><button type="button" class="eq-b" onclick="fmEdJuntarDoc()">Juntar</button>` : ''}<button type="button" class="eq-b" onclick="fmEdTexto()"><i class="fas fa-paragraph"></i>Escrever lição</button></div>
-                <div class="tit">Quiz</div>
-                <label class="ck" style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:14px"><input type="checkbox" id="fme-auto" ${c.auto ? 'checked' : ''}> Criar perguntas automáticas a partir das fichas das lições</label>
-                <div class="grid grid-cols-2 gap-2"><label class="f">Perguntas por quiz<select id="fme-n">${[5, 8, 10, 15].map(n => `<option ${c.nPerg === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label><label class="f">Nota para passar<select id="fme-min">${[60, 70, 80, 90, 100].map(n => `<option value="${n}" ${c.minimo === n ? 'selected' : ''}>${n}%</option>`).join('')}</select></label></div>
-                <div id="fme-pq">${c.perguntas.map((q, i) => fmEdPerguntaHtml(q, i)).join('')}</div>
-                <button type="button" class="eq-b mt-2" onclick="fmEdLer();fmEd.perguntas.push({p:'',o:['','','',''],c:0});fmEdPintar(${existe})"><i class="fas fa-plus"></i>Pergunta escrita por si</button>
-                <div class="acoes">${existe ? `<button type="button" style="color:#B91C1C" onclick="fmApagar('${c.id}')">Apagar curso</button>` : ''}<button type="button" onclick="dsModalFechar('fm-ed')">Cancelar</button><button type="button" class="p" onclick="fmGuardar()">Guardar</button></div></div>`);
+        const fmEdTemFicha = id => fmEd.licoes.some(l => l.tipo === 'ficha' && l.id === id);
+        function fmEdNomeSugerido() {
+            const fs = fmEd.licoes.filter(l => l.tipo === 'ficha').map(l => fmFicha(l.id)).filter(Boolean);
+            if (!fs.length) return fmEd.licoes.length ? 'Regras da casa' : '';
+            const tipos = new Set(fs.map(r => r.type || 'BAR')), cats = new Set(fs.map(r => r.category).filter(Boolean));
+            if (cats.size === 1 && fs.length > 1) return [...cats][0];
+            if (tipos.size === 1) return [...tipos][0] === 'KITCHEN' ? 'Pratos da cozinha' : 'Bebidas do bar';
+            if (fs.length === 1) return fs[0].name;
+            return 'Menu completo';
         }
-        const fmEdPerguntaHtml = (q, i) => `<div class="pq" data-i="${i}"><input class="fq-p" maxlength="160" placeholder="Pergunta" value="${escapeHtml(q.p)}">${q.o.map((o, j) => `<label style="display:flex;gap:6px;align-items:center"><input type="radio" name="fq-c${i}" ${q.c === j ? 'checked' : ''} style="width:auto" title="Resposta certa"><input class="fq-o" maxlength="100" placeholder="${j === 0 ? 'Resposta (marque a certa à esquerda)' : 'Outra resposta'}" value="${escapeHtml(o)}"></label>`).join('')}<button type="button" style="color:#B91C1C;font-size:12px;font-weight:800;text-align:left" onclick="fmEdLer();fmEd.perguntas.splice(${i},1);fmEdPintar(true)">Tirar pergunta</button></div>`;
-        function fmLicTitulo(l) { if (l.tipo === 'ficha') { const r = fmFicha(l.id); return r ? 'Ficha: ' + r.name : 'Ficha apagada'; } if (l.tipo === 'doc') { const d = eqDados().docs.find(x => x.id === l.id); return d ? 'Documento: ' + d.nome : 'Documento apagado'; } return l.titulo || 'Lição escrita'; }
+        function fmEdPintar() {
+            const c = fmEd, p = fmEdPasso, novo = c._novo;
+            const passos = ['O que vão aprender', 'Nome e para quem', 'Quiz'];
+            const nFich = c.licoes.filter(l => l.tipo === 'ficha').length, nOut = c.licoes.length - nFich;
+            let corpo = '';
+            if (p === 1) {
+                const recs = (appState.recipes || []).slice().sort((a, b) => String(a.category || '').localeCompare(String(b.category || '')) || String(a.name).localeCompare(String(b.name)));
+                const cats = [...new Set(recs.map(r => r.category).filter(Boolean))];
+                const q = fmNorm(fmEdBusca), vis = recs.filter(r => (!fmEdCat || (fmEdCat === '*BAR' ? (r.type || 'BAR') === 'BAR' : fmEdCat === '*KITCHEN' ? r.type === 'KITCHEN' : r.category === fmEdCat)) && (!q || fmNorm(r.name).includes(q)));
+                const todasVis = vis.length && vis.every(r => fmEdTemFicha(r.id));
+                corpo = `<p class="sub">Toque nas fichas que a equipa tem de saber. A app faz as perguntas a partir delas.</p>
+                    <div class="fmx-src"><i class="fas fa-magnifying-glass"></i><input id="fme-busca" placeholder="Procurar ficha" value="${escapeHtml(fmEdBusca)}" oninput="fmEdBusca=this.value;fmEdGrelha()" autocomplete="off"></div>
+                    <div class="fmx-chips"><button type="button" class="${!fmEdCat ? 'on' : ''}" onclick="fmEdCat='';fmEdPintar()">Todas</button><button type="button" class="${fmEdCat === '*BAR' ? 'on' : ''}" onclick="fmEdCat='*BAR';fmEdPintar()">🍸 Bar</button><button type="button" class="${fmEdCat === '*KITCHEN' ? 'on' : ''}" onclick="fmEdCat='*KITCHEN';fmEdPintar()">🍳 Cozinha</button>${cats.map(k => `<button type="button" class="${fmEdCat === k ? 'on' : ''}" onclick="fmEdCat=this.dataset.k;fmEdPintar()" data-k="${escapeHtml(k)}">${escapeHtml(k)}</button>`).join('')}</div>
+                    <div class="fmx-sel"><span><b id="fme-nsel">${nFich}</b> ${nFich === 1 ? 'ficha escolhida' : 'fichas escolhidas'}</span>${vis.length ? `<button type="button" onclick="fmEdTodas(${todasVis ? 0 : 1})">${todasVis ? 'Tirar estas' : 'Escolher todas (' + vis.length + ')'}</button>` : ''}</div>
+                    <div class="fmx-gr" id="fme-gr">${fmEdGrelhaHtml(vis)}</div>
+                    <div class="tit">Textos e documentos (opcional)</div><p class="sub">Regras da casa, como receber o cliente, higiene, fardamento.</p>
+                    <div class="lst">${c.licoes.map((l, i) => l.tipo === 'ficha' ? '' : `<div><i class="fas ${l.tipo === 'doc' ? 'fa-file-lines' : 'fa-paragraph'}" style="color:var(--brand)"></i><span>${escapeHtml(fmLicTitulo(l))}</span><button type="button" onclick="fmEdTirar(${i})" aria-label="Tirar" style="color:#B91C1C"><i class="fas fa-trash"></i></button></div>`).join('')}</div>
+                    <div class="flex flex-wrap gap-2 mt-2"><button type="button" class="eq-b" onclick="fmEdTexto()"><i class="fas fa-pen"></i>Escrever lição</button>${eqDados().docs.length ? `<select id="fme-doc" class="fmx-dsel" onchange="fmEdJuntarDoc()"><option value="">+ Juntar documento da Equipe…</option>${eqDados().docs.map(d => `<option value="${d.id}">${escapeHtml(d.nome)}</option>`).join('')}</select>` : ''}</div>`;
+            } else if (p === 2) {
+                if (!c.titulo) c.titulo = fmEdNomeSugerido();
+                const pub = fmPublico();
+                corpo = `<label class="f">Nome do curso<input id="fme-t" maxlength="60" value="${escapeHtml(c.titulo)}" placeholder="Ex.: Bebidas do bar"></label>
+                    <label class="f">Descrição (opcional)<input id="fme-d" maxlength="140" value="${escapeHtml(c.descricao || '')}" placeholder="Ex.: O que um barista novo tem de saber"></label>
+                    <div class="tit">Para quem</div><div class="fmx-chips">${pub.map(x => `<button type="button" class="${c.para.includes(x) ? 'on' : ''}" onclick="fmEdPara(this,this.dataset.p)" data-p="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join('')}</div><p class="sub" style="margin-top:6px">${c.para.length ? 'Só aparece como obrigatório para estas funções.' : 'Sem nada escolhido, o curso é para toda a equipa.'}</p>
+                    <div class="tit">Ordem das lições <small style="font-weight:600;color:#7A6A60">(${c.licoes.length})</small></div>
+                    <div class="lst">${c.licoes.map((l, i) => `<div><span class="nr">${i + 1}</span><span>${escapeHtml(fmLicTitulo(l))}</span><button type="button" onclick="fmEdMover(${i},-1)" aria-label="Subir" ${i ? '' : 'disabled style="opacity:.3"'}><i class="fas fa-arrow-up"></i></button><button type="button" onclick="fmEdMover(${i},1)" aria-label="Descer" ${i + 1 < c.licoes.length ? '' : 'disabled style="opacity:.3"'}><i class="fas fa-arrow-down"></i></button></div>`).join('') || '<p class="sub">Sem lições. Volte ao passo 1 para escolher fichas, ou escreva as perguntas no passo 3.</p>'}</div>`;
+            } else {
+                const ex = c.auto ? fmGerar(c).slice(0, 2) : [];
+                const seg = (id, vals, cur, fmt) => `<div class="fmx-seg" id="${id}">${vals.map(v => `<button type="button" class="${cur === v ? 'on' : ''}" onclick="fmEdLer();fmEd.${id === 'fme-n' ? 'nPerg' : 'minimo'}=${v};fmEdPintar()">${fmt(v)}</button>`).join('')}</div>`;
+                corpo = `<label class="fmx-sw"><span><b>Perguntas automáticas</b><small>A app cria perguntas a partir das fichas: ingredientes, quantidades, preparo, alergénios e preço.</small></span><input type="checkbox" id="fme-auto" ${c.auto ? 'checked' : ''} onchange="fmEdLer();fmEdPintar()"><i></i></label>
+                    ${ex.length ? `<div class="fmx-ex"><small>Exemplo de pergunta</small>${ex.map(q => `<p><b>${escapeHtml(q.p)}</b><br>${q.o.map(o => o === q.certa ? `<span class="ok">✓ ${escapeHtml(o)}</span>` : `<span>${escapeHtml(o)}</span>`).join(' · ')}</p>`).join('')}</div>` : (c.auto && !nFich ? '<p class="sub" style="margin-top:6px">Sem fichas no curso, as perguntas automáticas não têm de onde sair. Escreva as suas abaixo.</p>' : '')}
+                    <div class="tit">Perguntas em cada quiz</div>${seg('fme-n', [5, 8, 10, 15], c.nPerg, v => v)}
+                    <div class="tit">Nota para passar</div>${seg('fme-min', [60, 70, 80, 90, 100], c.minimo, v => v + '%')}
+                    <div class="tit">Perguntas escritas por si <small style="font-weight:600;color:#7A6A60">(opcional)</small></div>
+                    <div id="fme-pq">${c.perguntas.map((q, i) => fmEdPerguntaHtml(q, i)).join('')}</div>
+                    <button type="button" class="eq-b mt-2" onclick="fmEdLer();fmEd.perguntas.push({p:'',o:['','','',''],c:0});fmEdPintar()"><i class="fas fa-plus"></i>Escrever uma pergunta</button>`;
+            }
+            const podeSeg = p !== 1 || c.licoes.length > 0;
+            dsModal('fm-ed', `<div class="eq-m fmx-ed"><div class="flex items-start justify-between gap-3"><div><h3>${novo ? 'Novo curso' : 'Editar curso'}</h3><p class="sub">Passo ${p} de 3 · ${passos[p - 1]}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fm-ed')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
+                <div class="fmx-steps">${passos.map((t, i) => `<button type="button" class="${i + 1 === p ? 'on' : i + 1 < p ? 'feito' : ''}" ${novo && i + 1 > p ? 'disabled' : ''} onclick="fmEdIr(${i + 1})"><span>${i + 1 < p ? '✓' : i + 1}</span>${t}</button>`).join('')}</div>
+                <div class="fmx-edc">${corpo}</div>
+                <div class="acoes">${!novo && p === 3 ? `<button type="button" style="color:#B91C1C;margin-right:auto" onclick="fmApagar('${c.id}')">Apagar curso</button>` : ''}${p > 1 ? `<button type="button" onclick="fmEdIr(${p - 1})"><i class="fas fa-arrow-left mr-1"></i>Voltar</button>` : `<button type="button" onclick="dsModalFechar('fm-ed')">Cancelar</button>`}${p < 3 ? `<button type="button" class="p" onclick="fmEdIr(${p + 1})" ${podeSeg ? '' : 'disabled title="Escolha pelo menos uma ficha ou lição"'}>Seguinte<i class="fas fa-arrow-right ml-1"></i></button>` : `<button type="button" class="p" onclick="fmGuardar()">${novo ? 'Criar curso' : 'Guardar'}</button>`}${!novo && p < 3 ? `<button type="button" class="p" onclick="fmGuardar()">Guardar</button>` : ''}</div></div>`);
+            if (p === 1) { const i = document.getElementById('fme-busca'); if (i && fmEdBusca) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+        }
+        function fmEdGrelhaHtml(vis) {
+            if (!(appState.recipes || []).length) return '<p class="sub" style="grid-column:1/-1">Ainda não há fichas técnicas. Crie fichas no Bar ou na Cozinha, ou escreva uma lição abaixo.</p>';
+            if (!vis.length) return '<p class="sub" style="grid-column:1/-1">Nenhuma ficha encontrada.</p>';
+            return vis.map(r => { const img = typeof getRecipeImage === 'function' ? getRecipeImage(r) : r.image, on = fmEdTemFicha(r.id); return `<button type="button" class="fmx-f${on ? ' on' : ''}" aria-pressed="${on}" onclick="fmEdFicha('${r.id}',this)">${img ? `<img src="${escapeHtml(img)}" alt="" loading="lazy">` : `<span class="ph"><i class="fas ${r.type === 'KITCHEN' ? 'fa-utensils' : 'fa-mug-hot'}"></i></span>`}<b>${escapeHtml(r.name)}</b><span class="ck"><i class="fas fa-check"></i></span></button>`; }).join('');
+        }
+        function fmEdVisiveis() { const q = fmNorm(fmEdBusca); return (appState.recipes || []).slice().sort((a, b) => String(a.category || '').localeCompare(String(b.category || '')) || String(a.name).localeCompare(String(b.name))).filter(r => (!fmEdCat || (fmEdCat === '*BAR' ? (r.type || 'BAR') === 'BAR' : fmEdCat === '*KITCHEN' ? r.type === 'KITCHEN' : r.category === fmEdCat)) && (!q || fmNorm(r.name).includes(q))); }
+        function fmEdGrelha() { const g = document.getElementById('fme-gr'); if (g) g.innerHTML = fmEdGrelhaHtml(fmEdVisiveis()); }
+        function fmEdContar() { const n = fmEd.licoes.filter(l => l.tipo === 'ficha').length, el = document.getElementById('fme-nsel'); if (el) { el.textContent = n; el.nextSibling.textContent = n === 1 ? ' ficha escolhida' : ' fichas escolhidas'; } const b = document.querySelector('#fm-ed .acoes .p'); if (b && fmEdPasso === 1) b.disabled = !fmEd.licoes.length; }
+        function fmEdFicha(id, btn) {
+            const i = fmEd.licoes.findIndex(l => l.tipo === 'ficha' && l.id === id);
+            if (i >= 0) fmEd.licoes.splice(i, 1); else fmEd.licoes.push({ tipo: 'ficha', id });
+            if (btn) { btn.classList.toggle('on', i < 0); btn.setAttribute('aria-pressed', i < 0); }
+            fmEdContar();
+        }
+        function fmEdTodas(sim) { fmEdVisiveis().forEach(r => { const t = fmEdTemFicha(r.id); if (sim && !t) fmEd.licoes.push({ tipo: 'ficha', id: r.id }); if (!sim && t) fmEd.licoes = fmEd.licoes.filter(l => !(l.tipo === 'ficha' && l.id === r.id)); }); fmEdPintar(); }
+        function fmEdIr(n) {
+            if (!fmEd) return; fmEdLer(); if (n < 1 || n > 3) return;
+            if (n > 1 && fmEdPasso === 1 && !fmEd.licoes.length && fmEd._novo) return dsToast('Escolha pelo menos uma ficha ou escreva uma lição.', true);
+            if (n > 2 && fmEdPasso === 2 && !fmEd.titulo) return dsToast('Dê um nome ao curso.', true);
+            fmEdPasso = n; fmEdPintar();
+            const s = document.querySelector('#fm-ed .fmx-edc'); if (s) s.scrollTop = 0;
+        }
+        const fmEdPerguntaHtml = (q, i) => `<div class="pq fmx-pq" data-i="${i}"><div class="flex items-center gap-2"><b class="nr">${i + 1}</b><input class="fq-p" maxlength="160" placeholder="Pergunta" value="${escapeHtml(q.p)}"><button type="button" onclick="fmEdLer();fmEd.perguntas.splice(${i},1);fmEdPintar()" aria-label="Apagar pergunta" style="color:#B91C1C;padding:6px"><i class="fas fa-trash"></i></button></div>${q.o.map((o, j) => `<label class="op"><input type="radio" name="fq-c${i}" ${q.c === j ? 'checked' : ''} aria-label="Esta é a resposta certa"><input class="fq-o" maxlength="100" placeholder="${j === 0 ? 'Resposta certa' : 'Resposta errada'}" value="${escapeHtml(o)}"></label>`).join('')}<small>Marque a bolinha da resposta certa.</small></div>`;
+        function fmLicTitulo(l) { if (l.tipo === 'ficha') { const r = fmFicha(l.id); return r ? r.name : 'Ficha apagada'; } if (l.tipo === 'doc') { const d = eqDados().docs.find(x => x.id === l.id); return d ? 'Documento: ' + d.nome : 'Documento apagado'; } return l.titulo || 'Lição escrita'; }
         function fmEdLer() {
-            const g = id => document.getElementById(id); if (!g('fme-t')) return;
-            fmEd.titulo = g('fme-t').value.trim().slice(0, 60); fmEd.descricao = g('fme-d').value.trim().slice(0, 140);
-            fmEd.auto = g('fme-auto').checked; fmEd.nPerg = Number(g('fme-n').value) || 8; fmEd.minimo = Number(g('fme-min').value) || 80;
-            fmEd.perguntas = [...document.querySelectorAll('#fme-pq .pq')].map(el => { const o = [...el.querySelectorAll('.fq-o')].map(x => x.value.trim().slice(0, 100)); const c = [...el.querySelectorAll('input[type=radio]')].findIndex(x => x.checked); return { p: el.querySelector('.fq-p').value.trim().slice(0, 160), o, c: Math.max(0, c) }; });
+            const g = id => document.getElementById(id);
+            if (g('fme-t')) { fmEd.titulo = g('fme-t').value.trim().slice(0, 60); fmEd.descricao = g('fme-d').value.trim().slice(0, 140); }
+            if (g('fme-auto')) fmEd.auto = g('fme-auto').checked;
+            if (g('fme-pq')) fmEd.perguntas = [...document.querySelectorAll('#fme-pq .pq')].map(el => { const o = [...el.querySelectorAll('.fq-o')].map(x => x.value.trim().slice(0, 100)); const c = [...el.querySelectorAll('input[type=radio]')].findIndex(x => x.checked); return { p: el.querySelector('.fq-p').value.trim().slice(0, 160), o, c: Math.max(0, c) }; });
         }
         function fmEdPara(b, p) { fmEdLer(); const i = fmEd.para.indexOf(p); if (i >= 0) fmEd.para.splice(i, 1); else fmEd.para.push(p); b.classList.toggle('on'); }
-        function fmEdJuntarFicha() {
-            fmEdLer(); const v = document.getElementById('fme-ficha').value; if (!v) return;
-            let ids = [];
-            if (v === '*BAR' || v === '*KITCHEN') ids = appState.recipes.filter(r => (r.type || 'BAR') === v.slice(1)).map(r => r.id);
-            else if (v[0] === '#') ids = appState.recipes.filter(r => r.category === v.slice(1)).map(r => r.id);
-            else ids = [v];
-            ids.forEach(id => { if (!fmEd.licoes.some(l => l.tipo === 'ficha' && l.id === id)) fmEd.licoes.push({ tipo: 'ficha', id }); });
-            fmEdPintar(fmDados().cursos.some(x => x.id === fmEd.id));
-        }
-        function fmEdJuntarDoc() { fmEdLer(); const v = document.getElementById('fme-doc').value; if (!v) return; fmEd.licoes.push({ tipo: 'doc', id: v }); fmEdPintar(fmDados().cursos.some(x => x.id === fmEd.id)); }
+        function fmEdJuntarDoc() { const v = document.getElementById('fme-doc').value; if (!v) return; if (!fmEd.licoes.some(l => l.tipo === 'doc' && l.id === v)) fmEd.licoes.push({ tipo: 'doc', id: v }); fmEdPintar(); }
         function fmEdTexto() {
-            fmEdLer();
             dsModal('fm-tx', `<div class="eq-m"><h3>Escrever lição</h3><p class="sub">Ex.: como receber um cliente, regras de higiene, fardamento.</p>
                 <label class="f">Título<input id="fmt-t" maxlength="80" placeholder="Ex.: Como receber um cliente"></label>
                 <label class="f">Texto<textarea id="fmt-x" rows="9" maxlength="6000" placeholder="Escreva aqui a lição"></textarea></label>
@@ -25226,32 +25375,26 @@ async function dsTrPreparar() {
             const t = document.getElementById('fmt-t').value.trim(), x = document.getElementById('fmt-x').value.trim();
             if (!t || !x) return dsToast('Escreva o título e o texto.', true);
             fmEd.licoes.push({ tipo: 'texto', titulo: t.slice(0, 80), texto: x.slice(0, 6000) });
-            dsModalFechar('fm-tx'); fmEdPintar(fmDados().cursos.some(c => c.id === fmEd.id));
+            dsModalFechar('fm-tx'); fmEdPintar();
         }
-        function fmEdMover(i, d) { fmEdLer(); const j = i + d; if (j < 0) return; const l = fmEd.licoes; [l[i], l[j]] = [l[j], l[i]]; fmEdPintar(fmDados().cursos.some(c => c.id === fmEd.id)); }
-        function fmEdTirar(i) { fmEdLer(); fmEd.licoes.splice(i, 1); fmEdPintar(fmDados().cursos.some(c => c.id === fmEd.id)); }
+        function fmEdMover(i, d) { fmEdLer(); const j = i + d, l = fmEd.licoes; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; fmEdPintar(); }
+        function fmEdTirar(i) { fmEdLer(); fmEd.licoes.splice(i, 1); fmEdPintar(); }
         function fmGuardar() {
             fmEdLer();
-            if (!fmEd.titulo) return dsToast('Dê um nome ao curso.', true);
+            if (!fmEd.titulo) fmEd.titulo = fmEdNomeSugerido();
+            if (!fmEd.titulo) { fmEdPasso = 2; fmEdPintar(); return dsToast('Dê um nome ao curso.', true); }
             fmEd.perguntas = fmEd.perguntas.filter(q => q.p && q.o.filter(Boolean).length >= 2 && q.o[q.c]);
-            if (!fmEd.licoes.length && !fmEd.perguntas.length) return dsToast('Junte pelo menos uma lição ou uma pergunta.', true);
+            if (!fmEd.licoes.length && !fmEd.perguntas.length) { fmEdPasso = 1; fmEdPintar(); return dsToast('Escolha pelo menos uma ficha, uma lição ou uma pergunta.', true); }
+            const novo = fmEd._novo; delete fmEd._novo;
             const l = fmDados().cursos, i = l.findIndex(x => x.id === fmEd.id);
             if (i >= 0) l[i] = fmEd; else l.push(fmEd);
-            eqGuardar(); dsModalFechar('fm-ed'); fmPintar(); dsToast('Curso guardado');
+            eqGuardar(); dsModalFechar('fm-ed'); fmPintar(); dsToast(novo ? 'Curso criado. A equipa já o pode fazer.' : 'Curso guardado');
         }
         async function fmApagar(id) {
             if (!(await dsConfirmar('Apagar este curso? Os resultados já feitos ficam no histórico.'))) return;
             const f = fmDados(); f.cursos = f.cursos.filter(c => c.id !== id); eqGuardar(); dsModalFechar('fm-ed'); fmPintar();
         }
-        async function fmAuto() {
-            if (!eqPodeEditar()) return;
-            const bar = appState.recipes.filter(r => (r.type || 'BAR') === 'BAR'), coz = appState.recipes.filter(r => r.type === 'KITCHEN');
-            const f = fmDados(); let n = 0;
-            const mk = (titulo, para, l) => { if (!l.length || f.cursos.some(c => c.titulo === titulo)) return; f.cursos.push({ id: fmId(), titulo, descricao: l.length + (l.length === 1 ? ' ficha técnica' : ' fichas técnicas') + ', com quiz automático.', para, licoes: l.map(r => ({ tipo: 'ficha', id: r.id })), perguntas: [], auto: true, nPerg: 10, minimo: 80 }); n++; };
-            mk('Bebidas do bar', ['Bar'], bar); mk('Pratos da cozinha', ['Cozinha'], coz);
-            if (!n) return dsToast('Já existem cursos com as fichas, ou ainda não há fichas.', true);
-            eqGuardar(); fmPintar(); dsToast(n === 1 ? 'Curso criado' : n + ' cursos criados');
-        }
+        async function fmAuto() { fmEditar(); }
 
         // ---------- perguntas automáticas a partir das fichas
         const fmMist = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -25279,37 +25422,173 @@ async function dsTrPreparar() {
             return fmMist(out);
         }
 
-        // ---------- fazer o curso
+        // perguntas de verdadeiro ou falso (ex.: "O Mojito leva hortelã?")
+        function fmGerarVF(c) {
+            const fichas = (c.licoes || []).filter(l => l.tipo === 'ficha').map(l => fmFicha(l.id)).filter(r => r && (r.ingredients || []).length);
+            const todas = (appState.recipes || []).filter(r => (r.ingredients || []).length), out = [];
+            fmMist(fichas).forEach(r => {
+                const nomes = r.ingredients.map(i => fmNorm(i.name));
+                if (Math.random() < .5) { const i = fmMist(r.ingredients.filter(x => x.name))[0]; if (i) out.push({ p: `${r.name} leva ${i.name}?`, o: ['Verdadeiro', 'Falso'], certa: 'Verdadeiro', vf: 1 }); }
+                else { const n = fmMist(todas.flatMap(x => x.ingredients.map(i => i.name)).filter(x => x && !nomes.includes(fmNorm(x))))[0]; if (n) out.push({ p: `${r.name} leva ${n}?`, o: ['Verdadeiro', 'Falso'], certa: 'Falso', vf: 1 }); }
+            });
+            return out;
+        }
+
+        // ---------- fazer o curso, ao estilo de um jogo: vidas, XP, sequência, níveis
         let fmJ = null;
+        function fmSom(tipo) {
+            let on = true; try { on = localStorage.getItem('fm_som') !== '0'; } catch (_) {}
+            if (!on) return;
+            try {
+                const A = window.AudioContext || window.webkitAudioContext; if (!A) return;
+                const ctx = fmSom.ctx || (fmSom.ctx = new A()), t0 = ctx.currentTime;
+                const nota = (f, t, d, tp = 'sine', v = .12) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = tp; o.frequency.value = f; g.gain.setValueAtTime(0, t0 + t); g.gain.linearRampToValueAtTime(v, t0 + t + .01); g.gain.exponentialRampToValueAtTime(.001, t0 + t + d); o.connect(g).connect(ctx.destination); o.start(t0 + t); o.stop(t0 + t + d + .02); };
+                if (tipo === 'certo') { nota(660, 0, .12); nota(990, .09, .2); }
+                else if (tipo === 'errado') { nota(196, 0, .25, 'triangle', .15); nota(156, .1, .3, 'triangle', .12); }
+                else if (tipo === 'combo') { [660, 784, 988, 1318].forEach((f, i) => nota(f, i * .06, .14)); }
+                else if (tipo === 'nivel') { [523, 659, 784, 1047, 1319].forEach((f, i) => nota(f, i * .1, .3, 'triangle', .14)); }
+                else if (tipo === 'fim') { [784, 988, 1175].forEach((f, i) => nota(f, i * .08, .22)); }
+            } catch (_) {}
+        }
+        function fmSomTrocar() { let on = true; try { on = localStorage.getItem('fm_som') !== '0'; localStorage.setItem('fm_som', on ? '0' : '1'); } catch (_) {} const b = document.getElementById('fmx-som'); if (b) b.innerHTML = `<i class="fas ${on ? 'fa-volume-xmark' : 'fa-volume-high'}"></i>`; }
+        const fmReduz = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (_) { return false; } };
+        function fmConfetes(n = 140) {
+            if (fmReduz()) return;
+            const cv = document.createElement('canvas'); cv.className = 'fmx-conf'; document.body.appendChild(cv);
+            const W = cv.width = innerWidth * devicePixelRatio, H = cv.height = innerHeight * devicePixelRatio, g = cv.getContext('2d');
+            const cores = ['#983808', '#231F20', '#E0794F', '#F2ECE4', '#B45309', '#15803D'];
+            const ps = Array.from({ length: n }, () => ({ x: W / 2 + (Math.random() - .5) * W * .3, y: H * .35, vx: (Math.random() - .5) * 26 * devicePixelRatio, vy: (-Math.random() * 22 - 8) * devicePixelRatio, r: (4 + Math.random() * 6) * devicePixelRatio, a: Math.random() * 6, va: (Math.random() - .5) * .4, c: cores[Math.floor(Math.random() * cores.length)], q: Math.random() < .5 }));
+            const t0 = performance.now();
+            (function f(t) { const e = t - t0; g.clearRect(0, 0, W, H); ps.forEach(p => { p.vy += .9 * devicePixelRatio; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.a += p.va; g.save(); g.translate(p.x, p.y); g.rotate(p.a); g.globalAlpha = Math.max(0, 1 - e / 2600); g.fillStyle = p.c; if (p.q) g.fillRect(-p.r / 2, -p.r / 3, p.r, p.r * .66); else { g.beginPath(); g.arc(0, 0, p.r / 2.2, 0, 7); g.fill(); } g.restore(); }); if (e < 2600) requestAnimationFrame(f); else cv.remove(); })(t0);
+        }
         function fmJogar(id) {
             const c = fmDados().cursos.find(x => x.id === id); if (!c) return;
-            const staff = fmStaff(); let quem = ''; try { quem = localStorage.getItem('fm_quem') || ''; } catch (_) {}
-            if (!staff.some(s => s.id === quem)) quem = '';
-            const perg = fmMist([...(c.auto ? fmGerar(c) : []).slice(0, c.nPerg || 8), ...(c.perguntas || []).map(q => ({ p: q.p, o: fmMist(q.o.filter(Boolean)), certa: q.o[q.c] }))]).slice(0, Math.max(c.nPerg || 8, (c.perguntas || []).length));
-            fmJ = { c, i: -1, perg, certas: 0, quem, fase: 'inicio', respondida: false };
+            fmCss();
+            const n = c.nPerg || 8;
+            const auto = c.auto ? fmMist([...fmGerar(c).slice(0, Math.ceil(n * .75)), ...fmGerarVF(c).slice(0, Math.ceil(n * .35))]) : [];
+            const minhas = (c.perguntas || []).map(q => ({ p: q.p, o: fmMist(q.o.filter(Boolean)), certa: q.o[q.c] }));
+            const perg = fmMist([...minhas, ...auto.slice(0, Math.max(0, n - minhas.length))]).map((q, i) => Object.assign(q, { id: i }));
+            fmJ = { c, perg, fila: perg.slice(), total: perg.length, i: 0, vidas: 3, xp: 0, combo: 0, maxCombo: 0, certas: 0, feitas: new Set(), erradas: [], fase: 'inicio', sel: null, ver: false, ini: 0, antes: null };
+            // quem é: na primeira vez, um colaborador escolhe o seu nome na Equipe
+            if (!fmEuStaff() && currentRole !== 'dono' && fmStaff().length) { let ja = false; try { ja = !!localStorage.getItem('fm_eu_' + fmUid() + '_nao'); } catch (_) {} if (!ja) fmJ.fase = 'quem'; }
             fmJogPintar();
         }
+        function fmEscolherEu(id) {
+            try { if (id) localStorage.setItem('fm_eu_' + fmUid(), id); else localStorage.setItem('fm_eu_' + fmUid() + '_nao', '1'); } catch (_) {}
+            fmJ.fase = 'inicio'; fmJogPintar();
+        }
+        async function fmSair() {
+            if (fmJ && (fmJ.fase === 'quiz' || fmJ.fase === 'licoes') && fmJ.feitas.size) { if (!(await dsConfirmar('Sair agora? O progresso desta tentativa perde-se.'))) return; }
+            document.getElementById('fmx-play')?.remove(); document.body.classList.remove('fmx-aberto'); fmJ = null;
+        }
         function fmJogPintar() {
-            const j = fmJ, c = j.c, lic = c.licoes || [], staff = fmStaff();
-            let corpo = '';
-            if (j.fase === 'inicio') {
-                corpo = `<div class="lic"><h4>${escapeHtml(c.titulo)}</h4><p>${c.descricao ? escapeHtml(c.descricao) + '<br>' : ''}${lic.length} ${lic.length === 1 ? 'lição' : 'lições'} e ${j.perg.length} perguntas. Para passar: ${c.minimo || 80}%.</p>
-                    ${staff.length ? `<label class="f" style="display:block;margin-top:12px;font-weight:800;font-size:13px">Quem está a fazer?<select id="fm-quem" style="display:block;width:100%;margin-top:4px;font-size:15px;border-radius:12px;border:1px solid #CBD5E1;padding:10px"><option value="">Escolha o seu nome</option>${staff.filter(s => fmParaMim(c, s)).concat(staff.filter(s => !fmParaMim(c, s))).map(s => `<option value="${s.id}" ${s.id === j.quem ? 'selected' : ''}>${escapeHtml(s.nome)}${s.funcao ? ' · ' + escapeHtml(s.funcao) : ''}</option>`).join('')}</select></label>` : ''}</div>
-                    <div class="flex gap-2 mt-4"><button type="button" class="eq-b" style="flex:1" onclick="fmJogFase('quiz')">Ir direto ao quiz</button><button type="button" class="eq-b p" style="flex:1" onclick="fmJogFase('licoes')">${lic.length ? 'Começar as lições' : 'Começar o quiz'}</button></div>`;
+            const j = fmJ, c = j.c, lic = c.licoes || [];
+            let el = document.getElementById('fmx-play');
+            if (!el) { el = document.createElement('div'); el.id = 'fmx-play'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); document.body.classList.add('fmx-aberto'); }
+            let som = true; try { som = localStorage.getItem('fm_som') !== '0'; } catch (_) {}
+            const pct = j.fase === 'quiz' ? Math.round(j.feitas.size / Math.max(1, j.total) * 100) : j.fase === 'licoes' ? Math.round((j.i + 1) / Math.max(1, lic.length) * 100) : 0;
+            const top = `<div class="fmx-top"><button type="button" class="x" onclick="fmSair()" aria-label="Fechar"><i class="fas fa-xmark"></i></button><div class="bar"><i style="width:${pct}%"></i></div>${j.fase === 'quiz' ? `<span class="vd" id="fmx-vd" aria-label="${j.vidas} vidas">❤️ <b>${j.vidas}</b></span>` : ''}<button type="button" class="x" id="fmx-som" onclick="fmSomTrocar()" aria-label="Som"><i class="fas ${som ? 'fa-volume-high' : 'fa-volume-xmark'}"></i></button></div>`;
+            let corpo = '', pe = '';
+            if (j.fase === 'quem') {
+                const lig = fmLigados(), livres = fmStaff().filter(s => !lig[s.id] || lig[s.id] === fmUid());
+                corpo = `<div class="fmx-mid"><div class="em">👋</div><h2>Quem é você na equipa?</h2><p>Escolha uma vez. O seu progresso fica guardado na sua conta.</p><div class="fmx-quem">${livres.map(s => `<button type="button" onclick="fmEscolherEu('${s.id}')"><span class="av" style="background:${fmCor(s.id)}">${escapeHtml(fmIni(s.nome))}</span><b>${escapeHtml(s.nome)}</b>${s.funcao ? `<small>${escapeHtml(s.funcao)}</small>` : ''}</button>`).join('')}<button type="button" onclick="fmEscolherEu('')"><span class="av" style="background:#7A6A60"><i class="fas fa-user"></i></span><b>Não estou na lista</b><small>${escapeHtml((currentUser && currentUser.email) || '')}</small></button></div></div>`;
+            } else if (j.fase === 'inicio') {
+                const m = fmMeuMelhor(c.id);
+                corpo = `<div class="fmx-mid"><div class="em fmx-pop">${m && fmPassou(c, m) ? '🏆' : '🎯'}</div><h2>${escapeHtml(c.titulo)}</h2><p>${c.descricao ? escapeHtml(c.descricao) + '<br>' : ''}${lic.length ? lic.length + (lic.length === 1 ? ' lição' : ' lições') + ' e ' : ''}${j.total} perguntas · para passar: ${c.minimo || 80}%</p>
+                    <div class="fmx-regras"><span>❤️<b>3 vidas</b></span><span>⚡<b>+10 XP</b> por certa</span><span>🔥<b>Bónus</b> por sequência</span></div>${m ? `<p class="sub">A sua melhor nota: <b>${m.nota}%</b></p>` : ''}</div>`;
+                pe = `<div class="fmx-pe">${lic.length ? `<button type="button" class="fmx-b sec" onclick="fmFase('quiz')">Ir direto ao quiz</button><button type="button" class="fmx-b" onclick="fmFase('licoes')">Começar as lições</button>` : `<button type="button" class="fmx-b" onclick="fmFase('quiz')" ${j.total ? '' : 'disabled'}>Começar</button>`}</div>`;
+                if (!j.total) corpo += `<p class="sub" style="text-align:center">Este curso ainda não tem perguntas. Peça ao responsável para juntar fichas com ingredientes ou escrever perguntas.</p>`;
             } else if (j.fase === 'licoes') {
-                const l = lic[j.i]; corpo = `<p class="sub">Lição ${j.i + 1} de ${lic.length}</p><div class="prog"><i style="width:${Math.round((j.i + 1) / lic.length * 100)}%"></i></div><div class="lic">${fmLicHtml(l)}</div>
-                    <div class="flex gap-2 mt-4">${j.i > 0 ? `<button type="button" class="eq-b" style="flex:1" onclick="fmJ.i--;fmJogPintar()"><i class="fas fa-arrow-left"></i>Anterior</button>` : ''}<button type="button" class="eq-b p" style="flex:2" onclick="${j.i + 1 < lic.length ? 'fmJ.i++;fmJogPintar()' : "fmJogFase('quiz')"}">${j.i + 1 < lic.length ? 'Seguinte' : 'Fazer o quiz'} <i class="fas fa-arrow-right"></i></button></div>`;
+                corpo = `<div class="fmx-lic fmx-in"><small class="tg">Lição ${j.i + 1} de ${lic.length}</small><div class="lic">${fmLicHtml(lic[j.i])}</div></div>`;
+                pe = `<div class="fmx-pe">${j.i > 0 ? `<button type="button" class="fmx-b sec" onclick="fmJ.i--;fmJogPintar()"><i class="fas fa-arrow-left"></i></button>` : ''}<button type="button" class="fmx-b" onclick="${j.i + 1 < lic.length ? 'fmJ.i++;fmJogPintar()' : "fmFase('quiz')"}">${j.i + 1 < lic.length ? 'Continuar' : 'Fazer o quiz'}</button></div>`;
             } else if (j.fase === 'quiz') {
-                const q = j.perg[j.i];
-                if (!q) corpo = `<div class="lic"><p>Este curso ainda não tem perguntas. Junte fichas com ingredientes ou escreva perguntas.</p></div>`;
-                else corpo = `<p class="sub">Pergunta ${j.i + 1} de ${j.perg.length}</p><div class="prog"><i style="width:${Math.round((j.i + 1) / j.perg.length * 100)}%"></i></div><div class="lic"><h4>${escapeHtml(q.p)}</h4>${q.o.map((o, k) => `<button type="button" class="op" data-k="${k}" onclick="fmResponder(${k})">${escapeHtml(o)}</button>`).join('')}</div>
-                    <div class="flex mt-4"><button type="button" class="eq-b p hidden" id="fm-seg" style="flex:1" onclick="fmSeguinte()">${j.i + 1 < j.perg.length ? 'Seguinte' : 'Ver resultado'} <i class="fas fa-arrow-right"></i></button></div>`;
+                const q = j.fila[0];
+                corpo = `<div class="fmx-q fmx-in" id="fmx-q">${q.rev ? '<small class="tg rev">↻ Pergunta para rever</small>' : q.vf ? '<small class="tg">Verdadeiro ou falso?</small>' : '<small class="tg">Escolha a resposta certa</small>'}<h2>${escapeHtml(q.p)}</h2>
+                    <div class="ops${q.vf ? ' vf' : ''}">${q.o.map((o, k) => `<button type="button" class="op" data-k="${k}" onclick="fmEscolher(${k})"><span class="k">${k + 1}</span><span>${escapeHtml(o)}</span></button>`).join('')}</div></div>`;
+                pe = `<div class="fmx-pe" id="fmx-pe"><button type="button" class="fmx-b" id="fmx-ver" onclick="fmVerificar()" disabled>Verificar</button></div>`;
+            } else corpo = fmFimHtml();
+            el.innerHTML = `<div class="fmx-in-w">${j.fase === 'fim' ? '' : top}<div class="fmx-corpo">${corpo}</div>${pe}</div>`;
+            if (j.fase === 'quiz') { el.onkeydown = e => { const n = Number(e.key); if (n >= 1 && n <= 4 && !fmJ.ver) fmEscolher(n - 1); else if (e.key === 'Enter') { const b = document.querySelector('#fmx-pe .fmx-b:not([disabled])'); if (b) { e.preventDefault(); b.click(); } } }; el.tabIndex = -1; el.focus({ preventScroll: true }); }
+        }
+        function fmFase(f) {
+            fmJ.fase = f === 'licoes' && !(fmJ.c.licoes || []).length ? 'quiz' : f; fmJ.i = 0;
+            if (fmJ.fase === 'quiz') { fmJ.ini = Date.now(); if (!fmJ.total) return fmFim(); }
+            fmJogPintar();
+        }
+        function fmEscolher(k) {
+            if (fmJ.ver) return; fmJ.sel = k;
+            document.querySelectorAll('#fmx-q .op').forEach(b => b.classList.toggle('sel', Number(b.dataset.k) === k));
+            const v = document.getElementById('fmx-ver'); if (v) v.disabled = false;
+        }
+        const FM_BOAS = ['Excelente!', 'Muito bem!', 'Certíssimo!', 'Isso mesmo!', 'Boa!', 'Perfeito!'];
+        function fmVerificar() {
+            const j = fmJ, q = j.fila[0]; if (j.ver || j.sel == null) return; j.ver = true;
+            const certo = q.o[j.sel] === q.certa, primeira = !j.feitas.has(q.id) && !q.rev;
+            document.querySelectorAll('#fmx-q .op').forEach(b => { const o = q.o[Number(b.dataset.k)]; b.disabled = true; if (o === q.certa) b.classList.add('certa'); else if (Number(b.dataset.k) === j.sel) b.classList.add('errada'); });
+            let msg = '';
+            if (certo) {
+                j.combo++; j.maxCombo = Math.max(j.maxCombo, j.combo);
+                const ganho = q.rev ? 5 : 10, bonus = j.combo >= 3 ? 5 : 0; j.xp += ganho + bonus;
+                if (primeira) j.certas++;
+                j.feitas.add(q.id); j.fila.shift();
+                msg = `<div class="fmx-fb ok"><div class="t"><span class="ic">✓</span><div><b>${FM_BOAS[Math.floor(Math.random() * FM_BOAS.length)]}</b><small>+${ganho} XP${bonus ? ` · +${bonus} sequência` : ''}</small></div></div><button type="button" class="fmx-b ok" onclick="fmContinuar()">Continuar</button></div>`;
+                fmSom(j.combo >= 3 && [3, 5, 10, 15].includes(j.combo) ? 'combo' : 'certo');
             } else {
-                const nota = j.perg.length ? Math.round(j.certas / j.perg.length * 100) : 0, ok = nota >= (c.minimo || 80);
-                corpo = `<div class="lic" style="text-align:center"><div style="font-size:46px">${ok ? '🎉' : '📚'}</div><h4>${ok ? 'Passou!' : 'Quase lá'}</h4><p style="font-size:30px;font-weight:900;margin:6px 0">${nota}%</p><p>${j.certas} de ${j.perg.length} certas. ${ok ? 'Bom trabalho.' : 'Para passar precisa de ' + (c.minimo || 80) + '%. Reveja as lições e tente de novo.'}</p><p class="sub" id="fm-gravado"></p></div>
-                    <div class="flex gap-2 mt-4"><button type="button" class="eq-b" style="flex:1" onclick="fmJogar('${c.id}')"><i class="fas fa-rotate"></i>Repetir</button><button type="button" class="eq-b p" style="flex:1" onclick="dsModalFechar('fm-play')">Fechar</button></div>`;
+                j.combo = 0; j.vidas--; j.erradas.push(q.p);
+                j.feitas.add(q.id); j.fila.shift();
+                if (!q.rev && j.vidas > 0) j.fila.push(Object.assign({}, q, { rev: true, o: fmMist(q.o) }));      // volta no fim, como revisão
+                msg = `<div class="fmx-fb no"><div class="t"><span class="ic">✕</span><div><b>Resposta certa:</b><small class="cr">${escapeHtml(q.certa)}</small></div></div><button type="button" class="fmx-b no" onclick="fmContinuar()">${j.vidas > 0 ? 'Continuar' : 'Ver resultado'}</button></div>`;
+                fmSom('errado'); try { navigator.vibrate && navigator.vibrate(120); } catch (_) {}
+                const qe = document.getElementById('fmx-q'); if (qe && !fmReduz()) { qe.classList.remove('fmx-shake'); void qe.offsetWidth; qe.classList.add('fmx-shake'); }
+                const vd = document.getElementById('fmx-vd'); if (vd) { vd.innerHTML = `💔 <b>${j.vidas}</b>`; vd.classList.add('fmx-perde'); }
             }
-            dsModal('fm-play', `<div class="eq-m"><div class="pl"><div class="flex items-start justify-between gap-3"><div><h3>${escapeHtml(c.titulo)}</h3></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('fm-play')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>${corpo}</div></div>`);
+            const bar = document.querySelector('#fmx-play .fmx-top .bar i'); if (bar) bar.style.width = Math.round(j.feitas.size / Math.max(1, j.total) * 100) + '%';
+            document.getElementById('fmx-pe').outerHTML = `<div class="fmx-pe fb" id="fmx-pe">${msg}</div>`;
+            if (certo && [3, 5, 10, 15].includes(j.combo)) fmFlash(`🔥 ${j.combo} seguidas!`);
+            document.querySelector('#fmx-pe .fmx-b')?.focus({ preventScroll: true });
+        }
+        function fmFlash(t) { const d = document.createElement('div'); d.className = 'fmx-flash'; d.textContent = t; document.getElementById('fmx-play')?.appendChild(d); setTimeout(() => d.remove(), 1400); }
+        function fmContinuar() { const j = fmJ; j.ver = false; j.sel = null; if (j.vidas <= 0 || !j.fila.length) return fmFim(); fmJogPintar(); }
+        function fmFimHtml() {
+            const j = fmJ, c = j.c, nota = j.total ? Math.round(j.certas / j.total * 100) : 0, ok = nota >= (c.minimo || 80) && j.vidas > 0;
+            const seg = Math.round((Date.now() - (j.ini || Date.now())) / 1000), tempo = Math.floor(seg / 60) + ':' + String(seg % 60).padStart(2, '0');
+            const sem = j.vidas <= 0;
+            return `<div class="fmx-mid fmx-fim"><div class="em fmx-pop">${sem ? '💔' : ok ? '🏆' : '📚'}</div><h2>${sem ? 'Ficou sem vidas' : ok ? 'Curso concluído!' : 'Quase lá'}</h2>
+                <p>${sem ? 'Reveja as lições e tente de novo. Cada tentativa conta para o seu XP.' : ok ? 'Passou com ' + nota + '%. Bom trabalho.' : 'Para passar precisa de ' + (c.minimo || 80) + '%. Tente de novo.'}</p>
+                <div class="fmx-st"><div class="s xp"><small>XP ganho</small><b data-n="${j.xp}">0</b></div><div class="s"><small>Acertos</small><b>${nota}%</b></div><div class="s"><small>Tempo</small><b>${tempo}</b></div>${j.maxCombo >= 3 ? `<div class="s"><small>Sequência</small><b>🔥 ${j.maxCombo}</b></div>` : ''}</div>
+                <div class="fmx-nv" id="fmx-nv"></div><p class="sub" id="fm-gravado">A guardar…</p></div>
+                <div class="fmx-pe"><button type="button" class="fmx-b sec" onclick="fmJogar('${c.id}')"><i class="fas fa-rotate"></i> Repetir</button><button type="button" class="fmx-b" onclick="fmSair()">Continuar</button></div>`;
+        }
+        async function fmFim() {
+            const j = fmJ; j.fase = 'fim';
+            const eu = fmPessoas().find(p => p.eu), antesXp = eu ? eu.xp : 0, antesSeq = eu ? eu.seq : 0;
+            fmJogPintar();
+            const nota = j.total ? Math.round(j.certas / j.total * 100) : 0, ok = nota >= (j.c.minimo || 80) && j.vidas > 0;
+            if (ok) { fmSom('fim'); setTimeout(() => fmConfetes(), 250); }
+            // contador de XP
+            const xb = document.querySelector('#fmx-play .fmx-st .xp b');
+            if (xb) { const alvo = j.xp, t0 = performance.now(); (function f(t) { const k = Math.min(1, (t - t0) / 900); xb.textContent = '+' + Math.round(alvo * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(f); })(t0); }
+            const s = fmEuStaff(), g = () => document.getElementById('fm-gravado');
+            try {
+                if (!sb || !dataOwnerId || !currentUser) throw new Error('sem sessão');
+                const reg = { dono_id: dataOwnerId, curso_id: j.c.id, curso_titulo: j.c.titulo.slice(0, 80), membro_id: currentUser.id, quem_id: s ? s.id : null, quem_nome: fmEuNome().slice(0, 60), nota, certas: j.certas, total: j.total, xp: j.xp, detalhe: { vidas: j.vidas, combo: j.maxCombo, segundos: Math.round((Date.now() - (j.ini || Date.now())) / 1000), erradas: j.erradas.slice(0, 20) } };
+                const { data, error } = await sb.from('formacao_resultados').insert(reg).select('*').single();
+                if (error) throw error;
+                fmRes.unshift(data); if (g()) g().textContent = 'Guardado na sua conta' + (s ? ' (' + s.nome + ')' : '') + '.';
+            } catch (e) { console.warn(e); if (g()) g().textContent = 'Não foi possível guardar o resultado. Verifique a internet e tente de novo.'; return; }
+            // nível e sequência
+            const depois = fmPessoas().find(p => p.eu), xp = depois ? depois.xp : j.xp, nv = fmNivel(xp), nvA = fmNivel(antesXp), base = fmNivelBase(nv), prox = fmNivelBase(nv + 1);
+            const box = document.getElementById('fmx-nv');
+            if (box) { box.innerHTML = `<div class="l"><b>Nível ${nv}</b><small>${xp} / ${prox} XP</small></div><div class="nb"><i style="width:${Math.round((Math.max(base, antesXp) - base) / (prox - base) * 100)}%"></i></div>${depois && depois.seq > antesSeq ? `<p class="sq fmx-pop">🔥 ${depois.seq} ${depois.seq === 1 ? 'dia seguido' : 'dias seguidos'} a aprender</p>` : ''}`; requestAnimationFrame(() => setTimeout(() => { const i = box.querySelector('.nb i'); if (i) i.style.width = Math.min(100, Math.round((xp - base) / (prox - base) * 100)) + '%'; }, 60)); }
+            if (nv > nvA) setTimeout(() => fmSubiuNivel(nv), 900);
+            if (eqVista === 'formacao') fmPintar();
+        }
+        function fmSubiuNivel(n) {
+            const el = document.getElementById('fmx-play'); if (!el) return;
+            fmSom('nivel'); fmConfetes(180);
+            const d = document.createElement('div'); d.className = 'fmx-lvl'; d.setAttribute('role', 'alert');
+            d.innerHTML = `<div class="cx"><div class="bd"><span>${n}</span></div><h2>Subiu de nível!</h2><p>Chegou ao nível ${n}. Continue assim.</p><button type="button" class="fmx-b" onclick="this.closest('.fmx-lvl').remove()">Boa!</button></div>`;
+            el.appendChild(d); d.querySelector('button').focus();
         }
         function fmLicHtml(l) {
             if (!l) return '';
@@ -25329,28 +25608,94 @@ async function dsTrPreparar() {
             }
             return `<h4>${escapeHtml(l.titulo || '')}</h4><div style="white-space:pre-wrap">${escapeHtml(l.texto || '')}</div>`;
         }
-        function fmJogFase(f) {
-            const q = document.getElementById('fm-quem'); if (q) { fmJ.quem = q.value; try { localStorage.setItem('fm_quem', q.value); } catch (_) {} }
-            if (fmStaff().length && !fmJ.quem) return dsToast('Escolha o seu nome primeiro.', true);
-            fmJ.fase = f === 'licoes' && !(fmJ.c.licoes || []).length ? 'quiz' : f; fmJ.i = 0; fmJ.certas = 0; fmJogPintar();
-        }
-        function fmResponder(k) {
-            const j = fmJ, q = j.perg[j.i]; if (j.respondida) return; j.respondida = true;
-            const certo = q.o[k] === q.certa; if (certo) j.certas++;
-            document.querySelectorAll('#fm-play .op').forEach(b => { const o = q.o[Number(b.dataset.k)]; if (o === q.certa) b.classList.add('certa'); else if (Number(b.dataset.k) === k) b.classList.add('errada'); b.disabled = true; });
-            document.getElementById('fm-seg').classList.remove('hidden');
-        }
-        async function fmSeguinte() {
-            const j = fmJ; j.respondida = false;
-            if (j.i + 1 < j.perg.length) { j.i++; return fmJogPintar(); }
-            j.fase = 'fim'; fmJogPintar();
-            const nota = Math.round(j.certas / j.perg.length * 100), s = fmStaff().find(x => x.id === j.quem);
-            try {
-                const { data, error } = await sb.from('formacao_resultados').insert({ dono_id: dataOwnerId, curso_id: j.c.id, quem_id: j.quem || null, quem_nome: s ? s.nome.slice(0, 60) : null, nota, certas: j.certas, total: j.perg.length }).select('*').single();
-                if (error) throw error;
-                fmRes.unshift(data); const g = document.getElementById('fm-gravado'); if (g) g.textContent = 'Resultado guardado' + (s ? ' para ' + s.nome : '') + '.';
-                if (eqVista === 'formacao') fmPintar();
-            } catch (_) { const g = document.getElementById('fm-gravado'); if (g) g.textContent = 'Não foi possível guardar o resultado (sem internet?).'; }
+        function fmCss() {
+            if (document.getElementById('fmx-css')) return;
+            document.head.insertAdjacentHTML('beforeend', `<style id="fmx-css">
+            .fmx-cd{padding:16px!important;border-radius:18px}.fmx-nota{font-size:13px;color:#7A6A60;margin-top:10px;line-height:1.4}
+            .fmx-me{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #E4DCCF;border-radius:18px;padding:14px 16px}
+            .fmx-me .av,.fmx-av,.fmx-lg .av,.fmx-quem .av{width:46px;height:46px;border-radius:14px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0}
+            .fmx-me .tx{flex:1;min-width:0}.fmx-me .tx b{display:block;font-size:16px;font-weight:900;color:#231F20}.fmx-me .tx span{font-size:13px;font-weight:700;color:#983808}.fmx-me .tx small{display:block;font-size:12px;color:#7A6A60;margin-top:3px}
+            .fmx-me .nb,.fmx-nv .nb{height:10px;background:#F2ECE4;border-radius:99px;overflow:hidden;margin-top:6px}.fmx-me .nb i,.fmx-nv .nb i{display:block;height:100%;background:linear-gradient(90deg,#983808,#E0794F);border-radius:99px;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+            .fmx-me .ks{display:flex;gap:8px}.fmx-me .ks span{display:flex;flex-direction:column;align-items:center;background:#F6F3F0;border-radius:14px;padding:8px 10px;min-width:62px}.fmx-me .ks em{font-style:normal;font-size:18px;line-height:1}.fmx-me .ks b{font-size:16px;font-weight:900;color:#231F20}.fmx-me .ks small{font-size:11px;color:#7A6A60}
+            @media (max-width:520px){.fmx-me{flex-wrap:wrap}.fmx-me .ks{width:100%}.fmx-me .ks span{flex:1}}
+            .fmx-cc .hd{display:flex;align-items:center;justify-content:space-between;gap:8px}.fmx-cc .hd img{width:52px;height:52px;border-radius:14px;object-fit:cover}.fmx-cc .hd .ic{width:52px;height:52px;border-radius:14px;background:#FBEDE6;color:#983808;display:flex;align-items:center;justify-content:center;font-size:20px}
+            .fmx-cc .rg{width:52px;height:52px}.fmx-cc .rg circle{fill:none;stroke-width:5}.fmx-cc .rg .t{stroke:#F2ECE4}.fmx-cc .rg .v{stroke:#983808;stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset .8s}.fmx-cc.ok .rg .v{stroke:#15803D}.fmx-cc .rg text{font-size:12px;font-weight:900;fill:#231F20}.fmx-cc.ok .rg text{fill:#15803D;font-size:16px}
+            .fmx-lg{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 6px;border-top:1px solid #F2ECE4;border-radius:12px}.fmx-lg:hover{background:#F6F3F0}.fmx-lg.eu{background:#FBEDE6}
+            .fmx-lg .ps{width:22px;text-align:center;font-weight:900;color:#7A6A60}.fmx-lg .av{width:36px;height:36px;border-radius:11px;font-size:13px}.fmx-lg .nm{flex:1;min-width:0}.fmx-lg .nm b{display:block;font-size:14px;font-weight:800;color:#231F20;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fmx-lg .nm small{font-size:12px;color:#7A6A60}
+            .fmx-lg .sp{width:64px;height:22px;color:#983808;flex-shrink:0}.fmx-lg .xp,.fmx-hl .xp{font-weight:900;font-size:13px;color:#983808;white-space:nowrap}
+            @media (max-width:420px){.fmx-lg .sp{display:none}}
+            .fmx-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.fmx-kpi .k{background:#F6F3F0;border-radius:14px;padding:10px}.fmx-kpi b{display:block;font-size:20px;font-weight:900;color:#231F20}.fmx-kpi small{font-size:12px;color:#5B4A40;line-height:1.25;display:block}
+            @media (max-width:640px){.fmx-kpi{grid-template-columns:1fr 1fr}}
+            .fmx-ch{display:flex;align-items:flex-end;gap:8px;height:150px;margin-top:14px;padding-top:16px}.fmx-ch .c{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.fmx-ch .c i{display:block;width:100%;max-width:34px;background:#E4DCCF;border-radius:6px 6px 2px 2px;transition:height .8s}.fmx-ch .c i.on{background:#983808}.fmx-ch .v{font-size:11px;font-weight:800;color:#5B4A40}.fmx-ch small{font-size:11px;color:#7A6A60}
+            .fmx-hl{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid #F2ECE4}.fmx-hl .ok,.fmx-hl .nao{width:26px;height:26px;border-radius:99px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}.fmx-hl .ok{background:#DCFCE7;color:#15803D}.fmx-hl .nao{background:#FEE2E2;color:#B91C1C}.fmx-hl .nm{flex:1;min-width:0}.fmx-hl .nm b{display:block;font-size:14px;font-weight:800}.fmx-hl .nm small{font-size:12px;color:#7A6A60}
+            .fmx-ed .fmx-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0 4px}.fmx-steps button{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:#7A6A60;padding:8px;border-radius:12px;background:#F6F3F0;text-align:left;line-height:1.2}.fmx-steps button span{width:22px;height:22px;border-radius:99px;background:#fff;border:1px solid #E4DCCF;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
+            .fmx-steps button.on{background:#FBEDE6;color:#983808}.fmx-steps button.on span{background:#983808;border-color:#983808;color:#fff}.fmx-steps button.feito span{background:#15803D;border-color:#15803D;color:#fff}.fmx-steps button:disabled{opacity:.55}
+            @media (max-width:420px){.fmx-steps button{font-size:0;justify-content:center}.fmx-steps button span{font-size:11px}}
+            .fmx-edc{padding-top:6px}
+            .fmx-src{display:flex;align-items:center;gap:8px;border:1px solid #E4DCCF;border-radius:12px;padding:0 12px;margin-top:10px;background:#fff}.fmx-src i{color:#7A6A60}.fmx-src input{flex:1;border:0!important;outline:0;padding:11px 0!important;font-size:16px;background:transparent;margin:0!important;width:auto!important}
+            .fmx-chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none;flex-wrap:wrap}.fmx-chips button{white-space:nowrap;font-size:13px;font-weight:800;padding:7px 12px;border-radius:99px;border:1px solid #E4DCCF;background:#fff;color:#3A2A22}.fmx-chips button.on{background:#231F20;border-color:#231F20;color:#fff}
+            .fmx-sel{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 8px;font-size:14px;color:#5B4A40}.fmx-sel b{color:#983808;font-weight:900}.fmx-sel button{font-size:13px;font-weight:800;color:#983808;text-decoration:underline}
+            .fmx-gr{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:46vh;overflow-y:auto;padding:2px}
+            .fmx-f{position:relative;border:2px solid #E4DCCF;border-radius:14px;background:#fff;padding:6px;text-align:left;transition:transform .12s,border-color .12s}.fmx-f:active{transform:scale(.97)}.fmx-f img,.fmx-f .ph{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#F6F3F0;color:#C9BBAF;font-size:22px}
+            .fmx-f b{display:block;font-size:12.5px;font-weight:800;line-height:1.2;margin-top:6px;color:#231F20;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+            .fmx-f .ck{position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:99px;background:rgba(255,255,255,.92);border:2px solid #E4DCCF;color:transparent;display:flex;align-items:center;justify-content:center;font-size:11px}
+            .fmx-f.on{border-color:#983808;background:#FBEDE6}.fmx-f.on .ck{background:#983808;border-color:#983808;color:#fff}
+            .fmx-dsel{flex:1;min-width:180px;border:1px solid #E4DCCF;border-radius:12px;padding:9px 10px;font-size:14px;background:#fff}
+            .fmx-ed .lst .nr,.fmx-pq .nr{width:22px;height:22px;border-radius:99px;background:#F2ECE4;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0}
+            .fmx-sw{display:flex;align-items:center;gap:12px;background:#F6F3F0;border-radius:14px;padding:12px 14px;margin-top:8px;cursor:pointer}.fmx-sw span{flex:1}.fmx-sw b{display:block;font-size:14px;font-weight:900;color:#231F20}.fmx-sw small{display:block;font-size:12.5px;color:#5B4A40;line-height:1.35;margin-top:2px}
+            .fmx-sw input{position:absolute;opacity:0;width:1px;height:1px}.fmx-sw i{width:46px;height:28px;border-radius:99px;background:#C9BBAF;position:relative;flex-shrink:0;transition:background .2s}.fmx-sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+            .fmx-sw input:checked+i{background:#983808}.fmx-sw input:checked+i::after{transform:translateX(18px)}.fmx-sw input:focus-visible+i{outline:2px solid #983808;outline-offset:2px}
+            .fmx-ex{border:1px dashed #E4DCCF;border-radius:14px;padding:10px 12px;margin-top:10px;font-size:13px}.fmx-ex small{font-weight:800;color:#7A6A60;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em}.fmx-ex p{margin-top:6px;color:#5B4A40}.fmx-ex .ok{color:#15803D;font-weight:800}
+            .fmx-seg{display:flex;gap:6px;flex-wrap:wrap}.fmx-seg button{flex:1;min-width:52px;padding:10px 8px;border-radius:12px;border:1px solid #E4DCCF;background:#fff;font-weight:800;font-size:14px}.fmx-seg button.on{background:#983808;border-color:#983808;color:#fff}
+            .fmx-pq{border:1px solid #E4DCCF;border-radius:14px;padding:10px;margin-top:8px;display:flex;flex-direction:column;gap:6px}.fmx-pq .fq-p{flex:1;border:1px solid #E4DCCF;border-radius:10px;padding:9px 10px;font-size:15px;font-weight:700}.fmx-pq label.op{display:flex;gap:8px;align-items:center}.fmx-pq label.op input[type=radio]{width:20px;height:20px;accent-color:#15803D;flex-shrink:0}.fmx-pq .fq-o{flex:1;border:1px solid #E4DCCF;border-radius:10px;padding:8px 10px;font-size:15px}.fmx-pq small{font-size:12px;color:#7A6A60}
+            body.fmx-aberto{overflow:hidden}
+            #fmx-play{position:fixed;inset:0;z-index:2147483000;background:#fff;color:#231F20;display:flex;justify-content:center;outline:0}
+            .fmx-in-w{width:100%;max-width:640px;display:flex;flex-direction:column;height:100%;padding:max(12px,env(safe-area-inset-top)) 16px 0}
+            .fmx-top{display:flex;align-items:center;gap:12px;padding:6px 0 10px}.fmx-top .x{width:40px;height:40px;border-radius:12px;color:#7A6A60;font-size:20px;flex-shrink:0}.fmx-top .x:hover{background:#F6F3F0}
+            .fmx-top .bar{flex:1;height:16px;background:#F2ECE4;border-radius:99px;overflow:hidden}.fmx-top .bar i{display:block;height:100%;background:#15803D;border-radius:99px;transition:width .5s cubic-bezier(.2,.8,.2,1);position:relative}.fmx-top .bar i::after{content:"";position:absolute;left:8px;right:8px;top:3px;height:4px;border-radius:99px;background:rgba(255,255,255,.35)}
+            .fmx-top .vd{font-weight:900;font-size:16px;color:#B91C1C;white-space:nowrap}
+            .fmx-perde{animation:fmxPerde .5s}@keyframes fmxPerde{30%{transform:scale(1.35)}60%{transform:scale(.9)}}
+            .fmx-corpo{flex:1;overflow-y:auto;padding:8px 2px 20px;display:flex;flex-direction:column}
+            .fmx-mid{margin:auto 0;text-align:center;padding:12px 0}.fmx-mid .em{font-size:72px;line-height:1}.fmx-mid h2{font-family:'Bricolage Grotesque',inherit;font-size:28px;font-weight:800;letter-spacing:-.02em;margin-top:12px}.fmx-mid p{color:#5B4A40;margin-top:8px;font-size:15.5px}
+            .fmx-regras{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px}.fmx-regras span{background:#F6F3F0;border-radius:12px;padding:8px 12px;font-size:13px;color:#5B4A40}.fmx-regras b{color:#231F20;margin-left:4px}
+            .fmx-quem{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:18px;text-align:left}.fmx-quem button{display:flex;flex-direction:column;align-items:flex-start;gap:6px;border:2px solid #E4DCCF;border-bottom-width:4px;border-radius:16px;padding:12px;background:#fff}.fmx-quem button:hover{border-color:#983808}.fmx-quem b{font-size:15px;font-weight:900}.fmx-quem small{font-size:12px;color:#7A6A60;word-break:break-all}
+            .fmx-lic .lic{margin-top:8px}.fmx-lic img{width:100%;max-height:240px;object-fit:cover;border-radius:16px;margin-bottom:12px}.fmx-lic h4{font-size:22px;font-weight:900}.fmx-lic .ing{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F2ECE4}
+            .fmx-q h2{font-family:'Bricolage Grotesque',inherit;font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:8px 0 18px}
+            .fmx-corpo .tg{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#983808}.fmx-corpo .tg.rev{color:#B45309}
+            .fmx-q .ops{display:grid;gap:10px}.fmx-q .ops.vf{grid-template-columns:1fr 1fr}
+            .fmx-q .op{display:flex;align-items:center;gap:12px;text-align:left;border:2px solid #E4DCCF;border-bottom-width:4px;border-radius:16px;padding:14px;font-size:16px;font-weight:700;background:#fff;color:#231F20;transition:transform .08s,border-color .15s,background .15s}
+            .fmx-q .op:active:not(:disabled){transform:translateY(2px);border-bottom-width:2px}.fmx-q .op .k{width:26px;height:26px;border-radius:8px;border:2px solid #E4DCCF;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7A6A60;flex-shrink:0}
+            .fmx-q .op.sel{border-color:#983808;background:#FBEDE6}.fmx-q .op.sel .k{border-color:#983808;color:#983808}
+            .fmx-q .op.certa{border-color:#15803D;background:#DCFCE7;color:#14532D}.fmx-q .op.certa .k{border-color:#15803D;color:#15803D}.fmx-q .op.errada{border-color:#B91C1C;background:#FEE2E2;color:#7F1D1D}.fmx-q .op.errada .k{border-color:#B91C1C;color:#B91C1C}
+            .fmx-pe{display:flex;gap:10px;padding:14px 0 max(16px,env(safe-area-inset-bottom));border-top:2px solid #F2ECE4}
+            .fmx-pe.fb{border:0;padding:0;margin:0 -16px}
+            .fmx-b{flex:1;min-height:52px;border-radius:16px;background:#983808;color:#fff;font-weight:900;font-size:16px;letter-spacing:.02em;box-shadow:0 4px 0 #5E2205;transition:transform .08s,box-shadow .08s}.fmx-b:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #5E2205}
+            .fmx-b:disabled{background:#E4DCCF;color:#7A6A60;box-shadow:0 4px 0 #C9BBAF}.fmx-b.sec{background:#fff;color:#231F20;border:2px solid #E4DCCF;box-shadow:0 4px 0 #E4DCCF;flex:0 1 auto;padding:0 18px}
+            .fmx-b.ok{background:#15803D;box-shadow:0 4px 0 #0F5A2B}.fmx-b.no{background:#B91C1C;box-shadow:0 4px 0 #7F1414}
+            .fmx-fb{width:100%;padding:16px 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;animation:fmxSobe .25s cubic-bezier(.2,.8,.2,1)}.fmx-fb.ok{background:#DCFCE7}.fmx-fb.no{background:#FEE2E2}
+            .fmx-fb .t{display:flex;align-items:center;gap:12px}.fmx-fb .ic{width:40px;height:40px;border-radius:99px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;flex-shrink:0}.fmx-fb.ok .ic,.fmx-fb.ok b{color:#15803D}.fmx-fb.no .ic,.fmx-fb.no b{color:#B91C1C}.fmx-fb b{display:block;font-size:19px;font-weight:900}.fmx-fb small{font-size:14px;font-weight:700;color:#14532D}.fmx-fb .cr{color:#7F1D1D;font-size:15px}
+            @media (min-width:641px){.fmx-fb{flex-direction:row;align-items:center;justify-content:space-between;padding-left:24px;padding-right:24px;border-radius:18px 18px 0 0}.fmx-fb .fmx-b{flex:0 0 200px}}
+            @keyframes fmxSobe{from{transform:translateY(100%)}to{transform:none}}
+            .fmx-in{animation:fmxEntra .3s cubic-bezier(.2,.8,.2,1)}@keyframes fmxEntra{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+            .fmx-shake{animation:fmxAbana .4s}@keyframes fmxAbana{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+            .fmx-pop{animation:fmxPop .6s cubic-bezier(.2,1.6,.4,1)}@keyframes fmxPop{from{transform:scale(.3);opacity:0}to{transform:none;opacity:1}}
+            .fmx-flash{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:#231F20;color:#fff;font-weight:900;font-size:20px;padding:12px 20px;border-radius:99px;animation:fmxFlash 1.4s forwards;pointer-events:none;white-space:nowrap}@keyframes fmxFlash{0%{opacity:0;transform:translate(-50%,10px) scale(.7)}15%{opacity:1;transform:translate(-50%,0) scale(1.08)}25%{transform:translate(-50%,0) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-20px)}}
+            .fmx-st{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin:22px 0 4px}.fmx-st .s{border:2px solid #E4DCCF;border-radius:16px;padding:10px;animation:fmxPop .5s backwards}.fmx-st .s:nth-child(2){animation-delay:.12s}.fmx-st .s:nth-child(3){animation-delay:.24s}.fmx-st .s:nth-child(4){animation-delay:.36s}
+            .fmx-st small{display:block;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:#7A6A60}.fmx-st b{display:block;font-size:24px;font-weight:900;margin-top:2px}.fmx-st .xp{border-color:#983808;background:#FBEDE6}.fmx-st .xp b{color:#983808}
+            .fmx-nv{text-align:left;margin-top:14px}.fmx-nv .l{display:flex;justify-content:space-between;align-items:baseline}.fmx-nv b{font-weight:900}.fmx-nv small{color:#7A6A60;font-size:12px}.fmx-nv .nb{height:14px}.fmx-nv .sq{text-align:center;margin-top:14px;font-weight:900;color:#B45309;font-size:17px}
+            .fmx-lvl{position:absolute;inset:0;background:rgba(35,31,32,.72);display:flex;align-items:center;justify-content:center;padding:20px;animation:fmxEntra .2s}.fmx-lvl .cx{background:#fff;border-radius:24px;padding:28px 24px;text-align:center;max-width:340px;width:100%;animation:fmxPop .55s cubic-bezier(.2,1.6,.4,1)}
+            .fmx-lvl .bd{width:120px;height:120px;margin:0 auto;border-radius:32px;background:#983808;display:flex;align-items:center;justify-content:center;transform:rotate(-6deg);box-shadow:0 8px 0 #5E2205;animation:fmxGira 1s cubic-bezier(.2,1.4,.4,1)}.fmx-lvl .bd span{color:#fff;font-family:'Bricolage Grotesque',inherit;font-size:64px;font-weight:800;transform:rotate(6deg)}
+            @keyframes fmxGira{from{transform:rotate(-200deg) scale(.2)}to{transform:rotate(-6deg) scale(1)}}
+            .fmx-lvl h2{font-family:'Bricolage Grotesque',inherit;font-size:28px;font-weight:800;margin-top:22px}.fmx-lvl p{color:#5B4A40;margin:6px 0 18px}.fmx-lvl .fmx-b{width:100%}
+            .fmx-conf{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483600}
+            @media (prefers-reduced-motion:reduce){.fmx-in,.fmx-pop,.fmx-shake,.fmx-fb,.fmx-st .s,.fmx-lvl .cx,.fmx-lvl .bd,.fmx-flash,.fmx-perde{animation:none!important}}
+            html.dark .fmx-me,html.dark .fmx-f,html.dark .fmx-quem button,html.dark .fmx-q .op,html.dark .fmx-seg button,html.dark .fmx-chips button,html.dark .fmx-src,html.dark .fmx-dsel{background:#2A1B14;border-color:#44332A;color:#F2ECE4}
+            html.dark .fmx-me .tx b,html.dark .fmx-lg .nm b,html.dark .fmx-kpi b,html.dark .fmx-me .ks b,html.dark .fmx-f b{color:#F2ECE4}html.dark .fmx-me .ks span,html.dark .fmx-kpi .k,html.dark .fmx-sw,html.dark .fmx-regras span,html.dark .fmx-steps button{background:#1F130E;color:#C9BBAF}
+            html.dark .fmx-me .tx span,html.dark .fmx-lg .xp,html.dark .fmx-hl .xp{color:#E0794F}html.dark .fmx-lg.eu,html.dark .fmx-f.on,html.dark .fmx-q .op.sel{background:#3A2218}
+            html.dark #fmx-play{background:#1F130E;color:#F2ECE4}html.dark .fmx-mid p,html.dark .fmx-regras b{color:#C9BBAF}html.dark .fmx-top .bar,html.dark .fmx-me .nb,html.dark .fmx-nv .nb{background:#44332A}html.dark .fmx-pe{border-color:#44332A}
+            html.dark .fmx-q .op.certa{background:#14532D;color:#DCFCE7;border-color:#4ADE80}html.dark .fmx-q .op.errada{background:#7F1D1D;color:#FEE2E2;border-color:#F87171}html.dark .fmx-fb.ok{background:#14532D}html.dark .fmx-fb.no{background:#7F1D1D}html.dark .fmx-fb b,html.dark .fmx-fb small,html.dark .fmx-fb .cr{color:#fff!important}
+            html.dark .fmx-lg,html.dark .fmx-hl{border-color:#44332A}html.dark .fmx-lg:hover{background:#2A1B14}html.dark .fmx-lg .sp{color:#E0794F}html.dark .fmx-ch .c i{background:#44332A}html.dark .fmx-ch .c i.on{background:#E0794F}html.dark .fmx-ch .v,html.dark .fmx-kpi small{color:#C9BBAF}html.dark .fmx-st .s{border-color:#44332A}html.dark .fmx-st .xp{background:#3A2218}html.dark .fmx-lvl .cx{background:#2A1B14}html.dark .fmx-corpo .tg{color:#E0794F}html.dark .fmx-b.sec{background:#2A1B14;color:#F2ECE4;border-color:#44332A;box-shadow:0 4px 0 #44332A}
+            </style>`);
         }
 
         // ---------- assistente da casa (respostas tiradas das fichas e dos documentos)
