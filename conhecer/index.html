@@ -189,6 +189,11 @@ section.bloco{padding:104px 0}
 .aviso small{display:block;font-weight:500;opacity:.9}
 .zap{background:#E7F7EE;border-radius:14px 14px 14px 4px;padding:14px;font-size:14px;line-height:1.5;max-width:330px}
 .zap b{display:block;margin-bottom:4px}
+.esc{display:grid;grid-template-columns:minmax(52px,auto) repeat(7,1fr);gap:4px;margin-top:10px;font-size:12px;text-align:center;align-items:center}
+.esc span{color:var(--ink-3);font-weight:600}
+.esc b{text-align:left;font-weight:600;font-size:13px}
+.esc i{font-style:normal;font-weight:700;padding:6px 0;border-radius:8px;background:var(--foam)}
+.esc i.f{background:transparent;color:var(--ink-3);font-weight:500;font-size:10px}
 .zap small{display:block;text-align:right;color:var(--ink-3);font-size:11px;margin-top:6px}
 .talao{background:#fff;width:250px;margin:0 auto;padding:20px 18px 26px;font-size:13px;border-radius:4px;box-shadow:0 1px 0 var(--line);position:relative;
   -webkit-mask:radial-gradient(circle 6px at 50% 100%,transparent 98%,#000) 0 0/16px 100%;mask:radial-gradient(circle 6px at 50% 100%,transparent 98%,#000) 0 0/16px 100%}
@@ -571,6 +576,36 @@ footer nav{display:flex;gap:24px;flex-wrap:wrap}
           <div class="linha"><b>Bebidas do bar</b><span class="num">Ana · <b style="color:var(--green)">✓ 100%</b></span></div>
           <div class="linha"><b>Receber o cliente</b><span class="num">Marta · <b style="color:#D97706">por fazer</b></span></div>
           <div class="linha"><b>“A lasanha tem glúten?”</b><span class="num"><b style="color:#B91C1C">Sim</b> · da ficha</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="func inv" id="escala-tips">
+      <div class="txt">
+        <h3>Escala e tips que se fazem sozinhas</h3>
+        <p>O Dio’Stock aprende o horário de cada pessoa e preenche a semana por si. As tips de cada dia dividem-se ao cêntimo por quem trabalhou, sem contas à mão. No fim, a escala e as tips seguem para a equipa como foto, por WhatsApp.</p>
+        <ul>
+          <li>Semana preenchida com o horário de cada pessoa</li>
+          <li>Copiar a semana anterior num toque</li>
+          <li>Folgas, férias e faltas: quem falta não recebe tips</li>
+          <li>Tips do dia ou da semana, divididas ao cêntimo</li>
+        </ul>
+        <span class="plano">Plano PRO</span>
+      </div>
+      <div class="ecra">
+        <div class="ui">
+          <div class="ui-t">Escala · sala <small>preenchida sozinha</small></div>
+          <div class="esc" role="table" aria-label="Exemplo de escala semanal">
+            <span></span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span>
+            <b>Ana</b><i>M</i><i>M</i><i class="f">folga</i><i>M</i><i>T</i><i>T</i><i class="f">folga</i>
+            <b>Rui</b><i>T</i><i class="f">folga</i><i>T</i><i>T</i><i>M</i><i>M</i><i>M</i>
+            <b>Marta</b><i class="f">folga</i><i>T</i><i>M</i><i class="f">folga</i><i>T</i><i>T</i><i>M</i>
+          </div>
+          <p style="margin:8px 0 0;font-size:12px;color:var(--ink-3)">M manhã · T tarde</p>
+          <div class="ui-t" style="margin-top:16px">Tips de sábado <small class="num">86,40 €</small></div>
+          <div class="linha"><b>Ana</b><span class="num">28,80 €</span></div>
+          <div class="linha"><b>Rui</b><span class="num">28,80 €</span></div>
+          <div class="linha"><b>Marta</b><span class="num">28,80 €</span></div>
         </div>
       </div>
     </div>
