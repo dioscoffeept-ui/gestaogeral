@@ -26538,5 +26538,167 @@ async function dsTrPreparar() {
         }
     </script>
 
+    <style>
+        /* Formação: imagem do curso e das lições escritas */
+        .fmi-box { display: flex; gap: 12px; align-items: center; }
+        .fmi-pv { width: 96px; height: 72px; border-radius: 14px; background: #F6F3F0; border: 1.5px dashed #D9CDBF; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; color: #B9A99C; font-size: 20px; }
+        .fmi-pv img { width: 100%; height: 100%; object-fit: cover; }
+        .fmi-pv.arrastar { border-color: var(--brand); background: #FBEDE6; }
+        .fmi-bts { display: flex; flex-wrap: wrap; gap: 6px; }
+        .fmi-bts button, .fmi-bts label { font-size: 12.5px; font-weight: 800; padding: 7px 10px; border-radius: 10px; border: 1px solid #E4DCCF; background: #fff; color: #231F20; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .fmi-bts i { color: var(--brand); }
+        .fmi-bts .rm, .fmi-bts .rm i { color: #B91C1C; }
+        .fmi-fl { margin-top: 10px; border: 1px solid #E4DCCF; border-radius: 14px; padding: 10px; }
+        .fmi-fl form { display: flex; gap: 6px; }
+        .fmi-fl input { flex: 1; min-width: 0; width: auto !important; }
+        .fmi-fl form button { padding: 0 12px; border-radius: 10px; background: var(--brand); color: #fff; font-weight: 800; }
+        .fmi-gr { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+        .fmi-gr button { aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #F1ECE4; }
+        .fmi-gr img { width: 100%; height: 100%; object-fit: cover; }
+        #fm-ed .lst > div span.nr { flex: 0 0 22px; overflow: visible; }
+        .fmi-dica { font-size: 11.5px; color: #7A6A60; margin-top: 6px; }
+        #fm-play .lic .fmi-lic { width: 100%; max-height: 320px; object-fit: cover; border-radius: 14px; margin-bottom: 10px; }
+        html.dark .fmi-pv, html.dark .fmi-bts button, html.dark .fmi-bts label, html.dark .fmi-fl { background: #1F130E; border-color: #44332A; color: #F2ECE4; }
+    </style>
+    <script>
+        // ======================================================= FORMAÇÃO: imagens (capa do curso e lições escritas)
+        // Tirar foto · Escolher da galeria · Fotos gratuitas · Ajustar · Remover · colar (Ctrl+V) · arrastar
+        const fmImg = { capa: { orig: null, fl: [] }, lic: { url: null, orig: null, fl: [] } };
+        const fmImgGet = a => a === 'capa' ? (fmEd && fmEd.img) || null : fmImg.lic.url;
+        const fmImgSet = (a, u) => { if (a === 'capa') { if (fmEd) { if (u) fmEd.img = u; else delete fmEd.img; } } else fmImg.lic.url = u; fmImgPintar(a); };
+        function fmImgHtml(a) {
+            return `<div class="fmi-box" id="fmi-${a}"></div>
+                <div class="fmi-fl hidden" id="fmi-fl-${a}"><form onsubmit="event.preventDefault();fmImgProcurar('${a}')"><input id="fmi-q-${a}" placeholder="Procurar (em inglês funciona melhor)" autocomplete="off"><button type="submit" aria-label="Procurar"><i class="fas fa-magnifying-glass"></i></button></form><div class="fmi-gr" id="fmi-gr-${a}"></div><p class="fmi-dica" id="fmi-msg-${a}"></p></div>`;
+        }
+        function fmImgPintar(a) {
+            const el = document.getElementById('fmi-' + a); if (!el) return;
+            const u = fmImgGet(a), orig = fmImg[a].orig;
+            el.innerHTML = `<div class="fmi-pv" id="fmi-pv-${a}">${u ? `<img src="${escapeHtml(u)}" alt="">` : '<i class="fas fa-image"></i>'}</div>
+                <div><div class="fmi-bts">
+                    <label><i class="fas fa-camera"></i>Tirar foto<input type="file" accept="image/*" capture="environment" class="hidden" onchange="fmImgFicheiro('${a}',this)"></label>
+                    <label><i class="fas fa-images"></i>Galeria<input type="file" accept="image/*" class="hidden" onchange="fmImgFicheiro('${a}',this)"></label>
+                    <button type="button" onclick="fmImgLivres('${a}')"><i class="fas fa-magnifying-glass"></i>Fotos gratuitas</button>
+                    ${u && orig ? `<button type="button" onclick="fmImgAjustar('${a}')"><i class="fas fa-crop-simple"></i>Ajustar</button>` : ''}
+                    ${u ? `<button type="button" class="rm" onclick="fmImgSet('${a}',null)"><i class="fas fa-trash"></i>Remover</button>` : ''}
+                </div><p class="fmi-dica">Também pode colar (Ctrl+V) ou arrastar uma imagem para aqui.</p></div>`;
+            const pv = el.querySelector('.fmi-pv');
+            el.ondragover = e => { e.preventDefault(); pv.classList.add('arrastar'); };
+            el.ondragleave = () => pv.classList.remove('arrastar');
+            el.ondrop = e => { e.preventDefault(); pv.classList.remove('arrastar'); const f = [...(e.dataTransfer.files || [])].find(x => /^image\//.test(x.type)); if (f) fmImgUsar(a, f); };
+        }
+        async function fmImgUsar(a, f) {
+            const r = document.getElementById('recorte'); if (r) document.body.appendChild(r); // o recorte aparece por cima do curso
+            const u = await dsRecortar(f, { aspeto: 4 / 3, saida: 800, inicio: 'cobrir', titulo: 'Ajustar a imagem' });
+            if (!u) return; fmImg[a].orig = f; fmImgSet(a, u);
+        }
+        function fmImgFicheiro(a, input) { const f = input.files && input.files[0]; input.value = ''; if (f) fmImgUsar(a, f); }
+        function fmImgAjustar(a) { if (fmImg[a].orig) fmImgUsar(a, fmImg[a].orig); }
+        function fmImgLivres(a) {
+            const p = document.getElementById('fmi-fl-' + a); if (!p) return; p.classList.toggle('hidden');
+            if (p.classList.contains('hidden')) return;
+            const q = document.getElementById('fmi-q-' + a);
+            if (!q.value.trim()) { const base = a === 'capa' ? (document.getElementById('fme-t')?.value || (fmEd && fmEd.titulo) || '') : (document.getElementById('fmt-t')?.value || ''); q.value = typeof photoQuery === 'function' ? photoQuery(base) : base; }
+            if (q.value.trim()) fmImgProcurar(a); else q.focus();
+        }
+        async function fmImgProcurar(a) {
+            const q = document.getElementById('fmi-q-' + a).value.trim(), g = document.getElementById('fmi-gr-' + a), m = document.getElementById('fmi-msg-' + a);
+            if (!q) { m.textContent = 'Escreva o que procura, de preferência em inglês (ex.: restaurant team, coffee).'; return; }
+            g.innerHTML = '<p class="fmi-dica" style="grid-column:1/-1"><i class="fas fa-circle-notch fa-spin mr-1"></i>A procurar fotos…</p>'; m.textContent = '';
+            try {
+                const l = ((await (await fotosCall('q=' + encodeURIComponent(q) + '&page=1')).json()).fotos) || [];
+                fmImg[a].fl = l.slice(0, 12);
+                g.innerHTML = fmImg[a].fl.map((f, i) => `<button type="button" onclick="fmImgEscolher('${a}',${i})"><img loading="lazy" src="${escapeHtml(f.thumb)}" alt=""></button>`).join('') || '<p class="fmi-dica" style="grid-column:1/-1">Nenhuma foto encontrada. Tente outra palavra (em inglês funciona melhor).</p>';
+            } catch (e) { g.innerHTML = ''; m.textContent = String(e && e.message) === 'login' ? 'Entre na sua conta para procurar fotos.' : 'Não foi possível procurar fotos agora. Tente de novo daqui a pouco.'; }
+        }
+        async function fmImgEscolher(a, i) {
+            const f = fmImg[a].fl[i]; if (!f) return;
+            try {
+                let r; try { r = await fotosCall('img=' + encodeURIComponent(f.full)); } catch (_) { r = await fotosCall('img=' + encodeURIComponent(f.thumb)); }
+                const b = await r.blob(); await fmImgUsar(a, new File([b], 'foto.jpg', { type: b.type || 'image/jpeg' }));
+                document.getElementById('fmi-fl-' + a)?.classList.add('hidden');
+                if (f.credit) dsToast('Foto: ' + f.credit);
+            } catch (e) { dsToast('Não foi possível usar esta foto. Escolha outra.', true); }
+        }
+        // colar (Ctrl+V): vai para a lição se estiver aberta, senão para o curso
+        document.addEventListener('paste', e => {
+            const f = [...((e.clipboardData && e.clipboardData.files) || [])].find(x => /^image\//.test(x.type)); if (!f) return;
+            const aberto = id => { const m = document.getElementById(id); return m && m.classList.contains('on'); };
+            const a = aberto('fm-tx') && document.getElementById('fmi-lic') ? 'lic' : aberto('fm-ed') && document.getElementById('fmi-capa') ? 'capa' : null;
+            if (!a) return; e.preventDefault(); fmImgUsar(a, f);
+        });
+
+        (function () {
+            // passo 2 do curso: imagem do curso
+            const oP = fmEdPintar;
+            fmEdPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    if (fmEdPasso === 1) document.querySelectorAll('#fm-ed .lst > div').forEach(row => {
+                        const t = row.querySelector('span:not(.nr)'); if (!t || row.querySelector('.fmi-ed')) return;
+                        const i = fmEd.licoes.findIndex(x => x.tipo === 'texto' && fmLicTitulo(x) === t.textContent); if (i < 0) return;
+                        const l = fmEd.licoes[i];
+                        t.insertAdjacentHTML('afterend', `<button type="button" class="fm-ocr fmi-ed" onclick="fmEdTextoEditar(${i})">${l.img ? '<i class="fas fa-image mr-1"></i>' : ''}Editar</button>`);
+                    });
+                    if (fmEdPasso === 2 && !document.getElementById('fmi-capa')) {
+                        const d = document.getElementById('fme-d')?.closest('label');
+                        if (d) { d.insertAdjacentHTML('afterend', `<div class="tit">Imagem do curso <small style="font-weight:600;color:#7A6A60">(opcional)</small></div>${fmImgHtml('capa')}`); fmImgPintar('capa'); }
+                    }
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+            const oE = fmEditar;
+            fmEditar = function () { fmImg.capa.orig = null; return oE.apply(this, arguments); };
+            // lição escrita com imagem
+            const oT = fmEdTexto;
+            fmEdTexto = function () {
+                const r = oT.apply(this, arguments);
+                fmImg.lic.url = null; fmImg.lic.orig = null;
+                const x = document.getElementById('fmt-x')?.closest('label');
+                if (x) { x.insertAdjacentHTML('afterend', `<div class="tit" style="margin-top:10px">Imagem (opcional)</div>${fmImgHtml('lic')}`); fmImgPintar('lic'); }
+                return r;
+            };
+            const oOk = fmEdTextoOk;
+            fmEdTextoOk = function () {
+                const n = fmEd.licoes.length, u = fmImg.lic.url;
+                const r = oOk.apply(this, arguments);
+                if (fmEd.licoes.length > n && u) { fmEd.licoes[fmEd.licoes.length - 1].img = u; fmImg.lic.url = null; }
+                return r;
+            };
+            // editar uma lição escrita (texto e imagem)
+            window.fmEdTextoEditar = function (i) {
+                const l = fmEd.licoes[i]; if (!l || l.tipo !== 'texto') return;
+                fmEdTexto();
+                const g = id => document.getElementById(id);
+                g('fmt-t').value = l.titulo || ''; g('fmt-x').value = l.texto || '';
+                fmImg.lic.url = l.img || null; fmImgPintar('lic');
+                const h = document.querySelector('#fm-tx h3'); if (h) h.textContent = 'Editar lição';
+                const ok = document.querySelector('#fm-tx .acoes .p');
+                if (ok) { ok.textContent = 'Guardar lição'; ok.onclick = null; ok.setAttribute('onclick', `fmEdTextoGuardar(${i})`); }
+            };
+            window.fmEdTextoGuardar = function (i) {
+                const t = document.getElementById('fmt-t').value.trim(), x = document.getElementById('fmt-x').value.trim();
+                if (!t || !x) return dsToast('Escreva o título e o texto.', true);
+                const l = fmEd.licoes[i]; l.titulo = t.slice(0, 80); l.texto = x.slice(0, 6000);
+                if (fmImg.lic.url) l.img = fmImg.lic.url; else delete l.img;
+                fmImg.lic.url = null; dsModalFechar('fm-tx'); fmEdPintar();
+            };
+            // cartão do curso: usa a imagem escolhida
+            const oC = fmCursoCard;
+            fmCursoCard = function (c) {
+                let h = oC.apply(this, arguments);
+                const img = c.img || ((c.licoes || []).find(l => l.img) || {}).img;
+                if (img && !/<div class="hd"><img /.test(h)) h = h.replace('<div class="hd"><span class="ic"><i class="fas fa-graduation-cap"></i></span>', `<div class="hd"><img src="${escapeHtml(img)}" alt="" loading="lazy">`);
+                else if (c.img) h = h.replace(/<div class="hd"><img src="[^"]*"/, `<div class="hd"><img src="${escapeHtml(c.img)}"`);
+                return h;
+            };
+            // na lição: mostra a imagem
+            const oL = fmLicHtml;
+            fmLicHtml = function (l) {
+                const h = oL.apply(this, arguments);
+                return l && l.tipo === 'texto' && l.img ? `<img class="fmi-lic" src="${escapeHtml(l.img)}" alt="">` + h : h;
+            };
+        })();
+    </script>
+
 </body>
 </html>
