@@ -29,7 +29,9 @@
 <meta name="twitter:image:alt" content="Dio’Stock — saiba quanto ganha em cada prato e cada bebida">
 <!-- REGRA FIXA: banner grande 1200×630 e summary_large_image. Não trocar por imagem quadrada. -->
 <meta name="theme-color" content="#9C3815">
-<link rel="icon" href="../icon-192.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/icon-48.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="../fontes/fontes.css">
 <script type="application/ld+json">
@@ -119,7 +121,11 @@ img,svg,video{max-width:100%}
 .margem .big{font-family:var(--display);font-weight:800;font-size:64px;line-height:.9;letter-spacing:-.04em;color:var(--green);transition:color .2s}
 .margem .big.mal{color:#B42318}
 .margem p{font-size:14px;color:var(--ink-2);text-align:right;max-width:20ch}
-.bebidas{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 6px}
+.grupo{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--creme,#F6F3F0);border:1px solid var(--line);border-radius:14px;padding:4px;margin:14px 0 0}
+.grupo button{border:0;background:transparent;border-radius:10px;padding:9px 10px;font:inherit;font-size:14.5px;font-weight:700;color:var(--ink-2);cursor:pointer}
+.grupo button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.bebidas{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}
+.bebidas button[hidden]{display:none}
 .bebidas button{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font:inherit;font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer}
 .bebidas button:hover{border-color:var(--ink);color:var(--ink)}
 .bebidas button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
@@ -443,16 +449,20 @@ body{background:#F6F3F0}
         <div><b id="f-nome">Latte</b><small id="f-copo">Ficha técnica · copo de 300 ml</small></div>
         <span class="tag">Experimente</span>
       </div>
+      <div class="grupo" role="group" aria-label="Tipo de ficha">
+        <button type="button" data-g="b" aria-pressed="true">Bebidas</button>
+        <button type="button" data-g="c" aria-pressed="false">Comidas</button>
+      </div>
       <div class="bebidas" role="group" aria-label="Bebida ou prato">
-        <button type="button" data-b="expresso">Expresso</button>
-        <button type="button" data-b="latte" aria-pressed="true">Latte</button>
-        <button type="button" data-b="gin">Gin tónico</button>
-        <button type="button" data-b="aperol">Aperol Spritz</button>
-        <button type="button" data-b="coca">Coca-Cola</button>
-        <button type="button" data-b="zero">Coca-Cola Zero</button>
-        <button type="button" data-b="tosta">Tosta mista</button>
-        <button type="button" data-b="burger">Hambúrguer</button>
-        <button type="button" data-b="lasanha">Lasanha</button>
+        <button type="button" data-g="b" data-b="expresso">Expresso</button>
+        <button type="button" data-g="b" data-b="latte" aria-pressed="true">Latte</button>
+        <button type="button" data-g="b" data-b="gin">Gin tónico</button>
+        <button type="button" data-g="b" data-b="aperol">Aperol Spritz</button>
+        <button type="button" data-g="b" data-b="coca">Coca-Cola</button>
+        <button type="button" data-g="b" data-b="zero">Coca-Cola Zero</button>
+        <button type="button" data-g="c" data-b="tosta" hidden>Tosta mista</button>
+        <button type="button" data-g="c" data-b="burger" hidden>Hambúrguer</button>
+        <button type="button" data-g="c" data-b="lasanha" hidden>Lasanha</button>
       </div>
       <div id="f-linhas"></div>
       <div class="lin tot num"><span>Custo de produção</span><output id="f-custo">0,86 €</output></div>
@@ -575,7 +585,7 @@ body{background:#F6F3F0}
           <ul class="chk"><li>Bebidas, pratos, brunch e bases</li><li>Foto e modo de preparo</li><li>Alergénios em cada ficha</li><li>Simulador de margem e lucro</li></ul>
           <span class="plano">Desde 5 € por mês</span>
         </div>
-        <div class="vis"><figure class="fc-tel"><img src="img/ficha.webp?v=2" width="390" height="686" alt="Ficha técnica da Lasanha à bolonhesa no Dio’Stock: custo dos ingredientes 2,55 €, preço de venda 12,50 €, IVA a entregar 1,44 €, lucro líquido de 8,66 € e margem de 78,2%" loading="lazy" decoding="async"><figcaption>Uma ficha real da app: o custo, o IVA e o que sobra de cada lasanha</figcaption></figure></div>
+        <div class="vis"><figure class="fc-tel"><img src="img/ficha.webp?v=3" width="390" height="686" alt="Ficha técnica da Lasanha à bolonhesa no Dio’Stock: custo dos ingredientes 2,55 €, preço de venda 12,50 €, IVA a entregar 1,44 €, lucro líquido de 8,66 € e margem de 78,2%" loading="lazy" decoding="async"><figcaption>Uma ficha real da app: o custo, o IVA e o que sobra de cada lasanha</figcaption></figure></div>
       </article>
 
       <article class="bx bx-stock escuro">
@@ -808,10 +818,12 @@ body{background:#F6F3F0}
   function escolher(k) {
     const b = B[k]; cur = k; preco = b.preco;
     $('f-nome').textContent = b.nome; $('f-copo').textContent = b.copo;
-    document.querySelectorAll('.bebidas button').forEach(x => x.setAttribute('aria-pressed', x.dataset.b === k));
+    document.querySelectorAll('.bebidas button').forEach(x => { x.setAttribute('aria-pressed', x.dataset.b === k); x.hidden = !!b.prato !== (x.dataset.g === 'c'); });
+    document.querySelectorAll('.grupo button').forEach(x => x.setAttribute('aria-pressed', (x.dataset.g === 'c') === !!b.prato));
     linhas(b); draw();
   }
   document.querySelectorAll('.bebidas button').forEach(x => x.onclick = () => escolher(x.dataset.b));
+  document.querySelectorAll('.grupo button').forEach(x => x.onclick = () => escolher(x.dataset.g === 'c' ? 'lasanha' : 'latte'));
   $('f-isento').addEventListener('input', draw);
   $('f-preco').addEventListener('input', e => { const v = parseFloat(String(e.target.value).replace(/[^\d,.]/g, '').replace(',', '.')); if (isFinite(v) && v > 0) { preco = Math.min(999, Math.round(v * 100) / 100); draw(); } });
   $('f-preco').addEventListener('blur', draw);
