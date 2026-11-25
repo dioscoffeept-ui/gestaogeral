@@ -443,13 +443,16 @@ body{background:#F6F3F0}
         <div><b id="f-nome">Latte</b><small id="f-copo">Ficha técnica · copo de 300 ml</small></div>
         <span class="tag">Experimente</span>
       </div>
-      <div class="bebidas" role="group" aria-label="Bebida">
+      <div class="bebidas" role="group" aria-label="Bebida ou prato">
         <button type="button" data-b="expresso">Expresso</button>
         <button type="button" data-b="latte" aria-pressed="true">Latte</button>
         <button type="button" data-b="gin">Gin tónico</button>
         <button type="button" data-b="aperol">Aperol Spritz</button>
         <button type="button" data-b="coca">Coca-Cola</button>
         <button type="button" data-b="zero">Coca-Cola Zero</button>
+        <button type="button" data-b="tosta">Tosta mista</button>
+        <button type="button" data-b="burger">Hambúrguer</button>
+        <button type="button" data-b="lasanha">Lasanha</button>
       </div>
       <div id="f-linhas"></div>
       <div class="lin tot num"><span>Custo de produção</span><output id="f-custo">0,86 €</output></div>
@@ -568,11 +571,11 @@ body{background:#F6F3F0}
         <div class="tx">
           <span class="eti">Fichas técnicas</span>
           <h3>O custo certo de cada prato e bebida</h3>
-          <p>Cada receita mostra quanto custa a fazer, quanto lhe sobra e o preço mínimo para a margem que quer. Quando o fornecedor sobe o leite, todas as fichas se atualizam.</p>
+          <p>Cada receita mostra quanto custa a fazer, quanto lhe sobra e o preço mínimo para a margem que quer. Quando o fornecedor sobe a carne ou o leite, todas as fichas se atualizam.</p>
           <ul class="chk"><li>Bebidas, pratos, brunch e bases</li><li>Foto e modo de preparo</li><li>Alergénios em cada ficha</li><li>Simulador de margem e lucro</li></ul>
           <span class="plano">Desde 5 € por mês</span>
         </div>
-        <div class="vis"><figure class="fc-tel"><img src="img/ficha.webp" width="390" height="602" alt="Ficha técnica do Cappuccino no Dio’Stock: custo dos ingredientes 0,55 €, preço de venda 3,20 €, IVA a entregar, lucro líquido de 2,37 € e margem de 83,8%" loading="lazy" decoding="async"><figcaption>Uma ficha real da app: o custo, o IVA e o que sobra de cada cappuccino</figcaption></figure></div>
+        <div class="vis"><figure class="fc-tel"><img src="img/ficha.webp?v=2" width="390" height="686" alt="Ficha técnica da Lasanha à bolonhesa no Dio’Stock: custo dos ingredientes 2,55 €, preço de venda 12,50 €, IVA a entregar 1,44 €, lucro líquido de 8,66 € e margem de 78,2%" loading="lazy" decoding="async"><figcaption>Uma ficha real da app: o custo, o IVA e o que sobra de cada lasanha</figcaption></figure></div>
       </article>
 
       <article class="bx bx-stock escuro">
@@ -770,7 +773,13 @@ body{background:#F6F3F0}
     coca: { nome: 'Coca-Cola', copo: 'Ficha técnica · lata de 33 cl', iva: 23, preco: 2.20, l: [
       ['Lata 33 cl', 0.45, '€/un', 1, 'un', 1, 0.01], ['Gelo e limão', 0.05, '€', 0, '', 0, 0.01] ] },
     zero: { nome: 'Coca-Cola Zero', copo: 'Ficha técnica · lata de 33 cl', iva: 23, preco: 2.20, l: [
-      ['Lata 33 cl', 0.45, '€/un', 1, 'un', 1, 0.01], ['Gelo e limão', 0.05, '€', 0, '', 0, 0.01] ] }
+      ['Lata 33 cl', 0.45, '€/un', 1, 'un', 1, 0.01], ['Gelo e limão', 0.05, '€', 0, '', 0, 0.01] ] },
+    tosta: { nome: 'Tosta mista', copo: 'Ficha técnica · 1 tosta', iva: 13, preco: 4.50, prato: true, l: [
+      ['Pão de forma', 0.10, '€/un', 2, 'un', 1, 0.01], ['Fiambre', 9, '€/kg', 40, 'g', 1000, 0.5], ['Queijo', 8.5, '€/kg', 40, 'g', 1000, 0.5], ['Manteiga e guardanapo', 0.08, '€', 0, '', 0, 0.01] ] },
+    burger: { nome: 'Hambúrguer', copo: 'Ficha técnica · 1 prato com batata', iva: 13, preco: 12.50, prato: true, l: [
+      ['Carne picada', 9.5, '€/kg', 150, 'g', 1000, 0.5], ['Pão de hambúrguer', 0.45, '€/un', 1, 'un', 1, 0.01], ['Batata frita', 1.6, '€/kg', 180, 'g', 1000, 0.1], ['Queijo, alface, tomate e molho', 0.45, '€', 0, '', 0, 0.01] ] },
+    lasanha: { nome: 'Lasanha', copo: 'Ficha técnica · 1 dose', iva: 13, preco: 11.00, prato: true, l: [
+      ['Carne picada', 8.9, '€/kg', 150, 'g', 1000, 0.5], ['Massa de lasanha', 4.8, '€/kg', 100, 'g', 1000, 0.5], ['Queijo', 8.5, '€/kg', 40, 'g', 1000, 0.5], ['Molho bechamel e tomate', 0.55, '€', 0, '', 0, 0.01] ] }
   };
   let preco = 3.80, cur = null;
   const $ = id => document.getElementById(id);
@@ -793,8 +802,8 @@ body{background:#F6F3F0}
     const ip = $('f-preco'); if (document.activeElement !== ip) ip.value = preco.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     $('f-margem').textContent = Math.round(m) + '%';
     $('f-margem').classList.toggle('mal', m < 60);
-    $('f-txt').innerHTML = sobra > 0 ? 'de margem. Sobram <b class="num">' + fmt(sobra) + '</b> por bebida' + (iva ? ', já sem IVA.' : '.') : 'de margem. A este preço, perde dinheiro em cada bebida.';
-    $('f-iva').textContent = b.iva === 13 ? 'IVA da restauração (13%) já descontado.' : 'IVA de 23% já descontado (bebidas alcoólicas e refrigerantes).';
+    $('f-txt').innerHTML = sobra > 0 ? 'de margem. Sobram <b class="num">' + fmt(sobra) + '</b> por ' + (b.prato ? 'prato' : 'bebida') + (iva ? ', já sem IVA.' : '.') : 'de margem. A este preço, perde dinheiro em cada ' + (b.prato ? 'prato.' : 'bebida.');
+    $('f-iva').textContent = b.iva === 13 ? 'IVA da restauração (13%) já descontado' + (b.prato ? ' (refeições).' : '.') : 'IVA de 23% já descontado (bebidas alcoólicas e refrigerantes).';
   }
   function escolher(k) {
     const b = B[k]; cur = k; preco = b.preco;
