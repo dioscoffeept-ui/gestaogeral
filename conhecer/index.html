@@ -400,10 +400,13 @@ body{background:#F6F3F0}
 .bx-form::before{content:"";position:absolute;z-index:-1;width:380px;height:380px;border-radius:50%;background:rgba(255,255,255,.45);left:34%;top:-120px}
 .bx-form .eti{background:#fff}
 .bx-form figure{margin:0;text-align:center}.bx-form figcaption{font-size:13px;font-weight:700;color:var(--ink-2);margin-top:10px}
+.bx-fichas .fc-tel{margin:0}
+.bx-fichas .fc-tel img{height:auto;width:100%;max-width:300px;border-radius:28px;border:8px solid var(--ink);box-shadow:0 24px 40px -18px rgba(36,21,14,.45);background:#fff;display:block;margin:0 auto;transform:rotate(2deg)}
+.bx-fichas .fc-tel figcaption{font-size:13px;font-weight:700;color:var(--ink-2);text-align:center;margin-top:14px}
 .bx-form .fm-tel img{height:auto;width:100%;max-width:250px;border-radius:30px;border:8px solid var(--ink);box-shadow:0 24px 40px -18px rgba(36,21,14,.45);background:#fff;display:block;margin:0 auto;transform:rotate(-3deg)}
 .bx-form .fm-pnl img{height:auto;width:100%;max-width:300px;border-radius:20px;box-shadow:0 20px 40px -20px rgba(36,21,14,.4);display:block;margin:0 auto;transform:rotate(2deg)}
 @media (max-width:980px){.bento{grid-template-columns:1fr 1fr}.bx-fichas,.bx-enc{grid-column:1 / -1}.bx-form{grid-template-columns:1fr 1fr}.bx-form .tx{grid-column:1 / -1}}
-@media (max-width:640px){.bento{grid-template-columns:1fr;gap:14px}.bx{padding:22px;border-radius:24px}.bx-fichas,.bx-enc,.bx-form{grid-template-columns:1fr;grid-column:auto}.bx h3{font-size:24px}.bx .chk{grid-template-columns:1fr}.bx-form .fm-tel img{max-width:210px}.bx-form .fm-pnl img{max-width:260px}.bx-stock .big{font-size:46px}}
+@media (max-width:640px){.bento{grid-template-columns:1fr;gap:14px}.bx{padding:22px;border-radius:24px}.bx-fichas,.bx-enc,.bx-form{grid-template-columns:1fr;grid-column:auto}.bx h3{font-size:24px}.bx .chk{grid-template-columns:1fr}.bx-form .fm-tel img{max-width:210px}.bx-fichas .fc-tel img{max-width:250px}.bx-form .fm-pnl img{max-width:260px}.bx-stock .big{font-size:46px}}
 </style>
 </head>
 <body>
@@ -569,14 +572,7 @@ body{background:#F6F3F0}
           <ul class="chk"><li>Bebidas, pratos, brunch e bases</li><li>Foto e modo de preparo</li><li>Alergénios em cada ficha</li><li>Simulador de margem e lucro</li></ul>
           <span class="plano">Desde 5 € por mês</span>
         </div>
-        <div class="vis"><div class="ui">
-          <div class="ui-t">Fichas do bar <small>12 fichas</small></div>
-          <div class="linha"><b>Expresso</b><span class="num">custo 0,50 € · <b style="color:#D97706">43%</b></span></div>
-          <div class="linha"><b>Cappuccino</b><span class="num">custo 0,82 € · <b style="color:var(--green)">74%</b></span></div>
-          <div class="linha"><b>Iced Matcha</b><span class="num">custo 1,36 € · <b style="color:var(--green)">69%</b></span></div>
-          <div class="linha"><b>Nitro Cold Brew</b><span class="num">custo 1,30 € · <b style="color:#D97706">63%</b></span></div>
-          <div class="linha"><b>Bolo de banana</b><span class="num">custo 0,61 € · <b style="color:var(--green)">66%</b></span></div>
-        </div></div>
+        <div class="vis"><figure class="fc-tel"><img src="img/ficha.webp" width="390" height="602" alt="Ficha técnica do Cappuccino no Dio’Stock: custo dos ingredientes 0,55 €, preço de venda 3,20 €, IVA a entregar, lucro líquido de 2,37 € e margem de 83,8%" loading="lazy" decoding="async"><figcaption>Uma ficha real da app: o custo, o IVA e o que sobra de cada cappuccino</figcaption></figure></div>
       </article>
 
       <article class="bx bx-stock escuro">
