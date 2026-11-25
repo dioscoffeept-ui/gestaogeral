@@ -1411,8 +1411,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                             <button type="button" onclick="closeAccountMenu(); exportBackup()" class="menu-item"><i class="fas fa-download"></i> Baixar backup</button>
                             <label class="menu-item cursor-pointer"><i class="fas fa-upload"></i> Importar backup<input type="file" accept="application/json,.json" class="hidden" onchange="closeAccountMenu(); importBackup(this)"></label>
                             <button type="button" onclick="closeAccountMenu(); resetToDefaultData()" class="menu-item"><i class="fas fa-rotate-left"></i> Apagar tudo e repor exemplos</button>
-                            <div class="border-t border-slate-100 my-1"></div>
-                            <button type="button" onclick="closeAccountMenu(); logout()" class="menu-item" style="color:#dc2626"><i class="fas fa-right-from-bracket" style="color:#dc2626"></i> Sair</button>
+                            <div class="ds-sair-fixo"><button type="button" onclick="closeAccountMenu(); logout()" class="menu-item" style="color:#dc2626"><i class="fas fa-right-from-bracket" style="color:#dc2626"></i> Sair</button></div>
                         </div>
                     </div>
                 </div>
@@ -4585,7 +4584,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
 
         async function logout() {
-            if (!confirm('Terminar sessão neste aparelho?')) return;
+            if (!(await dsConfirmar('Terminar sessão neste aparelho?'))) return;
             if (cloudDirty) await pushCloud();
             try { localStorage.setItem('diostock-saiu', '1'); } catch (_) {}
             // o "sair" do servidor pode falhar sem internet: a sessão deste aparelho apaga-se sempre
@@ -26382,5 +26381,11 @@ async function dsTrPreparar() {
             </style>`);
         })();
     </script>
+    <style>
+        /* menu da conta: nunca passa do fundo do ecrã; o Sair fica sempre à vista no fundo */
+        #account-menu { max-height: calc(100dvh - 90px); overflow-y: auto; overscroll-behavior: contain; padding-bottom: 0 !important; }
+        #account-menu .ds-sair-fixo { position: sticky; bottom: 0; background: #fff; border-top: 1px solid #f1f5f9; padding: 4px 0 6px; }
+        html.dark #account-menu .ds-sair-fixo { background: var(--ds-superficie, #2A1B14); border-color: #44332A; }
+    </style>
 </body>
 </html>
