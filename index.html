@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 25/11/2026 09:16</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 25/11/2026 09:28</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -25154,6 +25154,16 @@ async function dsTrPreparar() {
         #fx-modal .lk { display: flex; gap: 6px; margin-top: 8px; }
         #fx-modal .lk code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; background: #F6F3F0; border-radius: 10px; padding: 9px 10px; }
         #fx-modal .lk button, #fx-modal .bt { font-size: 12px; font-weight: 800; padding: 8px 12px; border-radius: 10px; border: 1px solid #CBD5E1; background: #fff; white-space: nowrap; }
+        /* o botão de trocar o link tem texto longo: no telemóvel ocupa a largura e quebra a linha, em vez de sair do ecrã */
+        #fx-modal .bt { white-space: normal; text-align: left; line-height: 1.35; max-width: 100%; display: inline-flex; align-items: flex-start; gap: 6px; }
+        #fx-modal .bt i { margin-top: 2px; }
+        #fx-modal .lk { min-width: 0; }
+        #fx-modal .lk button { flex-shrink: 0; }
+        #fx-modal .fx-outro { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+        #fx-modal .fx-outro[hidden] { display: none; }
+        #fx-modal .fx-outro input { width: 90px; font-size: 16px; border-radius: 12px; border: 1px solid #CBD5E1; padding: 9px 11px; }
+        #fx-modal .fx-outro select { width: auto; font-size: 16px; border-radius: 12px; border: 1px solid #CBD5E1; padding: 9px 11px; }
+        #fx-modal .fx-outro small { flex-basis: 100%; font-size: 12px; color: #64748B; }
         #fx-modal ol { font-size: 12.5px; color: #475569; padding-left: 18px; margin: 8px 0 0; list-style: decimal; line-height: 1.55; }
     </style>
     <script>
@@ -25229,10 +25239,9 @@ async function dsTrPreparar() {
             dsModal('fx-modal', `<div class="flex items-start justify-between gap-3"><div><h3>NFC e aniversário</h3><p class="text-sm text-slate-500">Carimbo com um toque do telemóvel e uma oferta no aniversário do cliente.</p></div><button type="button" class="x" onclick="dsModalFechar('fx-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
               <div class="sec"><h4>📲 Carimbo por NFC</h4><p>O cliente encosta o telemóvel à etiqueta NFC no balcão e recebe o carimbo no cartão dele, sem a equipa tocar em nada.</p>
                 <label class="tg"><input type="checkbox" id="fx-nfc" ${c.nfc_ligado ? 'checked' : ''}> Ligar o carimbo por NFC</label>
-                <label class="campo">No máximo 1 carimbo por cliente a cada
-                  <select id="fx-horas">${[[1, '1 hora'], [2, '2 horas'], [4, '4 horas'], [8, '8 horas'], [12, '12 horas'], [24, '1 dia']].map(([v, t]) => `<option value="${v}" ${(c.nfc_horas || 4) === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+                ${fxIntervaloHtml(c.nfc_horas || 4)}
                 ${c.nfc_tok ? `<div class="lk"><code>${escapeHtml(fxLinkNfc())}</code><button type="button" onclick="fidCopiar(fxLinkNfc())"><i class="fas fa-copy"></i> Copiar</button></div>
-                <div class="flex gap-2 mt-2"><button type="button" class="bt" onclick="fxTrocarNfc()"><i class="fas fa-rotate"></i> Trocar o link (a etiqueta antiga deixa de dar carimbos)</button></div>` : '<p style="margin-top:8px">Ao guardar, criamos o link para gravar na etiqueta.</p>'}
+                <div class="flex gap-2 mt-2"><button type="button" class="bt" onclick="fxTrocarNfc()"><i class="fas fa-rotate"></i><span>Trocar o link <small style="font-weight:600;color:#64748B">(a etiqueta antiga deixa de dar carimbos)</small></span></button></div>` : '<p style="margin-top:8px">Ao guardar, criamos o link para gravar na etiqueta.</p>'}
                 <ol><li>Compre etiquetas NFC NTAG213 ou NTAG215 (custam poucos cêntimos cada).</li><li>Instale a app gratuita <b>NFC Tools</b> no telemóvel (iPhone ou Android).</li><li>Em <b>Escrever → Adicionar um registo → URL</b>, cole o link acima e encoste o telemóvel à etiqueta.</li><li>Cole a etiqueta no balcão, com um aviso: “Encoste o telemóvel e ganhe o carimbo”.</li></ol>
                 <p style="margin-top:8px">Cada telemóvel só recebe 1 carimbo no intervalo escolhido. Os carimbos por NFC aparecem no histórico do cliente. Se o link for partilhado, toque em <b>Trocar o link</b> e grave a etiqueta de novo.</p></div>
               <div class="sec"><h4>🎂 Oferta de aniversário</h4><p>Ao criar o cartão, o cliente pode indicar o dia e o mês do aniversário (sem o ano). Nesse dia o cartão mostra a oferta e a app avisa a equipa.</p>
@@ -25244,12 +25253,28 @@ async function dsTrPreparar() {
         }
         async function fxGuardar(novoTok) {
             const nfc = document.getElementById('fx-nfc').checked;
-            const up = { nfc_ligado: nfc, nfc_horas: Number(document.getElementById('fx-horas').value) || 4, aniv_ligado: document.getElementById('fx-aniv').checked,
+            const horas = fxIntervaloLer();
+            if (!horas) return dsToast('Escolha um intervalo entre 1 hora e 30 dias.', true);
+            const up = { nfc_ligado: nfc, nfc_horas: horas, aniv_ligado: document.getElementById('fx-aniv').checked,
                 aniv_oferta: (document.getElementById('fx-oferta').value || '').trim().slice(0, 60) || 'Um café grátis', aniv_dias: Number(document.getElementById('fx-dias').value) || 0 };
             if ((nfc && !(fidCfg && fidCfg.nfc_tok)) || novoTok) up.nfc_tok = fxTok();
             const { data, error } = await sb.from('fidelidade_cfg').update(up).eq('dono_id', fidDono()).select('*').single();
             if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
             fidCfg = data; dsToast(novoTok ? 'Link novo criado. Grave-o na etiqueta.' : 'Guardado'); fxAbrir(); try { fidPintar(); } catch (_) {}
+        }
+        // intervalo entre carimbos por NFC: atalhos ou o que a loja quiser (1 hora a 30 dias)
+        const FX_INT = [[1, '1 hora'], [2, '2 horas'], [4, '4 horas'], [8, '8 horas'], [12, '12 horas'], [24, '1 dia'], [48, '2 dias'], [168, '1 semana']];
+        function fxIntervaloHtml(h) {
+            const pre = FX_INT.some(([v]) => v === h), dias = !pre && h % 24 === 0;
+            return `<label class="campo">No máximo 1 carimbo por cliente a cada
+                  <select id="fx-horas" onchange="document.getElementById('fx-outro').hidden=this.value!=='outro'">${FX_INT.map(([v, t]) => `<option value="${v}" ${h === v ? 'selected' : ''}>${t}</option>`).join('')}<option value="outro" ${pre ? '' : 'selected'}>Outro intervalo…</option></select></label>
+                <div id="fx-outro" class="fx-outro" ${pre ? 'hidden' : ''}><input id="fx-outro-n" type="number" inputmode="numeric" min="1" max="720" step="1" value="${pre ? 3 : dias ? h / 24 : h}" aria-label="Número"><select id="fx-outro-u" aria-label="Unidade"><option value="1" ${dias ? '' : 'selected'}>horas</option><option value="24" ${dias ? 'selected' : ''}>dias</option></select><small>De 1 hora a 30 dias.</small></div>`;
+        }
+        function fxIntervaloLer() {
+            const v = document.getElementById('fx-horas').value;
+            if (v !== 'outro') return Number(v) || 4;
+            const n = Math.round(Number(String(document.getElementById('fx-outro-n').value).replace(',', '.')) * Number(document.getElementById('fx-outro-u').value));
+            return n >= 1 && n <= 720 ? n : 0;
         }
         async function fxTrocarNfc() { if (await dsConfirmar('Criar um link novo? A etiqueta NFC atual deixa de dar carimbos até ser gravada com o link novo.')) fxGuardar(true); }
         // aniversário também ao criar o cartão pela equipa
@@ -25553,7 +25578,7 @@ async function dsTrPreparar() {
             fmCss();
             const c = id ? fmDados().cursos.find(x => x.id === id) : null;
             fmEd = c ? JSON.parse(JSON.stringify(c)) : { id: fmId(), titulo: '', descricao: '', para: [], licoes: [], perguntas: [], auto: true, nPerg: 8, minimo: 80 };
-            fmEd._novo = !c; fmEdPasso = 1; fmEdBusca = ''; fmEdCat = '';
+            fmEd._novo = !c; fmEdPasso = 1; fmEdBusca = ''; fmEdCat = ''; fmEdExCache = null; fmEdExN = 3;
             fmEdPintar();
         }
         const fmEdTemFicha = id => fmEd.licoes.some(l => l.tipo === 'ficha' && l.id === id);
@@ -25593,10 +25618,10 @@ async function dsTrPreparar() {
                     <div class="tit">Ordem das lições <small style="font-weight:600;color:#7A6A60">(${c.licoes.length})</small></div>
                     <div class="lst">${c.licoes.map((l, i) => `<div><span class="nr">${i + 1}</span><span>${escapeHtml(fmLicTitulo(l))}</span><button type="button" onclick="fmEdMover(${i},-1)" aria-label="Subir" ${i ? '' : 'disabled style="opacity:.3"'}><i class="fas fa-arrow-up"></i></button><button type="button" onclick="fmEdMover(${i},1)" aria-label="Descer" ${i + 1 < c.licoes.length ? '' : 'disabled style="opacity:.3"'}><i class="fas fa-arrow-down"></i></button></div>`).join('') || '<p class="sub">Sem lições. Volte ao passo 1 para escolher fichas, ou escreva as perguntas no passo 3.</p>'}</div>`;
             } else {
-                const ex = c.auto ? fmGerar(c).slice(0, 2) : [];
+                const ex = c.auto ? fmEdExemplos(c) : [];
                 const seg = (id, vals, cur, fmt) => `<div class="fmx-seg" id="${id}">${vals.map(v => `<button type="button" class="${cur === v ? 'on' : ''}" onclick="fmEdLer();fmEd.${id === 'fme-n' ? 'nPerg' : 'minimo'}=${v};fmEdPintar()">${fmt(v)}</button>`).join('')}</div>`;
                 corpo = `<label class="fmx-sw"><span><b>Perguntas automáticas</b><small>A app cria perguntas a partir das fichas: ingredientes, quantidades, preparo, alergénios e preço.</small></span><input type="checkbox" id="fme-auto" ${c.auto ? 'checked' : ''} onchange="fmEdLer();fmEdPintar()"><i></i></label>
-                    ${ex.length ? `<div class="fmx-ex"><small>Exemplo de pergunta</small>${ex.map(q => `<p><b>${escapeHtml(q.p)}</b><br>${q.o.map(o => o === q.certa ? `<span class="ok">✓ ${escapeHtml(o)}</span>` : `<span>${escapeHtml(o)}</span>`).join(' · ')}</p>`).join('')}</div>` : (c.auto && !nFich ? '<p class="sub" style="margin-top:6px">Sem fichas no curso, as perguntas automáticas não têm de onde sair. Escreva as suas abaixo.</p>' : '')}
+                    ${ex.length || (c.auto && (c.ocultas || []).length) ? fmEdExHtml(c, ex) : (c.auto && !nFich ? '<p class="sub" style="margin-top:6px">Sem fichas no curso, as perguntas automáticas não têm de onde sair. Escreva as suas abaixo.</p>' : '')}
                     <div class="tit">Perguntas em cada quiz</div>${seg('fme-n', [5, 8, 10, 15], c.nPerg, v => v)}
                     <div class="tit">Nota para passar</div>${seg('fme-min', [60, 70, 80, 90, 100], c.minimo, v => v + '%')}
                     <div class="tit">Perguntas escritas por si <small style="font-weight:600;color:#7A6A60">(opcional)</small></div>
@@ -25657,6 +25682,41 @@ async function dsTrPreparar() {
         }
         function fmEdMover(i, d) { fmEdLer(); const j = i + d, l = fmEd.licoes; if (j < 0 || j >= l.length) return; [l[i], l[j]] = [l[j], l[i]]; fmEdPintar(); }
         function fmEdTirar(i) { fmEdLer(); fmEd.licoes.splice(i, 1); fmEdPintar(); }
+        // Perguntas automáticas: ver exemplos, editar (passa a pergunta escrita por si) ou não usar
+        let fmEdExCache = null, fmEdExN = 3;
+        function fmEdExemplos(c) {
+            const chave = JSON.stringify((c.licoes || []).filter(l => l.tipo === 'ficha').map(l => l.id)) + '|' + (c.ocultas || []).length;
+            if (!fmEdExCache || fmEdExCache.chave !== chave || fmEdExCache.id !== c.id) {
+                const oc = c.ocultas || [], vistos = new Set();
+                const l = fmGerar(c).filter(q => { const k = fmNorm(q.p); if (oc.includes(k) || vistos.has(k)) return false; vistos.add(k); return true; });
+                fmEdExCache = { chave, id: c.id, l };
+            }
+            return fmEdExCache.l;
+        }
+        function fmEdExHtml(c, ex) {
+            const vis = ex.slice(0, fmEdExN), oc = (c.ocultas || []).length;
+            return `<div class="fmx-ex"><div class="flex items-center justify-between gap-2"><small>Perguntas automáticas · exemplos</small>${ex.length > 1 ? `<button type="button" class="fmx-exb" onclick="fmEdExOutros()"><i class="fas fa-shuffle"></i> Outros</button>` : ''}</div>
+                ${vis.map((q, i) => `<div class="fmx-exq"><p><b>${escapeHtml(q.p)}</b><br>${q.o.map(o => o === q.certa ? `<span class="ok">✓ ${escapeHtml(o)}</span>` : `<span>${escapeHtml(o)}</span>`).join(' · ')}</p>
+                    <div class="fmx-exa"><button type="button" onclick="fmEdExEditar(${i})"><i class="fas fa-pen"></i> Editar</button><button type="button" onclick="fmEdExTirar(${i})"><i class="fas fa-eye-slash"></i> Não usar</button></div></div>`).join('')}
+                ${ex.length > fmEdExN ? `<button type="button" class="fmx-exb mt-2" onclick="fmEdLer();fmEdExN+=5;fmEdPintar()">Ver mais (${ex.length - fmEdExN})</button>` : ''}
+                <p class="fmx-exn">Ao editar, a pergunta passa para "Perguntas escritas por si" com o seu texto. ${oc ? `${oc} ${oc === 1 ? 'pergunta automática fica' : 'perguntas automáticas ficam'} de fora. <button type="button" class="fmx-exb" onclick="fmEdLer();fmEd.ocultas=[];fmEdExCache=null;fmEdPintar()">Repor</button>` : ''}</p></div>`;
+        }
+        function fmEdExOutros() { fmEdLer(); if (fmEdExCache) fmEdExCache.l = fmMist(fmEdExCache.l); fmEdPintar(); }
+        function fmEdExTirar(i) {
+            fmEdLer(); const q = fmEdExCache && fmEdExCache.l[i]; if (!q) return;
+            fmEd.ocultas = [...new Set([...(fmEd.ocultas || []), fmNorm(q.p)])];
+            fmEdExCache.l.splice(i, 1); fmEdExCache.chave = JSON.stringify((fmEd.licoes || []).filter(l => l.tipo === 'ficha').map(l => l.id)) + '|' + fmEd.ocultas.length;
+            fmEdPintar();
+        }
+        function fmEdExEditar(i) {
+            fmEdLer(); const q = fmEdExCache && fmEdExCache.l[i]; if (!q) return;
+            const o = q.o.slice(0, 4); while (o.length < 4) o.push('');
+            fmEd.perguntas.push({ p: q.p, o, c: Math.max(0, o.indexOf(q.certa)) });
+            fmEd.ocultas = [...new Set([...(fmEd.ocultas || []), fmNorm(q.p)])];
+            fmEdExCache.l.splice(i, 1); fmEdExCache.chave = JSON.stringify((fmEd.licoes || []).filter(l => l.tipo === 'ficha').map(l => l.id)) + '|' + fmEd.ocultas.length;
+            fmEdPintar();
+            setTimeout(() => { const el = document.querySelector('#fme-pq .pq:last-child .fq-p'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus(); } }, 60);
+        }
         function fmGuardar() {
             fmEdLer();
             if (!fmEd.titulo) fmEd.titulo = fmEdNomeSugerido();
@@ -25756,7 +25816,7 @@ async function dsTrPreparar() {
             const c = fmDados().cursos.find(x => x.id === id); if (!c) return;
             fmCss();
             const n = c.nPerg || 8;
-            const auto = c.auto ? fmMist([...fmGerar(c).slice(0, Math.ceil(n * .75)), ...fmGerarVF(c).slice(0, Math.ceil(n * .35))]) : [];
+            const auto = c.auto ? fmMist([...fmGerar(c).filter(q => !(c.ocultas || []).includes(fmNorm(q.p))).slice(0, Math.ceil(n * .75)), ...fmGerarVF(c).slice(0, Math.ceil(n * .35))]) : [];
             const minhas = (c.perguntas || []).map(q => ({ p: q.p, o: fmMist(q.o.filter(Boolean)), certa: q.o[q.c] }));
             const perg = fmMist([...minhas, ...auto.slice(0, Math.max(0, n - minhas.length))]).map((q, i) => Object.assign(q, { id: i }));
             fmJ = { c, perg, fila: perg.slice(), total: perg.length, i: 0, vidas: 3, xp: 0, combo: 0, maxCombo: 0, certas: 0, feitas: new Set(), erradas: [], fase: 'inicio', sel: null, ver: false, ini: 0, antes: null };
@@ -25946,7 +26006,7 @@ async function dsTrPreparar() {
             .fmx-sw{display:flex;align-items:center;gap:12px;background:#F6F3F0;border-radius:14px;padding:12px 14px;margin-top:8px;cursor:pointer}.fmx-sw span{flex:1}.fmx-sw b{display:block;font-size:14px;font-weight:900;color:#231F20}.fmx-sw small{display:block;font-size:12.5px;color:#5B4A40;line-height:1.35;margin-top:2px}
             .fmx-sw input{position:absolute;opacity:0;width:1px;height:1px}.fmx-sw i{width:46px;height:28px;border-radius:99px;background:#C9BBAF;position:relative;flex-shrink:0;transition:background .2s}.fmx-sw i::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:99px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
             .fmx-sw input:checked+i{background:#983808}.fmx-sw input:checked+i::after{transform:translateX(18px)}.fmx-sw input:focus-visible+i{outline:2px solid #983808;outline-offset:2px}
-            .fmx-ex{border:1px dashed #E4DCCF;border-radius:14px;padding:10px 12px;margin-top:10px;font-size:13px}.fmx-ex small{font-weight:800;color:#7A6A60;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em}.fmx-ex p{margin-top:6px;color:#5B4A40}.fmx-ex .ok{color:#15803D;font-weight:800}
+            .fmx-ex{border:1px dashed #E4DCCF;border-radius:14px;padding:10px 12px;margin-top:10px;font-size:13px}.fmx-exq{border-top:1px solid #F2ECE4;padding-top:6px;margin-top:6px}.fmx-exq:first-of-type{border-top:0}.fmx-exa{display:flex;gap:6px;margin-top:6px}.fmx-exa button{font-size:12px;font-weight:800;padding:6px 10px;border-radius:10px;border:1px solid #E4DCCF;background:#fff;color:#5B4A40}.fmx-exa button:first-child{color:#983808;border-color:#F2D6C7;background:#FBEDE6}.fmx-exb{font-size:12px;font-weight:800;color:#983808;padding:4px 6px}.fmx-exn{font-size:11.5px!important;color:#7A6A60!important;margin-top:8px!important}.fmx-ex small{font-weight:800;color:#7A6A60;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em}.fmx-ex p{margin-top:6px;color:#5B4A40}.fmx-ex .ok{color:#15803D;font-weight:800}
             .fmx-seg{display:flex;gap:6px;flex-wrap:wrap}.fmx-seg button{flex:1;min-width:52px;padding:10px 8px;border-radius:12px;border:1px solid #E4DCCF;background:#fff;font-weight:800;font-size:14px}.fmx-seg button.on{background:#983808;border-color:#983808;color:#fff}
             .fmx-pq{border:1px solid #E4DCCF;border-radius:14px;padding:10px;margin-top:8px;display:flex;flex-direction:column;gap:6px}.fmx-pq .fq-p{flex:1;border:1px solid #E4DCCF;border-radius:10px;padding:9px 10px;font-size:15px;font-weight:700}.fmx-pq label.op{display:flex;gap:8px;align-items:center}.fmx-pq label.op input[type=radio]{width:20px;height:20px;accent-color:#15803D;flex-shrink:0}.fmx-pq .fq-o{flex:1;border:1px solid #E4DCCF;border-radius:10px;padding:8px 10px;font-size:15px}.fmx-pq small{font-size:12px;color:#7A6A60}
             body.fmx-aberto{overflow:hidden}
