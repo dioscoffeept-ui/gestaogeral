@@ -26065,7 +26065,7 @@ async function dsTrPreparar() {
             // documentos escritos (regras, normas, manual)
             const docs = eqDados().docs.filter(d => d.tipo === 'texto' && d.texto);
             let melhor = null;
-            docs.forEach(d => String(d.texto).split(/\n\s*\n|\n(?=\s*[-•*\d])/).forEach(par => { const pt = new Set(fmToks(par)); const s = toks.filter(w => pt.has(w) || [...pt].some(x => x.length > 4 && w.length > 4 && x.slice(0, 5) === w.slice(0, 5))).length; if (s > 0 && (!melhor || s > melhor.s)) melhor = { s, par: par.trim(), d }; }));
+            docs.forEach(d => String(d.texto).split(/\n\s*\n|\n(?=\s*[-•*\d])/).forEach(par => { const pt = new Set(fmToks(par)); const s = toks.filter(w => pt.has(w) || [...pt].some(x => x.length >= 4 && w.length >= 4 && x.slice(0, 4) === w.slice(0, 4))).length; if (s > 0 && (!melhor || s > melhor.s)) melhor = { s, par: par.trim(), d }; }));
             if (melhor && (melhor.s >= 2 || toks.length <= 2)) return `${escapeHtml(melhor.par.slice(0, 900)).replace(/\n/g, '<br>')}<span class="fonte">Do documento “${escapeHtml(melhor.d.nome)}” · <button type="button" onclick="eqDocAbrir('${melhor.d.id}')">Abrir</button></span>`;
             const outros = docs.length ? '' : ' Junte as regras da casa em Equipe → Documentos (escritos na app) para eu as poder consultar.';
             return `Não encontrei isso nas fichas nem nos documentos. Pergunte ao responsável.${outros}<br><small style="color:#7A6A60">Experimente: “o que leva o …”, “como se faz o …”, “quanto leva de … no …”, “que pratos têm glúten”.</small>`;
@@ -26387,5 +26387,156 @@ async function dsTrPreparar() {
         #account-menu .ds-sair-fixo { position: sticky; bottom: 0; background: #fff; border-top: 1px solid #f1f5f9; padding: 4px 0 6px; }
         html.dark #account-menu .ds-sair-fixo { background: var(--ds-superficie, #2A1B14); border-color: #44332A; }
     </style>
+    <style>
+        /* Formação: perguntas escritas por si (a bolinha não pode ocupar a linha toda) */
+        #fm-ed .fmx-pq label.op input[type=radio] { width: 22px !important; height: 22px; padding: 0 !important; flex: 0 0 22px; margin: 0; border: 0; }
+        #fm-ed .fmx-pq .fq-o { flex: 1 1 auto; width: auto !important; min-width: 0; }
+        #fm-ed .fmx-pq .fq-p { width: auto !important; min-width: 0; }
+        #fm-ed .lst .fm-ocr { font-size: 12px; font-weight: 800; color: var(--brand); padding: 4px 8px; border-radius: 999px; border: 1px solid #E4DCCF; background: #fff; white-space: nowrap; }
+        #fm-ocr textarea { width: 100%; min-height: 220px; font-size: 14px; line-height: 1.5; border: 1px solid #CBD5E1; border-radius: 12px; padding: 10px; }
+        #fm-play .lic .fm-img { width: 100%; max-height: none; object-fit: contain; background: #F6F3F0; }
+    </style>
+    <script>
+        // ======================================================= FORMAÇÃO: documentos em imagem (leitura do texto) + perguntas a partir de textos
+        const fmDocImg = d => d && d.tipo !== 'texto' && /^image\//.test(d.mime || '');
+        const fmDocTexto = d => !d ? '' : d.tipo === 'texto' ? String(d.texto || '') : String(d.ocr || '');
+        async function fmOcrLer(d) {
+            await loadTesseract();
+            const u = await eqDocUrl(d), blob = await (await fetch(u)).blob();
+            const worker = await Tesseract.createWorker('por', 1, { logger: m => { if (m.status === 'recognizing text') { const el = document.getElementById('fm-ocr-p'); if (el) el.textContent = 'A ler o texto da imagem… ' + Math.round(m.progress * 100) + '%'; } } });
+            try {
+                const img = await imgFromBlob(blob);
+                let t = (await worker.recognize(await imageToCanvasJpeg(img, 2200))).data.text || '';
+                if (t.replace(/\s/g, '').length < 25) { const { canvas } = await prepareImage(blob); const t2 = (await worker.recognize(canvas)).data.text || ''; if (t2.length > t.length) t = t2; }
+                return t.split('\n').map(x => x.replace(/\s{2,}/g, ' ').trim()).filter(x => x.length > 1).join('\n');
+            } finally { try { await worker.terminate(); } catch (_) {} }
+        }
+        // abre o texto lido para o responsável corrigir; guarda no documento (fica para a Formação e para o "Pergunte à casa")
+        async function fmOcrAbrir(id, reler) {
+            const d = eqDados().docs.find(x => x.id === id); if (!d) return;
+            const mostrar = (txt, msg) => dsModal('fm-ocr', `<div class="eq-m" id="fm-ocr"><h3>Texto da imagem</h3><p class="sub">${escapeHtml(d.nome)}. ${msg}</p>
+                <textarea id="fm-ocr-t" placeholder="Escreva aqui o que está na imagem">${escapeHtml(txt)}</textarea>
+                <div class="acoes"><button type="button" onclick="fmOcrAbrir('${d.id}',1)"><i class="fas fa-rotate mr-1"></i>Ler de novo</button><button type="button" onclick="dsModalFechar('fm-ocr')">Cancelar</button><button type="button" class="p" onclick="fmOcrGuardar('${d.id}')">Guardar texto</button></div></div>`);
+            if (d.ocr && !reler) return mostrar(d.ocr, 'Corrija o que a leitura trocou. As perguntas do quiz saem deste texto.');
+            dsModal('fm-ocr', `<div class="eq-m" id="fm-ocr"><h3>Texto da imagem</h3><p class="sub" id="fm-ocr-p">A preparar a leitura…</p><div style="text-align:center;padding:30px"><i class="fas fa-circle-notch fa-spin" style="font-size:28px;color:var(--brand)"></i></div></div>`);
+            try {
+                const t = await fmOcrLer(d);
+                mostrar(t, t ? 'Confira e corrija o que a leitura trocou. As perguntas do quiz saem deste texto.' : 'Não foi possível ler texto nesta imagem. Escreva-o aqui, se quiser perguntas sobre ela.');
+            } catch (e) { mostrar(d.ocr || '', 'Não foi possível ler a imagem (' + (e && e.message || 'sem internet?') + '). Pode escrever o texto aqui.'); }
+        }
+        function fmOcrGuardar(id) {
+            const d = eqDados().docs.find(x => x.id === id); if (!d) return;
+            d.ocr = document.getElementById('fm-ocr-t').value.trim().slice(0, 20000);
+            eqGuardar(); dsModalFechar('fm-ocr'); dsToast(d.ocr ? 'Texto guardado. O quiz já faz perguntas sobre ele.' : 'Texto apagado.');
+            if (typeof fmEd !== 'undefined' && fmEd && document.getElementById('fm-ed')?.classList.contains('on')) fmEdPintar();
+        }
+        (function () {
+            // ao juntar uma imagem ao curso, lê logo o texto
+            const oJ = fmEdJuntarDoc;
+            fmEdJuntarDoc = function () {
+                const v = document.getElementById('fme-doc')?.value; oJ.apply(this, arguments);
+                const d = eqDados().docs.find(x => x.id === v); if (fmDocImg(d) && !d.ocr) fmOcrAbrir(d.id);
+            };
+            // botão "Ler texto" ao lado das imagens na lista de lições
+            const oP = fmEdPintar;
+            fmEdPintar = function () {
+                const r = oP.apply(this, arguments);
+                try {
+                    const temTexto = fmEd.licoes.some(l => l.tipo === 'texto' || (l.tipo === 'doc' && fmDocTexto(eqDados().docs.find(x => x.id === l.id)).trim()));
+                    document.querySelectorAll('#fm-ed .lst > div').forEach(row => {
+                        const t = row.querySelector('span:not(.nr)'); if (!t || row.querySelector('.fm-ocr')) return;
+                        const l = fmEd.licoes.find(x => x.tipo === 'doc' && t.textContent === fmLicTitulo(x)); if (!l) return;
+                        const d = eqDados().docs.find(x => x.id === l.id); if (!fmDocImg(d)) return;
+                        t.insertAdjacentHTML('afterend', `<button type="button" class="fm-ocr" onclick="fmOcrAbrir('${d.id}')">${d.ocr ? '✓ Texto lido' : 'Ler texto'}</button>`);
+                    });
+                    if (temTexto) document.querySelectorAll('#fm-ed .fmx-edc p.sub').forEach(p => { if (/Sem fichas no curso/.test(p.textContent)) p.textContent = 'As perguntas automáticas vão sair dos textos e documentos do curso.'; });
+                } catch (e) { console.warn(e); }
+                return r;
+            };
+            // perguntas a partir dos textos (lições escritas, documentos e imagens lidas)
+            const oG = fmGerar;
+            fmGerar = function (c) {
+                const a = oG.apply(this, arguments), b = fmGerarTexto(c);
+                if (!b.length) return a; if (!a.length) return b;
+                // mistura metade-metade para os textos não ficarem de fora
+                const out = []; const x = a.slice(), y = b.slice();
+                while (x.length || y.length) { if (y.length) out.push(y.shift()); if (x.length) out.push(x.shift()); }
+                return out;
+            };
+            // na lição: mostra a imagem e o texto lido
+            const oL = fmLicHtml;
+            fmLicHtml = function (l) {
+                if (l && l.tipo === 'doc') {
+                    const d = eqDados().docs.find(x => x.id === l.id);
+                    if (fmDocImg(d)) {
+                        const idImg = 'fmi-' + d.id;
+                        eqDocUrl(d).then(u => { const im = document.getElementById(idImg); if (im) { im.src = u; im.classList.remove('hidden'); } }).catch(() => {});
+                        return `<h4>${escapeHtml(d.nome)}</h4><img id="${idImg}" class="fm-img hidden" alt="${escapeHtml(d.nome)}">${d.ocr ? `<div style="white-space:pre-wrap;margin-top:10px">${escapeHtml(d.ocr)}</div>` : ''}<button type="button" class="eq-b mt-2" onclick="eqDocAbrir('${d.id}')"><i class="fas fa-expand"></i>Ver em grande</button>`;
+                    }
+                }
+                return oL.apply(this, arguments);
+            };
+            // o "Pergunte à casa" também procura no texto lido das imagens
+            const oR = fmResponderPergunta;
+            fmResponderPergunta = function (q) {
+                const docs = eqDados().docs, extra = docs.filter(d => fmDocImg(d) && d.ocr && !d.texto);
+                extra.forEach(d => { d.texto = String(d.ocr).replace(/\n+/g, '\n\n'); d._tmp = 1; });
+                const tipos = extra.map(d => d.tipo); extra.forEach(d => { d.tipo = 'texto'; });
+                try { return oR.apply(this, arguments); } finally { extra.forEach((d, i) => { d.tipo = tipos[i]; delete d.texto; delete d._tmp; }); }
+            };
+        })();
+
+        function fmGerarTexto(c) {
+            const fontes = [];
+            (c.licoes || []).forEach(l => {
+                if (l.tipo === 'texto' && l.texto) fontes.push({ nome: l.titulo || 'Lição', txt: l.texto });
+                if (l.tipo === 'doc') { const d = eqDados().docs.find(x => x.id === l.id); const t = fmDocTexto(d); if (t.trim()) fontes.push({ nome: d.nome, txt: t }); }
+            });
+            if (!fontes.length) return [];
+            const out = [];
+            const add = (p, certa, erradas) => { const e = fmMist([...new Set(erradas.filter(x => x && fmNorm(x) !== fmNorm(certa)))]).slice(0, 3); if (e.length < 2 || !certa) return; out.push({ p, o: fmMist([certa, ...e]), certa }); };
+            const NUM = /\d+(?:[.,]\d+)?\s*(?:€|eur|euros|h|horas|min|minutos|ml|cl|l|g|kg|°c|ºc|%|un|unidades|x)?/gi;
+            fontes.forEach(f => {
+                const linhas = String(f.txt).split(/\n|(?<=[.;!?])\s+(?=[A-ZÀ-Ú])/).map(x => x.replace(/^\s*(?:[-•*·▪✓✔☐□]|\d{1,2}\s*[.)\-–])\s*/, '').replace(/\s{2,}/g, ' ').trim()).filter(x => x.length >= 4 && x.length <= 180 && /[a-zà-ú]{3}/i.test(x));
+                if (!linhas.length) return;
+                const kv = [], num = [], frases = [];
+                linhas.forEach(x => {
+                    let m = x.match(/^([^:]{3,60}?)\s*[:=–]\s*(.{1,70})$/);
+                    if (m && /[a-zà-ú]/i.test(m[1])) { kv.push({ k: m[1].trim(), v: m[2].trim() }); return; }
+                    const nums = x.match(NUM) || [];
+                    m = x.match(/^(.*?[a-zà-ú].*?)\s+(\d[\d.,]*(?:\s*(?:€|eur|h|min|ml|cl|l|g|kg|%|un))?)(?:\s+.*)?$/i);
+                    if (nums.length && m && m[1].replace(/[^a-zà-ú]/gi, '').length >= 3) { num.push({ k: m[1].replace(/[\s.:–-]+$/, '').trim(), v: nums[nums.length - 1].trim() }); return; }
+                    if (x.split(' ').length >= 4 && fmNorm(x) !== fmNorm(f.nome)) frases.push(x);
+                });
+                // "Chave: valor"
+                const vizinhos = v => { const m = String(v).match(/^(\d+(?:[.,]\d+)?)(\s*)(.*)$/); if (!m) return []; const n = parseFloat(m[1].replace(',', '.')), u = m[3] ? m[2] + m[3] : ''; const st = n >= 20 ? 10 : 1; return [n + st, n - st, n + 2 * st, n - 2 * st].filter(x => x >= 0 && x !== n).map(x => (Math.round(x * 100) / 100).toLocaleString('pt-PT') + u); };
+                fmMist(kv).forEach(o => add(`${f.nome}: ${o.k}?`, o.v, [...kv.filter(x => x !== o).map(x => x.v), ...vizinhos(o.v), ...num.map(x => x.v)]));
+                // linhas com números (horas, quantidades, preços, contagens)
+                if (num.length >= 3) fmMist(num).slice(0, 8).forEach(o => {
+                    const outros = num.filter(x => x !== o && fmNorm(x.v) !== fmNorm(o.v)).map(x => x.v);
+                    const n = parseFloat(o.v.replace(',', '.')); const unid = o.v.replace(/^[\d.,\s]+/, '');
+                    const viz = isFinite(n) ? [n + 1, n > 1 ? n - 1 : n + 2, n * 2].map(v => (Math.round(v * 100) / 100).toLocaleString('pt-PT') + (unid ? ' ' + unid.trim() : '')) : [];
+                    add(`${f.nome}: quanto é «${o.k}»?`, o.v, [...outros, ...viz]);
+                });
+                // completar a frase (palavra principal escondida)
+                const palavras = [...new Set(linhas.join(' ').split(/[^A-Za-zÀ-ÿ]+/).filter(w => w.length >= 4 && !FM_VAZIAS.has(fmNorm(w))))];
+                fmMist(frases).slice(0, 8).forEach(x => {
+                    const ws = x.split(/\s+/).map(w => w.replace(/^[^A-Za-zÀ-ÿ0-9]+|[^A-Za-zÀ-ÿ0-9]+$/g, '')).filter(w => w.length >= 4 && !FM_VAZIAS.has(fmNorm(w)) && !/^\d/.test(w));
+                    if (!ws.length) return;
+                    const alvo = ws.sort((a, b) => b.length - a.length)[Math.floor(Math.random() * Math.min(2, ws.length))];
+                    const p = x.replace(new RegExp('(^|[^A-Za-zÀ-ÿ])' + alvo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=$|[^A-Za-zÀ-ÿ])'), '$1_____');
+                    if (p === x) return;
+                    const perto = palavras.filter(w => fmNorm(w) !== fmNorm(alvo) && Math.abs(w.length - alvo.length) <= 4);
+                    add(`${f.nome} — complete: «${p.slice(0, 150)}»`, alvo, fmMist(perto.length >= 3 ? perto : palavras.filter(w => fmNorm(w) !== fmNorm(alvo))));
+                });
+                // ordem dos passos (listas de tarefas, ex.: fecho)
+                if (frases.length >= 4 && frases.length <= 40) fmMist(frases.slice(0, -1).map((x, i) => i)).slice(0, 3).forEach(i => {
+                    add(`${f.nome}: o que vem a seguir a «${frases[i].slice(0, 80)}»?`, frases[i + 1].slice(0, 100), frases.filter((x, j) => j !== i && j !== i + 1).map(x => x.slice(0, 100)));
+                });
+            });
+            return fmMist(out);
+        }
+    </script>
+
 </body>
 </html>
