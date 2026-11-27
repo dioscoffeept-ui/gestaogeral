@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 14:00</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 14:40</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20676,7 +20676,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795787404';
+        const DS_BUILD = '1795788728';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -22221,7 +22221,11 @@ var qrcode = function() {
         function eqCalcular(seg, prof) {
             prof = prof || 0;
             const e = eqDados(), ks = eqSemanaKeys(seg), segK = ks[0], cfg = eqTipsCfg(segK);
-            const quem = e.staff.filter(s => s.tipsModo !== 'nao'), sempre = s => s.tipsModo === 'sempre';
+            const quem = e.staff.filter(s => s.tipsModo !== 'nao'), fixo = s => s.tipsModo === 'sempre';
+            // de férias não recebe tips (opção da conta, ligada por defeito)
+            const semFerias = e.feriasSemTips !== false, deFerias = (k, s) => { const c = eqCel(k, s.id); return !!(c && c.folga && c.ferias); };
+            let kAtual = null; const sempre = s => fixo(s) && !(semFerias && kAtual && deFerias(kAtual, s));
+            const extraC = {};   // cêntimos de arredondamento dados a cada pessoa (para o gestor ver)
             const exC = {}, diaC = {}; quem.forEach(s => { exC[s.id] = 0; diaC[s.id] = [0, 0, 0, 0, 0, 0, 0]; });
             const porDia = [0, 0, 0, 0, 0, 0, 0], avisos = []; let total = 0, sobraC = 0;
             // cêntimos que sobraram da semana anterior (procura até 12 semanas para trás)
@@ -22236,15 +22240,20 @@ var qrcode = function() {
                 const W = w.reduce((a, x) => a + x, 0); if (!(W > 0)) { sobraC += C; return; }
                 let dado = 0; const parte = {};
                 l.forEach((s, i) => { const x = Math.floor(C * w[i] / W + 1e-9); parte[s.id] = x; dado += x; });
-                // os cêntimos que faltam: 1 a cada um, a começar por quem tem menos até agora (assim rodam e ninguém fica a perder)
+                // os cêntimos que faltam vão para os fixos ("Todos os dias"), 1 a 1, a começar pelo fixo que tem menos;
+                // sem fixos neste valor, vão para quem tem menos até agora
                 let resto = C - dado;
-                const ordem = l.map((s, i) => ({ s, i, f: C * w[i] / W - parte[s.id] })).filter(o => w[o.i] > 0)
-                    .sort((a, b) => (exC[a.s.id] + parte[a.s.id]) - (exC[b.s.id] + parte[b.s.id]) || b.f - a.f || a.i - b.i);
-                for (let k = 0; resto > 0 && ordem.length; k = (k + 1) % ordem.length, resto--) parte[ordem[k].s.id]++;
+                const cand = l.map((s, i) => ({ s, i })).filter(o => w[o.i] > 0), fx = cand.filter(o => fixo(o.s));
+                const pool = fx.length ? fx : cand;
+                while (resto > 0 && pool.length) {
+                    pool.sort((a, b) => (exC[a.s.id] + parte[a.s.id]) - (exC[b.s.id] + parte[b.s.id]) || a.i - b.i);
+                    parte[pool[0].s.id]++; extraC[pool[0].s.id] = (extraC[pool[0].s.id] || 0) + 1; resto--;
+                }
                 l.forEach(s => { exC[s.id] += parte[s.id]; if (d != null) diaC[s.id][d] += parte[s.id]; });
             };
             if (cfg.modo === 'turno') {
                 ks.forEach((k, d) => {
+                    kAtual = k;
                     const td = (e.tips[k] && e.tips[k].t) || {};
                     e.turnos.forEach(t => {
                         const v = eqNum(td[t.id]); if (!v) return; porDia[d] += v; total += v;
@@ -22257,6 +22266,7 @@ var qrcode = function() {
                 });
             } else if (cfg.modo === 'dia') {
                 ks.forEach((k, d) => {
+                    kAtual = k;
                     const v = eqNum(e.tips[k] && e.tips[k].d); if (!v) return; porDia[d] += v; total += v;
                     const trab = quem.filter(s => !sempre(s) && eqTrab(eqCel(k, s.id))), w = trab.map(s => peso(eqCel(k, s.id), s));
                     const mx = w.length ? Math.max(...w) : 1, sp = quem.filter(s => sempre(s) && !trab.includes(s));
@@ -22269,7 +22279,9 @@ var qrcode = function() {
                 if (v) {
                     total = v;
                     const w0 = quem.map(s => sempre(s) ? 0 : ks.reduce((a, k) => { const c = eqCel(k, s.id); return a + (eqTrab(c) ? (cfg.divisao === 'iguais' ? 1 : peso(c, s)) : 0); }, 0));
-                    const mx = Math.max(0, ...w0), w = quem.map((s, i) => sempre(s) ? (cfg.divisao === 'iguais' ? 1 : mx) : (cfg.divisao === 'iguais' ? (w0[i] > 0 ? 1 : 0) : w0[i]));
+                    // fixos de férias parte da semana: recebem só pelos dias em que não estão de férias
+                    const fr = s => semFerias ? ks.filter(k => !deFerias(k, s)).length / 7 : 1;
+                    const mx = Math.max(0, ...w0), w = quem.map((s, i) => sempre(s) ? (cfg.divisao === 'iguais' ? (fr(s) >= 1 ? 1 : fr(s)) : mx * fr(s)) : (cfg.divisao === 'iguais' ? (w0[i] > 0 ? 1 : 0) : w0[i]));
                     if (!w0.some(x => x > 0)) avisos.push(`${eqEur(v)} de tips da semana mas ninguém escalado.`);
                     if (w.some(x => x > 0)) juntar(v, quem, w, null);
                 }
@@ -22278,7 +22290,7 @@ var qrcode = function() {
             const dsN = Object.keys(semDias).map(Number).sort((a, b) => a - b);
             if (dsN.length) { const soma = dsN.reduce((a, d) => a + semDias[d], 0), nomes = dsN.map(d => EQ_DIAS_L[d]); avisos.unshift(`${eqEur(soma)} de tips ${dsN.length === 1 ? 'em ' + nomes[0] : 'em ' + nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1]} sem ninguém a trabalhar ${dsN.length === 1 ? 'nesse dia' : 'nesses dias'}.`); }
             const res = {}; quem.forEach(s => res[s.id] = { exato: exC[s.id] / 100, dias: diaC[s.id].map(x => x / 100), total: exC[s.id] / 100 });
-            return { res, porDia: porDia.map(x => Math.round(x * 100) / 100), total: Math.round(total * 100) / 100, avisos, cfg, ks, sobraC, vemC, sobra: sobraC / 100, vem: vemC / 100 };
+            return { res, porDia: porDia.map(x => Math.round(x * 100) / 100), total: Math.round(total * 100) / 100, avisos, cfg, ks, sobraC, vemC, sobra: sobraC / 100, vem: vemC / 100, extraC, semFerias };
         }
 
         // ---------- página
@@ -22542,12 +22554,13 @@ var qrcode = function() {
                     <div class="eq-box"><b>Como entram as tips</b><p>Escolha como regista o dinheiro das tips nesta semana.</p><div class="eq-pills">${modos.map(([v, l]) => `<button type="button" ${dis} class="${cfg.modo === v ? 'on' : ''}" onclick="eqTipCfg('modo','${v}')">${l}</button>`).join('')}</div></div>
                     <div class="eq-box"><b>Como dividir</b><p>${cfg.modo === 'turno' ? 'Cada turno é dividido em partes iguais por quem trabalhou nesse turno.' : 'Entre quem trabalhou' + (cfg.modo === 'dia' ? ' nesse dia.' : ' na semana.')}</p><div class="eq-pills">${divs.map(([v, l]) => `<button type="button" ${dis || (cfg.modo === 'turno' ? 'disabled' : '')} class="${cfg.modo !== 'turno' && cfg.divisao === v ? 'on' : ''}" onclick="eqTipCfg('divisao','${v}')">${l}</button>`).join('')}</div></div>
                 </div>
+                ${ed ? eqComoDivide(r, e) : ''}
                 ${entrada}
                 ${quem.some(s => r.res[s.id].total > 0) ? `<div class="eq-box" style="margin-top:14px"><b>A receber esta semana</b><div class="eq-res">${quem.filter(s => r.res[s.id].total > 0).map(s => `<div><span><i style="background:${s.cor || '#983808'}"></i>${escapeHtml(s.nome)}</span><b>${eqEur(r.res[s.id].total)}</b></div>`).join('')}</div></div>` : ''}
                 ${r.avisos.map(a => `<div class="eq-aviso"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(a)} Marque quem trabalhou na escala.</div>`).join('')}
                 <div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">A receber</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
                     <tfoot><tr><td class="nm">Tips</td>${ks.map((k, d) => `<td>${cfg.modo === 'semana' ? '' : eqEur(r.porDia[d])}</td>`).join('')}<td>${eqEur(r.total)}</td></tr></tfoot></table></div></div>
-                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. Tudo é dividido ao cêntimo: quem fez os mesmos turnos recebe exatamente o mesmo, e cada total da semana é a soma dos dias. Quando um valor não dá para dividir por igual, os cêntimos que faltam vão um a um para quem tem menos, por isso rodam e ninguém fica a perder. Distribuído: ${eqEur(soma)} de ${eqEur(r.total)}.${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
+                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. Tudo é dividido ao cêntimo: quem fez os mesmos turnos recebe exatamente o mesmo, e cada total da semana é a soma dos dias. Distribuído: ${eqEur(soma)} de ${eqEur(r.total)}.${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
                 <div class="eq-bar"><button type="button" class="eq-b" onclick="eqEnviarTips()"><i class="fab fa-whatsapp"></i>Enviar resumo</button></div>`;
         }
         function eqTipSet(k, tipo, tid, val) {
@@ -22562,6 +22575,22 @@ var qrcode = function() {
             }
             eqGuardar(); eqPintarTips();
         }
+        // Só para quem pode editar: como é feita a divisão, os cêntimos de arredondamento e as férias
+        function eqComoDivide(r, e) {
+            const extra = Object.entries(r.extraC || {}).filter(([, c]) => c > 0).map(([id, c]) => { const s = e.staff.find(x => x.id === id); return s ? `${escapeHtml(s.nome)} +${c} ${c === 1 ? "cêntimo" : "cêntimos"}` : ''; }).filter(Boolean);
+            const fixos = e.staff.filter(s => s.tipsModo === 'sempre').map(s => escapeHtml(s.nome));
+            return `<div class="eq-box eq-como" style="margin-top:14px"><b><i class="fas fa-circle-info" style="color:var(--brand)"></i> Como é feita a divisão <small style="font-weight:600;color:#7A6A60">· só o gestor vê isto</small></b>
+                <ul>
+                    <li>${r.cfg.modo === 'turno' ? 'Cada turno é dividido em partes iguais por quem trabalhou nesse turno.' : r.cfg.modo === 'dia' ? 'Cada dia é dividido por quem trabalhou nesse dia' + (r.cfg.divisao === 'horas' ? ', pelas horas.' : r.cfg.divisao === 'turnos' ? ', pelos turnos.' : ', em partes iguais.') : 'A semana é dividida por quem trabalhou' + (r.cfg.divisao === 'horas' ? ', pelas horas.' : r.cfg.divisao === 'turnos' ? ', pelos turnos.' : ', em partes iguais.')}</li>
+                    <li>${fixos.length ? `Recebem todos os dias (fixos): ${fixos.join(', ')}. Recebem a sua parte de todas as tips, mesmo sem estar escalados.` : 'Não há ninguém marcado para receber todos os dias.'}</li>
+                    <li>Tudo é dividido ao cêntimo e nada fica por distribuir. Quando um valor não dá para dividir por igual, os cêntimos que faltam vão para os fixos${fixos.length ? '' : ' (sem fixos: para quem tem menos)'}, um a um, a começar pelo que tem menos.</li>
+                    <li>${extra.length ? 'Esta semana: ' + extra.join(' · ') + '.' : 'Esta semana não houve cêntimos a arredondar.'}</li>
+                </ul>
+                <label class="eq-fer-op"><input type="checkbox" ${e.feriasSemTips !== false ? 'checked' : ''} onchange="eqFeriasTips(this.checked)"> <span><b>Quem está de férias não recebe tips</b><small>Também vale para os fixos: nos dias de férias não recebem.</small></span></label>
+            </div>`;
+        }
+        function eqFeriasTips(v) { if (!eqPodeEditar()) return; eqDados().feriasSemTips = !!v; eqGuardar(); eqPintarTips(); dsToast(v ? 'De férias: não recebe tips.' : 'De férias: os fixos continuam a receber.'); }
+        document.head.insertAdjacentHTML('beforeend', `<style>.eq-como ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px;font-size:13px;color:#5B4A40;list-style:disc}.eq-fer-op{display:flex;gap:10px;align-items:flex-start;margin-top:12px;padding-top:12px;border-top:1px solid #E4DCCF;cursor:pointer}.eq-fer-op input{width:20px;height:20px;margin-top:2px;accent-color:var(--brand)}.eq-fer-op span{display:flex;flex-direction:column;font-size:14px}.eq-fer-op small{color:#7A6A60;font-size:12px}html.dark .eq-como ul{color:#C9BBAF}html.dark .eq-fer-op{border-color:#44332A}</style>`);
         function eqTipCfg(campo, v) {
             if (!eqPodeEditar()) return;
             const e = eqDados(), segK = eqKey(eqSeg), c = Object.assign({}, eqTipsCfg(segK)); c[campo] = v;
@@ -24428,7 +24457,7 @@ async function dsTrPreparar() {
         function mepRefresh() {
             const vis = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); };
             if (vis('tab-mep')) renderMep();
-            if (vis('tab-producoes')) renderProducoes();
+            if (vis('tab-producoes') || vis('tab-mep')) renderProducoes();
             if (vis('tab-inventory') && typeof renderInventory === 'function') renderInventory();
         }
 
@@ -26992,6 +27021,89 @@ async function dsTrPreparar() {
             const oR = renderInventory;
             renderInventory = function () { invOrfaos(); return oR.apply(this, arguments); };
             setTimeout(() => { invOrfaos(); try { if (!document.getElementById('tab-inventory').classList.contains('hidden')) renderInventory(); } catch (_) {} }, 3000);
+        })();
+    </script>
+
+    <script>
+        // ======================================================= JANELAS DE ESCREVER (fichas, produtos, fornecedores, equipa…)
+        // 1) Tocar fora do cartão já não fecha a janela (perdia-se o que estava escrito).
+        // 2) Fechar / Cancelar / Esc com alterações por guardar pergunta "Sair sem guardar?".
+        // 3) Enter guarda (nos campos de uma linha; no texto longo, o Enter continua a mudar de linha).
+        (function () {
+            const EXCL = new Set(['ds-dlg', 'dlg-ov', 'auth-screen']);
+            const visivel = el => !!el && el.offsetParent !== null || (el && getComputedStyle(el).position === 'fixed' && getComputedStyle(el).display !== 'none' && el.getBoundingClientRect().width > 0);
+            const campos = ov => [...ov.querySelectorAll('input, textarea, select')].filter(i => !/^(hidden|checkbox|radio|button|submit|file|range|color|search)$/i.test(i.type) && i.offsetWidth > 0);
+            const eOverlay = el => { if (!el || el === document.body || el.nodeType !== 1 || EXCL.has(el.id)) return false; const cs = getComputedStyle(el); if (cs.position !== 'fixed') return false; const r = el.getBoundingClientRect(); return r.width >= innerWidth - 2 && r.height >= innerHeight - 2; };
+            const overlayDe = el => { let x = el; while (x && x !== document.body) { if (eOverlay(x)) return x; x = x.parentElement; } return null; };
+            const doTopo = () => { const l = [...document.querySelectorAll('body *')].filter(el => !EXCL.has(el.id) && eOverlay(el) && visivel(el) && campos(el).length); return l.sort((a, b) => (+getComputedStyle(b).zIndex || 0) - (+getComputedStyle(a).zIndex || 0))[0] || null; };
+            const ehFechar = b => { if (!b || b.closest('#ds-dlg, #dlg-ov')) return false; const t = (b.textContent || '').trim(), oc = b.getAttribute('onclick') || '', al = b.getAttribute('aria-label') || '';
+                if (/guardar|gravar|criar|atualizar|confirmar|enviar|adicionar/i.test(t)) return false;
+                return /^(cancelar|fechar|voltar|×)$/i.test(t) || /fechar|close/i.test(al) || (!t && /close[A-Z]\w*\(|Fechar\(|fechar\(|Close\(|\.add\('hidden'\)|classList\.add\("hidden"\)/.test(oc)) || /^close[A-Z]\w*Modal\(|dsModalFechar\(|Fechar\(/.test(oc) && !t.length; };
+            let passa = false;
+            async function sairSemGuardar() { return typeof dsConfirm === 'function' ? await dsConfirm('Sair sem guardar?', 'O que escreveu nesta janela perde-se.', { ok: 'Sair sem guardar', cancel: 'Continuar a editar', danger: true, icon: 'fa-door-open' }) : true; }
+            // marcar a janela como "com alterações" quando se escreve; limpa quando volta a abrir
+            document.addEventListener('input', e => { const ov = overlayDe(e.target); if (ov) ov.dataset.dsSujo = '1'; }, true);
+            document.addEventListener('change', e => { const ov = overlayDe(e.target); if (ov && !/checkbox|radio/.test(e.target.type || '')) ov.dataset.dsSujo = '1'; }, true);
+            new MutationObserver(ms => ms.forEach(m => { const el = m.target; if (el.dataset && el.dataset.dsSujo && !visivel(el)) delete el.dataset.dsSujo; })).observe(document.body, { attributes: true, attributeFilter: ['class', 'style'], subtree: true });
+            // 1 + 2: cliques
+            document.addEventListener('click', async ev => {
+                if (passa) return;
+                const t = ev.target;
+                // toque no fundo escuro de uma janela com campos: não fecha
+                if (eOverlay(t) && campos(t).length) {
+                    ev.preventDefault(); ev.stopImmediatePropagation();
+                    const card = t.firstElementChild; if (card && card.animate) card.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 220 });
+                    return;
+                }
+                const b = t.closest && t.closest('button, a, [onclick]'); if (!b || !ehFechar(b)) return;
+                const ov = overlayDe(b); if (!ov || !ov.dataset.dsSujo) return;
+                ev.preventDefault(); ev.stopImmediatePropagation();
+                if (await sairSemGuardar()) { delete ov.dataset.dsSujo; passa = true; try { b.click(); } finally { passa = false; } }
+            }, true);
+            // 2: Esc
+            document.addEventListener('keydown', async ev => {
+                if (ev.key !== 'Escape' || passa || document.getElementById('dlg-ov') || (document.getElementById('ds-dlg') || {}).classList?.contains('on')) return;
+                const ov = doTopo(); if (!ov) return;
+                ev.preventDefault(); ev.stopImmediatePropagation();
+                if (ov.dataset.dsSujo && !(await sairSemGuardar())) return;
+                delete ov.dataset.dsSujo;
+                const bt = [...ov.querySelectorAll('button, a, [onclick]')].filter(x => x.offsetWidth > 0).find(ehFechar);
+                if (bt) { passa = true; try { bt.click(); } finally { passa = false; } }
+            }, true);
+            // 3: Enter guarda
+            document.addEventListener('keydown', ev => {
+                if (ev.key !== 'Enter' || ev.defaultPrevented || ev.shiftKey || ev.isComposing) return;
+                const i = ev.target; if (!i || i.tagName !== 'INPUT' || /^(checkbox|radio|button|submit|file|search)$/i.test(i.type)) return;
+                if (i.closest('form') || i.closest('#ds-dlg, #dlg-ov') || i.getAttribute('list') || i.closest('[role=combobox], .ing-row, .ing-drop')) return;
+                const ov = overlayDe(i); if (!ov) return;
+                const bts = [...ov.querySelectorAll('button')].filter(b => b.offsetWidth > 0 && !b.disabled && /^(\s*)(guardar|gravar|criar|atualizar o stock|guardar alterações)/i.test(b.textContent.trim()));
+                if (bts.length !== 1) return;
+                ev.preventDefault(); bts[0].click();
+            });
+        })();
+    </script>
+
+    <script>
+        // ======================================================= PRODUÇÕES DENTRO DA MISE EN PLACE
+        // "Estoque › Produções" era o mesmo assunto que "Fichas › Mise en place": fica tudo na Mise en place,
+        // numa secção "O que está pronto" (tenho, quero ter, Produzi, porções prontas).
+        (function () {
+            const de = document.getElementById('tab-producoes'), para = document.getElementById('tab-mep');
+            if (!de || !para) return;
+            const sec = document.createElement('div'); sec.id = 'mep-pronto'; sec.className = 'space-y-6';
+            sec.innerHTML = '<div class="flex items-end justify-between gap-3 pt-2"><div><h3 class="text-lg font-black text-slate-800"><i class="fas fa-layer-group mr-2" style="color:var(--brand)"></i>O que está pronto</h3><p class="text-xs text-slate-500">Quanto tem de cada mise en place, quanto quer ter e o botão Produzi.</p></div></div>';
+            [...de.children].filter(el => !el.classList.contains('ds-seg2')).forEach(el => sec.appendChild(el));
+            para.appendChild(sec);
+            de.remove();
+            document.querySelectorAll('.ds-seg2 button[data-t="producoes"]').forEach(b => b.remove());
+            try { if (localStorage.getItem('ds_estoque') === 'producoes') localStorage.setItem('ds_estoque', 'inventory'); } catch (_) {}
+            const oT = switchTab;
+            switchTab = function (t) {
+                if (t === 'producoes') { const r = oT.call(this, 'mep'); setTimeout(() => { const el = document.getElementById('mep-pronto'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); return r; }
+                const r = oT.apply(this, arguments);
+                if (t === 'mep') { try { renderProducoes(); } catch (_) {} try { renderPrep(); } catch (_) {} }
+                return r;
+            };
         })();
     </script>
 </body>
