@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 13:55</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 14:00</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20676,7 +20676,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795786828';
+        const DS_BUILD = '1795787404';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -22547,7 +22547,7 @@ var qrcode = function() {
                 ${r.avisos.map(a => `<div class="eq-aviso"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(a)} Marque quem trabalhou na escala.</div>`).join('')}
                 <div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">A receber</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
                     <tfoot><tr><td class="nm">Tips</td>${ks.map((k, d) => `<td>${cfg.modo === 'semana' ? '' : eqEur(r.porDia[d])}</td>`).join('')}<td>${eqEur(r.total)}</td></tr></tfoot></table></div></div>
-                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. Tudo é dividido ao cêntimo: quem fez os mesmos turnos recebe exatamente o mesmo, e cada total da semana é a soma dos dias. Distribuído: ${eqEur(soma)}${r.vem ? ` (inclui ${eqEur(r.vem)} que sobraram da semana anterior)` : ''}.${r.sobra ? ` <b>Sobram ${eqEur(r.sobra)}</b> em cêntimos que não dá para dividir por igual: passam para as tips da semana seguinte.` : ''}${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
+                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. Tudo é dividido ao cêntimo: quem fez os mesmos turnos recebe exatamente o mesmo, e cada total da semana é a soma dos dias. Quando um valor não dá para dividir por igual, os cêntimos que faltam vão um a um para quem tem menos, por isso rodam e ninguém fica a perder. Distribuído: ${eqEur(soma)} de ${eqEur(r.total)}.${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
                 <div class="eq-bar"><button type="button" class="eq-b" onclick="eqEnviarTips()"><i class="fab fa-whatsapp"></i>Enviar resumo</button></div>`;
         }
         function eqTipSet(k, tipo, tid, val) {
