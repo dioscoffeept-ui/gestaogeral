@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 14:40</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 15:15</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -2451,10 +2451,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <div id="inv-pack-box" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                    <p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-box mr-1" style="color:var(--brand)"></i> Embalagem <span class="normal-case font-semibold text-slate-500">(opcional — ex.: garrafa de 700 ml, saco de 1 kg, pacote com 50 copos)</span></p>
+                    <p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-box mr-1" style="color:var(--brand)"></i> <span id="inv-pack-tit">Embalagem</span> <span id="inv-pack-sub"  class="normal-case font-semibold text-slate-500">(opcional — ex.: garrafa de 700 ml, saco de 1 kg, pacote com 50 copos)</span></p>
                     <div class="grid grid-cols-3 gap-2 items-end">
                         <div><label id="inv-pack-lb" class="block text-[10px] font-bold text-slate-500 mb-0.5">Cada embalagem tem</label><input id="inv-pack" type="number" min="0" step="any" placeholder="Ex: 50" oninput="invPackCalc('pack')" class="w-full rounded-xl border-slate-300 text-sm"></div>
-                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Embalagens que tenho</label><input id="inv-pack-n" type="number" min="0" step="any" placeholder="Ex: 6" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
+                        <div><label id="inv-pack-lbn" class="block text-[10px] font-bold text-slate-500 mb-0.5">Embalagens que tenho</label><input id="inv-pack-n" type="number" min="0" step="any" placeholder="Ex: 6" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
                         <div><label id="inv-pack-lb2" class="block text-[10px] font-bold text-slate-500 mb-0.5">+ aberto / solto</label><input id="inv-pack-loose" type="number" min="0" step="any" placeholder="0" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
                     </div>
                     <p id="inv-pack-hint" class="text-[11px] text-slate-500">Diga quantas unidades vêm em cada pacote e quantos pacotes tem: o estoque atual é calculado sozinho.</p>
@@ -9188,6 +9188,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             invoiceDeleteConfirm = async function () { const r = await oDel.apply(this, arguments); if (allInvOpen()) renderAllInvoices(); updateTrashCount(); return r; };
         })();
 
+        // ======================================================= CONTA DE TESTE
+        // A conta Dio'Stock recebe as novidades logo; as outras contas recebem-nas no patch de segunda.
+        const DS_CONTA_TESTE = '6339a575-bd31-4b04-a793-cd55c739193a';
+        const dsTeste = () => { try { return (typeof fidDono === 'function' ? fidDono() : (currentUser && currentUser.id)) === DS_CONTA_TESTE; } catch (_) { return false; } };
         // ======================================================= EMBALAGENS NOS ITENS
         function invPackCalc(src) {
             const pack = parseFloat(document.getElementById('inv-pack').value) || 0;
@@ -9197,7 +9201,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const UN = { g: 'g', ml: 'ml', un: 'un', kg: 'kg', L: 'L', doses: 'doses' }[unit] || unit;
             const ex = { g: '1000', ml: '700', kg: '1', L: '0,7', un: '50', doses: '20' }[unit] || '50';
             const lb = document.getElementById('inv-pack-lb'), lb2 = document.getElementById('inv-pack-lb2'), pk = document.getElementById('inv-pack');
-            if (lb) lb.textContent = 'Cada embalagem tem (' + UN + ')';
+            const T = dsTeste(), lbn = document.getElementById('inv-pack-lbn'), tit = document.getElementById('inv-pack-tit'), sub = document.getElementById('inv-pack-sub');
+            if (lb) lb.textContent = (T ? 'Cada unidade tem (' : 'Cada embalagem tem (') + UN + ')';
+            if (lbn) lbn.textContent = T ? 'Unidades que tenho' : 'Embalagens que tenho';
+            if (tit) tit.textContent = T ? 'Quanto tem cada unidade' : 'Embalagem';
+            if (sub && T) sub.textContent = '(opcional — ex.: 1 garrafa = 700 ml, 1 frasco = 200 ml, 1 saco = 1 kg)';
             if (lb2) lb2.textContent = '+ aberto / solto (' + UN + ')';
             if (pk) pk.placeholder = 'Ex: ' + ex;
             if (pack > 0 && src === 'n' && (nEl.value !== '' || lEl.value !== '')) {
@@ -9208,8 +9216,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (pack > 0 && !(unit === 'un' && pack === 1)) {
                 const n = Math.floor(stock / pack + 1e-9), loose = Math.round((stock - n * pack) * 1000) / 1000;
                 if (src !== 'n') { nEl.value = stock ? n : ''; lEl.value = loose || ''; }
-                hint.innerHTML = `<b style="color:var(--brand)">${fmtQ(n)} embalage${n === 1 ? 'm' : 'ns'} × ${fmtQ(pack)} ${escapeHtml(UN)}${loose ? ' + ' + fmtQ(loose) + ' ' + escapeHtml(UN) + ' aberto' : ''} = ${fmtQ(stock)} ${escapeHtml(UN)}</b> no Estoque atual.`;
-            } else hint.textContent = 'Diga quanto tem cada embalagem (ex.: 1 licor = 700 ml) e quantas tem: o estoque atual é calculado sozinho.';
+                hint.innerHTML = T ? `<b style="color:var(--brand)">${fmtQ(n)} un. de ${fmtQ(pack)} ${escapeHtml(UN)}${loose ? ' + ' + fmtQ(loose) + ' ' + escapeHtml(UN) + ' aberto' : ''} = ${fmtQ(stock)} ${escapeHtml(UN)}</b> no Estoque atual.`
+                    : `<b style="color:var(--brand)">${fmtQ(n)} embalage${n === 1 ? 'm' : 'ns'} × ${fmtQ(pack)} ${escapeHtml(UN)}${loose ? ' + ' + fmtQ(loose) + ' ' + escapeHtml(UN) + ' aberto' : ''} = ${fmtQ(stock)} ${escapeHtml(UN)}</b> no Estoque atual.`;
+            } else hint.textContent = T ? 'Diga quanto tem cada unidade (ex.: 1 frasco = 200 ml) e quantas tem: o estoque é calculado sozinho e as fichas descontam certinho.' : 'Diga quanto tem cada embalagem (ex.: 1 licor = 700 ml) e quantas tem: o estoque atual é calculado sozinho.';
         }
         (function () {
             const oOpen = openInventoryModal;
@@ -9242,8 +9251,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             dsModal('inv-aj', `<div class="flex items-start justify-between gap-3"><div><h3 class="text-lg font-black">${escapeHtml(it.name)}</h3><p class="text-sm text-slate-500">Agora: <b>${fmtQ(st)} ${u}</b>${ps ? ` (${fmtQ(n)} emb. × ${fmtQ(ps)} ${u}${lo ? ' + ' + fmtQ(lo) : ''})` : ''}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('inv-aj')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
                 <div class="inv-aj mt-3">
                     <label>Fica com (${u})<input id="aj-v" inputmode="decimal" value="${String(st).replace('.', ',')}" oninput="invAjCalc('v')"></label>
-                    ${ps ? `<div class="g2"><label>Embalagens de ${fmtQ(ps)} ${u}<input id="aj-n" inputmode="decimal" value="${n}" oninput="invAjCalc('n')"></label><label>+ aberto (${u})<input id="aj-l" inputmode="decimal" value="${lo || ''}" placeholder="0" oninput="invAjCalc('n')"></label></div>` : ''}
-                    <div class="pm">${(ps ? [[-ps, '−1 emb.'], [ps, '+1 emb.']] : []).concat(it.unit === 'un' || it.unit === 'doses' ? [[-1, '−1'], [1, '+1']] : [[-100, '−100'], [100, '+100']]).map(([d, t]) => `<button type="button" onclick="invAjSoma(${d})">${t}</button>`).join('')}</div>
+                    ${ps ? `<div class="g2"><label>${dsTeste() ? 'Unidades' : 'Embalagens'} de ${fmtQ(ps)} ${u}<input id="aj-n" inputmode="decimal" value="${n}" oninput="invAjCalc('n')"></label><label>+ aberto (${u})<input id="aj-l" inputmode="decimal" value="${lo || ''}" placeholder="0" oninput="invAjCalc('n')"></label></div>` : ''}
+                    <div class="pm">${(ps ? [[-ps, dsTeste() ? '−1 un.' : '−1 emb.'], [ps, dsTeste() ? '+1 un.' : '+1 emb.']] : []).concat(it.unit === 'un' || it.unit === 'doses' ? [[-1, '−1'], [1, '+1']] : [[-100, '−100'], [100, '+100']]).map(([d, t]) => `<button type="button" onclick="invAjSoma(${d})">${t}</button>`).join('')}</div>
                     <p id="aj-pv" class="pv"></p>
                 </div>
                 <div class="flex gap-2 mt-4"><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold bg-slate-100" onclick="dsModalFechar('inv-aj')">Cancelar</button><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold text-white" style="background:var(--brand)" onclick="invAjGuardar('${it.id}')"><i class="fas fa-check mr-1"></i>Guardar</button></div>`);
@@ -9299,7 +9308,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         const cell = tr.children[2]; if (!cell) return;
                         const ps = it.packSize > 0 ? it.packSize : 0;
                         cell.innerHTML = `<button type="button" class="inv-aj-b" onclick="invQuickCount('${it.id}')" title="Acertar o stock">${cell.innerHTML}<i class="fas fa-pen"></i></button>`;
-                        if (ps) { const n = Math.floor((Number(it.stock) || 0) / ps), lo = Math.round(((Number(it.stock) || 0) - n * ps) * 100) / 100; cell.insertAdjacentHTML('beforeend', `<span class="block text-[10px] text-slate-500 font-semibold">${fmtQ(n)} emb. × ${fmtQ(ps)}${it.unit !== 'un' ? ' ' + escapeHtml(it.unit) : ''}${lo ? ' + ' + fmtQ(lo) : ''}</span>`); }
+                        if (ps) { const n = Math.floor((Number(it.stock) || 0) / ps), lo = Math.round(((Number(it.stock) || 0) - n * ps) * 100) / 100; cell.insertAdjacentHTML('beforeend', `<span class="block text-[10px] text-slate-500 font-semibold">${dsTeste() ? `${fmtQ(n)} un. de ${fmtQ(ps)}${it.unit !== 'un' ? ' ' + escapeHtml(it.unit) : ''}${lo ? ' + ' + fmtQ(lo) + ' aberto' : ''}` : `${fmtQ(n)} emb. × ${fmtQ(ps)}${it.unit !== 'un' ? ' ' + escapeHtml(it.unit) : ''}${lo ? ' + ' + fmtQ(lo) : ''}`}</span>`); }
                     });
                     mTable(t);
                 });
@@ -20676,7 +20685,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795788728';
+        const DS_BUILD = '1795791982';
         (function () {
             let aVer = false;
             async function verNova() {
