@@ -22234,9 +22234,14 @@ var qrcode = function() {
             const juntar = (v, l, w, d) => {
                 let C = Math.round(v * 100) + porJuntarC; porJuntarC = 0;
                 const W = w.reduce((a, x) => a + x, 0); if (!(W > 0)) { sobraC += C; return; }
-                let dado = 0;
-                l.forEach((s, i) => { const x = Math.floor(C * w[i] / W + 1e-9); exC[s.id] += x; if (d != null) diaC[s.id][d] += x; dado += x; });
-                sobraC += C - dado;
+                let dado = 0; const parte = {};
+                l.forEach((s, i) => { const x = Math.floor(C * w[i] / W + 1e-9); parte[s.id] = x; dado += x; });
+                // os cêntimos que faltam: 1 a cada um, a começar por quem tem menos até agora (assim rodam e ninguém fica a perder)
+                let resto = C - dado;
+                const ordem = l.map((s, i) => ({ s, i, f: C * w[i] / W - parte[s.id] })).filter(o => w[o.i] > 0)
+                    .sort((a, b) => (exC[a.s.id] + parte[a.s.id]) - (exC[b.s.id] + parte[b.s.id]) || b.f - a.f || a.i - b.i);
+                for (let k = 0; resto > 0 && ordem.length; k = (k + 1) % ordem.length, resto--) parte[ordem[k].s.id]++;
+                l.forEach(s => { exC[s.id] += parte[s.id]; if (d != null) diaC[s.id][d] += parte[s.id]; });
             };
             if (cfg.modo === 'turno') {
                 ks.forEach((k, d) => {
