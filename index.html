@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 12:20</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 12:35</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -2437,25 +2437,25 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Estoque Atual *</label>
-                        <input type="number" step="0.01" min="0" id="inv-stock" required class="w-full rounded-xl border-slate-300 text-sm">
+                        <input type="number" step="any" min="0" id="inv-stock" required class="w-full rounded-xl border-slate-300 text-sm">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Estoque Mínimo *</label>
-                        <input type="number" step="0.01" min="0" id="inv-min-stock" required class="w-full rounded-xl border-slate-300 text-sm">
+                        <input type="number" step="any" min="0" id="inv-min-stock" placeholder="0" class="w-full rounded-xl border-slate-300 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fornecedor *</label>
-                        <select id="inv-supplier" required class="w-full rounded-xl border-slate-300 text-sm"></select>
+                        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fornecedor</label>
+                        <select id="inv-supplier" class="w-full rounded-xl border-slate-300 text-sm"></select>
                     </div>
                 </div>
                 <div id="inv-pack-box" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
-                    <p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-box mr-1" style="color:var(--brand)"></i> Embalagem <span class="normal-case font-semibold text-slate-500">(opcional — ex.: pacote com 50 copos)</span></p>
+                    <p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-box mr-1" style="color:var(--brand)"></i> Embalagem <span class="normal-case font-semibold text-slate-500">(opcional — ex.: garrafa de 700 ml, saco de 1 kg, pacote com 50 copos)</span></p>
                     <div class="grid grid-cols-3 gap-2 items-end">
-                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Unid. por embalagem</label><input id="inv-pack" type="number" min="1" step="1" placeholder="Ex: 50" oninput="invPackCalc('pack')" class="w-full rounded-xl border-slate-300 text-sm"></div>
-                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Embalagens que tenho</label><input id="inv-pack-n" type="number" min="0" step="1" placeholder="Ex: 6" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
-                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">+ soltas</label><input id="inv-pack-loose" type="number" min="0" step="any" placeholder="0" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
+                        <div><label id="inv-pack-lb" class="block text-[10px] font-bold text-slate-500 mb-0.5">Cada embalagem tem</label><input id="inv-pack" type="number" min="0" step="any" placeholder="Ex: 50" oninput="invPackCalc('pack')" class="w-full rounded-xl border-slate-300 text-sm"></div>
+                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Embalagens que tenho</label><input id="inv-pack-n" type="number" min="0" step="any" placeholder="Ex: 6" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
+                        <div><label id="inv-pack-lb2" class="block text-[10px] font-bold text-slate-500 mb-0.5">+ aberto / solto</label><input id="inv-pack-loose" type="number" min="0" step="any" placeholder="0" oninput="invPackCalc('n')" class="w-full rounded-xl border-slate-300 text-sm"></div>
                     </div>
                     <p id="inv-pack-hint" class="text-[11px] text-slate-500">Diga quantas unidades vêm em cada pacote e quantos pacotes tem: o estoque atual é calculado sozinho.</p>
                 </div>
@@ -9194,16 +9194,22 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const nEl = document.getElementById('inv-pack-n'), lEl = document.getElementById('inv-pack-loose'), stEl = document.getElementById('inv-stock');
             const unit = document.getElementById('inv-unit').value;
             const hint = document.getElementById('inv-pack-hint');
-            if (pack > 1 && src === 'n' && (nEl.value !== '' || lEl.value !== '')) {
+            const UN = { g: 'g', ml: 'ml', un: 'un', kg: 'kg', L: 'L', doses: 'doses' }[unit] || unit;
+            const ex = { g: '1000', ml: '700', kg: '1', L: '0,7', un: '50', doses: '20' }[unit] || '50';
+            const lb = document.getElementById('inv-pack-lb'), lb2 = document.getElementById('inv-pack-lb2'), pk = document.getElementById('inv-pack');
+            if (lb) lb.textContent = 'Cada embalagem tem (' + UN + ')';
+            if (lb2) lb2.textContent = '+ aberto / solto (' + UN + ')';
+            if (pk) pk.placeholder = 'Ex: ' + ex;
+            if (pack > 0 && src === 'n' && (nEl.value !== '' || lEl.value !== '')) {
                 const n = parseFloat(nEl.value) || 0, loose = parseFloat(lEl.value) || 0;
-                stEl.value = Math.round((n * pack + loose) * 100) / 100;
+                stEl.value = Math.round((n * pack + loose) * 1000) / 1000;
             }
             const stock = parseFloat(stEl.value) || 0;
-            if (pack > 1) {
-                const n = Math.floor(stock / pack), loose = Math.round((stock - n * pack) * 100) / 100;
+            if (pack > 0 && !(unit === 'un' && pack === 1)) {
+                const n = Math.floor(stock / pack + 1e-9), loose = Math.round((stock - n * pack) * 1000) / 1000;
                 if (src !== 'n') { nEl.value = stock ? n : ''; lEl.value = loose || ''; }
-                hint.innerHTML = `<b style="color:var(--brand)">${fmtQ(n)} embalage${n === 1 ? 'm' : 'ns'} × ${fmtQ(pack)}${loose ? ' + ' + fmtQ(loose) + ' soltas' : ''} = ${fmtQ(stock)} ${escapeHtml(unit)}</b> no Estoque atual.`;
-            } else hint.textContent = 'Diga quantas unidades vêm em cada pacote e quantos pacotes tem: o estoque atual é calculado sozinho.';
+                hint.innerHTML = `<b style="color:var(--brand)">${fmtQ(n)} embalage${n === 1 ? 'm' : 'ns'} × ${fmtQ(pack)} ${escapeHtml(UN)}${loose ? ' + ' + fmtQ(loose) + ' ' + escapeHtml(UN) + ' aberto' : ''} = ${fmtQ(stock)} ${escapeHtml(UN)}</b> no Estoque atual.`;
+            } else hint.textContent = 'Diga quanto tem cada embalagem (ex.: 1 licor = 700 ml) e quantas tem: o estoque atual é calculado sozinho.';
         }
         (function () {
             const oOpen = openInventoryModal;
@@ -9212,7 +9218,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             editInventoryItem = function (id) {
                 const r = oEdit.apply(this, arguments);
                 const it = appState.inventory.find(i => i.id === id) || {};
-                document.getElementById('inv-pack').value = it.packSize > 1 ? it.packSize : '';
+                document.getElementById('inv-pack').value = it.packSize > 0 && !(it.unit === 'un' && it.packSize === 1) ? it.packSize : '';
                 document.getElementById('inv-pack-n').value = ''; document.getElementById('inv-pack-loose').value = '';
                 invPackCalc('init'); return r;
             };
@@ -9220,28 +9226,59 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             document.getElementById('inv-unit').addEventListener('change', () => invPackCalc('unit'));
             const oSave = saveInventoryItem;
             saveInventoryItem = function (e) {
-                const pack = Math.round(parseFloat(document.getElementById('inv-pack').value) || 0);
+                const pack = Math.round((parseFloat(String(document.getElementById('inv-pack').value).replace(',', '.')) || 0) * 1000) / 1000;
                 const id = document.getElementById('inv-id').value, before = new Set(appState.inventory.map(i => i.id));
                 const r = oSave.apply(this, arguments);
                 const it = id ? appState.inventory.find(i => i.id === id) : appState.inventory.find(i => !before.has(i.id));
-                if (it) { if (pack > 1) it.packSize = pack; else delete it.packSize; saveStorage(); renderInventory(); }
+                if (it) { if (pack > 0 && !(it.unit === 'un' && pack === 1)) it.packSize = pack; else delete it.packSize; if (!(Number(it.minStock) >= 0)) it.minStock = 0; saveStorage(); renderInventory(); }
                 return r;
             };
         })();
+        // Acertar o stock de um produto, livre: escreve com quanto fica (ou em embalagens), ou soma / tira
         function invQuickCount(id) {
             const it = appState.inventory.find(i => i.id === id); if (!it) return;
-            const ps = it.packSize > 1 ? it.packSize : 0;
-            const v = prompt('Contagem de "' + it.name + '"\nQuantidade atual em ' + it.unit + (ps ? '\n(ou escreva em embalagens de ' + ps + ', ex.: 6e = ' + 6 * ps + ')' : '') + ':', it.stock);
-            if (v === null) return;
-            const s = String(v).trim().toLowerCase().replace(',', '.');
-            let n;
-            const m = s.match(/^(\d+(?:\.\d+)?)\s*(e|emb|embalagens?|pac|pacotes?|cx|caixas?)\s*(?:\+\s*(\d+(?:\.\d+)?))?$/);
-            if (m && ps) n = parseFloat(m[1]) * ps + (parseFloat(m[3]) || 0);
-            else n = parseFloat(s);
-            if (!isFinite(n) || n < 0) return alert('Valor inválido.');
-            it.stock = Math.round(n * 100) / 100; it.countedAt = new Date().toISOString().slice(0, 10);
-            saveStorage(); renderInventory();
+            const ps = it.packSize > 0 ? it.packSize : 0, u = escapeHtml(it.unit || '');
+            const st = Number(it.stock) || 0, n = ps ? Math.floor(st / ps + 1e-9) : 0, lo = ps ? Math.round((st - n * ps) * 1000) / 1000 : 0;
+            dsModal('inv-aj', `<div class="flex items-start justify-between gap-3"><div><h3 class="text-lg font-black">${escapeHtml(it.name)}</h3><p class="text-sm text-slate-500">Agora: <b>${fmtQ(st)} ${u}</b>${ps ? ` (${fmtQ(n)} emb. × ${fmtQ(ps)} ${u}${lo ? ' + ' + fmtQ(lo) : ''})` : ''}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('inv-aj')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
+                <div class="inv-aj mt-3">
+                    <label>Fica com (${u})<input id="aj-v" inputmode="decimal" value="${String(st).replace('.', ',')}" oninput="invAjCalc('v')"></label>
+                    ${ps ? `<div class="g2"><label>Embalagens de ${fmtQ(ps)} ${u}<input id="aj-n" inputmode="decimal" value="${n}" oninput="invAjCalc('n')"></label><label>+ aberto (${u})<input id="aj-l" inputmode="decimal" value="${lo || ''}" placeholder="0" oninput="invAjCalc('n')"></label></div>` : ''}
+                    <div class="pm">${(ps ? [[-ps, '−1 emb.'], [ps, '+1 emb.']] : []).concat(it.unit === 'un' || it.unit === 'doses' ? [[-1, '−1'], [1, '+1']] : [[-100, '−100'], [100, '+100']]).map(([d, t]) => `<button type="button" onclick="invAjSoma(${d})">${t}</button>`).join('')}</div>
+                    <p id="aj-pv" class="pv"></p>
+                </div>
+                <div class="flex gap-2 mt-4"><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold bg-slate-100" onclick="dsModalFechar('inv-aj')">Cancelar</button><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold text-white" style="background:var(--brand)" onclick="invAjGuardar('${it.id}')"><i class="fas fa-check mr-1"></i>Guardar</button></div>`);
+            window._ajIt = it; invAjCalc('v');
         }
+        const ajNum = id => { const e = document.getElementById(id); if (!e) return null; const v = parseFloat(String(e.value).replace(/\s/g, '').replace(',', '.')); return isFinite(v) ? v : null; };
+        function invAjCalc(src) {
+            const it = window._ajIt; if (!it) return; const ps = it.packSize > 0 ? it.packSize : 0;
+            const v = document.getElementById('aj-v');
+            if (src === 'n' && ps) v.value = String(Math.round(((ajNum('aj-n') || 0) * ps + (ajNum('aj-l') || 0)) * 1000) / 1000).replace('.', ',');
+            const val = ajNum('aj-v');
+            if (src !== 'n' && ps && val != null) { const n = Math.floor(val / ps + 1e-9), lo = Math.round((val - n * ps) * 1000) / 1000; document.getElementById('aj-n').value = n; document.getElementById('aj-l').value = lo || ''; }
+            const pv = document.getElementById('aj-pv'), st = Number(it.stock) || 0;
+            if (pv) pv.innerHTML = val == null || val < 0 ? '<span style="color:#B91C1C">Escreva um número (0 ou mais).</span>' : `${fmtQ(st)} → <b>${fmtQ(val)} ${escapeHtml(it.unit || '')}</b>${val !== st ? ` (${val > st ? '+' : ''}${fmtQ(val - st)})` : ''}`;
+        }
+        function invAjSoma(d) { const v = document.getElementById('aj-v'); const val = Math.max(0, (ajNum('aj-v') || 0) + d); v.value = String(Math.round(val * 1000) / 1000).replace('.', ','); invAjCalc('v'); }
+        function invAjGuardar(id) {
+            const it = appState.inventory.find(i => i.id === id); if (!it) return;
+            const val = ajNum('aj-v'); if (val == null || val < 0) return dsToast('Escreva com quanto fica (0 ou mais).', true);
+            const antes = Number(it.stock) || 0;
+            it.stock = Math.round(val * 1000) / 1000; it.countedAt = new Date().toISOString().slice(0, 10);
+            const log = Array.isArray(appState.stockAjustes) ? appState.stockAjustes : (appState.stockAjustes = []);
+            log.unshift({ em: new Date().toISOString(), por: (currentUser && currentUser.email) || '', modo: 'acerto', id: it.id, nome: it.name, antes, depois: it.stock });
+            appState.stockAjustes = log.slice(0, 300);
+            saveStorage(); dsModalFechar('inv-aj'); renderInventory();
+            dsToast(it.name + ': ' + fmtQ(it.stock) + ' ' + (it.unit || ''));
+        }
+        document.head.insertAdjacentHTML('beforeend', `<style>
+            .inv-aj-b{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:4px 6px;margin:-4px -6px;border-radius:8px;cursor:pointer;font:inherit;color:inherit}.inv-aj-b:hover{background:#FBEDE6}.inv-aj-b i{font-size:10px;color:#7A6A60}
+            .inv-aj label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:800;color:#5B4A40}.inv-aj input{border:1px solid #E4DCCF;border-radius:12px;padding:12px;font-size:20px;font-weight:800;background:#fff;min-width:0;width:100%;text-align:right}
+            .inv-aj .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.inv-aj .g2 input{font-size:16px;padding:10px}
+            .inv-aj .pm{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.inv-aj .pm button{flex:1 1 70px;padding:10px;border-radius:12px;border:1px solid #E4DCCF;background:#fff;font-weight:800}
+            .inv-aj .pv{margin-top:10px;font-size:14px;color:#5B4A40}
+            html.dark .inv-aj input,html.dark .inv-aj .pm button{background:#2A1B14;border-color:#44332A;color:#F2ECE4}html.dark .inv-aj label{color:#C9BBAF}
+        </style>`);
         // células do estoque: embalagens + botão de contagem; rótulos para o telemóvel
         function mTable(table) {
             if (!table) return;
@@ -9260,8 +9297,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         const id = (btn.getAttribute('onclick').match(/'([^']+)'/) || [])[1];
                         const it = appState.inventory.find(x => x.id === id); if (!it) return;
                         const cell = tr.children[2]; if (!cell) return;
-                        const ps = it.packSize > 1 ? it.packSize : 0;
-                        if (ps) { const n = Math.floor((Number(it.stock) || 0) / ps), lo = Math.round(((Number(it.stock) || 0) - n * ps) * 100) / 100; cell.insertAdjacentHTML('beforeend', `<span class="block text-[10px] text-slate-500 font-semibold">${fmtQ(n)} emb. × ${ps}${lo ? ' + ' + fmtQ(lo) : ''}</span>`); }
+                        const ps = it.packSize > 0 ? it.packSize : 0;
+                        cell.innerHTML = `<button type="button" class="inv-aj-b" onclick="invQuickCount('${it.id}')" title="Acertar o stock">${cell.innerHTML}<i class="fas fa-pen"></i></button>`;
+                        if (ps) { const n = Math.floor((Number(it.stock) || 0) / ps), lo = Math.round(((Number(it.stock) || 0) - n * ps) * 100) / 100; cell.insertAdjacentHTML('beforeend', `<span class="block text-[10px] text-slate-500 font-semibold">${fmtQ(n)} emb. × ${fmtQ(ps)}${it.unit !== 'un' ? ' ' + escapeHtml(it.unit) : ''}${lo ? ' + ' + fmtQ(lo) : ''}</span>`); }
                     });
                     mTable(t);
                 });
@@ -20638,7 +20676,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795781542';
+        const DS_BUILD = '1795781721';
         (function () {
             let aVer = false;
             async function verNova() {
