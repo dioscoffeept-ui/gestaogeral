@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 08:30</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 11:05</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20636,7 +20636,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795765696';
+        const DS_BUILD = '1795776736';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -26355,18 +26355,49 @@ async function dsTrPreparar() {
             });
             return bs >= 35 ? best : null;
         }
+        // lê uma linha como se escreve: "Popayan Decaf 250 g - 10,98 + 23% iva. 1 unidade", "Leite 12 L", "2x Café 1 kg 18,50€"
+        const STK_UQ = /(\d+(?:[.,]\d+)?)\s*(unidades|unidade|unid|uni|un|pacotes|pacote|pct|caixas|caixa|cx|garrafas|garrafa|latas|lata|sacos|saco|x|kgs|kg|quilos|gramas|grs|gr|g|litros|litro|lt|l|ml|cl|dl)(?![a-z])\.?/i;
+        function stkExtrair(raw) {
+            let t = ' ' + raw + ' ', preco = null, iva = null, comIva = null, emb = null, q = null, u = '';
+            if (/\b(sem|s\/)\s*iva\b|\+\s*(?:o\s+|de\s+)?iva|\bmais\s+(?:o\s+)?iva\b|%\s*\+/i.test(t)) comIva = false;
+            if (/\b(com|c\/)\s*iva\b|\biva\s+inclu/i.test(t)) comIva = true;
+            t = t.replace(/\b(sem|s\/|com|c\/)\s*iva\b|\biva\s+inclu[ií]do\b/ig, ' ');
+            let m = /\+?\s*(\d{1,2}(?:[.,]\d)?)\s*%\s*(?:de\s+)?(?:iva)?/i.exec(t);
+            if (m) { iva = parseFloat(m[1].replace(',', '.')); if (/\+/.test(m[0]) && comIva === null) comIva = false; t = t.replace(m[0], ' '); }
+            t = t.replace(/\b(iva|\+)\b|\+/ig, ' ');
+            m = /(\d+[.,]\d{1,2})\s*(?:€|eur(?:os)?\b)|(?:€|eur)\s*(\d+(?:[.,]\d{1,2})?)|(\d+)\s*(?:€|eur(?:os)?\b)/i.exec(t) || /(?:^|\s)(\d+,\d{2})(?=\s|$|[.;-])/.exec(t);
+            if (m) { preco = parseFloat(String(m[1] || m[2] || m[3]).replace(',', '.')); t = t.replace(m[0], ' '); }
+            m = /(?:^|\s)(\d+)\s*x(?=\s)/i.exec(t);                                     // "2x"
+            if (m) { q = +m[1]; u = 'un'; t = t.replace(m[0], ' '); }
+            const achados = []; let r2 = t, mm; const re = new RegExp(STK_UQ.source, 'ig');
+            while ((mm = re.exec(t))) achados.push(mm);
+            const tipo = w => /^(kg|kgs|quilos|gramas|grs|gr|g)$/i.test(w) ? 'g' : /^(litros?|lt|l|ml|cl|dl)$/i.test(w) ? 'ml' : 'un';
+            const peso = achados.filter(a => tipo(a[2]) !== 'un'), cont = achados.filter(a => tipo(a[2]) === 'un');
+            if (q == null && cont.length) { q = parseFloat(cont[0][1].replace(',', '.')); u = 'un'; r2 = r2.replace(cont[0][0], ' '); }
+            if (peso.length) {
+                const a = peso[0], n = parseFloat(a[1].replace(',', '.'));
+                if (q == null) { q = n; u = a[2].toLowerCase(); } else emb = { q: n, u: a[2].toLowerCase() };
+                r2 = r2.replace(a[0], q === n && !emb ? ' ' : ' ' + a[0] + ' ');
+            }
+            // "café de 250" (sem unidade): embalagem em gramas
+            m = /\bde\s+(\d{2,4})(?!\s*[.,]?\d)(?=\s|$)/i.exec(r2);
+            if (m && !emb && /caf|grao|gr[aã]o|cha\b|ch[aá]\b|cacau|aç[uú]car|acucar|farinha/i.test(stkNorm(r2))) { emb = { q: +m[1], u: 'g' }; r2 = r2.replace(m[0], ' ' + m[1] + ' g '); }
+            if (q == null) { m = /(?:^|\s)(\d+(?:[.,]\d+)?)\s*$/.exec(r2.trim() ? ' ' + r2.trim() : ''); if (m) { q = parseFloat(m[1].replace(',', '.')); r2 = r2.trim().replace(/(\d+(?:[.,]\d+)?)\s*$/, ''); } }
+            if (q == null) { m = /^\s*(\d+(?:[.,]\d+)?)\s+(?=\D)/.exec(r2); if (m) { q = parseFloat(m[1].replace(',', '.')); r2 = r2.replace(m[0], ' '); } }
+            const nome = r2.replace(/[,;]/g, ' ').replace(/\s[-–:.]+(?=\s|$)|^[\s\-–:.]+|[\s\-–:.]+$/g, ' ').replace(/\s+/g, ' ').trim().replace(/(\s+(de|da|do|e|com|a))+$/i, '').replace(/^(e|de)\s+/i, '').trim();
+            return { nome, q, u, preco, iva, comIva, emb };
+        }
         function stkLer(texto) {
             const out = [];
             String(texto || '').split(/\r?\n|;/).forEach(l => {
                 const raw = l.replace(/\s+/g, ' ').trim(); if (raw.length < 2) return;
-                let m, nome, q, u;
-                if (/^\d/.test(raw)) { m = /^(\d+(?:[.,]\d+)?)\s*([a-zA-Zçã]{0,9})\.?\s+(?:de\s+)?(.+)$/.exec(raw); if (m) { q = m[1]; u = m[2]; nome = m[3]; } }  // "300 copos 12oz"
-                if (!nome) { m = /^(.*?)[\s:–-]+(\d+(?:[.,]\d+)?)\s*([a-zA-Zçã]{0,9})\.?\s*$/.exec(raw); if (m && m[1].trim()) { nome = m[1]; q = m[2]; u = m[3]; } }   // "Leite meio-gordo 12 L""
-                if (!nome) return;
-                if (u && !STK_U[stkNorm(u)]) { nome = (nome + ' ' + u).trim(); u = ''; }
-                const qn = parseFloat(String(q).replace(',', '.')); if (!isFinite(qn)) return;
-                const it = stkMelhor(nome);
-                out.push({ texto: raw, nome: nome.trim(), q: qn, u: u || '', itemId: it ? it.id : '' });
+                const e = stkExtrair(raw);
+                if (!e.nome || e.nome.length < 2) return;
+                if (e.q == null || !isFinite(e.q)) { if (e.preco == null) return; e.q = 1; e.u = 'un'; }   // com preço e sem quantidade: 1 unidade
+                const it = stkMelhor(e.nome);
+                const novo = !it && (stkModo === 'entrada' || stkModo === 'contagem');
+                out.push({ texto: raw, nome: e.nome, q: e.q, u: e.u || '', itemId: it ? it.id : (novo ? '__novo' : ''),
+                    preco: e.preco, iva: e.iva != null ? e.iva : (e.preco != null ? 23 : null), comIva: e.comIva == null ? true : e.comIva, emb: e.emb });
             });
             return out;
         }
@@ -26415,17 +26446,46 @@ async function dsTrPreparar() {
         function stkRever(l) {
             stkLinhas = l;
             const inv = (appState.inventory || []).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-            const opts = sel => `<option value="">— não mexer —</option>${inv.map(it => `<option value="${it.id}" ${it.id === sel ? 'selected' : ''}>${escapeHtml(it.name)}</option>`).join('')}`;
+            const opts = (sel, x) => `<option value="">— não mexer —</option><option value="__novo" ${sel === '__novo' ? 'selected' : ''}>➕ Criar novo: ${escapeHtml(x.nome || 'produto')}</option>${inv.map(it => `<option value="${it.id}" ${it.id === sel ? 'selected' : ''}>${escapeHtml(it.name)}</option>`).join('')}`;
             dsModal('stk-rev', `<div class="flex items-start justify-between gap-3"><div><h3 class="text-lg font-black">Rever antes de mudar o stock</h3><p class="text-sm text-slate-500">${STK_MODOS[stkModo][0]}: ${STK_MODOS[stkModo][1]}</p></div><button type="button" class="p-2 text-slate-400" onclick="dsModalFechar('stk-rev')" aria-label="Fechar"><i class="fas fa-xmark text-xl"></i></button></div>
                 <div class="stk-modos mini mt-3">${Object.entries(STK_MODOS).map(([k, v]) => `<button type="button" class="${stkModo === k ? 'on' : ''}" onclick="stkLerRev();stkModo='${k}';stkPintarCartao();stkRever(stkLinhas)"><i class="fas ${v[2]}"></i><span><b>${v[0]}</b></span></button>`).join('')}</div>
-                <div class="stk-rev">${l.map((x, i) => `<div class="r" data-i="${i}"><small class="o">“${escapeHtml(x.texto)}”</small><div class="g"><select class="it" onchange="stkLerRev();stkRever(stkLinhas)">${opts(x.itemId)}</select><input class="q" inputmode="decimal" value="${String(x.q).replace('.', ',')}" aria-label="Quantidade" oninput="stkLerRev();stkPrev(${i})"><span class="u">${escapeHtml(x.u || ((inv.find(it => it.id === x.itemId) || {}).unit) || '')}</span></div><p class="pv" id="stk-pv-${i}"></p></div>`).join('')}</div>
+                <div class="stk-rev">${l.map((x, i) => `<div class="r" data-i="${i}"><small class="o">“${escapeHtml(x.texto)}”</small><div class="g"><select class="it" onchange="stkLerRev();stkRever(stkLinhas)">${opts(x.itemId, x)}</select><input class="q" inputmode="decimal" value="${String(x.q).replace('.', ',')}" aria-label="Quantidade" oninput="stkLerRev();stkPrev(${i})"><span class="u">${escapeHtml(x.u || ((inv.find(it => it.id === x.itemId) || {}).unit) || '')}</span></div>${x.itemId === '__novo' ? stkNovoHtml(x, i) : ''}<p class="pv" id="stk-pv-${i}"></p></div>`).join('')}</div>
                 <div class="flex gap-2 mt-4"><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold bg-slate-100" onclick="dsModalFechar('stk-rev')">Cancelar</button><button type="button" class="flex-1 px-4 py-3 rounded-xl font-bold text-white" style="background:var(--brand)" onclick="stkAplicar()"><i class="fas fa-check mr-1"></i>Atualizar o stock</button></div>`);
             l.forEach((_, i) => stkPrev(i));
         }
+        const stkEur = v => (Math.round(v * 100) / 100).toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+        const stkNum = v => { const n = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.')); return isFinite(n) ? n : null; };
+        function stkNovoHtml(x, i) {
+            const cats = (appState.inventoryCategories || []).slice(); const cat = x.cat != null ? x.cat : (typeof purchaseGuessCat === 'function' ? purchaseGuessCat({ desc: x.nome }) : '');
+            const ivas = [23, 13, 6, 0]; const iv = x.iva != null ? x.iva : 23;
+            return `<div class="nv"><label class="w">Nome do produto<input class="nv-nome" value="${escapeHtml(x.nome || '')}" maxlength="80" oninput="stkLerRev();stkPrev(${i})"></label>
+                <label>Embalagem <small>(opcional)</small><span class="pr"><input class="nv-emb" inputmode="decimal" placeholder="ex.: 250" value="${x.emb ? String(x.emb.q).replace('.', ',') : ''}" oninput="stkLerRev();stkPrev(${i})"><select class="nv-embu" onchange="stkLerRev();stkPrev(${i})">${['g', 'kg', 'ml', 'l'].map(u => `<option ${x.emb && x.emb.u === u ? 'selected' : ''}>${u}</option>`).join('')}</select></span></label>
+                <label>Preço de 1 ${x.emb ? 'embalagem' : 'unidade'}<span class="pr"><input class="nv-preco" inputmode="decimal" placeholder="0,00" value="${x.preco != null ? String(x.preco).replace('.', ',') : ''}" oninput="stkLerRev();stkPrev(${i})"><b>€</b></span></label>
+                <label>IVA<span class="pr"><select class="nv-iva" onchange="stkLerRev();stkPrev(${i})">${ivas.map(v => `<option value="${v}" ${v === iv ? 'selected' : ''}>${v}%</option>`).join('')}</select><select class="nv-com" onchange="stkLerRev();stkPrev(${i})"><option value="0" ${x.comIva === false ? 'selected' : ''}>+ IVA</option><option value="1" ${x.comIva === false ? '' : 'selected'}>com IVA</option></select></span></label>
+                <label class="w">Categoria<select class="nv-cat" onchange="stkLerRev()"><option value="">Sem categoria</option>${cats.map(c => `<option ${c === cat ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}</select></label></div>`;
+        }
         function stkLerRev() {
-            document.querySelectorAll('#stk-rev .r').forEach(el => { const x = stkLinhas[+el.dataset.i]; if (!x) return; x.itemId = el.querySelector('.it').value; const v = parseFloat(String(el.querySelector('.q').value).replace(',', '.')); x.q = isFinite(v) ? v : 0; });
+            document.querySelectorAll('#stk-rev .r').forEach(el => { const x = stkLinhas[+el.dataset.i]; if (!x) return; x.itemId = el.querySelector('.it').value; const v = stkNum(el.querySelector('.q').value); x.q = v != null ? v : 0;
+                const nv = el.querySelector('.nv'); if (!nv) return;
+                x.nome = nv.querySelector('.nv-nome').value.trim() || x.nome;
+                const e = stkNum(nv.querySelector('.nv-emb').value); x.emb = e && e > 0 ? { q: e, u: nv.querySelector('.nv-embu').value } : null;
+                x.preco = stkNum(nv.querySelector('.nv-preco').value); x.iva = Number(nv.querySelector('.nv-iva').value); x.comIva = nv.querySelector('.nv-com').value === '1';
+                x.cat = nv.querySelector('.nv-cat').value; });
+        }
+        // produto novo: unidade base (g / ml / un), stock e preço por embalagem
+        function stkNovoItem(x) {
+            const e = x.emb && x.emb.q > 0 ? x.emb : null;
+            const base = e ? (STK_U[stkNorm(e.u)] || ['un', 1]) : null;
+            const unit = base ? base[0] : (STK_U[stkNorm(x.u)] && STK_U[stkNorm(x.u)][0] !== 'un' ? STK_U[stkNorm(x.u)][0] : 'un');
+            const porEmb = base ? e.q * base[1] : 1;
+            const stock = base ? x.q * porEmb : (unit === 'un' ? x.q : x.q * (STK_U[stkNorm(x.u)] || [0, 1])[1]);
+            const nome = e && !new RegExp('\\b' + String(e.q).replace('.', '[.,]') + '\\s*' + e.u + '\\b', 'i').test(x.nome) ? x.nome + ' ' + String(e.q).replace('.', ',') + ' ' + e.u : x.nome;
+            const it = { id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: nome, category: x.cat || '', unit, stock: 0, minStock: 0, supplierId: '', iva: x.iva != null ? x.iva : 23, priceHasIva: x.comIva !== false };
+            if (x.preco > 0) { it.price = x.preco; it.priceQty = base ? porEmb : 1; it.priceDate = new Date().toISOString().slice(0, 10); }
+            return { it, stock };
         }
         function stkNovo(x) {
+            if (x.itemId === '__novo') { if (!x.nome || !(x.q > 0)) return null; const n = stkNovoItem(x); return { it: n.it, atual: 0, novo: n.stock, criar: true }; }
             const it = (appState.inventory || []).find(i => i.id === x.itemId); if (!it) return null;
             const q = stkConverter(x.q, x.u, it.unit), atual = Number(it.stock) || 0;
             const novo = stkModo === 'contagem' ? q : stkModo === 'entrada' ? atual + q : Math.max(0, atual - q);   // saída e desperdício tiram
@@ -26434,6 +26494,11 @@ async function dsTrPreparar() {
         function stkPrev(i) {
             const el = document.getElementById('stk-pv-' + i), x = stkLinhas[i]; if (!el || !x) return;
             const r = stkNovo(x);
+            if (r && r.criar) {
+                const c = r.it.price > 0 ? (r.it.priceHasIva ? r.it.price : r.it.price * (1 + r.it.iva / 100)) : null, s = r.it.price > 0 ? (r.it.priceHasIva ? r.it.price / (1 + r.it.iva / 100) : r.it.price) : null;
+                el.innerHTML = `<b>Produto novo:</b> ${escapeHtml(r.it.name)} · fica com <b>${escapeHtml(stkFmt(r.novo, r.it.unit))}</b>` + (c ? `<br>Preço: ${stkEur(s)} + IVA ${r.it.iva}% = <b>${stkEur(c)}</b>` : '<br><span style="color:#B45309">Sem preço: o custo das fichas fica por calcular.</span>');
+                return;
+            }
             el.innerHTML = r ? `${escapeHtml(stkFmt(r.atual, r.it.unit))} → <b>${escapeHtml(stkFmt(r.novo, r.it.unit))}</b>` : '<span style="color:#B45309">Escolha o insumo, ou fica como está.</span>';
         }
         function stkAplicar() {
@@ -26442,7 +26507,8 @@ async function dsTrPreparar() {
             if (!mud.length) return dsToast('Escolha pelo menos um insumo.', true);
             const log = Array.isArray(appState.stockAjustes) ? appState.stockAjustes : (appState.stockAjustes = []);
             const em = new Date().toISOString(), por = (currentUser && currentUser.email) || '';
-            mud.forEach(r => { log.unshift({ em, por, modo: stkModo, id: r.it.id, nome: r.it.name, antes: r.atual, depois: r.novo }); r.it.stock = Math.round(r.novo * 1000) / 1000; });
+            mud.filter(r => r.criar).forEach(r => appState.inventory.push(r.it));   // produtos novos entram no stock
+            mud.forEach(r => { log.unshift({ em, por, modo: stkModo, id: r.it.id, nome: r.it.name, antes: r.atual, depois: r.novo, novo: r.criar || undefined }); r.it.stock = Math.round(r.novo * 1000) / 1000; });
             // desperdício: também fica no registo de desperdício (com o custo), como em "Registar desperdício"
             if (stkModo === 'desperdicio') {
                 appState.retirados = Array.isArray(appState.retirados) ? appState.retirados : [];
@@ -26452,7 +26518,9 @@ async function dsTrPreparar() {
             appState.stockAjustes = log.slice(0, 300);
             saveStorage(); dsModalFechar('stk-rev'); renderInventory();
             const t = document.getElementById('stk-txt'); if (t) t.value = '';
-            dsToast(mud.length === 1 ? mud[0].it.name + ': ' + stkFmt(mud[0].novo, mud[0].it.unit) : mud.length + ' insumos atualizados');
+            try { renderBarRecipes(); renderKitchenRecipes(); } catch (_) {}
+            const nn = mud.filter(r => r.criar).length;
+            dsToast(mud.length === 1 ? (nn ? 'Criado: ' : '') + mud[0].it.name + ': ' + stkFmt(mud[0].novo, mud[0].it.unit) : mud.length + ' insumos atualizados' + (nn ? ' (' + nn + ' novos)' : ''));
         }
         (function () {
             document.head.insertAdjacentHTML('beforeend', `<style>
@@ -26460,7 +26528,12 @@ async function dsTrPreparar() {
                 .stk-modos button{display:flex;align-items:flex-start;gap:10px;text-align:left;border:1.5px solid #E4DCCF;border-radius:14px;padding:10px 12px;background:#fff;color:#231F20}
                 .stk-modos button i{margin-top:3px;color:#7A6A60}.stk-modos button b{display:block;font-size:13.5px;font-weight:800}.stk-modos button small{display:block;font-size:11.5px;color:#7A6A60;line-height:1.3;margin-top:2px}
                 .stk-modos button.on{border-color:var(--brand);background:#FBEDE6}.stk-modos button.on i{color:var(--brand)}
-                .stk-modos.mini button{padding:8px 10px;align-items:center}
+                .stk-modos.mini{grid-template-columns:repeat(auto-fit,minmax(118px,1fr))}.stk-modos.mini button{padding:8px 10px;align-items:center;min-width:0}.stk-modos.mini button b{font-size:13px;line-height:1.2}
+                .stk-rev .nv{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;padding:10px;border-radius:12px;background:#FBEDE6}
+                .stk-rev .nv label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:800;color:#5B4A40;min-width:0}.stk-rev .nv label.w{grid-column:1/-1}.stk-rev .nv small{font-weight:600}
+                .stk-rev .nv input,.stk-rev .nv select{border:1px solid #E4DCCF;border-radius:10px;padding:8px;font-size:15px;background:#fff;min-width:0;width:100%}
+                .stk-rev .nv .pr{display:flex;gap:6px;align-items:center}.stk-rev .nv .pr b{font-size:14px}
+                html.dark .stk-rev .nv{background:#3A2218}html.dark .stk-rev .nv label{color:#C9BBAF}html.dark .stk-rev .nv input,html.dark .stk-rev .nv select{background:#2A1B14;border-color:#44332A;color:#F2ECE4}
                 @media (max-width:560px){.stk-modos:not(.mini){grid-template-columns:1fr}}
                 .stk-rev{margin-top:12px;max-height:55vh;overflow-y:auto}.stk-rev .r{padding:10px 0;border-top:1px solid #F2ECE4}.stk-rev .o{display:block;font-size:12px;color:#7A6A60;margin-bottom:6px}
                 .stk-rev .g{display:grid;grid-template-columns:1fr 84px auto;gap:6px;align-items:center}.stk-rev select,.stk-rev .q{border:1px solid #E4DCCF;border-radius:10px;padding:9px 8px;font-size:15px;background:#fff;min-width:0}.stk-rev .q{text-align:right}.stk-rev .u{font-size:13px;color:#5B4A40;font-weight:700;min-width:22px}
