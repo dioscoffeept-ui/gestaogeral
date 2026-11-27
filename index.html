@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 11:05</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 11:15</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20636,7 +20636,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795776736';
+        const DS_BUILD = '1795777055';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -26462,7 +26462,7 @@ async function dsTrPreparar() {
                 <label>Embalagem <small>(opcional)</small><span class="pr"><input class="nv-emb" inputmode="decimal" placeholder="ex.: 250" value="${x.emb ? String(x.emb.q).replace('.', ',') : ''}" oninput="stkLerRev();stkPrev(${i})"><select class="nv-embu" onchange="stkLerRev();stkPrev(${i})">${['g', 'kg', 'ml', 'l'].map(u => `<option ${x.emb && x.emb.u === u ? 'selected' : ''}>${u}</option>`).join('')}</select></span></label>
                 <label>Preço de 1 ${x.emb ? 'embalagem' : 'unidade'}<span class="pr"><input class="nv-preco" inputmode="decimal" placeholder="0,00" value="${x.preco != null ? String(x.preco).replace('.', ',') : ''}" oninput="stkLerRev();stkPrev(${i})"><b>€</b></span></label>
                 <label>IVA<span class="pr"><select class="nv-iva" onchange="stkLerRev();stkPrev(${i})">${ivas.map(v => `<option value="${v}" ${v === iv ? 'selected' : ''}>${v}%</option>`).join('')}</select><select class="nv-com" onchange="stkLerRev();stkPrev(${i})"><option value="0" ${x.comIva === false ? 'selected' : ''}>+ IVA</option><option value="1" ${x.comIva === false ? '' : 'selected'}>com IVA</option></select></span></label>
-                <label class="w">Categoria<select class="nv-cat" onchange="stkLerRev()"><option value="">Sem categoria</option>${cats.map(c => `<option ${c === cat ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}</select></label></div>`;
+                <label class="w">Categoria<select class="nv-cat" onchange="stkLerRev()">${cats.includes('Sem categoria') ? '' : '<option value="">Sem categoria</option>'}${cats.map(c => `<option ${c === cat ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}</select></label></div>`;
         }
         function stkLerRev() {
             document.querySelectorAll('#stk-rev .r').forEach(el => { const x = stkLinhas[+el.dataset.i]; if (!x) return; x.itemId = el.querySelector('.it').value; const v = stkNum(el.querySelector('.q').value); x.q = v != null ? v : 0;
@@ -26480,7 +26480,7 @@ async function dsTrPreparar() {
             const porEmb = base ? e.q * base[1] : 1;
             const stock = base ? x.q * porEmb : (unit === 'un' ? x.q : x.q * (STK_U[stkNorm(x.u)] || [0, 1])[1]);
             const nome = e && !new RegExp('\\b' + String(e.q).replace('.', '[.,]') + '\\s*' + e.u + '\\b', 'i').test(x.nome) ? x.nome + ' ' + String(e.q).replace('.', ',') + ' ' + e.u : x.nome;
-            const it = { id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: nome, category: x.cat || '', unit, stock: 0, minStock: 0, supplierId: '', iva: x.iva != null ? x.iva : 23, priceHasIva: x.comIva !== false };
+            const it = { id: 'inv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: nome, category: x.cat || 'Sem categoria', unit, stock: 0, minStock: 0, supplierId: '', iva: x.iva != null ? x.iva : 23, priceHasIva: x.comIva !== false };
             if (x.preco > 0) { it.price = x.preco; it.priceQty = base ? porEmb : 1; it.priceDate = new Date().toISOString().slice(0, 10); }
             return { it, stock };
         }
@@ -26914,5 +26914,27 @@ async function dsTrPreparar() {
             .modal-box, [role=dialog] > div { max-width: min(94vw, 900px); }
         }
     </style>
+
+    <script>
+        // Produtos sem categoria (ou com uma categoria apagada) ficavam invisíveis no Estoque:
+        // passam a aparecer em "Sem categoria", que se cria sozinha quando é preciso.
+        (function () {
+            const SEM = 'Sem categoria';
+            function invOrfaos() {
+                try {
+                    if (!appState || !Array.isArray(appState.inventory) || !Array.isArray(appState.inventoryCategories)) return;
+                    const cats = new Set(appState.inventoryCategories);
+                    const orf = appState.inventory.filter(i => !i.category || !cats.has(i.category));
+                    if (!orf.length) return;
+                    if (!cats.has(SEM)) appState.inventoryCategories.push(SEM);
+                    orf.forEach(i => { i.category = SEM; });
+                    try { saveStorage(); } catch (_) {}
+                } catch (_) {}
+            }
+            const oR = renderInventory;
+            renderInventory = function () { invOrfaos(); return oR.apply(this, arguments); };
+            setTimeout(() => { invOrfaos(); try { if (!document.getElementById('tab-inventory').classList.contains('hidden')) renderInventory(); } catch (_) {} }, 3000);
+        })();
+    </script>
 </body>
 </html>
