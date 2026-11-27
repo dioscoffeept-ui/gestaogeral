@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 15:40</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 16:05</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -1504,7 +1504,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
 
                         <div class="ds-group">Matéria-prima</div>
                         <div class="ds-fields">
-                            <div class="ds-field"><label>Custo do café (€/kg)</label><input id="m-cafe" type="number" step="0.1" min="0" value="26" oninput="dsMargin(true)"></div>
+                            <div class="ds-field"><label>Custo do café (€/kg)</label><input id="m-cafe" type="number" step="any" min="0" value="26" oninput="dsMargin(true)"></div>
                             <div class="ds-field"><label>Dose por unidade (g)</label><input id="m-dose" type="number" step="0.5" min="0" value="18" oninput="dsMargin(true)"></div>
                         </div>
 
@@ -1512,8 +1512,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <div class="ds-fields">
                             <div class="ds-field"><label>Preço leite / bebida vegetal (€/L)</label><input id="m-leite" type="number" step="0.05" min="0" value="1.2" oninput="dsMargin(true)"></div>
                             <div class="ds-field"><label>Uso por copo (ml)</label><input id="m-ml" type="number" step="5" min="0" value="160" oninput="dsMargin(true)"></div>
-                            <div class="ds-field"><label>Copo / embalagem (€)</label><input id="m-copo" type="number" step="0.01" min="0" value="0.12" oninput="dsMargin(true)"></div>
-                            <div class="ds-field"><label>Acessórios: tampa, autocolante (€)</label><input id="m-acess" type="number" step="0.01" min="0" value="0.08" oninput="dsMargin(true)"></div>
+                            <div class="ds-field"><label>Copo / embalagem (€)</label><input id="m-copo" type="number" step="any" min="0" value="0.12" oninput="dsMargin(true)"></div>
+                            <div class="ds-field"><label>Acessórios: tampa, autocolante (€)</label><input id="m-acess" type="number" step="any" min="0" value="0.08" oninput="dsMargin(true)"></div>
                         </div>
 
 
@@ -2473,11 +2473,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Paguei (€)</label>
-                            <input type="number" step="0.0001" min="0" id="inv-price" oninput="invPriceHint()" placeholder="ex.: 0,79" class="w-full rounded-xl border-slate-300 text-sm">
+                            <input type="number" step="any" min="0" id="inv-price" oninput="invPriceHint()" placeholder="ex.: 0,79" class="w-full rounded-xl border-slate-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Por <span id="inv-price-unit">quantidade</span></label>
-                            <input type="number" step="0.01" min="0" id="inv-price-qty" oninput="invPriceHint()" placeholder="ex.: 1000" class="w-full rounded-xl border-slate-300 text-sm">
+                            <input type="number" step="any" min="0" id="inv-price-qty" oninput="invPriceHint()" placeholder="ex.: 1000" class="w-full rounded-xl border-slate-300 text-sm">
                         </div>
                         <div>
                             <label class="block text-[11px] font-bold text-slate-600 mb-1">Esse valor é</label>
@@ -6003,7 +6003,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                 `<option value="" ${unit === '' ? 'selected' : ''}>—</option>`;
             row.innerHTML = `
                 <input type="text" placeholder="Ingrediente" value="${escapeHtml(name)}" class="ing-name flex-1 text-xs font-semibold rounded-xl border-slate-300">
-                <input type="number" step="0.01" placeholder="Qtd" value="${qtyVal}" class="ing-qty w-20 text-xs font-semibold rounded-xl border-slate-300">
+                <input type="number" step="any" placeholder="Qtd" value="${qtyVal}" class="ing-qty w-20 text-xs font-semibold rounded-xl border-slate-300">
                 <select class="ing-unit w-28 text-xs font-semibold rounded-xl border-slate-300">${unitOpts}</select>
                 <button type="button" onclick="this.parentElement.remove()" class="p-2 text-slate-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
             `;
@@ -7463,8 +7463,8 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <p class="text-xs font-black text-slate-800"><i class="fas fa-credit-card mr-1" style="color:var(--brand)"></i> Taxa do multibanco / cartão (TPA)</p>
                         <p class="text-[11px] text-slate-500">A comissão que o banco ou a empresa do terminal cobra em cada venda paga com cartão. Entra no lucro de cada ficha.</p>
                         <div class="grid grid-cols-3 gap-2">
-                            <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Comissão (%)</label><input id="tpa-pct" type="number" min="0" step="0.01" value="${cfg.tpaPct ?? ''}" oninput="fixedRecalc()" placeholder="ex.: 0,7" class="w-full text-xs font-bold text-right"></div>
-                            <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">+ fixo por venda (€)</label><input id="tpa-fixo" type="number" min="0" step="0.01" value="${cfg.tpaFixo ?? ''}" oninput="fixedRecalc()" placeholder="ex.: 0,05" class="w-full text-xs font-bold text-right"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Comissão (%)</label><input id="tpa-pct" type="number" min="0" step="any" value="${cfg.tpaPct ?? ''}" oninput="fixedRecalc()" placeholder="ex.: 0,7" class="w-full text-xs font-bold text-right"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">+ fixo por venda (€)</label><input id="tpa-fixo" type="number" min="0" step="any" value="${cfg.tpaFixo ?? ''}" oninput="fixedRecalc()" placeholder="ex.: 0,05" class="w-full text-xs font-bold text-right"></div>
                             <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Vendas com cartão (%)</label><input id="tpa-share" type="number" min="0" max="100" step="1" value="${cfg.cartaoPct ?? 100}" oninput="fixedRecalc()" class="w-full text-xs font-bold text-right"></div>
                         </div>
                     </div>
@@ -7488,7 +7488,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         }
         function fixedLineHtml(l, i) {
             return `<div class="flex gap-2 items-center fixed-line"><input value="${escapeHtml(l.nome || '')}" placeholder="Despesa" class="fx-nome flex-1 text-xs font-semibold">
-                <input type="number" min="0" step="0.01" value="${l.valor ?? ''}" oninput="fixedRecalc()" placeholder="€/mês" class="fx-valor w-28 text-xs font-bold text-right">
+                <input type="number" min="0" step="any" value="${l.valor ?? ''}" oninput="fixedRecalc()" placeholder="€/mês" class="fx-valor w-28 text-xs font-bold text-right">
                 <button type="button" onclick="this.parentElement.remove();fixedRecalc()" class="p-1 text-slate-400 hover:text-red-600" title="Remover">✕</button></div>`;
         }
         function fixedAddLine() { document.getElementById('fixed-lines').insertAdjacentHTML('beforeend', fixedLineHtml({ nome: '', valor: '' })); }
@@ -9798,7 +9798,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             p.innerHTML = `<p class="text-[11px] text-slate-600"><b>Variações de ${escapeHtml(base)}</b> — ex.: outros tipos de leite. O cliente escolhe um; o custo e o lucro de cada um aparecem na ficha.</p>` +
                 alts.map((a, k) => `<div class="grid grid-cols-[1fr_70px_78px_auto] gap-1.5 items-center">
                     <input list="inv-names-dl" value="${escapeHtml(a.name || '')}" placeholder="Insumo do estoque" oninput="altsSet(this,${k},'name',this.value)" class="text-xs font-semibold rounded-lg border-slate-300 min-w-0">
-                    <input type="number" step="0.01" value="${a.quantity ?? ''}" placeholder="qtd" title="Quantidade (vazio = igual à do ingrediente)" oninput="altsSet(this,${k},'quantity',this.value)" class="text-xs font-semibold rounded-lg border-slate-300 min-w-0">
+                    <input type="number" step="any" value="${a.quantity ?? ''}" placeholder="qtd" title="Quantidade (vazio = igual à do ingrediente)" oninput="altsSet(this,${k},'quantity',this.value)" class="text-xs font-semibold rounded-lg border-slate-300 min-w-0">
                     <div class="relative"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">+€</span><input type="number" step="0.05" value="${a.extra || ''}" placeholder="0,00" title="Acréscimo no preço de venda" oninput="altsSet(this,${k},'extra',this.value)" class="w-full text-xs font-semibold rounded-lg border-slate-300 pl-6 min-w-0"></div>
                     <button type="button" onclick="altsDel(this,${k})" class="w-7 h-7 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-white" aria-label="Remover">✕</button></div>`).join('') +
                 `<button type="button" onclick="altsAdd(this)" class="text-xs font-bold" style="color:var(--brand)"><i class="fas fa-plus mr-1"></i>Adicionar variação</button>`;
@@ -16835,7 +16835,7 @@ var qrcode = function() {
             const t = posTotal(), arred = Math.ceil(t) - t > 0.001 ? Math.ceil(t) : Math.ceil(t + 0.5);
             dsModal('gj-modal', `<div class="flex items-start justify-between gap-3"><div><h3>Gorjeta</h3><p class="text-sm text-slate-500">Não entra na fatura. Fica registada no fecho de caixa.</p></div><button type="button" class="x" onclick="dsModalFechar('gj-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
                 <div class="chs mt-3"><button type="button" onclick="gjPor(0)">Sem gorjeta</button><button type="button" onclick="gjPor(${Math.round(t * 5) / 100})">5% · ${eurN(t * .05)}</button><button type="button" onclick="gjPor(${Math.round(t * 10) / 100})">10% · ${eurN(t * .1)}</button><button type="button" onclick="gjPor(${Math.round((arred - t) * 100) / 100})">Arredondar para ${eurN(arred)}</button></div>
-                <div class="grid grid-cols-2 gap-2 mt-3"><input id="gj-v" type="number" min="0" step="0.1" placeholder="Outro valor €"><button type="button" class="bs" onclick="gjPor(parseFloat(document.getElementById('gj-v').value)||0)">OK</button></div>
+                <div class="grid grid-cols-2 gap-2 mt-3"><input id="gj-v" type="number" min="0" step="any" placeholder="Outro valor €"><button type="button" class="bs" onclick="gjPor(parseFloat(document.getElementById('gj-v').value)||0)">OK</button></div>
                 <p class="text-xs text-slate-500 mt-3">No terminal, cobre o total com a gorjeta incluída.</p>`);
         }
         function gjPor(v) { posGorj = Math.max(0, Math.round(v * 100) / 100); dsModalFechar('gj-modal'); posRenderCart(); }
@@ -17143,7 +17143,7 @@ var qrcode = function() {
                 <div class="grid grid-cols-2 gap-3"><label class="text-sm font-bold text-slate-700">Pontos por cada 1 €<input type="number" min="0" step="0.5" value="${c.porEuro}" onchange="ptCfg().porEuro=parseFloat(this.value)||0;saveStorage()" class="mt-1 w-full rounded-xl border-slate-300 text-sm"></label>
                 <label class="text-sm font-bold text-slate-700">Pontos para o prémio<input type="number" min="1" step="1" value="${c.alvo}" onchange="ptCfg().alvo=parseInt(this.value)||10;saveStorage()" class="mt-1 w-full rounded-xl border-slate-300 text-sm"></label>
                 <label class="text-sm font-bold text-slate-700">Prémio<input type="text" maxlength="40" value="${escapeHtml(c.premio)}" onchange="ptCfg().premio=this.value;saveStorage()" class="mt-1 w-full rounded-xl border-slate-300 text-sm"></label>
-                <label class="text-sm font-bold text-slate-700">Vale (€ de desconto)<input type="number" min="0" step="0.1" value="${c.valor}" onchange="ptCfg().valor=parseFloat(this.value)||0;saveStorage()" class="mt-1 w-full rounded-xl border-slate-300 text-sm"></label></div>
+                <label class="text-sm font-bold text-slate-700">Vale (€ de desconto)<input type="number" min="0" step="any" value="${c.valor}" onchange="ptCfg().valor=parseFloat(this.value)||0;saveStorage()" class="mt-1 w-full rounded-xl border-slate-300 text-sm"></label></div>
                 <p class="text-xs text-slate-500">Exemplo: 1 ponto por euro, 10 pontos = um café grátis (vale 1 €). Ao pagar, escolha o cliente e toque em "Usar pontos".</p>
                 <div class="pt-4 border-t border-slate-100"><h4 class="text-lg font-black text-slate-900">Apps de entrega</h4><p class="text-sm text-slate-500">Registe os pedidos da Uber Eats, Glovo e Bolt Food no Balcão para o estoque e os relatórios ficarem certos. Ponha a comissão de cada uma.</p></div>
                 <div class="grid grid-cols-3 gap-3">${AP_APPS.map(([k, n]) => `<label class="text-sm font-bold text-slate-700">${n} (%)<input type="number" min="0" max="60" step="0.5" value="${a[k]}" onchange="apCfg()['${k}']=parseFloat(this.value)||0;saveStorage()" class="mt-1 w-full rounded-xl border-slate-300 text-sm"></label>`).join('')}</div>
@@ -18124,7 +18124,7 @@ var qrcode = function() {
             gNeg.insertAdjacentHTML('beforebegin', `<div id="sim-comida" class="sim-off"><div class="ds-group">Ingredientes</div>
                 <div class="sc-add"><select id="sc-ficha" onchange="simFicha(this)"><option value="">Usar o custo de uma ficha…</option></select><button type="button" onclick="simLinha()"><i class="fas fa-plus mr-1"></i>Ingrediente</button></div>
                 <div id="sc-lin"></div>
-                <div class="ds-fields"><div class="ds-field"><label>Embalagem (€)</label><input id="sc-emb" type="number" step="0.01" min="0" value="0" oninput="dsMargin(true)"><small>Caixa, guardanapo, talheres. 0 se for servido na mesa.</small></div></div></div>`);
+                <div class="ds-fields"><div class="ds-field"><label>Embalagem (€)</label><input id="sc-emb" type="number" step="any" min="0" value="0" oninput="dsMargin(true)"><small>Caixa, guardanapo, talheres. 0 se for servido na mesa.</small></div></div></div>`);
             window._simBlocos = { bebida: [document.getElementById('sim-tipo-wrap'), ...blocoDe(gMat), ...blocoDe(gLei)], ret: gRet };
         })();
 
@@ -18140,7 +18140,7 @@ var qrcode = function() {
             simComida = c;
         }
         function simLinhasPintar(lin) {
-            document.getElementById('sc-lin').innerHTML = (lin || []).map(l => `<div class="lin"><input class="n" type="text" value="${escapeHtml(l.n || '')}" placeholder="Ingrediente" oninput="dsMargin(true)"><input class="c" type="number" step="0.01" min="0" value="${escapeHtml(String(l.c ?? ''))}" placeholder="€" oninput="dsMargin(true)"><button type="button" class="x" onclick="this.parentElement.remove();dsMargin(true)" aria-label="Tirar"><i class="fas fa-xmark"></i></button></div>`).join('');
+            document.getElementById('sc-lin').innerHTML = (lin || []).map(l => `<div class="lin"><input class="n" type="text" value="${escapeHtml(l.n || '')}" placeholder="Ingrediente" oninput="dsMargin(true)"><input class="c" type="number" step="any" min="0" value="${escapeHtml(String(l.c ?? ''))}" placeholder="€" oninput="dsMargin(true)"><button type="button" class="x" onclick="this.parentElement.remove();dsMargin(true)" aria-label="Tirar"><i class="fas fa-xmark"></i></button></div>`).join('');
         }
         function simLinha() { simGuardarComida(); simComida.lin.push({ n: '', c: '' }); simLinhasPintar(simComida.lin); const l = document.querySelectorAll('#sc-lin .lin .n'); if (l.length) l[l.length - 1].focus(); dsMargin(true); }
         function simFicha(sel) {
@@ -20706,7 +20706,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795793384';
+        const DS_BUILD = '1795795346';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -24530,7 +24530,7 @@ async function dsTrPreparar() {
                   </div>
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Área</label><select id="mep-area" class="w-full text-xs font-bold rounded-xl border-slate-300"><option value="BAR">Bar</option><option value="KITCHEN">Cozinha</option></select></div>
-                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">1 receita rende *</label><div class="flex gap-1"><input id="mep-yq" oninput="mepIngPorTxt()" type="number" step="0.01" min="0.01" required class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="10"><select id="mep-yu" onchange="mepIngPorTxt()" class="w-20 text-xs font-bold rounded-xl border-slate-300">${MEP_YU.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>
+                    <div><label class="block text-[11px] font-bold text-slate-500 mb-1">1 receita rende *</label><div class="flex gap-1"><input id="mep-yq" oninput="mepIngPorTxt()" type="number" step="any" min="0.01" required class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="10"><select id="mep-yu" onchange="mepIngPorTxt()" class="w-20 text-xs font-bold rounded-xl border-slate-300">${MEP_YU.map(u => `<option value="${u}">${u}</option>`).join('')}</select></div></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Conservação</label><select id="mep-cons" class="w-full text-xs font-bold rounded-xl border-slate-300">${Object.entries(MEP_CONS).map(([k, c]) => `<option value="${k}">${c[0]}</option>`).join('')}</select></div>
                     <div><label class="block text-[11px] font-bold text-slate-500 mb-1">Validade (dias)</label><input id="mep-days" type="number" min="0" step="1" class="w-full text-xs font-bold rounded-xl border-slate-300" placeholder="Ex.: 30"></div>
                   </div>
@@ -24564,7 +24564,7 @@ async function dsTrPreparar() {
             const qv = (quantity === null || quantity === undefined) ? '' : quantity;
             const opts = MEP_ING_U.map(u => `<option value="${u}" ${unit === u ? 'selected' : ''}>${u}</option>`).join('') + `<option value="" ${unit === '' ? 'selected' : ''}>—</option>`;
             row.innerHTML = `<input type="text" placeholder="Ingrediente" value="${escapeHtml(name)}" class="ing-name flex-1 text-xs font-semibold rounded-xl border-slate-300">
-                <input type="number" step="0.01" placeholder="Qtd" value="${qv}" class="ing-qty w-20 text-xs font-semibold rounded-xl border-slate-300">
+                <input type="number" step="any" placeholder="Qtd" value="${qv}" class="ing-qty w-20 text-xs font-semibold rounded-xl border-slate-300">
                 <select class="ing-unit w-24 text-xs font-semibold rounded-xl border-slate-300">${opts}</select>
                 <button type="button" onclick="this.closest('.ingredient-row').remove()" class="p-2 text-slate-400 hover:text-red-600" aria-label="Remover"><i class="fas fa-trash"></i></button>`;
             list.appendChild(row);
@@ -24769,8 +24769,8 @@ async function dsTrPreparar() {
                     const receitas = falta ? Math.ceil(falta / mepYield(m) * 10) / 10 : 0;
                     return `<tr class="border-b border-slate-100">
                         <td class="px-4 py-3"><div class="flex items-center gap-2">${m.image ? `<img src="${escapeHtml(m.image)}" alt="" loading="lazy" class="w-10 h-10 rounded-lg object-cover shrink-0">` : (m.icon ? `<span class="text-xl">${escapeHtml(m.icon)}</span>` : '')}<div class="min-w-0"><p class="font-bold text-slate-800 leading-tight">${escapeHtml(m.name)}</p><div class="mt-0.5">${mepConsBadge(m)}</div></div></div></td>
-                        <td data-label="Tenho" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
-                        <td data-label="Quero ter" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="0.01" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
+                        <td data-label="Tenho" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="any" value="${Math.round((Number(p.tenho) || 0) * 100) / 100}" onchange="mepSet('${m.id}','tenho',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
+                        <td data-label="Quero ter" class="px-4 py-3"><div class="flex items-center gap-1"><input type="number" min="0" step="any" value="${Math.round((Number(p.meta) || 0) * 100) / 100}" onchange="mepSet('${m.id}','meta',this.value)" class="w-20 text-xs font-bold rounded-lg border-slate-300 py-1.5"><span class="text-[11px] text-slate-500">${escapeHtml(yu)}</span></div></td>
                         <td data-label="Validade" class="px-4 py-3">${val.html}</td>
                         <td data-label="Falta" class="px-4 py-3">${falta ? `<span class="font-black text-amber-600">${fmtQty(falta, yu)}</span><span class="block text-[10px] text-slate-400">≈ ${mepReceitasTxt(receitas)}</span>` : '<span class="text-emerald-600 font-bold text-xs"><i class="fas fa-check mr-1"></i>OK</span>'}</td>
                         <td class="px-4 py-3"><div class="flex gap-1.5 justify-end"><button onclick="mepProduce('${m.id}')" class="px-3 py-1.5 text-[11px] text-white font-bold rounded-lg whitespace-nowrap" style="background:var(--brand)"><i class="fas fa-plus mr-1"></i>Produzi</button><button onclick="mepOpen('${m.id}')" class="px-2.5 py-1.5 text-[11px] font-bold rounded-lg bg-slate-100 text-slate-600" aria-label="Editar ficha"><i class="fas fa-pen"></i></button></div></td></tr>`;
@@ -27186,6 +27186,12 @@ async function dsTrPreparar() {
                 return r;
             };
         })();
+    </script>
+
+    <script>
+        // Valores exatos em qualquer campo de número (ex.: 2,138 kg): nunca bloquear por "casas decimais a mais"
+        document.addEventListener('focusin', e => { const i = e.target; if (i && i.tagName === 'INPUT' && i.type === 'number' && i.step !== '1') i.step = 'any'; }, true);
+        document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button[type=submit], input[type=submit]'); const f = b && b.form; if (f) f.querySelectorAll('input[type=number]').forEach(i => { if (i.step !== '1') i.step = 'any'; }); }, true);
     </script>
 </body>
 </html>
