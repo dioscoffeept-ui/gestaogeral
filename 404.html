@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dio'Stock</title>
+<meta name="theme-color" content="#983808">
+<script>
+  // Páginas de cartões (n/<código>/) e mensagens (m/<código>/) acabadas de criar ainda podem não existir no site
+  // (são geradas de hora a hora). Em vez de "página não encontrada", o cliente vai logo para o cartão certo.
+  (function () {
+    var p = location.pathname, q = location.search || '';
+    var n = p.match(/\/n\/([A-Za-z0-9]{6})\/?/), c = p.match(/\/c\/([A-Za-z0-9]{7})\/?/);
+    var base = p.replace(/\/(n|c|m)\/[^/]*\/?.*$/, '/');
+    if (n) { location.replace(base + 'cartao.html?n=' + n[1]); return; }
+    if (c) { location.replace(base + 'cartao.html?k=' + c[1]); return; }
+        window.__nada = true;
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Schibsted+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --cafe: #983808; --preto: #231F20; --creme: #F6F3F0; --linha: #E4DCCF; --t2: #5B4A40; }
+  @media (prefers-color-scheme: dark) { :root { --creme: #1F130E; --preto: #F2ECE4; --linha: #44332A; --t2: #C9BBAF; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--creme); color: var(--preto); font: 16px/1.5 'Schibsted Grotesk', system-ui, sans-serif; padding: 24px 16px; }
+  main { max-width: 420px; text-align: center; }
+  svg { width: 64px; height: 64px; }
+  h1 { font: 800 28px/1.1 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing: -.02em; margin: 18px 0 8px; }
+  p { color: var(--t2); margin: 0 0 22px; }
+  a { display: inline-block; background: var(--cafe); color: #fff; text-decoration: none; font-weight: 700; padding: 14px 22px; border-radius: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <svg viewBox="0 0 512 512" role="img" aria-label="Dio'Stock"><rect width="512" height="512" rx="110" fill="#983808"/><path fill="#FFFFFF" fill-rule="evenodd" transform="translate(-310.56 -358.57) scale(2.0901)" d="M285.94,221.79h-71.81v144.01h104.27l9.08-55.02-41.54-89ZM275.92,336.73h-31.92v-51.88h31.92v51.88Z"/></svg>
+  <h1>Esta página não existe</h1>
+  <p>O link pode estar incompleto. Se recebeu um cartão de fidelidade, peça o link de novo à loja.</p>
+  <a href="/">Ir para o Dio'Stock</a>
+</main>
+</body>
+</html>

@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 25/11/2026 09:28</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 08:30</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -9805,8 +9805,10 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <div class="overflow-x-auto"><table class="w-full text-xs"><thead><tr class="text-[10px] uppercase text-slate-400"><th class="text-left font-bold pb-1">Opção</th><th class="text-right font-bold pb-1 px-2">Custo</th><th class="text-right font-bold pb-1 px-2">PVP</th><th class="text-right font-bold pb-1">Lucro</th></tr></thead>
                         <tbody>${row(escapeHtml(rec.ingredients.filter(g => (g.alts || []).length).map(g => g.name).join(' + ')) + ' <span class="text-[10px] text-slate-400">(base)</span>', rec, 0)}${vs.map(v => row(escapeHtml(v.label) + ` <span class="text-[10px] text-slate-400">em vez de ${escapeHtml(v.base.name)}</span>`, recipeWithVariant(rec, v.key), Number(v.alt.extra) || 0)).join('')}</tbody></table></div>
                         <p class="text-[10px] text-slate-400 mt-2">Lucro líquido por unidade, sem IVA e com a taxa do multibanco. Nas vendas pode ligar cada variação ao produto do POS.</p></div>`;
-                    const act = document.getElementById('view-actions');
-                    if (act && act.parentElement === box) box.insertBefore(sec, act); else box.appendChild(sec);
+                    // dentro da zona que desliza (por baixo dos ingredientes): nunca tapa a ficha, em nenhum ecrã
+                    const sc = document.getElementById('vr-scroll'), act = document.getElementById('view-actions');
+                    if (sc) { sec.classList.add('pt-0'); sc.appendChild(sec); }
+                    else if (act && act.parentElement === box) box.insertBefore(sec, act); else box.appendChild(sec);
                 }
                 return r;
             };
@@ -12702,7 +12704,7 @@ var qrcode = function() {
                 ${balPeriod === 'custom' ? `<div class="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600"><label>De <input type="date" value="${a}" onchange="balFrom=this.value;balRender()" class="rounded-xl border-slate-200 text-sm ml-1"></label><label>até <input type="date" value="${b}" onchange="balTo=this.value;balRender()" class="rounded-xl border-slate-200 text-sm ml-1"></label></div>` : ''}
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <p class="text-sm font-black text-slate-900">${escapeHtml(label)} <span class="text-slate-400 font-bold">· ${period}</span></p>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2 bal-exp">
                         <button type="button" onclick="balCsv()" ${list.length ? '' : 'disabled'} class="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40"><i class="fas fa-file-excel mr-1"></i>Excel</button>
                         <button type="button" onclick="balPrint()" ${list.length ? '' : 'disabled'} class="px-3 py-2 rounded-xl text-xs font-bold text-white shadow-sm disabled:opacity-40" style="background:var(--brand)"><i class="fas fa-file-arrow-down mr-1"></i>Baixar documento (PDF)</button>
                     </div>
@@ -20634,7 +20636,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795506548';
+        const DS_BUILD = '1795765696';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -25236,14 +25238,22 @@ async function dsTrPreparar() {
         const fxLinkNfc = () => fidCfg && fidCfg.nfc_tok ? fidBase() + 'cartao.html?nfc=' + fidCfg.nfc_tok : '';
         function fxAbrir() {
             const c = fidCfg || {};
-            dsModal('fx-modal', `<div class="flex items-start justify-between gap-3"><div><h3>NFC e aniversário</h3><p class="text-sm text-slate-500">Carimbo com um toque do telemóvel e uma oferta no aniversário do cliente.</p></div><button type="button" class="x" onclick="dsModalFechar('fx-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+            dsModal('fx-modal', `<div class="flex items-start justify-between gap-3"><div><h3>NFC, avaliações e aniversário</h3><p class="text-sm text-slate-500">Carimbo com um toque do telemóvel, avaliações no Google e uma oferta no aniversário do cliente.</p></div><button type="button" class="x" onclick="dsModalFechar('fx-modal')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
               <div class="sec"><h4>📲 Carimbo por NFC</h4><p>O cliente encosta o telemóvel à etiqueta NFC no balcão e recebe o carimbo no cartão dele, sem a equipa tocar em nada.</p>
                 <label class="tg"><input type="checkbox" id="fx-nfc" ${c.nfc_ligado ? 'checked' : ''}> Ligar o carimbo por NFC</label>
                 ${fxIntervaloHtml(c.nfc_horas || 4)}
                 ${c.nfc_tok ? `<div class="lk"><code>${escapeHtml(fxLinkNfc())}</code><button type="button" onclick="fidCopiar(fxLinkNfc())"><i class="fas fa-copy"></i> Copiar</button></div>
-                <div class="flex gap-2 mt-2"><button type="button" class="bt" onclick="fxTrocarNfc()"><i class="fas fa-rotate"></i><span>Trocar o link <small style="font-weight:600;color:#64748B">(a etiqueta antiga deixa de dar carimbos)</small></span></button></div>` : '<p style="margin-top:8px">Ao guardar, criamos o link para gravar na etiqueta.</p>'}
+                <div class="flex gap-2 mt-2 flex-wrap">${'NDEFReader' in window ? `<button type="button" class="bt" onclick="fxGravarNfc(fxLinkNfc())"><i class="fas fa-wifi" style="transform:rotate(90deg)"></i><span>Gravar na etiqueta agora</span></button>` : ''}<button type="button" class="bt" onclick="fxTrocarNfc()"><i class="fas fa-rotate"></i><span>Trocar o link <small style="font-weight:600;color:#64748B">(a etiqueta antiga deixa de dar carimbos)</small></span></button></div>` : '<p style="margin-top:8px">Ao guardar, criamos o link para gravar na etiqueta.</p>'}
                 <ol><li>Compre etiquetas NFC NTAG213 ou NTAG215 (custam poucos cêntimos cada).</li><li>Instale a app gratuita <b>NFC Tools</b> no telemóvel (iPhone ou Android).</li><li>Em <b>Escrever → Adicionar um registo → URL</b>, cole o link acima e encoste o telemóvel à etiqueta.</li><li>Cole a etiqueta no balcão, com um aviso: “Encoste o telemóvel e ganhe o carimbo”.</li></ol>
                 <p style="margin-top:8px">Cada telemóvel só recebe 1 carimbo no intervalo escolhido. Os carimbos por NFC aparecem no histórico do cliente. Se o link for partilhado, toque em <b>Trocar o link</b> e grave a etiqueta de novo.</p></div>
+              <div class="sec" id="fg-sec"><h4>⭐ Avaliações no Google</h4><p>O cliente encosta o telemóvel a uma etiqueta NFC (ou lê um QR) e abre logo a página para avaliar a sua loja no Google.</p>
+                <label class="campo">Link para avaliar no Google<input id="fg-link" inputmode="url" maxlength="500" placeholder="https://g.page/r/…/review" value="${escapeHtml(c.google_avaliar || '')}"></label>
+                <p style="margin-top:6px">Onde encontrar: no Google, pesquise o nome da sua loja → no seu Perfil da Empresa toque em <b>Pedir avaliações</b> (ou <b>Obter mais avaliações</b>) → <b>Copiar link</b>. Também pode colar o ID do sítio (Place ID).</p>
+                <div class="flex gap-2 mt-2"><button type="button" class="bt" onclick="fgGuardar()"><i class="fas fa-check"></i><span>Guardar o link</span></button>${c.google_avaliar ? `<button type="button" class="bt" onclick="window.open(fidCfg.google_avaliar,'_blank','noopener')"><i class="fab fa-google"></i><span>Testar</span></button>` : ''}</div>
+                ${c.aval_tok && c.google_avaliar ? `<p style="margin-top:10px"><b>Link para gravar na etiqueta</b> (se mudar o link do Google, a etiqueta continua a funcionar):</p>
+                <div class="lk"><code>${escapeHtml(fgLinkNfc())}</code><button type="button" onclick="fidCopiar(fgLinkNfc())"><i class="fas fa-copy"></i> Copiar</button></div>
+                <div class="flex gap-2 mt-2 flex-wrap">${'NDEFReader' in window ? `<button type="button" class="bt" onclick="fxGravarNfc(fgLinkNfc())"><i class="fas fa-wifi" style="transform:rotate(90deg)"></i><span>Gravar na etiqueta agora</span></button>` : ''}<button type="button" class="bt" onclick="fgQr()"><i class="fas fa-qrcode"></i><span>Ver o QR</span></button></div>
+                <p style="margin-top:8px">${c.aval_toques ? `Já abriram as avaliações ${c.aval_toques} ${c.aval_toques === 1 ? 'vez' : 'vezes'} pela etiqueta.` : 'Ainda ninguém tocou na etiqueta.'} ${'NDEFReader' in window ? '' : 'Para gravar a etiqueta use a app gratuita <b>NFC Tools</b>: Escrever → Adicionar um registo → URL, cole o link e encoste o telemóvel.'}</p>` : ''}</div>
               <div class="sec"><h4>🎂 Oferta de aniversário</h4><p>Ao criar o cartão, o cliente pode indicar o dia e o mês do aniversário (sem o ano). Nesse dia o cartão mostra a oferta e a app avisa a equipa.</p>
                 <label class="tg"><input type="checkbox" id="fx-aniv" ${c.aniv_ligado ? 'checked' : ''}> Ligar a oferta de aniversário</label>
                 <label class="campo">Oferta<input id="fx-oferta" maxlength="60" value="${escapeHtml(c.aniv_oferta || 'Um café grátis')}"></label>
@@ -25276,6 +25286,42 @@ async function dsTrPreparar() {
             const n = Math.round(Number(String(document.getElementById('fx-outro-n').value).replace(',', '.')) * Number(document.getElementById('fx-outro-u').value));
             return n >= 1 && n <= 720 ? n : 0;
         }
+        // ---------- avaliações no Google (etiqueta NFC ou QR → diostock.pt/avaliar.html?t=…)
+        const fgLinkNfc = () => fidCfg && fidCfg.aval_tok ? fidBase() + 'avaliar.html?t=' + fidCfg.aval_tok : '';
+        function fgNormalizar(v) {
+            v = String(v || '').trim();
+            if (!v) return '';
+            if (/^ChIJ[\w-]{10,}$/.test(v)) return 'https://search.google.com/local/writereview?placeid=' + v;   // Place ID
+            if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
+            v = v.replace(/^http:/i, 'https:');
+            let h = ''; try { h = new URL(v).hostname.toLowerCase(); } catch (_) { return null; }
+            return /(^|\.)(google\.[a-z.]+|g\.page|goo\.gl|maps\.app\.goo\.gl|g\.co)$/.test(h) ? v.slice(0, 500) : null;
+        }
+        async function fgGuardar() {
+            const v = fgNormalizar(document.getElementById('fg-link').value);
+            if (v === null) return dsToast('Este link não é do Google. Copie o link em "Pedir avaliações" no seu Perfil da Empresa.', true);
+            const up = { google_avaliar: v || null };
+            if (v && !(fidCfg && fidCfg.aval_tok)) up.aval_tok = fxTok();
+            const { data, error } = await sb.from('fidelidade_cfg').update(up).eq('dono_id', fidDono()).select('*').single();
+            if (error) return dsToast('Não foi possível guardar. Tente de novo.', true);
+            fidCfg = data; dsToast(v ? 'Link guardado. Já pode gravar a etiqueta.' : 'Link retirado.'); fxAbrir();
+            setTimeout(() => { const el = document.getElementById('fg-sec'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 150);
+        }
+        function fgQr() {
+            const u = fgLinkNfc(); if (!u) return;
+            dsModal('fg-qr', `<div class="flex items-start justify-between gap-3"><div><h3>QR para avaliar no Google</h3><p class="text-sm text-slate-500">Imprima e ponha ao lado da etiqueta, para quem não tem NFC.</p></div><button type="button" class="x" onclick="dsModalFechar('fg-qr')" aria-label="Fechar"><i class="fas fa-xmark"></i></button></div>
+                <div style="background:#fff;border-radius:16px;padding:16px;margin-top:12px;display:grid;place-items:center">${typeof payQrSvg === 'function' ? payQrSvg(u) : ''}</div><p class="text-center font-black mt-3">Avalie-nos no Google ★★★★★</p>`);
+        }
+        // gravar um link numa etiqueta NFC direto do telemóvel (Chrome no Android); nos outros, a app NFC Tools
+        async function fxGravarNfc(url) {
+            if (!url) return;
+            if (!('NDEFReader' in window)) return dsToast('Este telemóvel não grava etiquetas pelo navegador. Use a app NFC Tools.', true);
+            try {
+                dsToast('Encoste o telemóvel à etiqueta…');
+                await new NDEFReader().write({ records: [{ recordType: 'url', data: url }] });
+                dsToast('Etiqueta gravada. Teste: encoste outro telemóvel.');
+            } catch (e) { dsToast('Não foi possível gravar: ' + ((e && e.message) || 'tente de novo') + '.', true); }
+        }
         async function fxTrocarNfc() { if (await dsConfirmar('Criar um link novo? A etiqueta NFC atual deixa de dar carimbos até ser gravada com o link novo.')) fxGuardar(true); }
         // aniversário também ao criar o cartão pela equipa
         (function () {
@@ -25293,7 +25339,7 @@ async function dsTrPreparar() {
                 const r = oP.apply(this, arguments);
                 try {
                     const links = document.querySelector('#fid-page .fid-link, #fid-modal .fid-link');
-                    if (links && !links.querySelector('.fx-bt')) links.insertAdjacentHTML('beforeend', '<button type="button" class="fx-bt" onclick="fxAbrir()"><i class="fas fa-wifi" style="transform:rotate(90deg)"></i>NFC e aniversário</button>');
+                    if (links && !links.querySelector('.fx-bt')) links.insertAdjacentHTML('beforeend', '<button type="button" class="fx-bt" onclick="fxAbrir()"><i class="fas fa-wifi" style="transform:rotate(90deg)"></i>NFC e avaliações Google</button>');
                     const nv = document.getElementById('fid-novo');
                     if (nv && fidCfg && fidCfg.aniv_ligado && !document.getElementById('fx-n-dia')) {
                         const bt = nv.querySelector('button');
@@ -26287,7 +26333,7 @@ async function dsTrPreparar() {
         // ======================================================= ESTOQUE: ATUALIZAR O STOCK (foto, galeria, texto ou SAF-T)
         // Lista "produto quantidade" → revisão → contagem (fica X), entrada (soma X) ou saída (tira X).
         let stkModo = 'contagem', stkLinhas = [];
-        const STK_MODOS = { contagem: ['Contar o que há', 'Fica com a quantidade que escrever.', 'fa-clipboard-check'], entrada: ['Chegou mercadoria', 'Soma ao que já tem.', 'fa-truck-ramp-box'], saida: ['Gastou / saiu', 'Tira ao que tem (quebras, consumo, ofertas).', 'fa-arrow-down'] };
+        const STK_MODOS = { contagem: ['Contar o que há', 'Fica com a quantidade que escrever.', 'fa-clipboard-check'], entrada: ['Chegou mercadoria', 'Soma ao que já tem.', 'fa-truck-ramp-box'], saida: ['Gastou / saiu', 'Tira ao que tem (quebras, consumo, ofertas).', 'fa-arrow-down'], desperdicio: ['Desperdício', 'Estragou ou passou a validade. Sai do stock e conta no desperdício.', 'fa-trash-can'] };
         const stkNorm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9%\s]/g, ' ').replace(/\s+/g, ' ').trim();
         const stkFmt = (v, u) => (Math.round(v * 1000) / 1000).toLocaleString('pt-PT', { maximumFractionDigits: 3 }) + (u ? ' ' + u : '');
         // unidades: converte o que se escreve para a unidade do insumo
@@ -26382,7 +26428,7 @@ async function dsTrPreparar() {
         function stkNovo(x) {
             const it = (appState.inventory || []).find(i => i.id === x.itemId); if (!it) return null;
             const q = stkConverter(x.q, x.u, it.unit), atual = Number(it.stock) || 0;
-            const novo = stkModo === 'contagem' ? q : stkModo === 'entrada' ? atual + q : Math.max(0, atual - q);
+            const novo = stkModo === 'contagem' ? q : stkModo === 'entrada' ? atual + q : Math.max(0, atual - q);   // saída e desperdício tiram
             return { it, atual, novo };
         }
         function stkPrev(i) {
@@ -26397,6 +26443,12 @@ async function dsTrPreparar() {
             const log = Array.isArray(appState.stockAjustes) ? appState.stockAjustes : (appState.stockAjustes = []);
             const em = new Date().toISOString(), por = (currentUser && currentUser.email) || '';
             mud.forEach(r => { log.unshift({ em, por, modo: stkModo, id: r.it.id, nome: r.it.name, antes: r.atual, depois: r.novo }); r.it.stock = Math.round(r.novo * 1000) / 1000; });
+            // desperdício: também fica no registo de desperdício (com o custo), como em "Registar desperdício"
+            if (stkModo === 'desperdicio') {
+                appState.retirados = Array.isArray(appState.retirados) ? appState.retirados : [];
+                mud.forEach((r, k) => { const q = Math.max(0, r.atual - r.novo); if (!(q > 0)) return; let custo = 0; try { custo = (itemUnitCost(r.it) || 0) * q; } catch (_) {}
+                    appState.retirados.unshift({ id: 'rt_' + Date.now() + '_' + k, at: em, por: (typeof rtQuem === 'function' ? rtQuem() : por), origem: 'Estoque', motivo: 'Estragou / desperdício · Atualizar o stock', tipo: 'desperdicio', itens: [{ nome: r.it.name + ' (' + (r.it.unit || '') + ')', qty: Math.round(q * 1000) / 1000, preco: q ? custo / q : 0 }], valor: Math.round(custo * 100) / 100 }); });
+            }
             appState.stockAjustes = log.slice(0, 300);
             saveStorage(); dsModalFechar('stk-rev'); renderInventory();
             const t = document.getElementById('stk-txt'); if (t) t.value = '';
@@ -26404,7 +26456,7 @@ async function dsTrPreparar() {
         }
         (function () {
             document.head.insertAdjacentHTML('beforeend', `<style>
-                .stk-modos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+                .stk-modos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}@media (max-width:900px){.stk-modos{grid-template-columns:repeat(2,1fr)}}
                 .stk-modos button{display:flex;align-items:flex-start;gap:10px;text-align:left;border:1.5px solid #E4DCCF;border-radius:14px;padding:10px 12px;background:#fff;color:#231F20}
                 .stk-modos button i{margin-top:3px;color:#7A6A60}.stk-modos button b{display:block;font-size:13.5px;font-weight:800}.stk-modos button small{display:block;font-size:11.5px;color:#7A6A60;line-height:1.3;margin-top:2px}
                 .stk-modos button.on{border-color:var(--brand);background:#FBEDE6}.stk-modos button.on i{color:var(--brand)}
@@ -26760,5 +26812,34 @@ async function dsTrPreparar() {
         })();
     </script>
 
+
+    <style>
+        /* ======================================================= ECRÃS PEQUENOS (telemóveis de 320–420 px) e tablets
+           Regras gerais: nada passa da largura do ecrã, botões e títulos quebram linha em vez de apertar o texto. */
+        img, video, canvas, svg, table { max-width: 100%; }
+        select { max-width: 100%; }
+        #ds-bottom-nav button { min-width: 0; }
+        #ds-bottom-nav button span, #ds-bottom-nav button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        @media (max-width: 640px) {
+            /* cabeçalhos de secção com botão ao lado: o botão desce para baixo do título quando não cabe */
+            #tab-suppliers > div:first-child { flex-wrap: wrap; gap: 12px; }
+            #tab-suppliers > div:first-child > button { flex: 1 1 auto; justify-content: center; }
+            #kitchen-cat-filter, #bar-cat-filter { width: 100%; }
+            /* botões de exportar (Excel, PDF, SAF-T): ficam numa linha que quebra, sem partir palavras */
+            .bal-exp button { white-space: nowrap; flex: 1 1 auto; }
+            .dh-card h4, .dash-h { flex-wrap: wrap; row-gap: 6px; }
+        }
+        @media (max-width: 380px) {
+            #ds-bottom-nav button { font-size: 8.5px !important; letter-spacing: -.01em; }
+            #ds-bottom-nav button i { font-size: 16px; }
+            body { -webkit-text-size-adjust: 100%; }
+            .p-6 { padding: 16px !important; }
+            .p-5 { padding: 14px !important; }
+        }
+        /* tablets (768–1180 px): grelhas de 2 colunas não ficam apertadas */
+        @media (min-width: 641px) and (max-width: 1180px) {
+            .modal-box, [role=dialog] > div { max-width: min(94vw, 900px); }
+        }
+    </style>
 </body>
 </html>

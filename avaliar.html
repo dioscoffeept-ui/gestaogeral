@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Avaliar no Google</title>
+<meta name="theme-color" content="#983808">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Schibsted+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --cafe: #983808; --preto: #231F20; --creme: #F6F3F0; --t2: #5B4A40; }
+  @media (prefers-color-scheme: dark) { :root { --creme: #1F130E; --preto: #F2ECE4; --t2: #C9BBAF; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--creme); color: var(--preto); font: 16px/1.5 'Schibsted Grotesk', system-ui, sans-serif; padding: 24px 16px; }
+  main { max-width: 400px; text-align: center; }
+  .estrelas { font-size: 40px; letter-spacing: 4px; color: #F4B400; }
+  h1 { font: 800 26px/1.15 'Bricolage Grotesque', system-ui, sans-serif; letter-spacing: -.02em; margin: 12px 0 8px; }
+  p { color: var(--t2); margin: 0 0 20px; }
+  a.bt { display: inline-block; background: var(--cafe); color: #fff; text-decoration: none; font-weight: 700; padding: 14px 22px; border-radius: 12px; }
+</style>
+</head>
+<body>
+<main id="m">
+  <div class="estrelas" aria-hidden="true">★★★★★</div>
+  <h1>A abrir as avaliações…</h1>
+  <p>Obrigado por nos avaliar no Google.</p>
+</main>
+<script>
+  // Etiqueta NFC / QR "Avalie-nos no Google": o link fica no Dio'Stock, por isso a loja pode mudar o destino sem gravar a etiqueta de novo.
+  (async function () {
+    var t = (new URLSearchParams(location.search).get('t') || '').replace(/[^a-f0-9]/g, '');
+    var m = document.getElementById('m');
+    function falhou(txt) { m.innerHTML = '<div class="estrelas" aria-hidden="true">★★★★★</div><h1>Não conseguimos abrir</h1><p>' + txt + '</p>'; }
+    if (t.length !== 32) return falhou('Este link está incompleto. Peça ajuda ao balcão.');
+    try {
+      var r = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/rest/v1/rpc/fid_avaliar', { method: 'POST', headers: { apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', Authorization: 'Bearer sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', 'Content-Type': 'application/json' }, body: JSON.stringify({ p_t: t }) });
+      var u = r.ok ? await r.json() : null;
+      if (typeof u === 'string' && /^https:\/\//.test(u)) { location.replace(u); m.insertAdjacentHTML('beforeend', '<a class="bt" href="' + u.replace(/"/g, '%22') + '">Abrir o Google</a>'); return; }
+      falhou('Esta etiqueta já não está ativa. Peça ajuda ao balcão.');
+    } catch (e) { falhou('Sem ligação à internet. Tente de novo.'); }
+  })();
+</script>
+</body>
+</html>
