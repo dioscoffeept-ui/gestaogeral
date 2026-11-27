@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 12:35</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 13:55</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -20676,7 +20676,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795781721';
+        const DS_BUILD = '1795786828';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -22215,23 +22215,36 @@ var qrcode = function() {
             const out = {}; ids.forEach(id => out[id] = base[id] / 100); return out;
         }
         const eqTipsCfg = segK => { const e = eqDados(), c = e.tipsCfg[segK] || e.tipsCfg._ultimo || {}; return { modo: ['turno', 'dia', 'semana'].includes(c.modo) ? c.modo : 'turno', divisao: ['iguais', 'turnos', 'horas'].includes(c.divisao) ? c.divisao : 'iguais' }; };
-        function eqCalcular(seg) {
+        // Tips ao cêntimo, sem diferenças: cada valor (turno, dia ou semana) é dividido em cêntimos inteiros.
+        // Quem tem o mesmo peso recebe exatamente o mesmo; os cêntimos que não dão para dividir por igual
+        // não vão para ninguém em particular — passam para as tips da semana seguinte (e aparecem escritos).
+        function eqCalcular(seg, prof) {
+            prof = prof || 0;
             const e = eqDados(), ks = eqSemanaKeys(seg), segK = ks[0], cfg = eqTipsCfg(segK);
             const quem = e.staff.filter(s => s.tipsModo !== 'nao'), sempre = s => s.tipsModo === 'sempre';
-            const ex = {}, exDia = {}; quem.forEach(s => { ex[s.id] = 0; exDia[s.id] = [0, 0, 0, 0, 0, 0, 0]; });
-            const porDia = [0, 0, 0, 0, 0, 0, 0], avisos = []; let total = 0;
+            const exC = {}, diaC = {}; quem.forEach(s => { exC[s.id] = 0; diaC[s.id] = [0, 0, 0, 0, 0, 0, 0]; });
+            const porDia = [0, 0, 0, 0, 0, 0, 0], avisos = []; let total = 0, sobraC = 0;
+            // cêntimos que sobraram da semana anterior (procura até 12 semanas para trás)
+            let vemC = 0;
+            if (prof < 12) { try { const ant = eqCalcular(eqMais(seg, -7), prof + 1); vemC = ant.sobraC || 0; } catch (_) { vemC = 0; } }
+            let porJuntarC = vemC;
             const semDias = {}, semNinguem = (d, v) => { semDias[d] = (semDias[d] || 0) + v; };
             const peso = (c, s) => cfg.divisao === 'horas' ? eqHorasCel(c, s) : cfg.divisao === 'turnos' ? eqNTurnos(c) : 1;
-            const juntar = (v, l, w, d) => { const W = w.reduce((a, x) => a + x, 0); l.forEach((s, i) => { const x = v * w[i] / W; ex[s.id] += x; if (d != null) exDia[s.id][d] += x; }); };
+            // divide C cêntimos pelos pesos: cada um recebe floor(C × peso / soma); o resto fica de sobra
+            const juntar = (v, l, w, d) => {
+                let C = Math.round(v * 100) + porJuntarC; porJuntarC = 0;
+                const W = w.reduce((a, x) => a + x, 0); if (!(W > 0)) { sobraC += C; return; }
+                let dado = 0;
+                l.forEach((s, i) => { const x = Math.floor(C * w[i] / W + 1e-9); exC[s.id] += x; if (d != null) diaC[s.id][d] += x; dado += x; });
+                sobraC += C - dado;
+            };
             if (cfg.modo === 'turno') {
                 ks.forEach((k, d) => {
                     const td = (e.tips[k] && e.tips[k].t) || {};
                     e.turnos.forEach(t => {
                         const v = eqNum(td[t.id]); if (!v) return; porDia[d] += v; total += v;
-                        // quem fez este turno; quem tem só horas (sem turno marcado) conta se as horas cruzam o turno
                         const noTurno = s => { const c = eqCel(k, s.id); if (!eqTrab(c)) return false; if (eqTurnosEf(c).includes(t.id)) return true; if ((c.t || []).length) return false; return eqCruza(c.ini, c.fim, t.ini, t.fim); };
                         let l = quem.filter(s => sempre(s) || noTurno(s));
-                        // ninguém neste turno mas alguém trabalhou no dia: vai para quem trabalhou nesse dia
                         if (!l.some(s => !sempre(s))) { const dia = quem.filter(s => !sempre(s) && eqTrab(eqCel(k, s.id))); if (dia.length) l = dia.concat(quem.filter(sempre)); }
                         if (!l.some(s => !sempre(s))) semNinguem(d, v);
                         if (l.length) juntar(v, l, l.map(() => 1), d);
@@ -22256,13 +22269,11 @@ var qrcode = function() {
                     if (w.some(x => x > 0)) juntar(v, quem, w, null);
                 }
             }
+            sobraC += porJuntarC;   // semana sem tips: o que veio de trás continua a passar
             const dsN = Object.keys(semDias).map(Number).sort((a, b) => a - b);
             if (dsN.length) { const soma = dsN.reduce((a, d) => a + semDias[d], 0), nomes = dsN.map(d => EQ_DIAS_L[d]); avisos.unshift(`${eqEur(soma)} de tips ${dsN.length === 1 ? 'em ' + nomes[0] : 'em ' + nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1]} sem ninguém a trabalhar ${dsN.length === 1 ? 'nesse dia' : 'nesses dias'}.`); }
-            const totalC = Math.round(total * 100), dist = quem.filter(s => ex[s.id] > 0);
-            const horas = id => ks.reduce((a, k) => a + eqHorasCel(eqCel(k, id), eqPessoaDe(id)), 0);
-            const fin = eqArredondar(Object.fromEntries(dist.map(s => [s.id, ex[s.id]])), dist.length ? totalC : 0, (a, b) => horas(b) - horas(a));
-            const res = {}; quem.forEach(s => res[s.id] = { exato: ex[s.id], dias: exDia[s.id].map(x => Math.round(x * 100) / 100), total: fin[s.id] || 0 });
-            return { res, porDia: porDia.map(x => Math.round(x * 100) / 100), total: Math.round(total * 100) / 100, avisos, cfg, ks };
+            const res = {}; quem.forEach(s => res[s.id] = { exato: exC[s.id] / 100, dias: diaC[s.id].map(x => x / 100), total: exC[s.id] / 100 });
+            return { res, porDia: porDia.map(x => Math.round(x * 100) / 100), total: Math.round(total * 100) / 100, avisos, cfg, ks, sobraC, vemC, sobra: sobraC / 100, vem: vemC / 100 };
         }
 
         // ---------- página
@@ -22531,7 +22542,7 @@ var qrcode = function() {
                 ${r.avisos.map(a => `<div class="eq-aviso"><i class="fas fa-triangle-exclamation"></i>${escapeHtml(a)} Marque quem trabalhou na escala.</div>`).join('')}
                 <div class="eq-card"><div class="eq-scroll"><table class="eq-t"><thead><tr><th class="nm">A receber</th>${eqCabecalho(ks)}<th>Semana</th></tr></thead><tbody>${linhas}</tbody>
                     <tfoot><tr><td class="nm">Tips</td>${ks.map((k, d) => `<td>${cfg.modo === 'semana' ? '' : eqEur(r.porDia[d])}</td>`).join('')}<td>${eqEur(r.total)}</td></tr></tfoot></table></div></div>
-                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. As partes de cada dia são exatas e só o total da semana é arredondado ao cêntimo: quem fez os mesmos turnos recebe o mesmo e a soma bate com o total (${eqEur(soma)} de ${eqEur(r.total)}). Os valores de cada dia são aproximados ao cêntimo.${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
+                <p class="eq-nota">Quem trabalhou vem da Escala; as faltas não recebem. Tudo é dividido ao cêntimo: quem fez os mesmos turnos recebe exatamente o mesmo, e cada total da semana é a soma dos dias. Distribuído: ${eqEur(soma)}${r.vem ? ` (inclui ${eqEur(r.vem)} que sobraram da semana anterior)` : ''}.${r.sobra ? ` <b>Sobram ${eqEur(r.sobra)}</b> em cêntimos que não dá para dividir por igual: passam para as tips da semana seguinte.` : ''}${sempre.length ? ` Recebem todos os dias: ${sempre.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}${fora.length ? ` Não recebem tips: ${fora.map(s => escapeHtml(s.nome)).join(', ')}.` : ''}</p>
                 <div class="eq-bar"><button type="button" class="eq-b" onclick="eqEnviarTips()"><i class="fab fa-whatsapp"></i>Enviar resumo</button></div>`;
         }
         function eqTipSet(k, tipo, tid, val) {
@@ -22555,6 +22566,8 @@ var qrcode = function() {
             const r = eqCalcular(eqSeg), e = eqDados();
             let t = `*Tips ${eqSemanaTxt(eqSeg)}*${currentEmpresa ? ' · ' + currentEmpresa : ''}\nTotal: ${eqEur(r.total)}\n`;
             e.staff.filter(s => r.res[s.id] && r.res[s.id].total > 0).forEach(s => { t += `\n${s.nome}: ${eqEur(r.res[s.id].total)}`; });
+            if (r.vem) t += `\n\nInclui ${eqEur(r.vem)} que sobraram da semana anterior.`;
+            if (r.sobra) t += `${r.vem ? '\n' : '\n\n'}Sobram ${eqEur(r.sobra)} (cêntimos que não dá para dividir por igual): passam para a semana seguinte.`;
             window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t), '_blank');
         }
 
