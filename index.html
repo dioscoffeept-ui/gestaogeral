@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 11:15</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 12:20</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -14017,6 +14017,8 @@ var qrcode = function() {
         // ---------- textos da própria conta (fichas, ingredientes, notas, categorias…): traduzidos e guardados só para esta empresa
         const dsTrcTent = new Map();
         let DS_TRC = {}, dsTrcFila = new Set(), dsTrcT = null, dsTrcPausa = 0, dsTrcCarregado = '';
+        // A app é para Portugal: o número fiscal é sempre NIF, também no português do Brasil (nunca CPF/CNPJ)
+        function dsNifFix(m) { if (m && typeof m === 'object') for (const k in m) { const v = m[k]; if (typeof v === 'string' && /CNPJ|CPF/.test(v)) m[k] = v.replace(/CPF\s*\/\s*CNPJ|CNPJ\s*\/\s*CPF/g, 'NIF').replace(/\b(CNPJ|CPF)\b/g, 'NIF'); } return m; }
         function dsTrConta(k) {
             if (/^pt/.test(dsLang) || typeof currentUser === 'undefined' || !currentUser || DS_SAIDAS.has(k)) return null;
             if (!/[A-Za-zÀ-ú]{2}/.test(k) || k.length > 600) return null;
@@ -14029,11 +14031,11 @@ var qrcode = function() {
         async function dsTrcToken() { try { const { data } = await sb.auth.getSession(); return data && data.session && data.session.access_token; } catch (_) { return null; } }
         async function dsTrcCarregar() {
             const chave = dsLang + currentUser.id; dsTrcCarregado = chave;
-            try { DS_TRC = JSON.parse(localStorage.getItem('ds_trc_' + chave) || '{}') || {}; } catch (_) { DS_TRC = {}; } Object.keys(DS_TRC).forEach(k => { if (DS_TRC[k] === k && (k.match(/\p{L}{2,}/gu) || []).length >= 3) delete DS_TRC[k]; }); Object.values(DS_TRC).forEach(dsSaida);
+            try { DS_TRC = JSON.parse(localStorage.getItem('ds_trc_' + chave) || '{}') || {}; } catch (_) { DS_TRC = {}; } dsNifFix(DS_TRC); Object.keys(DS_TRC).forEach(k => { if (DS_TRC[k] === k && (k.match(/\p{L}{2,}/gu) || []).length >= 3) delete DS_TRC[k]; }); Object.values(DS_TRC).forEach(dsSaida);
             const tk = await dsTrcToken(); if (!tk) return;
             try {
                 const j = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', Authorization: 'Bearer ' + tk }, body: JSON.stringify({ acao: 'conta_tudo', lang: dsLang }) }).then(r => r.json());
-                if (j && j.map) { Object.assign(DS_TRC, j.map); Object.values(j.map).forEach(dsSaida); try { localStorage.setItem('ds_trc_' + chave, JSON.stringify(DS_TRC)); } catch (_) {} if (window.dsTrReaplicar) window.dsTrReaplicar(); }
+                if (j && j.map) { Object.assign(DS_TRC, dsNifFix(j.map)); Object.values(j.map).forEach(dsSaida); try { localStorage.setItem('ds_trc_' + chave, JSON.stringify(DS_TRC)); } catch (_) {} if (window.dsTrReaplicar) window.dsTrReaplicar(); }
             } catch (_) {}
         }
         async function dsTrcEnviar() {
@@ -14043,7 +14045,7 @@ var qrcode = function() {
             try {
                 const r = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', Authorization: 'Bearer ' + tk }, body: JSON.stringify({ acao: 'conta', lang: dsLang, textos: lote }) });
                 const j = await r.json(); const novos = (j && j.map) || {};
-                Object.assign(DS_TRC, novos); Object.values(novos).forEach(dsSaida);
+                Object.assign(DS_TRC, dsNifFix(novos)); Object.values(novos).forEach(dsSaida);
                 if (r.status === 429) { dsTrcPausa = Date.now() + 3600e3; }
                 else if (j.faltam) { dsTrcPausa = Date.now() + 20000; lote.forEach(k => { if (!(k in DS_TRC)) dsTrcFila.add(k); }); setTimeout(dsTrcEnviar, 20500); }
                 try { localStorage.setItem('ds_trc_' + dsLang + currentUser.id, JSON.stringify(DS_TRC)); } catch (_) {}
@@ -14059,7 +14061,7 @@ var qrcode = function() {
             try {
                 const r = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs' }, body: JSON.stringify({ acao: 'traduzir', lang: dsLang, textos: lote }) });
                 const j = await r.json(); const novos = j.map || {};
-                Object.assign(DS_TR, novos); Object.values(novos).forEach(dsSaida); lote.forEach(k => { if (!(k in novos) && (dsTrTent.get(k) || 0) < 4) setTimeout(() => dsTrPedir(k), 15000); });
+                Object.assign(DS_TR, dsNifFix(novos)); Object.values(novos).forEach(dsSaida); lote.forEach(k => { if (!(k in novos) && (dsTrTent.get(k) || 0) < 4) setTimeout(() => dsTrPedir(k), 15000); });
                 try { localStorage.setItem('ds_tr_' + dsLang, JSON.stringify(DS_TR)); } catch (_) {}
                 if (Object.keys(novos).length && window.dsTrReaplicar) window.dsTrReaplicar();
                 if (j.faltam) { dsTrPausa = Date.now() + 20000; lote.forEach(k => { if (!(k in DS_TR)) dsTrFila.add(k); }); setTimeout(dsTrEnviar, 20500); }
@@ -14068,7 +14070,7 @@ var qrcode = function() {
         }
         function dsTrIniciar() {
             if (dsLang === 'pt') return;
-            try { DS_TR = JSON.parse(localStorage.getItem('ds_tr_' + dsLang) || '{}') || {}; } catch (_) { DS_TR = {}; } Object.values(DS_TR).forEach(dsSaida);
+            try { DS_TR = JSON.parse(localStorage.getItem('ds_tr_' + dsLang) || '{}') || {}; } catch (_) { DS_TR = {}; } dsNifFix(DS_TR); Object.values(DS_TR).forEach(dsSaida);
             if (dsLang === 'en' || dsLang === 'es') Object.values(DS_I18N).forEach(v => dsSaida(v[dsLang === 'en' ? 0 : 1]));
             fetch('i18n-fontes.json').then(r => r.json()).then(arr => {
                 DS_FONTES = new Set(arr.filter(k => !/\{\d+\}/.test(k)));
@@ -14079,7 +14081,7 @@ var qrcode = function() {
                 if (window.dsTrReaplicar) window.dsTrReaplicar();
             }).catch(() => {});
             fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs' }, body: JSON.stringify({ acao: 'tudo', lang: dsLang }) })
-                .then(r => r.json()).then(j => { if (j && j.map) { Object.assign(DS_TR, j.map); Object.values(j.map).forEach(dsSaida); try { localStorage.setItem('ds_tr_' + dsLang, JSON.stringify(DS_TR)); } catch (_) {} if (window.dsTrReaplicar) window.dsTrReaplicar(); } }).catch(() => {});
+                .then(r => r.json()).then(j => { if (j && j.map) { Object.assign(DS_TR, dsNifFix(j.map)); Object.values(j.map).forEach(dsSaida); try { localStorage.setItem('ds_tr_' + dsLang, JSON.stringify(DS_TR)); } catch (_) {} if (window.dsTrReaplicar) window.dsTrReaplicar(); } }).catch(() => {});
         }
         let dsLang = 'pt';
         try { dsLang = localStorage.getItem('ds_lang') || ''; } catch (_) {}
@@ -20636,7 +20638,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795777055';
+        const DS_BUILD = '1795781542';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -24133,7 +24135,7 @@ async function dsTrPreparar() {
             for (let t = 0; t < 3 && lote.length; t++) {
                 try {
                     const j = await fetch('https://brisrzuvvxkkzhmhsgro.supabase.co/functions/v1/traduzir', { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: 'sb_publishable_Xq7qC8tz_NJcP6-SGViiLA_yNhVHaSs', Authorization: 'Bearer ' + tk }, body: JSON.stringify({ acao: 'conta', lang: dsLang, textos: lote }) }).then(r => r.json());
-                    Object.assign(DS_TRC, j.map || {}); Object.values(j.map || {}).forEach(dsSaida);
+                    Object.assign(DS_TRC, dsNifFix(j.map || {})); Object.values(j.map || {}).forEach(dsSaida);
                     lote = lote.filter(k => !(k in DS_TRC));
                     if (!j.faltam) break;
                 } catch (_) { await new Promise(r => setTimeout(r, 2000)); }
