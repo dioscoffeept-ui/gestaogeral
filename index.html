@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 15:20</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 15:35</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -2449,6 +2449,15 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Fornecedor</label>
                         <select id="inv-supplier" class="w-full rounded-xl border-slate-300 text-sm"></select>
                     </div>
+                </div>
+                <div id="inv-cont-box" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2" style="display:none">
+                    <p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-bottle-water mr-1" style="color:var(--brand)"></i> Quanto tem cada unidade <span class="normal-case font-semibold text-slate-500">(opcional — ex.: 1 Coca-Cola = 330 ml, 1 frasco = 200 ml, 1 saco = 1 kg)</span></p>
+                    <div class="grid grid-cols-2 gap-2 items-end">
+                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Cada unidade tem</label><input id="inv-cont-q" type="number" min="0" step="any" placeholder="Ex: 330" oninput="invContCalc()" class="w-full rounded-xl border-slate-300 text-sm"></div>
+                        <div><label class="block text-[10px] font-bold text-slate-500 mb-0.5">Medida</label><select id="inv-cont-u" onchange="invContCalc()" class="w-full rounded-xl border-slate-300 text-sm"><option value="ml">ml</option><option value="g">g</option><option value="L">L</option><option value="kg">kg</option></select></div>
+                    </div>
+                    <p id="inv-cont-hint" class="text-[11px] text-slate-500">O estoque continua em unidades (ex.: 20 Coca-Colas). As fichas podem usar ml ou g e descontam a parte certa de cada unidade.</p>
+                    <button type="button" id="inv-pack-mostrar" onclick="window._invPackVer=true;invContCalc()" class="text-[11px] font-bold underline" style="color:var(--brand)">Vem em caixas ou pacotes? (ex.: caixa com 24, bolo com 12 fatias)</button>
                 </div>
                 <div id="inv-pack-box" class="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-2">
                     <p class="text-xs font-bold text-slate-700 uppercase"><i class="fas fa-box mr-1" style="color:var(--brand)"></i> <span id="inv-pack-tit">Embalagem</span> <span id="inv-pack-sub"  class="normal-case font-semibold text-slate-500">(opcional — ex.: garrafa de 700 ml, saco de 1 kg, pacote com 50 copos)</span></p>
@@ -7207,6 +7216,15 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             if (!a || !b || a[0] !== b[0]) return null;
             return q * a[1] / b[1];
         }
+        // converte para a unidade do produto, usando o conteúdo de cada unidade (20 un de 330 ml: 33 ml = 0,1 un)
+        function convItem(q, from, it) {
+            if (!it) return null;
+            const c = convertQty(q, from, it.unit); if (c !== null) return c;
+            const ct = it.conteudo;
+            if (ct && Number(ct.q) > 0 && String(it.unit).toLowerCase() === 'un') { const x = convertQty(q, from, ct.u); if (x !== null) return x / Number(ct.q); }
+            if (/^(un|unid|unidade|unidades)$/i.test(String(from || '').trim()) && Number(it.packSize) > 0 && String(it.unit).toLowerCase() !== 'un') return q * Number(it.packSize);
+            return null;
+        }
         function defaultIva(item) { return /bebida|embalag|outro|limpez|descart/.test(normTxt(item && item.category)) ? 23 : 6; }
         function itemIva(item) { const v = parseFloat(item && item.iva); return isFinite(v) ? v : defaultIva(item); }
         // custo por unidade do item (g, ml, un…); gross = com IVA
@@ -7221,11 +7239,11 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             let it = findInvForIngredient(ing.name, ing.unit);
             if (it) return it;
             const n = normTxt(String(ing.name).replace(/\(.*?\)/g, ''));
-            it = appState.inventory.find(i => normTxt(i.name) === n && convertQty(1, ing.unit, i.unit) !== null);
+            it = appState.inventory.find(i => normTxt(i.name) === n && convItem(1, ing.unit, i) !== null);
             if (it) return it;
             let best = null, bs = 0;
             appState.inventory.forEach(i => {
-                if (convertQty(1, ing.unit, i.unit) === null) return;
+                if (convItem(1, ing.unit, i) === null) return;
                 const m = matchInfo(ing.name, i.name);
                 if (m.auto && m.score > bs) { best = i; bs = m.score; }
             });
@@ -7245,7 +7263,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     return { g, cost, costG, item: null, mep: mm.m };
                 }
                 const item = invForCost(g), uc = item ? itemUnitCost(item) : null;
-                const qq = item ? convertQty(q, g.unit, item.unit) : null;
+                const qq = item ? convItem(q, g.unit, item) : null;
                 if (uc === null || qq === null) { missing++; return { g, cost: null, item }; }
                 const cost = uc * qq, costG = itemUnitCost(item, true) * qq;
                 total += cost; gross += costG;
@@ -9203,7 +9221,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
             const UN = { g: 'g', ml: 'ml', un: 'un', kg: 'kg', L: 'L', doses: 'doses' }[unit] || unit;
             const ex = { g: '1000', ml: '700', kg: '1', L: '0,7', un: '50', doses: '20' }[unit] || '50';
             const lb = document.getElementById('inv-pack-lb'), lb2 = document.getElementById('inv-pack-lb2'), pk = document.getElementById('inv-pack');
-            const T = dsTeste(), lbn = document.getElementById('inv-pack-lbn'), tit = document.getElementById('inv-pack-tit'), sub = document.getElementById('inv-pack-sub');
+            const T = false, lbn = document.getElementById('inv-pack-lbn'), tit = document.getElementById('inv-pack-tit'), sub = document.getElementById('inv-pack-sub');
             if (lb) lb.textContent = (T ? 'Cada unidade tem (' : 'Cada embalagem tem (') + UN + ')';
             if (lbn) lbn.textContent = T ? 'Unidades que tenho' : 'Embalagens que tenho';
             if (tit) tit.textContent = T ? 'Quanto tem cada unidade' : 'Embalagem';
@@ -13086,7 +13104,7 @@ var qrcode = function() {
             for (const i of appState.inventory) {
                 const nn = normTxt(i.name);
                 if (nn !== n && nn !== base) continue;
-                const q = convertQty(Number(qty), unit, i.unit);
+                const q = convItem(Number(qty), unit, i);
                 if (q !== null && isFinite(q)) return { inv: i, q };
             }
             return null;
@@ -20687,7 +20705,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795792127';
+        const DS_BUILD = '1795792464';
         (function () {
             let aVer = false;
             async function verNova() {
@@ -27113,6 +27131,57 @@ async function dsTrPreparar() {
                 if (t === 'producoes') { const r = oT.call(this, 'mep'); setTimeout(() => { const el = document.getElementById('mep-pronto'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); return r; }
                 const r = oT.apply(this, arguments);
                 if (t === 'mep') { try { renderProducoes(); } catch (_) {} try { renderPrep(); } catch (_) {} }
+                return r;
+            };
+        })();
+    </script>
+
+    <script>
+        // ======================================================= CONTEÚDO DE CADA UNIDADE (20 un · cada uma 330 ml)
+        function invContCalc() {
+            const unit = document.getElementById('inv-unit').value, un = unit === 'un';
+            const cb = document.getElementById('inv-cont-box'), pb = document.getElementById('inv-pack-box');
+            if (cb) cb.style.display = un ? '' : 'none';
+            const vPack = !un || window._invPackVer || (parseFloat(document.getElementById('inv-pack').value) || 0) > 0;
+            if (pb) pb.style.display = vPack ? '' : 'none';
+            const bm = document.getElementById('inv-pack-mostrar'); if (bm) bm.style.display = vPack ? 'none' : '';
+            if (!un) return;
+            const q = parseFloat(String(document.getElementById('inv-cont-q').value).replace(',', '.')) || 0, u = document.getElementById('inv-cont-u').value;
+            const st = parseFloat(document.getElementById('inv-stock').value) || 0, h = document.getElementById('inv-cont-hint');
+            if (q > 0) {
+                const tot = st * q, base = /^(L|ml)$/.test(u) ? (u === 'L' ? tot * 1000 : tot) : (u === 'kg' ? tot * 1000 : tot), grande = base >= 1000;
+                const txt = /^(L|ml)$/.test(u) ? (grande ? fmtQ(Math.round(base / 10) / 100) + ' L' : fmtQ(base) + ' ml') : (grande ? fmtQ(Math.round(base / 10) / 100) + ' kg' : fmtQ(base) + ' g');
+                h.innerHTML = `<b style="color:var(--brand)">${fmtQ(st)} un × ${fmtQ(q)} ${u} = ${txt}</b>. As fichas podem usar ${/^(L|ml)$/.test(u) ? 'ml' : 'g'}: cada ${fmtQ(q)} ${u} desconta 1 unidade.`;
+            } else h.textContent = 'O estoque continua em unidades (ex.: 20 Coca-Colas). As fichas podem usar ml ou g e descontam a parte certa de cada unidade.';
+        }
+        (function () {
+            const fill = it => { window._invPackVer = false; const c = it && it.conteudo; document.getElementById('inv-cont-q').value = c && c.q > 0 ? c.q : ''; document.getElementById('inv-cont-u').value = c && c.u ? c.u : 'ml'; invContCalc(); };
+            const oOpen = openInventoryModal; openInventoryModal = function () { const r = oOpen.apply(this, arguments); fill(null); return r; };
+            const oEdit = editInventoryItem; editInventoryItem = function (id) { const r = oEdit.apply(this, arguments); fill(appState.inventory.find(i => i.id === id)); return r; };
+            document.getElementById('inv-unit').addEventListener('change', invContCalc);
+            document.getElementById('inv-stock').addEventListener('input', invContCalc);
+            const oSave = saveInventoryItem;
+            saveInventoryItem = function (e) {
+                const unit = document.getElementById('inv-unit').value, q = parseFloat(String(document.getElementById('inv-cont-q').value).replace(',', '.')) || 0, u = document.getElementById('inv-cont-u').value;
+                const id = document.getElementById('inv-id').value, before = new Set(appState.inventory.map(i => i.id));
+                const r = oSave.apply(this, arguments);
+                const it = id ? appState.inventory.find(i => i.id === id) : appState.inventory.find(i => !before.has(i.id));
+                if (it) { if (unit === 'un' && q > 0) it.conteudo = { q, u }; else delete it.conteudo; saveStorage(); renderInventory(); }
+                return r;
+            };
+            // na lista: "330 ml cada · 6,6 L"
+            const oRI = renderInventory;
+            renderInventory = function () {
+                const r = oRI.apply(this, arguments);
+                document.querySelectorAll('#inventory-grouped-container tbody tr').forEach(tr => {
+                    const b = tr.querySelector('button[onclick^="editInventoryItem"]'); if (!b || tr.dataset.dsct) return;
+                    const id = (b.getAttribute('onclick').match(/'([^']+)'/) || [])[1], it = appState.inventory.find(x => x.id === id);
+                    if (!it || !it.conteudo || it.unit !== 'un') return; tr.dataset.dsct = '1';
+                    const c = it.conteudo, tot = (Number(it.stock) || 0) * c.q, cell = tr.children[2]; if (!cell) return;
+                    const base = c.u === 'L' || c.u === 'kg' ? tot * 1000 : tot, liq = /^(L|ml)$/.test(c.u);
+                    const txt = base >= 1000 ? fmtQ(Math.round(base / 10) / 100) + (liq ? ' L' : ' kg') : fmtQ(base) + (liq ? ' ml' : ' g');
+                    cell.insertAdjacentHTML('beforeend', `<span class="block text-[10px] text-slate-500 font-semibold">${fmtQ(c.q)} ${escapeHtml(c.u)} cada · ${txt}</span>`);
+                });
                 return r;
             };
         })();
