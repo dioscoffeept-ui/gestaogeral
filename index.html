@@ -1357,7 +1357,7 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
                     </div>
                 </div>
                 <p class="text-center text-[11px] text-slate-400 mt-4"><i class="fas fa-lock mr-1"></i>Cada empresa vê apenas os seus próprios dados.</p>
-                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 15:15</p>
+                <p class="text-center text-[10px] text-slate-300 mt-1">Versão 27/11/2026 15:20</p>
                 <p class="text-center text-[11px] text-slate-400 mt-2"><a href="termos.html" target="_blank" class="hover:underline">Termos e Condições</a> · <a href="termos.html#cancelamento" target="_blank" class="hover:underline">Pagamentos e cancelamento</a> · <a href="termos.html#privacidade" target="_blank" class="hover:underline">Privacidade</a> · <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener" class="hover:underline">Livro de Reclamações</a></p>
             </div>
         </div>
@@ -9191,7 +9191,9 @@ html.dark .ds-field input,html.dark .ds-field select{background:#0f172a;border-c
         // ======================================================= CONTA DE TESTE
         // A conta Dio'Stock recebe as novidades logo; as outras contas recebem-nas no patch de segunda.
         const DS_CONTA_TESTE = '6339a575-bd31-4b04-a793-cd55c739193a';
-        const dsTeste = () => { try { return (typeof fidDono === 'function' ? fidDono() : (currentUser && currentUser.id)) === DS_CONTA_TESTE; } catch (_) { return false; } };
+        // Por agora (até começarem os patches semanais) as novidades vão para todas as contas: true = todas; false = só a conta de teste
+        const DS_NOVIDADES_TODAS = true;
+        const dsTeste = () => { if (DS_NOVIDADES_TODAS) return true; try { return (typeof fidDono === 'function' ? fidDono() : (currentUser && currentUser.id)) === DS_CONTA_TESTE; } catch (_) { return false; } };
         // ======================================================= EMBALAGENS NOS ITENS
         function invPackCalc(src) {
             const pack = parseFloat(document.getElementById('inv-pack').value) || 0;
@@ -20685,7 +20687,7 @@ var qrcode = function() {
 
     <script>
         // ---------- atualização automática: se houver versão nova publicada, a app recarrega sozinha
-        const DS_BUILD = '1795791982';
+        const DS_BUILD = '1795792127';
         (function () {
             let aVer = false;
             async function verNova() {
